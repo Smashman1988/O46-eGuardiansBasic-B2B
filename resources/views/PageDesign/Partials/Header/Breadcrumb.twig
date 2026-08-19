@@ -1,0 +1,35 @@
+{% set lang         = services.localizationRepository.getLanguage() %}
+{% set configItemName = config("Ceres.item.name") %}
+{% if categoryBreadcrumbs is not empty %}
+    <section class="section-bread">
+        <nav class="container">
+            <div class="row">
+                <div class="col-12">                 
+                    <ul class="breadcrumb list-no-style" itemscope itemtype="https://schema.org/BreadcrumbList">
+                        <li class="breadcrumb-item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                            <a href="{{ homepageURL }}" title="Startseite" itemscope itemtype="https://schema.org/WebPage" itemprop="item" itemid="{{ homepageURL }}">
+                                <span itemprop="name">{{ trans("GuardiansBasic::Template.home") }}</span>  
+                            </a>
+                            <meta itemprop="position" content="1" />
+                        </li>
+                        {% set break = false %}
+                        {% set countMeta = 2 %}
+                        {% for category in categoryBreadcrumbs %}
+                            {% if category.details[0] %}
+                                <li class="breadcrumb-item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                                    <a href="{{ services.category.getURLById( category.id ) }}" title="{{ category.details[0].name }}" itemscope itemtype="https://schema.org/WebPage" itemprop="item" itemid="{{ services.category.getURLById( category.id ) }}">
+                                        <span itemprop="name">{{ category.details[0].name }}</span>
+                                    </a>
+                                    <meta itemprop="position" content="{{ countMeta }}" />
+                                </li>
+                                {% set countMeta = countMeta + 1 %}
+                            {% else %}
+                                {% set break = true %}
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </section>
+{% endif %}

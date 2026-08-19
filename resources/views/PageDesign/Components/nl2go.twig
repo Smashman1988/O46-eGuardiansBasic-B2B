@@ -1,0 +1,25 @@
+ <script id="n2g_script">
+        !function(e,t,n,c,r,a,i){e.Newsletter2GoTrackingObject=r,e[r]=e[r]||function(){(e[r].q=e[r].q||[]).push(arguments)},e[r].l=1*new Date,a=t.createElement(n),i=t.getElementsByTagName(n)[0],a.async=1,a.src=c,i.parentNode.insertBefore(a,i)}(window,document,"script","//static.newsletter2go.com/utils.js","n2g");
+        n2g('create', 'IG31OH9Z');
+        </script>
+            <script type="text/javascript">
+                {% set taxCost = data.order.amounts[0].grossTotal - data.order.amounts[0].netTotal  %}
+            n2g('ecommerce:addTransaction', {
+                'id': '{{ data.order.id }}',
+                'affiliation': 'https://b2b.outlet46.de',
+                'revenue': '{{ data.order.amounts[0].grossTotal }}',
+                'shipping': '{{ shippingCosts }}',
+                'tax': '{{ taxCost }}'
+            });
+        {% for item in data.order.orderItems %}
+        n2g('ecommerce:addItem', {
+            'id': '{{ data.order.id }}',
+            'name': '{{ item.orderItemName }}',
+            'sku': '{{ item.variation.number }}',
+            'category': '',
+            'price': '{{ item.amounts[0].priceGross }}',
+            'quantity': '{{ item.quantity }}'
+        });
+        {% endfor %}
+        n2g('ecommerce:send');
+    </script>

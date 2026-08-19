@@ -1,0 +1,91 @@
+{% if pageMax > 1 %}
+    {% set canonicalURL = services.url.getCanonicalURL() %}
+    {% set showPageAt = currentPage %}
+        <ul class="pagination list-no-style">
+                {% if currentPage > 0 %}
+            <!-- PREV LINK -->
+            {% if (currentPage - 1) < 2 %}
+            <li class="page-nextprev page-item{% if currentPage < 2 %} disabled{% endif %}">
+                <a class="page-link" href="{{ canonicalURL ~ queryString({ 'page': null }) }}" title="{{ trans("GuardiansBasic::Template.lastpage") }}">
+                    <span class="icon-left-open-big"></span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-nextprev page-item{% if currentPage < 2 %} disabled{% endif %}">
+                <a class="page-link" href="{{ canonicalURL ~ queryString({ 'page': currentPage - 1  }) }}" title="{{ trans("GuardiansBasic::Template.lastpage") }}">
+                    <span class="icon-left-open-big"></span>
+                </a>
+            </li>
+            {% endif %}
+            <!-- ./PREV LINK -->
+ 
+            <!-- FIRST PAGE LINK -->
+            <li class="page-item {% if currentPage == 1 %}active{% endif %}">
+                <a class="page-link" 
+                   href="{{ canonicalURL ~ queryString({ 'page': null }) }}" title="{{ trans("GuardiansBasic::Template.page") }} 1">1</a>
+            </li>
+            {% if currentPage > 3 %}
+                <li class="page-item page-link">...</li>
+            {% endif %}
+            <!-- ./FIRST PAGE LINK -->
+
+            <!-- PAGINATION -->
+
+            {% if currentPage == pageMax and currentPage > 2 %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ canonicalURL ~ queryString({ 'page': currentPage - 2 }) }}" title="{{ trans("GuardiansBasic::Template.page") }} {{ currentPage - 2 }}">{{ currentPage - 2 }}</a>
+                </li>
+            {% endif %}
+            
+            {% if currentPage > 1 %}
+                {% if (currentPage - 1) > 1 %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ canonicalURL ~ queryString({ 'page': currentPage -1 }) }}" title="{{ trans("GuardiansBasic::Template.page") }} {{  currentPage - 1 }}">{{ currentPage - 1 }}</a>
+                </li>
+                {% endif %}
+            {% endif %}
+             {% if currentPage > 1 %}
+                <li class="page-item active">
+                    <a class="page-link" title="Seite {{ currentPage }}">{{ currentPage }}</a>
+                </li>
+            {% endif %}    
+                {% if currentPage+1 <= pageMax %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ canonicalURL ~ queryString({ 'page': currentPage + 1 }) }}" title="{{ trans("GuardiansBasic::Template.page") }} {{ currentPage + 1 }}">{{ currentPage + 1 }}</a>
+                </li>
+                {% set showPageAt = currentPage + 1 %}
+                {% endif %}
+            <!-- ./PAGINATION -->
+            
+            <!-- LAST PAGE LINK -->
+            {% if pageMax > showPageAt  %}
+                <li class="page-item page-link facet-test">...</li>
+                <li class="page-item facet-test">
+                    <a class="page-link"
+                       href="{{ canonicalURL ~ queryString({ 'page': pageMax }) }}" title="{{ trans("GuardiansBasic::Template.page") }} {{ pageMax }}">{{ pageMax }}</a>
+                </li>
+            {% endif %}
+            <!-- ./LAST PAGE LINK -->
+
+            <!-- NEXT LINK -->
+            {% if currentPage < pageMax %}
+            <li class="page-nextprev page-item disabled">
+                <a class="pagination__next"
+                   href="{{ canonicalURL ~ queryString({ 'page': currentPage + 1 }) }}&quickViewItem=true" title="{{ trans("GuardiansBasic::Template.nextpage") }}">
+                    <span class="icon-right-open-big"></span>
+                </a>
+            </li>
+			<li class="page-nextprev page-item{% if currentPage == pageMax %} disabled{% endif %}">
+                <a class="pagination__noxt"
+                   href="{{ canonicalURL ~ queryString({ 'page': currentPage + 1 }) }}" title="{{ trans("GuardiansBasic::Template.nextpage") }}">
+                    <span class="icon-right-open-big"></span>
+                </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            <!-- ./NEXT LINK -->
+        </ul>
+{% endif %}

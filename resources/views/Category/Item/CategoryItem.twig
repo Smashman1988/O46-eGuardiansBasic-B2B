@@ -1,0 +1,237 @@
+{% extends getPartial('page-design') %}
+{% set currencyFormat = config("Ceres.currency.format") %}
+{% set lang = services.localizationRepository.getLanguage() %}
+{% set currencycheck = services.checkout.getCurrencyData.name %}
+{% set catDetails = category.details[0] %}
+{% set isShoeCategory = category.id in [44, 52] or category.parentCategoryId in [44, 52] %}
+{% set translations = {
+    tSustainability: trans("GuardiansBasic::Template.sustainability"),
+    tAvailSizes: trans("GuardiansBasic::Template.availsizes"),
+    tStatt: trans("GuardiansBasic::Template.statt"),
+    tInBasket: trans("GuardiansBasic::Template.inbasket")
+} %}
+{% set transLabels = {
+    availsizedeal: trans("GuardiansBasic::Template.availsizedeal"),
+    availsizeonesize: trans("GuardiansBasic::Template.availsizeonesize"),
+    morethen18: trans("GuardiansBasic::Template.morethen18")
+} %}
+
+{% block PartialHead %}
+    {% set canonicalUrl = services.url.getCanonicalURL(null, true) %}
+    {% if category.id!=60 %}
+    {% if currentPage - 1 > 1 %}
+        <link rel="prev" href="{{ canonicalUrl ~ queryString({'page': currentPage - 1}) }}" />
+    {% elseif currentPage - 1 == 1 %}
+        <link rel="prev" href="{{ canonicalUrl }}" />
+    {% endif %}
+   
+    {% if currentPage + 1 <= pageMax %}
+        <link rel="next" href="{{ canonicalUrl ~ queryString({'page': currentPage + 1}) }}" />
+    {% endif %}
+    {% endif %}
+    {% if currentPage == 1 %}
+    {% set counter = 0 %}
+    {% if category.id!=60 %}
+    {% for item in itemList[:2] %}
+        <link rel="preload" href="{{ item.data.images.all[0].urlPreview }}.avif" as="image">
+        {% set vendorlogo = item.data.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+        {% if vendorlogo is not empty %}
+            <link rel="preload" href="{{ vendorlogo }}" as="image">
+        {% elseif item.data.item.manufacturer.logo is not empty %}
+            <link rel="preload" href="{{ item.data.item.manufacturer.logo }}" as="image">
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+    {% if category is null %}
+        {% if '&' in queryString() %}
+            {% set robotsValue = 'NOINDEX,FOLLOW' %}
+        {% else %}
+             {% set robotsValue = 'NOINDEX,FOLLOW' %}
+        {% endif %}
+
+      {% embed getPartial('page-metadata') %}
+            {% block title      trans("Ceres::Template.itemSearchResults") ~ " " ~ searchString %}
+            {% block robots     robotsValue %}
+      {% endembed %}
+    {% else %}
+      {% embed getPartial('page-metadata') %}
+      {% endembed %}
+    {% endif %} 
+{% endblock %}
+
+{% block PageBody %}
+{% if not isQuickView %}
+<script>(function () {
+    try {
+        if (typeof URLSearchParams !== 'undefined' && typeof URL !== 'undefined') {
+            const url = new URL(window.location.href);
+            const isQuickView = url.searchParams.get('quickViewItem') === 'true';
+            const hasCategoryList = document.querySelector('.category-product-list');
+
+            if (isQuickView && !hasCategoryList) {
+                url.searchParams.delete('quickViewItem');
+                window.location.replace(url.origin + url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+            }
+        }
+    } catch (e) {
+        console.warn('[MiniFailsafe] Fehler:', e);
+    }
+})();
+</script>
+{% endif %}
+
+	{% if category.id!=60 %}
+<section class="categoriegrid page-content container">
+    {% if isQuickView %}
+    {% if catDetails.description2 and currentPage < 2 %}
+        <div class="cat-description2">
+            <h1 class="category-title center cat-title">{{ catDetails.name }} ({{ itemCountTotal }})</h1>
+            {{ catDetails.description2 | raw }}<br>
+        </div>
+        {% else %}
+        <div class="cat-description2">
+            <h1 class="category-title center cat-title">{{ catDetails.name }} ({{ itemCountTotal }})</h1>
+        </div>
+    {% endif %}
+     {% endif %}
+    <div class="row">
+        {% if isQuickView %}
+        <div class="col-12">
+            <div class="leftsidecat">
+                {% if isSearch %}
+                    <h1 class="category-title">{{ trans("GuardiansBasic::Template.searchresultfor") }} "{{ searchString }}" ({{ itemCountTotal }})</h1>
+                     <div class="row d-lg-none">
+                        <div class="col-6">
+                            
+                        </div>
+                        <div class="col-6">
+                            <button data-eg-event="click" data-eg-param="html,filter-open" data-eg-handler="tgClass" class="btn btn-primary btn-block mb-3" aria-label="Filter öffnen">
+                                {{ trans("GuardiansBasic::Template.whatareyoulookingfor") }}
+                            </button>
+                        </div>
+                    </div>
+                    {% include "GuardiansBasic::Category.Item.Partials.FacetFilter3" %}
+                {% else %}
+                    <div class="row d-lg-none">
+                        <div class="col-6">
+                            <button data-eg-event="click" data-eg-param="html,menu-open" data-eg-handler="tgClass" class="btn btn-primary btn-block mb-3" aria-label="Kategorien">
+                                {{ trans("GuardiansBasic::Template.categories") }}
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button data-eg-event="click" data-eg-param="html,filter-open" data-eg-handler="tgClass" class="btn btn-primary btn-block mb-3" aria-label="Filter öffnen">
+                                {{ trans("GuardiansBasic::Template.whatareyoulookingfor") }}
+                            </button>
+                        </div>
+                    </div>
+                    {% include "GuardiansBasic::Category.Item.Partials.FacetFilter2" %}
+                {% endif %}
+
+            </div>
+        </div>
+                {% endif %}
+        <div class="col-12">
+             <div class="row align-items-center m-b-25">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                        {% if isQuickView %}
+                        <div class="align-items-center d-flex mr-md-2">
+                            <span class="light-big-txt l-b-t-2 d-none d-md-inline-block">{{ trans("GuardiansBasic::Template.sortby") }}</span>
+                            <div class="eg-dropdown eg-dropdown-sort eg-dropdown-normal mb-4 mb-md-0" data-eg-activesorting="{{ query.sorting }}" data-eg-defaultsorting="{{ searchOptions.defaultSorting }}">
+                                <div class="eg-dropdown-value">
+                                    <span class="sort-val">{{ searchOptions.sorting[query.sorting] }}</span> <span class="icon-down-open-big"></span>
+                                </div>
+                                <ul class="list-no-style eg-dropdown-content">
+                                {% for sortingValue, sortingKey in searchOptions.sorting %}
+                                    {% if query.sorting != sortingValue %}
+                                    <li>
+                                        <span data-eg-sortval="{{ sortingValue }}" data-eg-href="{{ canonicalURL ~ queryString({ 'sorting': sortingValue }) }}">{{ sortingKey }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                </ul>
+                            </div>                                
+                        </div>
+                        {% endif %}
+                        <div class="eg-pagination">
+                            {% include "GuardiansBasic::Category.Item.Partials.Pagination" %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+                       
+                <div class="category-product-list row" data-eg-handler="initCatItemEvents" data-eg-event="load">
+                {# 🟢 Macro für die beiden Varianten erstellen #} 
+                {% macro categoryItem(item, variant, currencycheck, isShoeCategory, translations, transLabels) %}
+                    <article class="post col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">
+                        {% if variant == 1 %}
+                            {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem2" with {
+                                'item': item,
+                                'currencycheck': currencycheck,
+                                'isShoeCategory': isShoeCategory,
+                                'translations': translations,
+                                'transLabels': transLabels
+                            } %}
+                        {% else %}
+                            {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem" with {
+                                'item': item,
+                                'currencycheck': currencycheck,
+                                'isShoeCategory': isShoeCategory,
+                                'translations': translations,
+                                'transLabels': transLabels
+                            } %}
+                        {% endif %}
+                    </article>
+                {% endmacro %}
+ 
+
+                {# 🟢 Nutzung des Macros in der Schleife #}
+                {% for item in itemList %}
+                    {% if loop.index <= 2 and currentPage == 1 %}
+                        {{ _self.categoryItem(item, 1, currencycheck, isShoeCategory, translations, transLabels) }}
+                    {% else %}
+                        {{ _self.categoryItem(item, 2, currencycheck, isShoeCategory, translations, transLabels) }}
+                    {% endif %}
+                {% endfor %}
+
+                </div>
+                <div class="scroller-status"><div class="loader-wheel infinite-scroll-request"><i><i><i><i><i><i><i><i><i><i><i><i></i></i></i></i></i></i></i></i></i></i></i></i></div>
+                    <p class="infinite-scroll-last tcenter">{{ trans("GuardiansBasic::Template.iscrollinfo1") }} {{ itemCountTotal }} {% if isSearch %} "{{ searchString }}"{% else %} {{ trans("GuardiansBasic::Template.items") }} {{ trans("GuardiansBasic::Template.iscrollinfo2") }} {{ catDetails.name }}{% endif %} {{ trans("GuardiansBasic::Template.iscrollinfo3") }}
+                        <br><br>{{ trans("GuardiansBasic::Template.iscrollinfo4") }}
+                        <br><br>{{ trans("GuardiansBasic::Template.iscrollinfo5") }} <a href="{% if lang=="en" %}/en/All-Articles/{% elseif lang=="fr" %}/fr/tous-les-articles/{% else %}/alle-artikel/{% endif %}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" title="{{ item.data | itemName }}">{{ trans("GuardiansBasic::Template.iscrollinfo6") }}</a></p>
+                    <p class="infinite-scroll-error tcenter">{{ trans("GuardiansBasic::Template.iscrollinfo7") }}</p>
+                </div>
+        </div>     
+    </div>
+    {#<div class="row">
+        <div class="col-12">
+            <div class="pull-right">
+                <div class="eg-pagination">
+                    {% include "GuardiansBasic::Category.Item.Partials.Pagination" %}
+                </div>
+            </div>
+        </div>
+    </div>#}
+    {% if isQuickView %}
+    {% if catDetails.description and currentPage < 2 %}
+    <div class="row mt-4">
+        <div class="col-xs-12">
+            <hr />
+            <div class="category-description">{{ catDetails.description | raw }}</div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</section>
+    {% else %}
+        {% include "GuardiansBasic::Category.Item.CategoryItemBrands" %} 
+{% endif %}
+{% if currentPage > 1 %}
+<script>
+window.addEventListener('load', function () {
+    window.scrollBy(1,1);
+ } ); </script>
+{% endif %}
+
+{% endblock %}

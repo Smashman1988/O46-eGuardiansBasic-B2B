@@ -1,0 +1,116 @@
+{# ======================  shipping-free-meter.twig (B2B Mindestbestellwert = NETTO)  ====================== #}
+{% set MIN_ORDER_NET = 199.00 %}
+
+{% set currencyData = services.checkout.getCurrencyData %}
+{% set currencyCode = currencyData.name %}
+
+<div id="o46-min-order"
+     class="o46-free-ship is-hidden"
+     data-cur="{{ currencyCode }}"
+     data-limit="{{ '%0.2f'|format(MIN_ORDER_NET) }}"
+     aria-live="polite" aria-atomic="true">
+  <div class="o46-bar-wrap" role="progressbar"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="o46-bar"></div>
+    <div class="o46-bar-cap"></div>
+  </div>
+  <p class="o46-free-ship-text">
+    <span class="o46-remaining"></span>
+  </p>
+</div>
+
+<script>
+(function(){
+  if (window.__O46_MINORDER_METER__) return;
+  window.__O46_MINORDER_METER__ = true;
+
+  function $(s,c){ return (c||document).querySelector(s); }
+  function n(v){ v = Number(v); return isFinite(v) ? v : 0; }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  function money(v,cur){
+    try{
+      return new Intl.NumberFormat(
+        document.documentElement.lang || 'de-DE',
+        { style:'currency', currency: cur || 'EUR' }
+      ).format(n(v));
+    } catch(e){
+      v = n(v);
+      return v.toFixed(2).replace('.',',') + ' ' + (cur || 'EUR');
+    }
+  }
+
+  function unitPrice(it){
+    if (it && it.price != null && it.price !== 'N / A') return n(it.price);  // NETTO
+    if (it && it.amount && it.amount.priceNet != null && it.amount.priceNet !== 'N / A') return n(it.amount.priceNet);
+    return 0;
+  }
+
+  function basketNet(items){
+    var sum = 0;
+    for (var it of (items || [])){
+      var qty  = n(it.quantity || 1);
+      var unit = unitPrice(it);
+      sum += unit * qty; // NETTO
+    }
+    return sum;
+  }
+
+  function updateFrom(items, session){
+    var box = $('#o46-min-order');
+    if (!box) return;
+
+    // --- Währung muss EUR sein (wie im alten shipping-free-meter) ---
+    var curFromSession = null;
+    try{
+      curFromSession = session && session.data && session.data.basket && session.data.basket.currency;
+    }catch(_){}
+    var curAttr = box.getAttribute('data-cur') || 'EUR';
+    var isEUR   = curFromSession ? (curFromSession === 'EUR') : (curAttr === 'EUR');
+
+    if (!Array.isArray(items) || !items.length || !isEUR){
+      box.classList.add('is-hidden');
+      return;
+    }
+    // ---------------------------------------------------------------
+
+    // Ab hier wissen wir: Warenkorb hat Items und Währung ist EUR
+    var cur   = 'EUR'; // Anzeige bleibt EUR, weil nur in EUR sichtbar
+    var limit = n(box.getAttribute('data-limit')) || 199;
+
+    var net   = basketNet(items);
+    var remaining = Math.max(0, limit - net);
+    var percent   = net >= limit ? 100 : (100 * net / limit);
+    percent = clamp(percent, 0, 100);
+
+    box.classList.remove('is-hidden');
+
+    var barWrap = $('.o46-bar-wrap', box),
+        bar     = $('.o46-bar', box),
+        cap     = $('.o46-bar-cap', box),
+        txt     = $('.o46-remaining', box);
+
+    bar.style.width = percent.toFixed(2) + '%';
+    barWrap.setAttribute('aria-valuenow', percent.toFixed(0));
+    cap.textContent = money(limit, cur);
+
+    if (net < limit){
+      box.classList.remove('o46-free-ship--done');
+      txt.textContent =
+        'Noch ' + money(remaining, cur) +
+        ' bis zum Mindestbestellwert von ' + money(limit, cur) +
+        ' (netto).';
+    } else {
+      box.classList.add('o46-free-ship--done');
+      txt.textContent =
+        'Mindestbestellwert erreicht – du kannst deine Bestellung abschließen.';
+    }
+  }
+
+  window.addEventListener('o46:basket-updated', function(e){
+    try{
+      var d = e.detail || {};
+      updateFrom(Array.isArray(d.items) ? d.items : [], d.session || null);
+    }catch(_){}
+  });
+})();
+</script>

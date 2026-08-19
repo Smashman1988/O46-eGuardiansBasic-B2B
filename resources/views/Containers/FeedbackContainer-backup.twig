@@ -1,0 +1,187 @@
+{# set itemFeedbacks = getFeedbackItemList(ItemDocumentsData.item.id,1,3) #}
+{% set ratingsAverage = getListFeedbackAverages(itemId)  %}
+
+{% set anzahl1 = 0 %}
+{% set anzahl2 = 0 %}
+{% set anzahl3 = 0 %}
+{% set anzahl4 = 0 %}
+{% set anzahl5 = 0 %}
+{% set anzahlTotals = ratingsAverage.ratingsCountTotal %}
+
+{% set percentTotal = (ratingsAverage.averageValue / 5) * 100 %}
+
+{#
+{% for singleFeedBackRating in itemFeedbacks.entries %}
+
+ {% set singleRating = singleFeedBackRating.feedbackRating %}
+ {% set singleRatingValue = singleRating.rating.ratingValue %}
+
+ {% if singleRatingValue==1 %}
+     {% set anzahl1 = anzahl1+1 %}
+ {% elseif singleRatingValue==2 %}
+     {% set anzahl2 = anzahl2+1 %}
+ {% elseif singleRatingValue==3 %}
+     {% set anzahl3 = anzahl3+1 %}
+ {% elseif singleRatingValue==4 %}
+     {% set anzahl4 = anzahl4+1 %}
+ {% elseif singleRatingValue==5 %}
+     {% set anzahl5 = anzahl5+1 %}
+ {% endif %}
+{% endfor %}
+#}
+{% set customerHasBuyThisItem = false %}
+{% set buyedVariationId = 0 %}
+{# GIBT ES EINEN BESSEREN WEG UM HERAUSZUFINDEN OB DER ARTIKEL VON DEM KUNDEN BEREITS GEKAUFT WURDE???? #}
+{% if services.customer.getContactId() > 0 %}
+ {% set customerOrders = services.customer.getOrders().toArray() %}
+ {% set sdfentries = customerOrders.entries %}
+ {% for customerOrder in customerOrders.entries if customerHasBuyThisItem==false %}
+     {% for singleVariation in variationsWithAttributes if customerHasBuyThisItem==false %}   
+         {% for singleOrder in customerOrder.order.orderItems if customerHasBuyThisItem==false %}
+             {% if singleOrder.itemVariationId==singleVariation.variationId %}
+                 {% set buyedVariationId = singleVariation.variationId %}
+                 {% set customerHasBuyThisItem = true %}
+             {% endif %}
+         {% endfor %}
+     {% endfor %}
+ {% endfor %}
+{% endif %}
+    {# KANN WIEDER RAUS WENN PLENTY ALLE GROESSEN AUSSPIELT AUCH OHNE STOCK - NIMMT DIE ERSTE VERFÜGBARE VARIANTE ALS buyedVariationId #}
+    {% if buyedVariationId== 0 %}
+        {% set buyedVariationId = variationsWithAttributes[0].variationId %}
+        {% set customerHasBuyThisItem = true %}
+    {% endif %}
+{% set itemFeedbacks = getFeedbackItemList(itemId, 1, 100) %}
+<section class="feedback-container">
+    <div class="container-rating">
+        <div class="row">
+            <div class="col-12">
+                <div class="title-rating-main mb-4 d-flex align-items-center flex-wrap">
+                    <div class="d-inline-block hhdh" id="quickrating">
+                        Kundenbewertungen
+                    </div>
+                    <div class="item-ratings-top item-ratings-head clearfix d-inline-block">
+                        <div class="rating-grey">
+                            {% for i in 1..5 %}
+                            <span class="icon-star"></span>
+                            {% endfor %}
+                        </div>
+                        <div class="rating-fuller" style="width: {{ percentTotal }}%">
+                            <div class="rating-fuller-inner">
+                                {% for i in 1..5 %}
+                                <span class="icon-star"></span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row {% if longDescription %}openable-feedback{% endif %}">
+            <div class="{% if longDescription %}col-12 col-md-6{% else %}col-12 col-lg-6 col-xlg-4{% endif %}">
+                
+                <div class="feedback-container">
+                    {% if anzahlTotals==0 %}
+                    <p class="mt-0">Für diesen Artikel erfolgte leider noch keine Kundenbewertung.</p>
+                    {% endif %}
+                    <div class="feedback-bars">
+                       <div class="feedback-bar-wrap">
+                           {% set ratingPercent = (100/anzahlTotals*ratingsAverage.ratingsCountOf5) %}
+                          <p class="feedback-bar-text-before">5 <i class=" icon-star"></i></p>
+                          <div class="feedback-bar">
+                             <div class="feedback-bar-fill" style="width: {{ ratingPercent }}%;"></div>
+                          </div>
+                          <p class="feedback-bar-text-after">&nbsp;{{ ratingsAverage.ratingsCountOf5 }}</p>
+                       </div>
+                       <div class="feedback-bar-wrap">
+                           {% set ratingPercent = (100/anzahlTotals*ratingsAverage.ratingsCountOf4)  %}
+                          <p class="feedback-bar-text-before">4 <i class=" icon-star"></i></p>
+                          <div class="feedback-bar">
+                             <div class="feedback-bar-fill" style="width: {{ ratingPercent }}%;"></div>
+                          </div>
+                          <p class="feedback-bar-text-after">&nbsp;{{ ratingsAverage.ratingsCountOf4 }}</p>
+                       </div>
+                       <div class="feedback-bar-wrap">
+                           {% set ratingPercent = (100/anzahlTotals*ratingsAverage.ratingsCountOf3)  %}
+                          <p class="feedback-bar-text-before">3 <i class=" icon-star"></i></p>
+                          <div class="feedback-bar">
+                             <div class="feedback-bar-fill" style="width: {{ ratingPercent }}%;"></div>
+                          </div>
+                          <p class="feedback-bar-text-after">&nbsp;{{ ratingsAverage.ratingsCountOf3 }}</p>
+                       </div>
+                       <div class="feedback-bar-wrap">
+                           {% set ratingPercent = (100/anzahlTotals*ratingsAverage.ratingsCountOf2)  %}
+                          <p class="feedback-bar-text-before">2 <i class=" icon-star"></i></p>
+                          <div class="feedback-bar">
+                             <div class="feedback-bar-fill" style="width: {{ ratingPercent }}%;"></div>
+                          </div>
+                          <p class="feedback-bar-text-after">&nbsp;{{ ratingsAverage.ratingsCountOf2 }}</p>
+                       </div>
+                       <div class="feedback-bar-wrap">
+                           {% set ratingPercent = (100/anzahlTotals*ratingsAverage.ratingsCountOf1)  %}
+                          <p class="feedback-bar-text-before">1 <i class=" icon-star"></i></p>
+                          <div class="feedback-bar">
+                             <div class="feedback-bar-fill" style="width: {{ ratingPercent }}%;"></div>
+                          </div>
+                          <p class="feedback-bar-text-after">&nbsp;{{ ratingsAverage.ratingsCountOf1 }}</p>
+                       </div>
+                    </div>
+                </div>
+            </div>
+            <div class="feedbackform-container {% if longDescription %}col-12 col-md-6{% else %}col-12 col-lg-6 col-xlg-8{% endif %}" data-eg-handler="initFeedbackform" data-eg-event="load">
+                {% if customerHasBuyThisItem and services.customer.getContactId() > 0 %}
+                    <div class="createFeedback"  data-buyed-variation="{{ buyedVariationId }}">
+                       <div class="stars">
+                           <input id="star-5" type="radio" value="5" name="ratingValue" class="star star-5" checked="checked"> 
+                           <label for="star-5" class="star star-5"></label> <input id="star-4" type="radio" value="4" name="ratingValue" class="star star-4"> 
+                           <label for="star-4" class="star star-4"></label> <input id="star-3" type="radio" value="3" name="ratingValue" class="star star-3"> 
+                           <label for="star-3" class="star star-3"></label> <input id="star-2" type="radio" value="2" name="ratingValue" class="star star-2"> 
+                           <label for="star-2" class="star star-2"></label> <input id="star-1" type="radio" value="1" name="ratingValue" class="star star-1"> 
+                           <label for="star-1" class="star star-1"></label>
+                       </div>
+                       <div class="form-group mb-3">
+                           <input type="text" id="title" name="title" placeholder="Titel" required="required" class="form-control rating-title-txt" data-eg-ratingtitle>
+                       </div>
+                       <div class="form-group mb-3">
+                           <textarea id="message" name="message" rows="3" placeholder="Rezensionstext" class="form-control rating-descr-txt"  data-eg-ratingmessage></textarea>
+                       </div>
+                        <div class="btn-cr-fee">
+                            <button class="btn btn-primary" data-eg-handler="createFeedback" data-eg-event="click" aria-label="Feedback senden">
+                            Rezension senden
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="rating-login">
+                        <div class="login-for-rev-head">Bitte logge dich in deinem Kundenkonto ein<br /> um eine Bewertung abzugeben.</div>
+                        <button data-eg-event="click" data-eg-href="/loginPreview/" data-eg-handler="modalContent" data-eg-title="Anmelden" class="btn btn-secondary btn-big" aria-label="Login öffnen">
+                            Jetzt anmelden
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% if longDescription %}
+        <div class="row">
+            <div class="col-12">
+                <button data-eg-param="html, openfeedback-on" data-eg-event="click" data-eg-handler="tgClass" class="btn btn-primary btn-openfeedback">Bewertungen öffnen</button>
+            </div>
+        </div>
+        {% endif %}
+
+       
+       
+
+       {% if itemFeedbacks is not empty and itemFeedbacks.totalsCount > 0 %}
+
+                            <div class="row">
+                                <div class="col-xs-12">
+                                    <div class="feedback-list mt-3">
+                                        {% include "GuardiansBasic::DynamicContent.DynamicFeedbacks" with { 'itemId': itemId, 'feedbackItems': itemFeedbacks } %}
+                                    </div>
+                                </div>
+                            </div>
+
+        {% endif %}
+    </div>
+</section>

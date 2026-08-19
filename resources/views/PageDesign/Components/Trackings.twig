@@ -1,0 +1,180 @@
+{% set uaId = 'UA-9915362-2' %}
+{% set awId = 'AW-1030271873' %}
+{% set awSendTo = 'AW-1030271873/ekQsCMz9gYsBEIHnousD' %}
+{% set shopName = 'https://b2b.outlet46.de' %}
+
+<script defer type="text/javascript" src="https://www.googletagmanager.com/gtag/js?id={{ uaId }}"  data-cookie-consent="tracking.googleAnalytics"></script>
+<script defer type="text/javascript" data-cookie-consent="tracking.googleAnalytics">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ uaId }}', { 'anonymize_ip': true });
+</script>     
+{#
+<script defer type="text/javascript" data-cookie-consent="tracking.googleAds">
+    gtag('config', '{{ awId }}');
+</script>#}
+{# ALLE SEITEN BIS AUF DIE UNTEN #}
+{#
+{% if not services.template.getCurrentTemplate()=="tpl.category.item" and not services.template.isItem() and not services.template.isSearch()  and not services.template.getCurrentTemplate() == "tpl.basket" and not services.template.isCheckout() and not services.template.isMyAccount() %}
+<script defer type="text/javascript" data-cookie-consent="tracking.googleAds">
+    gtag('event', 'page_view', {'send_to': '{{ awId }}',
+        {% if services.template.isHome() %}
+        'ecomm_pagetype': "home",
+        {% else %}
+        'ecomm_pagetype': "other",
+        {% endif %}
+        'ecomm_totalvalue': '0'
+    });
+</script>
+{% endif %}
+{# WARENKORB #}
+{# 
+{% if services.template.getCurrentTemplate() == "tpl.basket" %}
+{% set basketItems = services.basket.getBasketForTemplate() %}
+<script defer type="text/javascript" data-cookie-consent="tracking.googleAds">
+    gtag('event', 'page_view', {'send_to': '{{ awId }}',
+        'ecomm_pagetype': "cart",
+        'ecomm_totalvalue': '{{ basketItems.itemSum }}'
+    });
+</script>
+{% endif %}
+ #}
+{# MEIN KONTO #}
+{#
+{% if services.template.isMyAccount() %}
+<script defer type="text/javascript" data-cookie-consent="tracking.googleAds">
+    gtag('event', 'page_view', {'send_to': '{{ awId }}',
+        'ecomm_pagetype': "myaccount",
+        'ecomm_totalvalue': '0'
+    });
+</script>
+{% endif %}
+ #}
+{# EINZELNER ARTIKEL #}
+{#
+{% if services.template.isItem() %}
+{% set itemData = item.documents[0].data %}
+{% set itemPrices = itemData.prices %}
+<script defer type="text/javascript" data-cookie-consent="tracking.googleAds">
+    gtag('event', 'page_view', {'send_to': '{{ awId }}',
+       'ecomm_prodid': '{{ itemData.item.id }}',
+       'ecomm_pagetype': 'product', 
+       'ecomm_totalvalue': '{{ itemPrices.default.unitPrice.value }}'
+    });
+</script>
+{% endif %}
+ #}
+{# KATEGORIE UND SUCHE #}
+{#
+{% if services.template.getCurrentTemplate()=="tpl.category.item" or services.template.isSearch() %}
+    {% set itemIdsForAnalytics = [] %}
+    {% set itemPricesForAnalytics = [] %}
+    {% for item in itemList %}
+        {% set itemIdsForAnalytics = itemIdsForAnalytics|merge([item.data.item.id]) %}
+        {% set itemPricesForAnalytics = itemPricesForAnalytics|merge([item.data.prices.default.unitPrice.value]) %}
+    {% endfor %}
+    {% if services.template.isSearch() %}
+    <script defer type="text/javascript" data-cookie-consent="tracking.googleAds">
+        gtag('event', 'page_view', {'send_to': '{{ awId }}',
+            'ecomm_prodid': {{ itemIdsForAnalytics | json_encode }},
+            'ecomm_pagetype': 'searchresults', 
+            'ecomm_totalvalue': {{ itemPricesForAnalytics | json_encode }}
+        });
+    </script>
+    {% endif %}
+    {% if services.template.isCategory() %}
+    <script defer type="text/javascript" data-cookie-consent="tracking.googleAds">
+        gtag('event', 'page_view', {'send_to': '{{ awId }}',
+            'ecomm_prodid': {{ itemIdsForAnalytics | json_encode }},
+            'ecomm_pagetype': 'category', 
+            'ecomm_totalvalue': {{ itemPricesForAnalytics | json_encode }}
+        });
+   </script>
+    {% endif %}
+{% endif %}
+#}
+{# ORDER CONFIRMATION #}
+{% if services.template.getCurrentTemplate() == "tpl.confirmation" %}
+    {% if data.order.referrerId==1 or data.order.referrerId==11 or data.order.referrerId==15 or data.order.referrerId==16 or data.order.referrerId==17 or data.order.referrerId==18 or data.order.referrerId==19 or data.order.referrerId==20 or data.order.referrerId==21 or data.order.referrerId==22 or data.order.referrerId==23 or data.order.referrerId==25 or data.order.referrerId==54 or data.order.referrerId==55 or data.order.referrerId==56 or data.order.referrerId==59 or data.order.referrerId==60 or data.order.referrerId==135  %}
+        {% if request.get('orderId')=="" %}
+             <script defer>
+            var arrayBasketListItems = [];
+            </script>
+            {% set counter=0 %}
+            {% set shippingCosts = 0 %}
+            {% set itemMaxQuantity = 0 %}
+            {% for item in data.order.orderItems %}
+                {% if item.typeId == 6 %}
+                    {% if useGross %}
+                        {% set shippingCosts = shippingCosts + item.amounts[0].priceGross %}
+                    {% else %}
+                        {% set shippingCosts = shippingCosts + item.amounts[0].priceNet %}
+                    {% endif %}
+                {% else %}
+                    <script defer>
+                    arrayBasketListItems.push({
+                        "id": {{ data.order.id }},
+                        "name": "{{ item.orderItemName }}",
+                        "category": "",
+                        "list_position": {{ counter }}, 
+                        "quantity": {{ item.quantity }},
+                        "price": '{% if useGross %}{{ item.amounts[0].priceGross }}{% else %}{{ item.amounts[0].priceNet }}{% endif %}'
+                    })
+                    </script>
+                    {% set counter= counter + 1 %}
+                    {% set itemMaxQuantity= itemMaxQuantity + item.quantity %}
+                {% endif %}    
+            {% endfor %}
+
+            {% set dateOrder = data.order.createdAt |split('T') %}
+            {% set nowDate = "now"|date("Y-m-d") %}
+
+
+            <script defer type="text/javascript" data-cookie-consent="tracking.googleAnalytics">
+                gtag('event', 'purchase', {
+                    "transaction_id": "{{ data.order.id }}",
+                    "affiliation": "{{ shopName }}",
+                    "value": {{ data.order.amounts[0].grossTotal }}, 
+                    "currency": "EUR", 
+                    "tax": 16, 
+                    "shipping": {{ shippingCosts }}, 
+                    "items": arrayBasketListItems
+                });
+                gtag('event', 'purchase', {
+                'send_to': '{{ awSendTo }}',
+                'value':  {{ data.order.amounts[0].grossTotal }},
+                'currency': 'EUR',
+                    'transaction_id': '{{ data.order.id }}'
+                });
+            </script>
+            {% if data.order.referrerId==19 or data.order.referrerId==60 or data.order.referrerId==135 or data.order.referrerId==22 %}
+            <script defer id="n2g_script">
+            !function(e,t,n,c,r,a,i){e.Newsletter2GoTrackingObject=r,e[r]=e[r]||function(){(e[r].q=e[r].q||[]).push(arguments)},e[r].l=1*new Date,a=t.createElement(n),i=t.getElementsByTagName(n)[0],a.async=1,a.src=c,i.parentNode.insertBefore(a,i)}(window,document,"script","//static.newsletter2go.com/utils.js","n2g");
+            n2g('create', 'IG31OH9Z');
+            </script>
+            <script defer type="text/javascript">
+                  {% set taxCost = data.order.amounts[0].grossTotal - data.order.amounts[0].netTotal  %}
+            n2g('ecommerce:addTransaction', {
+                'id': '{{ data.order.id }}',
+                'affiliation': 'https://b2b.outlet46.de',
+                'revenue': '{{ data.order.amounts[0].grossTotal }}',
+                'shipping': '{{ shippingCosts }}',
+                'tax': '{{ taxCost }}'
+            });
+            {% for item in data.order.orderItems %}
+             n2g('ecommerce:addItem', {
+            'id': '{{ data.order.id }}',
+            'name': '{{ item.orderItemName }}',
+            'sku': '{{ item.variation.number }}',
+            'category': '',
+            'price': '{{ item.amounts[0].priceGross }}',
+            'quantity': '{{ item.quantity }}'
+            });
+            {% endfor %}
+            n2g('ecommerce:send');
+            </script>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endif %}

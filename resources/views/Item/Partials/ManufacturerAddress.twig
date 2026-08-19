@@ -1,0 +1,42 @@
+{# GuardiansBasic::Partials.ManufacturerAddress.twig #}
+
+{% set manufacturer = itemData.item.manufacturer %}
+{% set euResponsible = manufacturer.euResponsible %}
+
+<div class="manufacturer-address mt-3">
+    <strong>{{ trans("Ceres::Template.itemManufacturer") }}:</strong><br>
+    {{ manufacturer.name }}<br>
+
+    {% if manufacturer.street %}
+        {{ manufacturer.street }}<br>
+    {% endif %}
+    {% if manufacturer.zip or manufacturer.town %}
+        {{ manufacturer.zip }} {{ manufacturer.town }}<br>
+    {% endif %}
+    {% if manufacturer.country.name %}
+        {{ manufacturer.country.name }}<br>
+    {% endif %}
+
+    {% if manufacturer.email %}
+        <a href="mailto:{{ manufacturer.email }}">{{ manufacturer.email }}</a><br>
+    {% endif %}
+    {% if manufacturer.website %}
+        <a href="{{ manufacturer.website }}" target="_blank" rel="noopener">{{ manufacturer.website }}</a><br>
+    {% endif %}
+
+    {% if euResponsible is defined and euResponsible.name is not empty %}
+        <div class="mt-3">
+            <strong>{{ trans("Ceres::Template.itemManufacturerEU") }}:</strong><br>
+            {{ euResponsible.name }}<br>
+            {% if euResponsible.street %}
+                {{ euResponsible.street }}<br>
+            {% endif %}
+            {% if euResponsible.zip or euResponsible.town %}
+                {{ euResponsible.zip }} {{ euResponsible.town }}<br>
+            {% endif %}
+            {% if euResponsible.country.name %}
+                {{ euResponsible.country.name }}<br>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>

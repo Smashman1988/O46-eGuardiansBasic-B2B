@@ -1,0 +1,88 @@
+{% set currentPage = request.get('page') %}
+{% extends getPartial('page-design') %}
+{% block PartialHead %}
+    {% set canonicalUrl = services.url.getCanonicalURL(null, true) %}
+    {% if currentPage - 1 > 1 %}
+        <link rel="prev" href="{{ canonicalUrl ~ queryString({'page': currentPage - 1}) }}" />
+    {% elseif currentPage - 1 == 1 %}
+        <link rel="prev" href="{{ canonicalUrl }}" />
+    {% endif %}
+
+    {% if currentPage + 1 <= pageMax %}
+        <link rel="next" href="{{ canonicalUrl ~ queryString({'page': currentPage + 1}) }}" />
+    {% endif %}
+    {% if currentPage == 1 %}
+    {% set counter = 0 %}
+
+    
+    {% for item in itemList[:2] %}
+        <link rel="preload" href="{{ item.data.images.all[0].urlPreview }}.avif" as="image">
+        {% set vendorlogo = item.data.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+        {% if vendorlogo is not empty %}
+            <link rel="preload" href="{{ vendorlogo }}" as="image">
+        {% elseif item.data.item.manufacturer.logo is not empty %}
+            <link rel="preload" href="{{ item.data.item.manufacturer.logo }}" as="image">
+        {% endif %}
+    {% endfor %}
+    
+    
+    {% endif %}
+    {% if category is null %}
+        {% if '&' in queryString() %}
+            {% set robotsValue = 'NOINDEX' %}
+        {% else %}
+             {% set robotsValue = 'NOINDEX,FOLLOW' %}
+        {% endif %}
+
+      {% embed getPartial('page-metadata') %}
+            {% block title      trans("Ceres::Template.itemSearchResults") ~ " " ~ searchString %}
+            {% block robots     robotsValue %}
+      {% endembed %}
+    {% else %}
+      {% embed getPartial('page-metadata') %}
+      {% endembed %}
+    {% endif %}
+{% endblock %}
+{% block PageBody %}
+    
+    {% set categoryByRoute = services.category.get(category.id, lang) %}
+    {% set shopBuilderTemplate = shop_builder_category_template(category.id) %}
+    {% if shopBuilderTemplate | trim is not empty %}
+                      {% if categoryByRoute.details[0].description2 is not empty and currentPage < 2 %}
+                          <div class="container-max">
+                         <h1 class="category-title center content-title">{{ categoryByRoute.details[0].name }}</h1>
+                         {{ categoryByRoute.details[0].description2 | raw }}
+                          </div>
+                      {% elseif category.id == 5041 %}
+                         <div class="container-max">
+                         <h1 class="category-title center content-title display-none">{{ categoryByRoute.details[0].name }}</h1>
+                         </div>
+                      {% elseif category.id == 6424 %}
+                         <div class="container-max">
+                         <h1 class="category-title center content-title display-none">{{ categoryByRoute.details[0].name }}</h1>
+                         </div>
+                      {% else %}
+                         <div class="container-max">
+                         <h1 class="category-title center content-title">{{ categoryByRoute.details[0].name }}</h1>
+                         </div>
+                     {% endif %}
+                    {{ shopBuilderTemplate |replace({'script2': 'script'}) | raw }}
+                      {% if categoryByRoute.details[0].description is not empty  and currentPage < 2 %} 
+                          <hr />
+                          <div class="container-max">
+                    {{ categoryByRoute.details[0].description | raw }} 
+                          </div>
+                     {% endif %}
+    {% else %} 
+                <h1 class="category-title center content-title">{{ categoryByRoute.details[0].name }}</h1>
+                {{ categoryByRoute.details[0].description2 | raw }}   
+             </div>
+            </div>  
+        </div>
+        <div class="container-max contentpage"> 
+            <div class="row">
+                <div class="col-12">
+                {{ categoryByRoute.details[0].description | raw }}   
+    {% endif %}
+    
+{% endblock %}

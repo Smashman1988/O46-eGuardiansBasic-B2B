@@ -1,0 +1,422 @@
+{% set isQuickView = request.get('quickViewItem') is empty %}
+{% if isQuickView %}
+{% set orderId = request.get('orderId') %}
+{% set langCodeMap = { "de": "DE", "en": "EN", "fr": "FR", "it": "IT", "es": "ES" } %}
+
+{% import "Ceres::PageDesign.Macros.IncludeComponents" as Loader %}
+{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
+{% import "Ceres::PageDesign.Macros.Translations" as Translations %}
+{% if isShopBuilder %}
+    {% include "Ceres::Widgets.WidgetComponents" %}
+{% endif %}
+{% set lang = services.localizationRepository.getLanguage() %}
+{% set isItem = services.template.isItem() == "1" %}
+{% set currencyFormat = config("Ceres.currency.format") %}
+{% set defaultLanguage = webstoreConfig.defaultLanguage %}
+{% 
+    set vuePages = {
+        "tpl.wish-list": "Merkliste",
+        "tpl.basket": "Warenkorb",
+        "tpl.login": "Anmelden",
+        "tpl.register": "Registrieren",
+        "tpl.my-account": "Mein Konto",
+        "tpl.password-reset": "Passwort zurücksetzen", 
+        "tpl.confirmation":"Vielen Dank",
+        "tpl.checkout": "Kasse",
+        "tpl.category.blog": "",
+        "tpl.blog.category":"",
+        "tpl.blog.article" : "",
+        "tpl.blog.search" : "",
+        "tpl.order.return" : "Retoure",
+        "tpl.blog.landing" : ""
+    } 
+%} 
+{% set isVueView = false %}
+{% set contentVuePages = [5482,5483,5041,5497,5178,5177,5484,6250,6392,5414,6424] %}
+{% set salenti = [5171] %}
+{% set mainjs = [5497,5177,5153,5407,31,2923,5047,5046,5044,5045,550,29,32,5476,26,28,285,6343] %}
+{% set nojs = [5178,5483,6250] %}
+{% set vuejs = [5482, 5041, 5484,5171] %}
+{% set wkbkasse = [5484] %}
+{% set currentTemplate = services.template.getCurrentTemplate() %}
+{% set currentRequestUri = request.getRequestUri() %}
+{% if currentTemplate in vuePages|keys or "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or isShopBuilder or category.id in contentVuePages %}
+    {% set isVueView = true %}
+{% endif %}
+{% if isVueView %}
+    {{ component( "Ceres::PageDesign.Components.Notifications" ) }}
+    {{ component( "Ceres::Basket.Components.BasketPreview" ) }}
+    {{ component( "Ceres::Customer.Components.Login" ) }}
+    {{ component( "Ceres::Customer.Components.Registration" ) }}
+    {{ component( "Ceres::PageDesign.Components.Popper" ) }}
+    {{ component( "Ceres::Containers.Components.LastSeenItemList" ) }}
+    {{ component( "Ceres::Customer.Components.ForgotPassword" ) }}
+    {{ component( "Ceres::PageDesign.Components.ShippingCountrySelect" ) }}
+    {{ component( "Ceres::Customer.Components.UserLoginHandler" ) }}
+    {{ component( "Ceres::Customer.Components.Contact.AcceptPrivacyPolicyCheck") }}
+{% endif %}
+{# spaceless #}
+{% endif %}
+<!DOCTYPE html>
+<html lang="{{ lang }}" prefix="og: http://ogp.me/ns#">
+    <head>
+        {% if isQuickView %}
+        {{ get_consent_scripts(ceresConfig.global.blockCookies) }}
+        {% endif %}
+        {% include getPartial('head') %}
+        {% block PartialHead %}
+            {% embed getPartial('page-metadata') %}{% endembed %}
+        {% endblock %}
+         {% if isQuickView %}
+        {% set filteredStyles = get_additional_styles() %}
+        {% for styleTemplate in filteredStyles %}
+            {% if styleTemplate.path != "Feedback::Content.Styles" or currentTemplate == "tpl.confirmation" %}
+                {% include styleTemplate.path with styleTemplate.params %}
+            {% endif %}
+        {% endfor %}
+        {% if assetName is defined and assetName == 'ceres-checkout' %}
+            {{ LayoutContainer.show("Ceres::Checkout.Styles") }}
+        {% endif %}
+        {% if isItem %}
+            {{ LayoutContainer.show("Ceres::SingleItem.Styles") }}
+        {% endif %}
+        {% endif %}
+    </head>
+    <body class="hold-transition" {% if isVueView %}id="isVueView"{% endif %}>
+        {% if isQuickView %}
+        {{ context.renderState() }}
+        <!-- SSR:app() -->
+        <div id="vue-app" class="{% if services.template.isCheckout() %}isCheckout {% endif %}main" data-eg-handler="initShopData" data-eg-event="load">
+            {% if isVueView %}
+                <lazy-hydrate when-idle>
+                    <notifications template="#vue-notifications" :initial-notifications="{{ notifications | json_encode() }}"></notifications>
+                </lazy-hydrate>  
+                <div class="hidden">
+                    <shipping-country-select :disable-input="{{ services.template.isCheckout() | json_encode() }}"></shipping-country-select>
+                </div>
+                <div id="login-modal-wrapper">
+                    <div class="modal fade login-modal" id="login" tabindex="-1" role="dialog">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                    <div class="modal-title h3">{{ trans("Ceres::Template.login") }}</div>
+                                </div>
+                                <login template="#vue-login" modal-element="login-modal-wrapper"></login>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            {% include getPartial('header') %}
+            <div id="page-body" {% if currentTemplate == "tpl.wish-list" %}class="isWishList"{% endif %}>    
+            {% endif %}
+            {% block PageBody %}
+                <!-- inject content of inherited templates here -->
+            {% endblock %}
+            </div>
+            {% if isQuickView %}
+            {% if isVueView %}
+            {% else %}
+            {% include "GuardiansBasic::PageDesign.Components.nl-element" ~ langCodeMap[lang] %}
+            {% endif %}
+            {% include getPartial('footer') %}
+        </div>
+        <!-- /SSR -->
+        <div class="modal fade dynamicModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <span class="modal-title"></span>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body"> 
+                    <div class="loading-modal--wrap">
+                        <div>
+                            <span class="icon-spinner9 loader-basket"></span>
+                        </div>
+                        <div class="text-center">{{ trans("GuardiansBasic::Template.loadinginfo") }}</div>
+                    </div>
+                </div>
+              </div>
+            </div>
+        </div>              
+        <div data-eg-basket-preview class="transition">
+            <div class="basket-prev-title clearfix modal-header">
+                <span class="modal-title">{{ trans("GuardiansBasic::Template.baskettitle") }}</span>
+                <button class="basket-prev-close close" data-eg-handler="closeBasketPreview" data-eg-event="click" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="wrap-basket-prev">
+                <div class="loading-basket-prev-wrap">
+                    <div>
+                        <span class="icon-spinner9 loader-basket"></span>
+                    </div>
+                    <div class="text-center">{{ trans("GuardiansBasic::Template.loadinginfo") }}</div>
+                </div>
+                <div class="basket-prev-data"></div>
+            </div>
+        </div>        
+        <div class="eg-backdrop transition" data-eg-handler="closeBackdrop" data-eg-event="click touchend"></div>
+        <script id="app-data-custom" type="application/json">
+            {
+                "templateType": "{{ urls.templateType }}",
+                "language": "{{ lang }}",
+                "referrerID": "{{ request.get("ReferrerID") }}"
+            }
+        </script>
+        {% if isVueView %}
+           <!-- SSR:global(App) -->
+            <script id="app-data" type="application/json">
+                {
+                    "config": {{ ceresConfig | json_encode | raw }},
+                    "urls": {{ urls | json_encode | raw }},
+                    "activeCurrency": "{{ currencyData[currencyFormat] }}",
+                    "currencyPattern": {{  services.checkout.getCurrencyPattern() | json_encode | raw }},
+                    "isCategoryView": {% if services.template.isCategory() == "1" %}true{% else %}false{% endif %},
+                    "isCheckoutView": {% if services.template.isCheckout() == "1" %}true{% else %}false{% endif %},
+                    "isSearch": {% if services.template.isSearch() == "1" %}true{% else %}false{% endif %},
+                    "isItemView": {{ isItem | json_encode }},
+                    "templateEvent": "{{ templateEvent }}",
+                    "templateType": "{{ urls.templateType }}",
+                    "language": "{{ lang }}",
+                    "defaultLanguage": "{{ defaultLanguage }}",
+                    "decimalSeparator": "{{ config("IO.format.separator_decimal") }}",
+                    "urlTrailingSlash": {{ urls.appendTrailingSlash | json_encode }},
+                    "propertyFileUrl": "{{ services.propertyFile.getPropertyFileUrl() }}",
+                    "isShopBuilder": {{ isShopBuilder | default(false) | json_encode }},
+                    "bundleSetting": {{ webstoreConfig.dontSplitItemBundle | default(1) }},
+                    "bundlePrefix": "{{ services.order.getOrderItemPrefix(2) }}",
+                    "bundleComponentPrefix": "{{ services.order.getOrderItemPrefix(3) }}",
+                    "initialPleaseSelect": {{ webstoreConfig.attributeSelectDefaultOption | default(0) }},
+                    "publicPath": "{{ plugin_path('Ceres') ~ '/js/dist/' }}",
+                    "isCheapestSorting": "{{ services.template.isCheapestSorting() }}",
+                    "useVariationOrderProperties": {% if webstoreConfig.useVariationOrderProperties | default(0) %}true{% else %}false{% endif %},
+                    "initialData": {
+                        "shippingCountries": {{ services.country.getActiveCountriesList() | filterFields(["id", "currLangName", "isoCode2", "states.id", "states.name", "vatCodes"]) | json_encode | raw }},
+                        "shippingCountryId": {{ services.checkout.getShippingCountryId() }},
+                        "showNetPrices": {{ showNetPrices | json_encode }}
+                    },
+                    "features": {},
+                    "languageMap": {{ webstoreConfig.browserLanguage | json_encode | raw }}
+                }
+            </script>
+            <!-- /SSR -->
+            <script>
+                window.App = JSON.parse(document.getElementById("app-data").innerText);
+                window.__loadPluginChunk = function(source) {
+                    return source += "?v={{ buildHash }}";
+                };
+            </script>
+            
+            {{ Loader.include_components() }}
+            {{ LayoutContainer.show("Ceres::Script.Loader") }}
+            {{ Translations.add( "Ceres", "Template" ) }}
+            {{ get_json_data() }}
+            
+            {% set minSuffix = ceresConfig.log.performanceLevel == 'development' ? '' : '.min' %}
+
+
+            <!-- SSR:entry({{ ssr_entry('Ceres', 'resources/js/dist/ceres-server' ~ minSuffix ~ '.js') }}) -->
+            <!-- SSR:on() -->
+            <script src="{{ plugin_path('Ceres') }}/js/dist/ceres-client{{ minSuffix }}.js?v={{ buildHash }}"></script>
+            <!-- /SSR -->
+            <!-- SSR:off() -->
+            <script src="{{ plugin_path('Ceres') }}/js/dist/{{ assetName }}{{ minSuffix }}.js?v={{ buildHash }}"></script>
+            <!-- /SSR -->
+            
+            {% for scriptTemplate in get_additional_scripts() %}
+                {% if scriptTemplate.path != "Feedback::Content.Scripts" or currentTemplate == "tpl.confirmation" %}
+                    {% include scriptTemplate.path ignore missing with scriptTemplate.params %}
+                {% endif %}
+            {% endfor %}
+
+
+            {% if isShopBuilder %}
+                {% include "Ceres::Widgets.ShopBuilderDataStore" %}
+            {% endif %}
+            {% endif %}
+            <script> 
+            var pluginPathCeres = "https://cdn02.outlet46.de/plugin/427/ceres";
+            var activeLang = "{{ lang }}";
+            var activeLang2 = "{{ lang == 'de' ? '' : '/' ~ lang }}";
+             </script>      
+            {% if isVueView %}
+            {% include "GuardiansBasic::PageDesign.Components.cashinadvance" %}    
+            {% if assetName is defined and assetName == 'ceres-checkout' %}
+                {{ LayoutContainer.show("Ceres::Checkout.AfterScriptsLoaded") }}
+            {% endif %}                    
+            <!-- SSR:on() -->
+            <script>
+                window.createApp("#vue-app");
+            </script>
+            <!-- /SSR -->
+            <!-- SSR:off() -->
+            <script>
+                window.vueEventHub = new Vue();
+                if (App.config.log.checkSyntax)
+                {
+                    var rootElement = document.getElementById("vue-app");
+                    rootElement.innerHTML = rootElement.innerHTML.replace(/(?:^|\s)(?::|v-bind:)\S+=(?:""|'')/g, "");
+                    window.vueApp = new Vue({
+                        store: window.ceresStore
+                    });
+                    vueApp.$mount( rootElement.cloneNode(true) );
+                    if (vueApp.$el.id === "vue-app")
+                    {
+                        document.body.replaceChild( vueApp.$el, rootElement );
+                    }
+                }
+                else
+                {
+                    // eslint-disable-next-line no-unused-vars
+                    window.vueApp = new Vue({
+                        el: "#vue-app",
+                        store: window.ceresStore
+                    });
+                }
+            </script>
+            <!-- /SSR -->
+            {{ get_filtered_tags() }}
+        {% endif %}         
+        {# CHECKOUT VUE END #}    
+        <script>
+            var messageServiceTranslations = {
+                "0": "{{ trans("Ceres::Template.errorActionIsNotExecuted") }}",
+                "1": "{{ trans("Ceres::Template.notificationsItemNotAdded") }}",
+                "2": "{{ trans("Ceres::Template.notificationsNotEnoughStockItem") }}",
+                "3": "{{ trans("Ceres::Template.notificationsInvalidResetPasswordUrl") }}",
+                "4": "{{ trans("Ceres::Template.notificationsCheckPassword") }}",
+                "5": "{{ trans("Ceres::Template.notificationsItemBundleSplitted") }}",
+                "6": "{{ trans("Ceres::Template.notificationsItemOutOfStock") }}",
+                "7": "{{ trans("Ceres::Template.newsletterOptOutSuccessMessage") }}",
+                "8": "{{ trans("Ceres::Template.newsletterOptInMessage") }}",
+                "9": "{{ trans("Ceres::Template.notificationsBasketItemsRemoved") }}",
+                "10": "{{ trans("Ceres::Template.notificationsBasketItemsRemovedForLanguage") }}",
+                "11": "{{ trans("Ceres::Template.notificationsNoEmailEntered") }}",
+                "110": "{{ trans("Ceres::Template.errorBasketItemVariationNotFound") }}",
+                "111": "{{ trans("Ceres::Template.errorBasketItemNotEnoughStockForVariation") }}",
+                "112": "{{ trans("Ceres::Template.errorBasketItemMaximumQuantityReachedForItem") }}",
+                "113": "{{ trans("Ceres::Template.errorBasketItemMaximumQuantityReachedForVariation") }}",
+                "114": "{{ trans("Ceres::Template.errorBasketItemMinimumQuantityNotReachedForVariation") }}",
+                "301": "{{ trans("Ceres::Template.notificationRemoveCouponMinimumOrderValueIsNotReached") }}",
+                "401": "{{ trans("Ceres::Template.notificationsCalculateShippingFailed") }}",
+                "loginSuccessTitle" : "{{ trans("GuardiansBasic::Template.loginSuccessTitle") }}",
+                "loginSuccess" : "{{ trans("GuardiansBasic::Template.loginSuccess") }}",
+                "loginSuccess" : "{{ trans("GuardiansBasic::Template.loginSuccess1") }}",
+                "stockWarn1" : "{{ trans("GuardiansBasic::Template.stockWarn1") }}",
+                "stockWarn2" : "{{ trans("GuardiansBasic::Template.stockWarn2") }}",
+                "stockWarn3" : "{{ trans("GuardiansBasic::Template.stockWarn3") }}",
+                "login1" : "{{ trans("GuardiansBasic::Template.login1") }}",
+                "login2" : "{{ trans("GuardiansBasic::Template.login2") }}",
+                "banneduser" : "{{ trans("GuardiansBasic::Template.banneduser") }}",
+                "wronguserlogindata" : "{{ trans("GuardiansBasic::Template.wronguserlogindata") }}",
+                "successlogout" : "{{ trans("GuardiansBasic::Template.successlogout") }}",
+                "successpwdreset" : "{{ trans("GuardiansBasic::Template.successpwdreset") }}",
+                "failedpwdreset" : "{{ trans("GuardiansBasic::Template.failedpwdreset") }}",
+                "searchexample" : "{{ trans("GuardiansBasic::Template.searchexample") }}",
+                "wishlistplus" : "{{ trans("GuardiansBasic::Template.wishlistplus") }}",
+                "wishlistminus" : "{{ trans("GuardiansBasic::Template.wishlistminus") }}",
+                "feedbackerror" : "{{ trans("GuardiansBasic::Template.feedbackerror") }}",
+                "feedbacksuccess" : "{{ trans("GuardiansBasic::Template.feedbacksuccess") }}",
+                "feedbackerror2" : "{{ trans("GuardiansBasic::Template.feedbackerror2") }}"
+            }
+                       window.addEventListener('load', function () {
+                    
+                    /*window.addEventListener ('load', function () {
+
+                    });*/
+                    eGuardians.initialize();
+                    
+           
+            $('body').removeClass('hold-transition');
+                          } ); 
+            {% if services.template.isCheckout() %}
+            $(document).ready(function(){
+                console.log($('[data-model="countryId"] option:selected').length)
+                if($('.invoice-addresses-select [data-model="countryId"] option:selected').length>0){
+                    if($('[data-model="countryId"] option:selected').val()==1){
+                       $('.invoice-addresses-select .modal-content [data-model="vatNumber"]').hide();
+                    }else{
+                        $('.invoice-addresses-select .modal-content [data-model="vatNumber"]').show();
+                    }
+                }
+            })
+           $(document).on('change', '.invoice-addresses-select [data-model="countryId"]', function(event){   
+ 
+              if($( "option:selected",this ).val()==1){
+                   $('.invoice-addresses-select .modal-content [data-model="vatNumber"]').hide();
+               }else{
+                   $('.invoice-addresses-select .modal-content [data-model="vatNumber"]').show();
+               }
+            });
+            {% endif %}
+        </script>
+        {{ get_shop_builder_scripts( "latest", ceresConfig.log.performanceLevel == 'live') }}
+       {# CONTAINER FOR CHECKOUT  #}
+       {% if currentTemplate in ["tpl.basket", "tpl.confirmation"] or services.template.isCheckout() or services.template.isMyAccount() %}
+       {{ LayoutContainer.show("Ceres::Footer.RowThree") }}
+       {% endif %}
+       {{ LayoutContainer.show("Ceres::Footer.RowOne") }}
+       {{ LayoutContainer.show("Ceres::PageDesign.AfterOpeningBodyTag") }}
+       {% if not services.template.shouldBeCached() %}
+            <input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+        {% endif %}
+<div class="modal fade modal-cross" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title"></span>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+        </div>
+      </div>
+    </div>
+</div>    
+            {% if "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or category.id in mainjs  %}
+               <script src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/jquery-3.7.1.min.js"></script>
+               <script type="text/javascript" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/main-020726.min.js" defer></script> 
+            {% elseif category.id in vuejs %}
+                <script type="text/javascript" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/vue-020726.min.js" defer></script>
+            {% elseif currentTemplate in vuePages|keys %}
+               <script src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/jquery-3.7.1.min.js"></script>
+                <script type="text/javascript" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/main-020726.min.js" defer></script> 
+            {% elseif category.id in nojs %}
+               <script src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/jquery-3.7.1.min.js"></script>
+                <script type="text/javascript" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/main-020726.min.js" defer></script> 
+            {% elseif category.id or isSearch %}
+               <script src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/jquery-3.7.1.min.js"></script>
+                <script type="text/javascript" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/cat-020726.min.js" defer></script>
+            {% elseif isItem %} 
+               <script src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/jquery-3.7.1.min.js"></script>
+                <script type="text/javascript" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/item-020726.min.js" defer></script>
+            {% else %} 
+               <script src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/jquery-3.7.1.min.js"></script>
+                <script type="text/javascript" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/js/main-020726.min.js" defer></script> 
+            {% endif %}
+            {{ LayoutContainer.show("Ceres::Script.AfterScriptsLoaded") }} 
+            {% if isItem %}
+                {{ LayoutContainer.show("Ceres::SingleItem.AfterScriptsLoaded") }}
+            {% endif %} 
+            {% include "GuardiansBasic::PageDesign.Components.cookiebar" %} 
+            {% if category.id in wkbkasse %}
+                <link rel="stylesheet" href="https://cdn02.outlet46.de/plugin/427/amazonpaycheckout/css/amazon-pay.min.css" />
+                <script src="https://static-eu.payments-amazon.com/checkout.js" defer></script>
+                <script src="https://cdn02.outlet46.de/plugin/427/amazonpaycheckout/js/amazon-pay.min.js"></script>
+            {% endif %}
+            {% if isShopBuilder %}
+                {% else %}
+            {% include "GuardiansBasic::PageDesign.Components.b2babfrage" ~ langCodeMap[lang] %}
+            {% endif %}
+            <div class="ccklayer"></div> 
+{% endif %}
+    </body> 
+</html>

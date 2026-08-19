@@ -1,0 +1,28 @@
+{% set variationAttributes = getAttributesWithImages(itemId) %}
+{% set transLabels = transLabels ?? {
+    availsizedeal: trans("GuardiansBasic::Template.availsizedeal"),
+    availsizeonesize: trans("GuardiansBasic::Template.availsizeonesize"),
+    morethen18: trans("GuardiansBasic::Template.morethen18")
+} %}
+
+{% if variationAttributes.attributes is defined and variationAttributes.attributes | length > 0 %}
+    {% set boxAttributeList = variationAttributes.attributes | filter(attr => attr.type == 'box') %}
+    {% set boxAttribute = boxAttributeList | first %}
+
+    {% if boxAttribute is defined and boxAttribute.values is defined and boxAttribute.values is iterable %}
+        {% set valuesLength = boxAttribute.values | length %}
+        
+            {% set attributeValues = boxAttribute.values | orderByKey('position') %}
+            {% for attributeValue in attributeValues %}
+                <span class="availsize">{{ attributeValue.name }}</span>
+            {% endfor %}
+    {% else %}
+        <div class="no-cat-at">
+            <span class="availsize">{{ transLabels.availsizeonesize }}</span>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="no-cat-at">
+        <span class="availsize">{{ transLabels.availsizeonesize }}</span>
+    </div>
+{% endif %}

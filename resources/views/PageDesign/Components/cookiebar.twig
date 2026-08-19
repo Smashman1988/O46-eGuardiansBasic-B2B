@@ -1,0 +1,170 @@
+<script>
+      window.addEventListener("load", function() {
+        var consents = ConsentManager.getConsents();
+        function _isConsented(key) {
+            var groupKey = key.split(".")[0];
+            var consentKey = key.split(".")[1];
+
+            if (consentKey === "*") {
+                return Object.keys(consents[groupKey] || {}).some(function(consentKey) {
+                    return (consents[groupKey] || {})[consentKey];
+                });
+            }
+
+            return (consents[groupKey] || {})[consentKey];
+        }
+
+        Array.prototype.slice.call(document.querySelectorAll('[data-cookie-bar]')).forEach(function(cookieBar) {
+                // --- LCP-Vermeidung ---
+    cookieBar.style.visibility = "hidden";
+    cookieBar.style.opacity = "0";
+    cookieBar.style.transition = "opacity 0.3s ease";
+    setTimeout(function () {
+        cookieBar.style.visibility = "visible";
+        cookieBar.style.opacity = "1";
+    }, 1200);
+    
+    function _query(selector) {
+                return Array.prototype.slice.call(cookieBar.querySelectorAll(selector));
+            }
+            function _queryFn(callback) {
+                return function() {
+                    var args = Array.prototype.slice.call(arguments);
+                    var query = args[0];
+                    if(typeof query === "string") {
+                        query = _query(query);
+                    }
+                    if(!Array.isArray(query)) {
+                        query = [query];
+                    }
+                    return query.map(function(element) {
+                        args[0] = element;
+                        callback.apply(element, args);
+                    });
+                };
+            }
+
+            var _toggleClass = _queryFn(function(element, className, condition) {
+                element.classList[condition ? 'add' : 'remove'](className);
+            });
+
+            var _on = _queryFn(function(element, evt, listener) {
+                element.addEventListener(evt, function(evt) {
+                    listener.apply(element, [evt, element]);
+                });
+            });
+
+            var _groupVisibilitiies = {};
+            function _toggleGroup(key) {
+                _groupVisibilitiies[key] = !_groupVisibilitiies[key];
+                _toggleClass('[data-cb-group-in="' + key + '"]', 'd-none', !_groupVisibilitiies[key]);
+                _toggleClass('[data-cb-group-out="' + key + '"]', 'd-none', _groupVisibilitiies[key]);
+            }
+
+            function _toggleCollapse(collapsed) {
+                _toggleClass('[data-cb="collapseIn"]', 'd-none', !collapsed);
+                _toggleClass('[data-cb="collapseOut"]', 'd-none', collapsed);
+                document.querySelectorAll('[data-cookie-bar]')[0].classList[!collapsed ? 'add' : 'remove']('expand');
+            }
+
+            function _toggle(visible) {
+                _toggleClass(cookieBar, 'out', !visible);
+            }
+
+            function _updateCheckboxes() {
+                _query('[data-cb-consent-key]').forEach(function(checkbox) {
+                    let isConsented = _isConsented(checkbox.dataset.cbConsentKey)
+                    checkbox.checked = isConsented;
+                    checkbox.classList[isConsented ? 'add' : 'remove']('fa-circle');
+                    checkbox.classList[!isConsented ? 'add' : 'remove']('fa-circle-o');
+                });
+            }
+
+            _toggle(!ConsentManager.hasResponse());
+            document.addEventListener('consent-change', _updateCheckboxes);
+            _updateCheckboxes();
+            _toggleClass('[data-cb-group-in]', 'd-none', true);
+
+            _on('[data-cb="collapse"]', 'click', function() {
+                _toggleCollapse(true);
+            });
+
+            _on('[data-cb="expand"]', 'click', function() {
+                _toggleCollapse(false);
+            });
+
+            _on('[data-cb="acceptAll"]', 'click', function() {
+                Object.keys(consents || {}).forEach(function(groupKey) {
+                    Object.keys(consents[groupKey] || {}).forEach(function(consentKey) {
+                        return consents[groupKey][consentKey] = true;
+                    });
+                });
+                ConsentManager.setResponse(consents);
+                _toggle(false);
+                _toggleCollapse(true);
+            });
+
+            _on('[data-cb="save"]', 'click', function() {
+                ConsentManager.setResponse(consents);
+                _toggle(false);
+                _toggleCollapse(true);
+            });
+
+            _on('[data-cb="declineAll"]', 'click', function() {
+                Object.keys(consents || {}).forEach(function(groupKey) {
+                    if (groupKey !== 'necessary') {
+                        Object.keys(consents[groupKey] || {}).forEach(function(consentKey) {
+                            return consents[groupKey][consentKey] = false;
+                        });
+                    }
+                });
+                ConsentManager.setResponse(consents);
+                _toggle(false);
+                _toggleCollapse(true);
+            });
+
+            _on('[data-cb="saveNecessary"]', 'click', function() {
+                Object.keys(consents || {}).forEach(function(groupKey) {
+                    Object.keys(consents[groupKey] || {}).forEach(function(consentKey) {
+                        if (groupKey === 'necessary') {
+                            return consents[groupKey][consentKey] = true;
+                        }
+                        return consents[groupKey][consentKey] = false;
+                    });
+                });
+                ConsentManager.setResponse(consents);
+                _toggle(false);
+            });
+
+            _on('[data-cb="show"]', 'click', function() {
+                _toggle(true);
+            });
+
+            _on('[data-cb="hide"]', 'click', function() {
+                _toggle(false);
+            });
+
+            _on('[data-cb-consent-key]', 'change', function(evt, element) {
+                var key = (element.dataset || {}).cbConsentKey;
+                var groupKey = key.split(".")[0];
+                var consentKey = key.split(".")[1];
+                var newValue = !_isConsented(key);
+                consents[groupKey] = consents[groupKey] || {};
+                if(consentKey === "*") {
+                    Object.keys(consents[groupKey] || {}).forEach(function(cKey) {
+                        consents[groupKey][cKey] = newValue;
+                    });
+                } else {
+                    consents[groupKey][consentKey] = newValue;
+                }
+                _updateCheckboxes();
+            });
+
+            _on('[data-cb-group]', 'click', function(evt, element) {
+                var group = (element.dataset || {}).cbGroup;
+                if(!!group) _toggleGroup(group);
+            });
+
+        });
+    });
+    </script>

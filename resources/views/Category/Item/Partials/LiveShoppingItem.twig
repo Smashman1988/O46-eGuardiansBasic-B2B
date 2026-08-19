@@ -1,0 +1,10 @@
+{% set liveShoppingData = services.LiveShopping.getLiveShoppingData(liveshoppingid) %}
+{% if liveShoppingData is not empty %}
+    {% if liveShoppingData.item is not empty %}
+        {% set timestamp = 'now'|date('U') %}
+        {% if timestamp <= liveShoppingData.liveShopping.toTime %}
+            {% set itemData = {'data':liveShoppingData.item } %}
+            {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem" with { 'item': itemData} %}
+        {% endif %}
+    {% endif %}
+{% endif %}

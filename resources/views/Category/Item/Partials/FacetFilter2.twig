@@ -1,0 +1,122 @@
+{% set canonicalURL = services.url.getCanonicalURL() %}
+{% set priceMax = request.get("priceMax") %}
+{% set priceMin = request.get("priceMin") %}
+<section data-eg-target=".facet-item-value-chk" data-eg-event="change" data-eg-facets data-eg-catid="{{ category.id }}" data-eg-defaultitemsperpage="{{ searchOptions.defaultItemsPerPage }}">
+    <div class="filter-container">
+
+        <div class="wrap-filter-mobile">
+            <div class="row filter-no-mobile">
+                <div class="col-12 text-center">
+                    <button class="btn btn-primary btn-big mt-2 filter-no-desktop btnfilter-mobile-top" data-eg-btnfilter aria-label="Produkte anzeigen">
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12 text-center">
+                    <div class="light-big-txt filter-head mt-xl-0">
+                        <button class="basket-prev-close close d-lg-none" data-eg-handler="tgClass" data-eg-event="click" data-eg-param="html,filter-open" aria-label="Schließen">
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    </div>
+                </div> 
+            </div>
+            <div class="wrap-filter-mobile-scrollable">
+                <div class="row rowFilter"> 
+                    {% set activeFacets = (request.get("facets") is not empty ? request.get("facets")|split(',') : [])|merge(selectedFacets|default([])) %}
+                    {% set activeFacetList = {} %}
+                    {% for facet in facets %}
+                        <div class="col-12 colFilter {{ facet.cssClass }} facet-{{ facet.id }}">
+                            <div class="cat-facet eg-dropdown">
+                                <div class="btn-primary cat-facet-name eg-dropdown-value">{{ facet.name }} <span class="icon-down-open-big"></span></div>
+                                <div class="eg-dropdown-content">
+                                    <ul class="list-no-style {% if facet.id==2 %} facet-color d-flex{% endif %} facetgroup-{{ facet.id }}">
+                                    {% if facet.id==8 %} 
+                                        <li> 
+                                            <div class="input-group m-b-1">
+                                                <div class="input-group-prepend">
+                                                  <div class="input-group-text">{{ currencyData[currencyFormat] }}</div>
+                                                </div>
+                                                <input type="number" class="form-control facet-input-price-min" min="1" placeholder="Min." {% if priceMin is not empty %}value="{{ priceMin }}"{% endif %}>
+                                            </div>
+                                            <div class="input-group m-b-1">
+                                                <div class="input-group-prepend">
+                                                  <div class="input-group-text">{{ currencyData[currencyFormat] }}</div>
+                                                </div>
+                                                <input type="number" class="form-control facet-input-price-max" placeholder="Max." {% if priceMax is not empty %}value="{{ priceMax }}"{% endif %}>
+                                            </div>
+                                            <button class="btn btn-secondary btn-small btn-block m-b-1 pricefilter" data-eg-event="click" data-eg-handler="facetFilter" aria-label="Filter anwenden">{{ trans("GuardiansBasic::Template.apply") }}</button>
+                                        </li>
+                                    {% else %}
+                                        {% set activeFacetIds = activeFacets|map(v => v|default(0)) %}
+                                        {%- for facetValue in facet.values -%}
+                                            {% set isActive = facetValue.id in activeFacetIds %}
+                                            {% if isActive %}
+                                                {% set activeFacetInfos = { facetId: facetValue.id, facetName: facetValue.name } %}
+                                                {% set activeFacetList = activeFacetList|merge([activeFacetInfos]) %}
+                                            {% endif %}
+                                            <li data-eg-facet-itemcount="{{ facetValue.count }}">
+                                                <input id="facet-item-{{ facetValue.id }}" type="checkbox" class="hidden-xs-up facet-item-value-chk" data-eg-handler="facetFilter" data-eg-facetvalueid="{{ facetValue.id }}" {{ isActive ? 'checked' : '' }} />
+                                                <label for="facet-item-{{ facetValue.id }}" class="facet-item-value">
+                                                    {% if facet.id==2 %}
+                                                        <span>{{ facetValue.name }}</span>
+                                                    {% else %}
+                                                    <span class="chk-box">
+                                                          {% include "GuardiansBasic::Category.Item.Partials.check-icon" %}
+                                                        </span>
+                                                    {{ facetValue.name }}
+                                                    <span class="chk-count">{{ facetValue.count }}</span>
+                                                    {% endif %}    
+                                                </label>
+                                            </li>
+                                        {%- endfor -%}
+                                    {% endif %} 
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>       
+                    {% endfor %}
+                </div>
+                <button class="btn btn-primary btn-big d-lg-none btnfilter-mobile btnfilter-mobile-bottom" data-eg-btnfilter  aria-label="Produkte anzeigen">
+                    <span></span> 
+                </button>
+            </div>
+        </div>      
+    </div>
+</section>
+{% if activeFacetList or priceMax or priceMin %}
+    <hr class="hr-style">
+    <div class="row mt-2 mb-3 tcenter">
+        <div class="col-12">
+            <p class="category-title mb-3 d-lg-block">{{ trans("GuardiansBasic::Template.selectedfilters") }}</p>
+            {% if priceMax or priceMin %}
+                <label class="btn btn-secondary facet-remove-btn facet-remove-price" data-eg-handler="facetFilter" data-eg-event="click">
+                    <span class="facet-item-value facet-value-remove">
+                        {{ priceMin ~ " " ~ currencyData[currencyFormat] }}&nbsp;-&nbsp;{{ priceMax ~ " " ~ currencyData[currencyFormat] }}
+                    </span>
+                </label>
+            {% endif %}
+            {% for activeFacet in activeFacetList %}
+                <label class="btn btn-secondary facet-remove-btn" for="facet-item-{{ activeFacet.facetId }}">
+                    <span class="facet-item-value facet-value-remove">
+                        {{ activeFacet.facetName }}
+                    </span>
+                </label>
+            {% endfor %}
+            <a href="{{ canonicalURL ~ queryString({'facets':null,'priceMin':null,'priceMax':null}) }}" class="btn btn-secondary facet-remove-btn facet-remove-price facet-remove-all">
+                <label class="facet-item-value facet-value-remove">
+                    {{ trans("GuardiansBasic::Template.resetallfilters") }}
+                </label>
+            </a>
+        </div>
+    </div>
+{% endif %}
+<div class="row">
+    <div class="col-12 text-center">
+        <button class="btn btn-primary btn-big mt-2 display-none btnfilter-desktop" data-eg-btnfilter aria-label="Produkte anzeigen">
+            <span></span>
+        </button>
+    </div>
+</div>
+<hr class="hr-style">

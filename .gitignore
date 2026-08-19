@@ -1,0 +1,27 @@
+# Lokale / temporäre Dateien
+.cache/
+build/
+plenty-cache/
+plentydevtool.zip
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/
+*.sublime*
+
+# Logs / Backups / temporäre Dateien
+*.log
+*.bak
+*~
+
+# Node / npm
+node_modules/
+npm-debug.log
+
+# Lokale Plugin-Pakete
+*.zip

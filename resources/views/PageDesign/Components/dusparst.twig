@@ -1,0 +1,450 @@
+{# ======================  dusparst.twig  ====================== #}
+{% set hideWhenZero  = true %}
+{% set subtitleText  = 'Im Vergleich zur UVP' %}
+{% set basketItems   = services.basket.getBasketItemsForTemplate() %}
+{% set currencyData  = services.checkout.getCurrencyData %}
+{% set currencyCode  = currencyData.name %}
+{% set currencySymbol= currencyData['symbol'] %}
+{% set totalSave     = 0 %}
+
+{# ✅ Sprache (z.B. "de", "en", ggf. "de-DE") -> auf 2 Zeichen normalisieren #}
+{% set lang = services.localizationRepository.getLanguage() %}
+{% set langShort = lang|lower|slice(0,2) %}
+
+{# ✅ Label pro Sprache für "Gewicht:" (pro Item) #}
+{% set weightLabel = 'Gewicht:' %}
+{% if langShort == 'en' %}
+  {% set weightLabel = 'Weight:' %}
+{% elseif langShort == 'fr' %}
+  {% set weightLabel = 'Poids:' %}
+{% elseif langShort == 'it' %}
+  {% set weightLabel = 'Peso:' %}
+{% elseif langShort == 'es' %}
+  {% set weightLabel = 'Peso:' %}
+{% endif %}
+
+{# ---- initialen Sparwert serverseitig berechnen ---- #}
+{% if basketItems is defined and basketItems|length > 0 %}
+  {% for basketItem in basketItems %}
+    {% set qty = basketItem.quantity is defined and basketItem.quantity ? basketItem.quantity : 1 %}
+    {% set unitGross = 0 %}
+    {% if basketItem.price is defined and basketItem.price %}
+      {% set unitGross = basketItem.price %}
+    {% elseif basketItem.amount is defined and basketItem.amount.priceGross is defined %}
+      {% set unitGross = basketItem.amount.priceGross %}
+    {% endif %}
+
+    {% set rrpValue = 0 %}
+    {% if basketItem.variation is defined and basketItem.variation.data is defined
+          and basketItem.variation.data.prices is defined and basketItem.variation.data.prices.rrp is defined %}
+      {% if basketItem.variation.data.prices.rrp.unitPrice is defined
+            and basketItem.variation.data.prices.rrp.unitPrice.value is defined %}
+        {% set rrpValue = basketItem.variation.data.prices.rrp.unitPrice.value %}
+      {% elseif basketItem.variation.data.prices.rrp.price is defined
+            and basketItem.variation.data.prices.rrp.price.value is defined %}
+        {% set rrpValue = basketItem.variation.data.prices.rrp.price.value %}
+      {% endif %}
+    {% elseif basketItem.variation is defined and basketItem.variation.recommendedRetailPrice is defined
+          and basketItem.variation.recommendedRetailPrice.price is defined %}
+      {% set rrpValue = basketItem.variation.recommendedRetailPrice.price %}
+    {% elseif basketItem.variation is defined and basketItem.variation.rrp is defined
+          and basketItem.variation.rrp.price is defined %}
+      {% set rrpValue = basketItem.variation.rrp.price %}
+    {% endif %}
+
+    {% set savePerUnit = rrpValue - unitGross %}
+    {% if savePerUnit > 0 %}
+      {% set totalSave = totalSave + (savePerUnit * qty) %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{# Wichtig: Span immer rendern, damit JS läuft – bei 0 aber unsichtbar #}
+{% if hideWhenZero and totalSave <= 0 %}
+  <span class="you-save-total" data-cur="{{ currencyCode }}" style="display:none">0</span>
+{% else %}
+  <span class="you-save-total" data-cur="{{ currencyCode }}">
+    {{ totalSave|number_format(2, ',', '.') }} {{ currencySymbol }}
+  </span>
+{% endif %}
+
+<script>
+(function () {
+  if (window.__O46_DUSP_INSTALLED__) return;
+  window.__O46_DUSP_INSTALLED__ = true;
+
+  var ROUTE_ITEMS   = '/rest/io/basket/items';
+  var ROUTE_SESSION = '/rest/io/session';
+  var TARGET        = '.you-save-total';
+  var MARK          = 'ys_ob=1';
+
+  var DEBOUNCE  = 120;
+  var MAX_WAIT  = 700;
+  var CACHE_TTL = 1500;
+  var LIST_ITEM_SEL = '.basket-list-item';
+
+  // ✅ pro Item: Label aus Twig (sprachabhängig)
+  var WEIGHT_LABEL = {{ weightLabel|json_encode|raw }};
+
+  var WAIT_FOR_FOREIGN_SESSION = true;
+  var sawForeignSession = false;
+
+  if (!window.__O46_FETCH_ORIG__)   window.__O46_FETCH_ORIG__   = window.fetch.bind(window);
+  if (!window.__O46_XHROPEN_ORIG__) window.__O46_XHROPEN_ORIG__ = XMLHttpRequest.prototype.open;
+  var origFetch = window.__O46_FETCH_ORIG__;
+  var origOpen  = window.__O46_XHROPEN_ORIG__;
+
+  var PAGE_VISIBLE = !document.hidden;
+  document.addEventListener('visibilitychange', function(){ PAGE_VISIBLE = !document.hidden; }, {passive:true});
+
+  function $(sel, ctx){ return (ctx||document).querySelector(sel); }
+  function n(v){ v = Number(v); return isFinite(v) ? v : 0; }
+  var LOCALE = (document.documentElement && document.documentElement.lang) || 'de-DE';
+  var _fmtCache = {};
+  function money(v, cur){
+    try { return (_fmtCache[cur] || (_fmtCache[cur] = new Intl.NumberFormat(LOCALE,{style:'currency',currency:cur||'EUR'}))).format(n(v)); }
+    catch(e){ v=n(v); return v.toFixed(2).replace('.',',')+' '+(cur||'EUR'); }
+  }
+  function runIdle(fn, timeout){
+    if (typeof requestIdleCallback==='function') return requestIdleCallback(fn,{timeout:timeout||300});
+    return setTimeout(fn, timeout||120);
+  }
+
+  function unitPrice(it){
+    if (it && it.price != null && it.price !== 'N / A') return n(it.price);
+    if (it && it.amount && it.amount.priceGross != null && it.amount.priceGross !== 'N / A') return n(it.amount.priceGross);
+    var p = it && it.prices && it.prices.default && it.prices.default.price && it.prices.default.price.value;
+    return (p != null && p !== 'N / A') ? n(p) : 0;
+  }
+  function rrpValue(it){
+    var r = it && it.variation && it.variation.data && it.variation.data.prices && it.variation.data.prices.rrp;
+    if (!r) return 0;
+    var u = r.unitPrice && r.unitPrice.value; if (u != null && u !== 'N / A') return n(u);
+    var p = r.price && r.price.value;         if (p != null && p !== 'N / A') return n(p);
+    return 0;
+  }
+  function rrpCurrency(it, fallback){
+    var p = it && it.variation && it.variation.data && it.variation.data.prices;
+    return (p && p.rrp && p.rrp.currency) || (p && p.default && p.default.currency) || fallback || 'EUR';
+  }
+
+  // Gewicht nur aus Haupt-Variation (kein bundleComponents!)
+  function weightG(it){
+    try{
+      var g = it && it.variation && it.variation.data && it.variation.data.variation && it.variation.data.variation.weightG;
+      return (g != null && g !== '' && g !== 'N / A') ? n(g) : 0;
+    }catch(_){}
+    return 0;
+  }
+  function fmtKgFromG(g){
+    g = n(g);
+    var kg = g / 1000;
+    return kg.toFixed(2).replace('.',',') + ' kg';
+  }
+
+  // ✅ Gesamtgewicht: nur vorhandenes Markup updaten (ShopBuilder Placeholder)
+  // Erwartet: <span data-o46-total-weight>0,00 kg</span>
+  function updateTotalWeight(totalG){
+    var nodes = document.querySelectorAll('[data-o46-total-weight]');
+    if (!nodes || !nodes.length) return;
+
+    var txt = fmtKgFromG(totalG);
+    for (var i=0;i<nodes.length;i++){
+      if (nodes[i].textContent !== txt) nodes[i].textContent = txt;
+    }
+  }
+
+  function isBasketItemsUrl(u){ return String(u||'').indexOf(ROUTE_ITEMS) > -1; }
+  function isSessionUrl(u){ return /\/rest\/io\/session\/?(?:\?|$)/.test(String(u||'')); }
+  function isOwn(u){ return String(u||'').indexOf(MARK) !== -1; }
+
+  function emitBasketUpdated(items, session){
+    try { window.dispatchEvent(new CustomEvent('o46:basket-updated', {detail:{items:Array.isArray(items)?items:[], session:session||null}})); } catch(_){}
+  }
+
+  var LAST_ITEMS = null;
+  var LAST_TS    = 0;
+  var DIRTY      = false;
+
+  var inFlightCtrl    = null;
+  var inFlightPromise = null;
+
+  var debTimer = 0, maxTimer = 0;
+
+  function setItems(items){
+    if (Array.isArray(items)) { LAST_ITEMS = items; LAST_TS = Date.now(); emitBasketUpdated(items, null); }
+  }
+  function itemsFromSessionPayload(j){ return (j && j.data && Array.isArray(j.data.basketItems)) ? j.data.basketItems : []; }
+
+  function shouldUseCache(){
+    if (DIRTY) return false;
+    if (!LAST_ITEMS) return false;
+    return (Date.now() - LAST_TS) < CACHE_TTL;
+  }
+
+  function fetchItemsOnce(){
+    if (inFlightPromise) return inFlightPromise;
+    inFlightCtrl = new AbortController();
+    var sep = ROUTE_SESSION.indexOf('?') > -1 ? '&' : '?';
+    var url = ROUTE_SESSION + sep + 'templateType=basket' + '&' + MARK + '&_=' + Date.now();
+
+    inFlightPromise = origFetch(url, {
+      credentials:'same-origin',
+      headers:{'Accept':'application/json'},
+      signal: inFlightCtrl.signal
+    })
+    .then(r => r && r.ok ? r.json() : null)
+    .then(j => {
+      var items = itemsFromSessionPayload(j);
+      setItems(items);
+      emitBasketUpdated(items, j);
+      DIRTY = false;
+      return items;
+    })
+    .catch(() => LAST_ITEMS || [])
+    .finally(() => { inFlightCtrl = null; inFlightPromise = null; });
+
+    return inFlightPromise;
+  }
+
+  // ================= UVP + Gewicht Rendering =================
+  var anchorCache = new WeakMap();
+  var nameAnchorCache = new WeakMap();
+
+  function getItemIdFromRow(li){
+    var a = li.querySelector('a[href*="/a-"]');
+    if (!a) return null;
+    var m = (a.getAttribute('href')||'').match(/\/a-(\d+)\//);
+    return m ? m[1] : null;
+  }
+  function findRrpAnchor(li){
+    return li.querySelector('.price-box .item-total-price') ||
+           li.querySelector('.item-total-price') ||
+           li.querySelector('.meta-container .item-base-price');
+  }
+  function findNameAnchor(li){
+    return li.querySelector('a[data-testing="basket-item-name"]') ||
+           li.querySelector('a.item-name') ||
+           li.querySelector('a[href*="/a-"]');
+  }
+
+  function parseMoney(txt){
+    if (!txt) return NaN;
+    txt = String(txt).replace(/[^\d.,-]/g,'');
+    var lastComma = txt.lastIndexOf(','), lastDot = txt.lastIndexOf('.');
+    var decPos = Math.max(lastComma, lastDot);
+    if (decPos > -1){
+      var intPart = txt.slice(0, decPos).replace(/[.,]/g,'');
+      var decPart = txt.slice(decPos+1);
+      txt = intPart + '.' + decPart;
+    }
+    var v = Number(txt);
+    return isFinite(v) ? v : NaN;
+  }
+  function getRowQty(li){
+    var nEl = li.querySelector('input[type="number"], input.qty, .quantity input');
+    if (nEl && nEl.value){ var q = Number(nEl.value); if (isFinite(q) && q>0) return q; }
+    var d = li.getAttribute('data-qty') || (li.dataset && li.dataset.qty);
+    if (d){ var q2 = Number(d); if (isFinite(q2) && q2>0) return q2; }
+    return 1;
+  }
+  function getRowLinePrice(li){
+    var el = li.querySelector('.item-total-price, .price, .line-total, .basket-item-price');
+    return el ? parseMoney(el.textContent) : NaN;
+  }
+  function clearRrpLines(li){
+    var nodes = li.querySelectorAll('.o46-rrp-line');
+    for (var el of nodes){ if (el && el.parentNode) el.parentNode.removeChild(el); }
+  }
+  function clearWeightLines(li){
+    var nodes = li.querySelectorAll('.o46-weight-line');
+    for (var el of nodes){ if (el && el.parentNode) el.parentNode.removeChild(el); }
+  }
+
+  function renderPerItemExtras(items, currencyFallback){
+    var rows = document.querySelectorAll(LIST_ITEM_SEL);
+    if (!rows || !rows.length) return;
+
+    var byItemQueues = new Map();
+    for (var it of items){
+      var iid = String(it.itemId||''); if (!iid) continue;
+      if (!byItemQueues.has(iid)) byItemQueues.set(iid, []);
+      byItemQueues.get(iid).push(it);
+    }
+
+    for (var li of rows){
+      clearRrpLines(li);
+      clearWeightLines(li);
+
+      var itemId = getItemIdFromRow(li);
+      if (!itemId || !byItemQueues.has(String(itemId))) continue;
+      var queue = byItemQueues.get(String(itemId));
+      if (!queue || !queue.length) continue;
+
+      var matched = null, idx = -1;
+      try{
+        var qtyShown = n(getRowQty(li));
+        var line = getRowLinePrice(li);
+        if (isFinite(line) && line > 0 && qtyShown > 0){
+          var unitShown = line / qtyShown;
+          var tol = 0.02;
+          for (var j=0;j<queue.length;j++){
+            var cand = queue[j];
+            var u = unitPrice(cand);
+            if (isFinite(u) && Math.abs(u - unitShown) <= tol){ matched = cand; idx = j; break; }
+          }
+        }
+      }catch(_){}
+      if (!matched){ matched = queue[0]; idx = 0; }
+      queue.splice(idx,1);
+
+      var qtyRow = n(matched.quantity || getRowQty(li));
+
+      // ---- Gewicht unter Item-Name (links) ----
+      var wg = weightG(matched);
+      if (wg > 0){
+        var nameA = nameAnchorCache.get(li);
+        if (!nameA || !document.contains(nameA)){
+          nameA = findNameAnchor(li);
+          if (nameA) nameAnchorCache.set(li, nameA);
+        }
+        if (nameA){
+          var wNode = document.createElement('div');
+          wNode.className = 'o46-weight-line small text-muted';
+          wNode.textContent = WEIGHT_LABEL + ' ' + fmtKgFromG(wg * qtyRow);
+          nameA.insertAdjacentElement('afterend', wNode);
+        }
+      }
+
+      // ---- UVP unter Preisbox (wie vorher) ----
+      var rrp = rrpValue(matched);
+      if (!(rrp > 0)) continue;
+
+      var cur = rrpCurrency(matched, currencyFallback);
+
+      var anchor = anchorCache.get(li);
+      if (!anchor || !document.contains(anchor)) {
+        anchor = findRrpAnchor(li);
+        if (!anchor) continue;
+        anchorCache.set(li, anchor);
+      }
+
+      var node = document.createElement('div');
+      node.className = 'o46-rrp-line';
+      node.textContent = money(rrp * qtyRow, cur);
+      anchor.insertAdjacentElement('afterend', node);
+    }
+  }
+  // =================================================
+
+  function performUpdate(){
+    if (!PAGE_VISIBLE && !DIRTY) return;
+    var el = $(TARGET);
+    if (!el) return;
+    var cur = el.getAttribute('data-cur') || 'EUR';
+
+    if (WAIT_FOR_FOREIGN_SESSION && !sawForeignSession && !LAST_ITEMS && !DIRTY) return;
+
+    var p = shouldUseCache() ? Promise.resolve(LAST_ITEMS)
+                             : (LAST_ITEMS ? Promise.resolve(LAST_ITEMS) : fetchItemsOnce());
+
+    return p.then(function(items){
+      if (!Array.isArray(items)) items = [];
+
+      var total  = 0;
+      var totalG = 0; // Gesamtgewicht (g)
+
+      for (var it of items){
+        var qty = n(it.quantity || 1);
+
+        var save = rrpValue(it) - unitPrice(it);
+        if (save > 0) total += save * qty;
+
+        var wg = weightG(it);
+        if (wg > 0) totalG += wg * qty;
+      }
+
+      var txt = money(total, cur);
+
+      var job = function(){
+        if (el.textContent !== txt) el.textContent = txt;
+
+        // ✅ Gesamtgewicht nur in vorhandenes Markup schreiben (ShopBuilder)
+        updateTotalWeight(totalG);
+
+        runIdle(function(){ renderPerItemExtras(items, cur); }, 300);
+      };
+      if (typeof requestAnimationFrame==='function') requestAnimationFrame(job); else job();
+    });
+  }
+
+  function schedule(){
+    clearTimeout(debTimer);
+    debTimer = setTimeout(performUpdate, DEBOUNCE);
+    clearTimeout(maxTimer);
+    maxTimer = setTimeout(performUpdate, MAX_WAIT);
+  }
+
+  window.fetch = function(input, init){
+    var p = origFetch(input, init);
+    try{
+      var u = (input && input.url) ? input.url : String(input||'');
+      if (isSessionUrl(u)) {
+        if (!isOwn(u)) {
+          sawForeignSession = true;
+          WAIT_FOR_FOREIGN_SESSION = false;
+          DIRTY = true;
+          p.then(r => r.clone().json()).then(j => {
+            if (j) { setItems(itemsFromSessionPayload(j)); emitBasketUpdated(LAST_ITEMS, j); }
+            schedule();
+          });
+        }
+      } else if (isBasketItemsUrl(u)) {
+        DIRTY = true;
+        fetchItemsOnce().then(() => schedule());
+      }
+    }catch(_){}
+    return p;
+  };
+
+  XMLHttpRequest.prototype.open = function(method, url){
+    this.addEventListener('loadend', function(){
+      try{
+        var u = String(url||'');
+        if (isSessionUrl(u)) {
+          if (!isOwn(u)) {
+            sawForeignSession = true;
+            WAIT_FOR_FOREIGN_SESSION = false;
+            DIRTY = true;
+            try { var j = JSON.parse(this.responseText || 'null'); setItems(itemsFromSessionPayload(j)); emitBasketUpdated(LAST_ITEMS, j); } catch(_){}
+            schedule();
+          }
+        } else if (isBasketItemsUrl(u)) {
+          DIRTY = true;
+          fetchItemsOnce().then(() => schedule());
+        }
+      }catch(_){}
+    });
+    return origOpen.apply(this, arguments);
+  };
+
+  function primeWhenListReady(){
+    if (document.querySelector(LIST_ITEM_SEL)) return;
+    var mo = new MutationObserver(muts => {
+      for (var m of muts){
+        for (var node of m.addedNodes){
+          if (!(node instanceof Element)) continue;
+          if ((node.matches && node.matches(LIST_ITEM_SEL)) || (node.querySelector && node.querySelector(LIST_ITEM_SEL))) {
+            try { mo.disconnect(); } catch(_){}
+            return;
+          }
+        }
+      }
+    });
+    mo.observe(document.body,{childList:true,subtree:true});
+  }
+
+  primeWhenListReady();
+  window.o46UpdateNow = function(){ DIRTY = true; performUpdate(); };
+})();
+</script>

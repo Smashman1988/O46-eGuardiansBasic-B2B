@@ -1,0 +1,29 @@
+
+{% set itemAttributes  = services.item.getAttributeNameMap(sItemId) %}
+{% set attrNameMapWithImages = getImageAttributeList(sItemId, itemAttributes.attributes) %}
+
+{% set hasAttrImages = false %}
+{% for itemAttributeKey,itemAttribute in attrNameMapWithImages if hasAttrImages==false %}
+    {% for itemAttributeValueKey,itemAttributeValue in itemAttribute.values %}
+        {% if itemAttribute.images[itemAttributeValueKey] is not empty %}
+            {% set hasAttrImages = true %}  
+        {% endif %}      
+    {% endfor %} 
+{% endfor %}
+{% if hasAttrImages %}
+<div class="variation-cat-img">
+{% set i = 0 %}
+{% for itemAttributeKey,itemAttribute in attrNameMapWithImages %}
+    {% for itemAttributeValueKey,itemAttributeValue in itemAttribute.values %}                  
+        {% if itemAttribute.images[itemAttributeValueKey] is not empty %}
+            <div data-eg-variation-id="{{ variationKey }}" data-eg-variation-img="{{ itemAttribute.images[itemAttributeValueKey].urlMiddle }}">
+                <img src="{{ itemAttribute.images[itemAttributeValueKey].urlSecondPreview }}"  />
+            </div>
+        {% endif %}      
+    {% endfor %}
+      
+{% endfor %}
+</div>
+{% else %}
+null
+{% endif %}

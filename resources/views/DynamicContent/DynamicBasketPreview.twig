@@ -1,0 +1,121 @@
+{% set basketItems = services.basket.getBasketItemsForTemplate() %}
+{% set basketData = services.basket.getBasketForTemplate() %}
+{% set lieferland = basketData.shippingCountryId %}
+{% set isCheckout = false %}
+{% if services.template.getCurrentTemplate() == "tpl.login" or services.template.getCurrentTemplate() == "tpl.checkout" %}
+    {% set isCheckout = true %}
+{% endif %}
+{% set currencycheck = services.checkout.getCurrencyData.name %}
+{% if basketItems | length > 0 %}
+    <div class="basket-prev-wrap">
+        <div class="basket-preview-itemlist" data-eg-event="click" data-eg-target="[data-eg-deletefrombasket]">
+            {% set rabattSum = 0 %}
+            {% for basketItem in basketItems %}
+                <div class="basket-prev-item">
+                    {% set basketItemData = basketItem.variation.data %}
+                    <div class="row">
+                        <div class="col-2 nopadding padding-right-5">
+                            {% if basketItemData.images.variation[0].urlPreview is not empty %}
+                                <img src="{{ basketItemData.images.variation[0].urlSecondPreview }}" />
+                            {% else %}
+                                <img src="{{ basketItemData.images.all[0].urlSecondPreview }}" />
+                            {% endif %}
+                        </div>
+                        <div class="col-9 nopadding">
+                            <div class="basketpreviewtitle"><strong>{{ basketItem.quantity }} x</strong><a href="https://b2b.outlet46.de/{{ basketItemData.texts.urlPath }}/a-{{ basketItemData.variation.itemId}}/" target="_blank" rel="noopener noreferrer"> <b> {{ basketItemData.texts.name1 }}</b></a></div>
+                            {% if basketItemData.attributes is not empty %}
+                                {% for basketItemAttribute in basketItemData.attributes %}
+                                    <small><b>{{ basketItemAttribute.attribute.names.name }}: {{ basketItemAttribute.value.names.name }}</b></small>
+                                {% endfor %}
+                            {% endif %}
+                            <div class="dsp-flex-f-14">
+                            <div class="col-6 nopadding cat-rrp-price">
+                                <strong>{{ trans("GuardiansBasic::Template.statt") }} <span class="line-trough">{{ basketItem.variation.data.prices.rrp.unitPrice.formatted }}*</span></strong>
+                            </div>
+                            <div class="col-6 nopadding outlet-green font-18 font-w600">                                 
+                                   <strong>{{ basketItem.price|number_format(2, ',','.') }} {{ services.checkout.getCurrencyData()['symbol'] }}</strong>
+                            </div>  
+                            </div>                                                                  
+                        </div>
+                        <div class="col-1 nopadding padding-right-5">
+                            <button data-eg-deletefrombasket  data-eg-handler="deleteItemFromBasket" data-eg-basketid="{{ basketItem.id }}" class="basket-prev-btndelete">
+                                <span class="icon-cross"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% set stattsum = (rabattSum + basketData.itemSum ) %}
+        <div class="basket-prev-bottom">
+            <div class="basket-prev-results">
+                <div class="row bold m-t-1">
+                    <div class="col-6 outlet-green font-18 mt-auto mb-auto">{{ trans("GuardiansBasic::Template.yourprice") }}</div>
+                    <div class="col-6 text-right outlet-green font-18">
+                        {{ basketData.itemSum|number_format(2, ',','.') }} {{ services.checkout.getCurrencyData()['symbol'] }}
+                    </div>
+                </div>
+                  
+                <div class="row bold">
+                    <div class="col-9 outlet-green font-18 font-w600"><a href="{{ services.category.getURLById(5548) }}" target="_blank"><u>{{ trans("GuardiansBasic::Template.shipping") }}</u></a></div>
+                    <div class="col-3 text-right outlet-green font-18 font-w600  mt-auto mb-auto">
+                        {{ basketData.shippingAmount }} {{ services.checkout.getCurrencyData()['symbol'] }}
+                    </div>
+                </div>
+                    {% if currencycheck=="EUR" %}
+                    {% if lieferland==1 %}
+                <div class="row m-t-1 frei-haus full-height">
+                        <div class="frei-haus-b">
+                        </div>
+                     {% if basketData.itemSum<29 and lieferland==1  %}
+                        <div class="vsk-frei vsku29info">
+                            {{ trans("GuardiansBasic::Template.Orderforanadditional") }} {{ 29 - basketData.itemSum }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasic::Template.andwellgiveyou699") }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasic::Template.shippincostsThroughoutGermany") }}
+                        </div>
+                    {% else %}
+                        <div class="vsk-frei vsku29info">
+                            {{ trans("GuardiansBasic::Template.29eurocleared699") }}
+                        </div>
+                    {% endif %}
+                    </div>
+                     {% endif %}
+                        {% if lieferland!=1 and basketData.itemSum<29 %}
+                      <div class="row m-t-1 frei-haus full-height">
+                        <div class="mt-auto mb-auto f-size30">%
+                        </div>
+                       <div class="vsk-frei vsku29info">
+                           {{ trans("GuardiansBasic::Template.Orderforanadditional") }} {{ 29 - basketData.itemSum  }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasic::Template.andwellgiveyou10") }}{{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasic::Template.oftheshippingcostsoutsideofGermany") }}
+                        </div>
+                        </div>
+                        {% endif %}
+                       {% if lieferland!=1 and basketData.itemSum>29 %}
+                      <div class="row m-t-1 frei-haus full-height">
+                        <div class="mt-auto mb-auto f-size30">%
+                        </div>
+                       <div class="vsk-frei vsku29info">
+                           {{ trans("GuardiansBasic::Template.29eurocleared10") }}
+                        </div>
+                        </div>
+                      {% endif %}
+                      {% endif %}
+            </div>
+            
+            <div class="rows basket-prev-button-forward">
+                <div class="col-12">
+                    <a href="{{ services.category.getURLById(5484) }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" class="btn btn-primary btn-big">{{ trans("Ceres::Template.singleItemCheckout") }}</a>
+                </div>
+                <div class="col-12">
+                    <a href="{{ services.category.getURLById(5482) }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" class="btn btn-secondary btn-big">{{ trans("Ceres::Template.singleItemBasket") }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="basket-prev-notitems text-center hidden mt-4">
+        <div><span class="icon-online-shopping-cart"></span></div>
+        {{ trans("GuardiansBasic::Template.basketempty") }}
+    </div>
+{% else %}
+    <div class="basket-prev-notitems text-center mt-4">
+        <div><span class="icon-online-shopping-cart"></span></div>
+         {{ trans("GuardiansBasic::Template.basketempty") }}
+    </div>
+{% endif %}

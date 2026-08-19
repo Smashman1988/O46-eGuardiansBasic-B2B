@@ -1,0 +1,63 @@
+{% set currencycheck = services.checkout.getCurrencyData.name %}
+<div class="categoriegrid pt-0 page-content container-max">
+    <div class="row">
+        <div class="col-12">
+                        <h1 class="center tcenter">{{ trans("GuardiansBasic::Template.brandstitle") }}</h1>
+            <br>
+                        <p class="tcenter"><a  href="#A" class="brands-box" rel="" target="" type="default">A</a><a  href="#B" rel="" class="brands-box" target="" type="default">B</a><a  href="#C" rel="" class="brands-box" target="" type="default">C</a><a  href="#D" rel="" class="brands-box" target="" type="default">D</a><a  href="#E" rel="" class="brands-box" target="" type="default">E</a><a  href="#F" rel="" class="brands-box" target="" type="default">F</a><a  href="#G" rel="" class="brands-box" target="" type="default">G</a><a  href="#H" rel="" class="brands-box" target="" type="default">H</a><a  href="#I" rel="" class="brands-box" target="" type="default">I</a><a  href="#J" rel="" class="brands-box" target="" type="default">J</a><a  href="#K" rel="" class="brands-box" target="" type="default">K</a><a  href="#L" rel="" class="brands-box" target="" type="default">L</a><a  href="#M" rel="" class="brands-box" target="" type="default">M</a><a  href="#N" rel="" class="brands-box" target="" type="default">N</a><a  href="#O" rel="" class="brands-box" target="" type="default">O</a><a  href="#P" rel="" class="brands-box" target="" type="default">P</a><a  href="#Q" rel="" class="brands-box" target="" type="default">Q</a><a  href="#R" rel="" class="brands-box" target="" type="default">R</a><a  href="#S" rel="" class="brands-box" target="" type="default">S</a><a  href="#T" rel="" class="brands-box" target="" type="default">T</a><a  href="#U" rel="" class="brands-box" target="" type="default">U</a><a  href="#V" rel="" class="brands-box" target="" type="default">V</a><a  href="#W" rel="" class="brands-box" target="" type="default">W</a><a  href="#X" rel="" class="brands-box" target="" type="default">X</a><a  href="#Y" rel="" class="brands-box" target="" type="default">Y</a><a  href="#Z" rel="" class="brands-box" target="" type="default">Z</a><a  href="#end" rel="" class="brands-box" target="" type="default">0 - 9</a></p>
+            <div class="col-12"><p class="text-center"><a href="{{ services.category.getURLById(5618) }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}">- {{ trans("GuardiansBasic::Template.showall") }} -</a></p></div>
+                        <div class="widget widget-step-by-step-navigation widget-none brandTiles">
+                <div class="widget-inner">
+                    <div class="row">
+                            {% import _self as navbar %}
+                {% set counter = 0 %}
+                {% set megaMenuLevels = megaMenuLevels | default(1) %}
+                {% set firstSign = "" %}
+                {% for category in categories %}
+                    {% set rootCategoryIds = [60] %}
+                    {% if category.details | length > 0 and category.id in rootCategoryIds %}
+
+                        {% if urls.includeLanguage %}
+                            {% set currentScopeUrl = "/" ~ category.details[0].lang ~  "/" ~ category.details[0].nameUrl %}
+                        {% else %}
+                            {% set currentScopeUrl = "/" ~ category.details[0].nameUrl %}
+                        {% endif %}
+                        {% set translatedChildren = 0 %}
+                        {% for children in category.children if children.details[0] %}
+                            {% set translatedChildren = translatedChildren + 1 %}
+                        {% endfor %}
+
+                        {% set counter = counter + 1 %}
+                        {% if megaMenuLevels == 1 %}
+                            {% for child in category.children %}
+                                 {% if firstSign != child.details[0].name|first|upper %}
+                                    {% set firstSign = child.details[0].name|first|upper %}
+                                    <div class="col-12"><hr><p class="firstletter"><a name="{{ firstSign  }}">{{ firstSign }}</a></p><hr></div>
+                                {% endif %}
+                                {% if child.details | length > 0 %}
+            <div class="mb-3 col-12 col-sm-6 col-lg-4 col-xl-3">
+                <a href="{{ currentScopeUrl }}/{{ child.details[0].nameUrl }}{{ urls.trailingSlashSuffix }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" title="{{ child.details[0].metaTitle }}" class="d-flex bg-light border rounded">
+                    <picture class="xy-150 rounded">
+                        {% if child.details[0].image2Path is not empty %}
+                            <img src="" alt="{{ child.details[0].name }}" title="{{ child.details[0].name }}" data-src="/documents/{{ child.details[0].image2Path }}" class="lozad position-relative rounded">
+                             <noscript>
+                            <img src="/documents/{{ child.details[0].image2Path }}" alt="{{ child.details[0].name }}" title="{{ child.details[0].name }}">
+                             </noscript></picture> 
+                        {% else %}
+                         <img src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/no-logo-platzhalter.png" alt="{{ child.details[0].name }}" class="position-relative rounded"></picture> 
+                         {% endif %}
+                        <span class="align-self-center flex-grow-1 text-center">{{ child.details[0].name }} ({{ child.itemCount[0].count }})</span></a>
+            </div>
+                                                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                    {% endif %}
+                {% endfor %}
+ <p class="firstletter"><a name="end"></a></p>
+        </div>
+    </div>
+</div> 
+                </div> 
+                </div> 
+                </div> 

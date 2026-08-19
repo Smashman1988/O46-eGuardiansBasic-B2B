@@ -1,0 +1,86 @@
+{# Optimierte Feedback-Sektion mit Macro-Nutzung #}
+
+{% import "GuardiansBasic::Category.Macros.render-rating" as Rating %}
+
+
+{# Nur ein API-Aufruf für Feedbacks #}
+{% set itemFeedbacks = getFeedbackItemList(itemId, 1, 20) %}
+{% set ratingsAverage = getListFeedbackAverages(itemId)  %}
+
+{# Fallback-Werte #}
+{% set ratingsCount = [0, 0, 0, 0, 0] %}
+{% set ratingsPercent = [0, 0, 0, 0, 0] %}
+
+{% if ratingsAverage is not null and ratingsAverage.ratingsCountTotal > 0 %}
+    {% set ratingsCount = [
+        ratingsAverage.ratingsCountOf1,
+        ratingsAverage.ratingsCountOf2,
+        ratingsAverage.ratingsCountOf3,
+        ratingsAverage.ratingsCountOf4,
+        ratingsAverage.ratingsCountOf5
+    ] %}
+    {% set ratingsPercent = [
+        (ratingsCount[0] / ratingsAverage.ratingsCountTotal * 100),
+        (ratingsCount[1] / ratingsAverage.ratingsCountTotal * 100),
+        (ratingsCount[2] / ratingsAverage.ratingsCountTotal * 100),
+        (ratingsCount[3] / ratingsAverage.ratingsCountTotal * 100),
+        (ratingsCount[4] / ratingsAverage.ratingsCountTotal * 100)
+    ] %}
+{% endif %}
+
+<section class="feedback-container">
+    <div class="container-rating">
+        <div class="row">
+            <div class="col-12">
+                <div class="title-rating-main mb-4 d-flex align-items-center flex-wrap">
+                    <div class="d-inline-block hhdh" id="quickrating">
+                        {{ trans("GuardiansBasic::Template.ratingtitle") }}
+                    </div>
+                    {{ Rating.renderRating(ratingsAverage.averageValue, 5) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="row {% if longDescription %}openable-feedback{% endif %}">
+            <div class="{% if longDescription %}col-12 col-md-6{% else %}col-12 col-lg-6 col-xlg-4{% endif %}">
+                <div class="feedback-container">
+                    {% if ratingsAverage.ratingsCountTotal == 0 %}
+                        <p class="mt-0">{{ trans("GuardiansBasic::Template.norating") }}</p>
+                    {% endif %}
+                    <div class="feedback-bars">
+                        {% for i in 5..1 %}
+                            <div class="feedback-bar-wrap">
+                                <p class="feedback-bar-text-before">{{ i }} <i class="icon-star"></i></p>
+                                <div class="feedback-bar">
+                                    <div class="feedback-bar-fill" style="width: {{ ratingsPercent[i - 1]|number_format(1, '.', '') }}%;"></div>
+                                </div>
+                                <p class="feedback-bar-text-after">&nbsp;{{ ratingsCount[i - 1] }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {% if longDescription %}
+            <div class="row">
+                <div class="col-12">
+                    <button data-eg-param="html, openfeedback-on" data-eg-event="click" data-eg-handler="tgClass" class="btn btn-primary btn-openfeedback">
+                        {{ trans("GuardiansBasic::Template.openreviews") }}
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if itemFeedbacks is not empty and itemFeedbacks.totalsCount > 0 %}
+            <div class="row">
+                <div class="col-xs-12 px-3">
+                    <div class="feedback-list mt-3">
+                        {% include "GuardiansBasic::DynamicContent.DynamicFeedbacks" with { 'itemId': itemId, 'feedbackItems': itemFeedbacks } %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>

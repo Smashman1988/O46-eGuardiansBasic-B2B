@@ -1,0 +1,37 @@
+{# GuardiansBasic::Partials.StructuredData.Product.twig #}
+{# JSON-LD Structured Data for Product Schema #}
+
+{% set itemName = itemData.texts.name1 %}
+{% set description = itemData.texts.metaDescription is not empty ? itemData.texts.metaDescription : itemData.texts.name1 %}
+{% set imageUrl = itemData.images.all[0].urlMiddle %}
+{% set price = itemData.prices.default.unitPrice.value %}
+{% set rrp = itemData.prices.rrp.unitPrice.value %}
+{% set currency = itemData.prices.default.unitPrice.currency %}
+{% set inStock = itemData.availability.id in [1, 2, 3] ? 'InStock' : 'OutOfStock' %}
+{% set brand = itemData.item.manufacturer.name %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": "{{ itemName|e('html_attr') }}",
+  "image": "{{ imageUrl }}",
+  "description": "{{ description|e('html_attr') }}",
+  "sku": "{{ itemData.variation.number }}",
+  "brand": {
+    "@type": "Brand",
+    "name": "{{ brand }}"
+  },
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "{{ currency }}",
+    "price": "{{ price }}",
+    "availability": "https://schema.org/{{ inStock }}",
+    "itemCondition": "https://schema.org/NewCondition",
+    "url": "{{ itemData | itemURL }}"
+    {% if rrp and rrp > price %},
+    "priceValidUntil": "{{ "now"|date_modify("+30 days")|date("Y-m-d") }}"
+    {% endif %}
+  }
+}
+</script>

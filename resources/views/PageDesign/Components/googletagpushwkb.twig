@@ -1,0 +1,17 @@
+{% set basketItems = services.basket.getBasketItemsForTemplate() %}
+{% set itemListComma = "" %}
+        {% for basketItems in services.basket.getBasketItemsForTemplate() %}
+            {% set itemListComma = itemListComma~basketItems.variationId %}
+            {% set itemListPipe = itemListPipe~basketItems.variationId %}
+            {% if not loop.last %}
+                {% set itemListComma = itemListComma~"," %}
+                {% set itemListPipe = itemListPipe~"|" %}
+            {% endif %}
+        {% endfor %}    
+<script>
+window.dataLayer = window.dataLayer || [];
+
+dataLayer.push({
+ 'wkbidlistcomma': '{{ itemListComma }}',
+});
+</script>

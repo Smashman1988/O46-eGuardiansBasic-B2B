@@ -1,0 +1,33 @@
+<!-- ===== B2B / B2C CHOICE MODAL ===== -->
+<div id="shop-mode-modal" class="smm-hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="smm-title">
+  <div class="smm-backdrop"></div>
+  <div class="smm-wrap">
+    <div class="smm-card" role="document">
+      <header class="smm-header">
+        <h2 id="smm-title">{{ trans("GuardiansBasic::Template.b2bb2cabfrage1") }}</h2>
+        <p class="smm-sub">{{ trans("GuardiansBasic::Template.b2bb2cabfrage2") }}</p>
+      </header>
+
+      <div class="smm-grid">
+        <!-- B2B -->
+        <button id="smm-b2b" class="smm-option smm-green" aria-label="Ich habe einen Gewerbeschein – im B2B-Shop bleiben">
+          <span class="smm-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M10 4h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v4h-7v1a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H3V9a2 2 0 0 1 2-2h3V6a2 2 0 0 1 2-2zm4 3V6a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v1h4zM3 15h7v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1h7v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2z"/></svg>
+          </span>
+          <span class="smm-title">B2B</span>
+          <span class="smm-desc">{{ trans("GuardiansBasic::Template.b2bb2cabfrage3") }}</span>
+        </button>
+
+        <!-- B2C -->
+        <button id="smm-b2c" class="smm-option smm-white" aria-label="Ich bin Privatperson – zum B2C-Shop wechseln">
+          <span class="smm-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M6 7V6a6 6 0 1 1 12 0v1h2a1 1 0 0 1 1 1v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1h2zm2 0h8V6a4 4 0 0 0-8 0v1z"/></svg>
+          </span>
+          <span class="smm-title">B2C</span>
+          <span class="smm-desc">{{ trans("GuardiansBasic::Template.b2bb2cabfrage4") }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div> 
+

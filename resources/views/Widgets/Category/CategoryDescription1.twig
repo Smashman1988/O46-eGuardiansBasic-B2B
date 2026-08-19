@@ -1,0 +1,8 @@
+{% set cat = services.category.get(categoryId, lang) %}
+{% if cat.details[0].description is not empty %}
+  <div class="category-description">
+    {{ cat.details[0].description | raw }}
+  </div>
+{% else %}
+  <p>Keine Beschreibung vorhanden.</p>
+{% endif %}

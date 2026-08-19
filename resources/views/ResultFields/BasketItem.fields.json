@@ -1,0 +1,17 @@
+[
+    "itemId",
+    "texts.name1*",
+    "texts.lang",
+    "variation.id",
+    "variation.itemId",
+    "variation.availability.names.name",
+	"variation.weightG",
+    "item.id",
+    "images.all.urlPreview",
+    "images.all.position",
+    "images.all.path",
+    "filter.isSalable",
+    "attributes.attribute.names.name",
+    "attributes.value.names.name",
+	"unit.unitOfMeasurement"
+]

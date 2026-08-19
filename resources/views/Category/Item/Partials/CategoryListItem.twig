@@ -1,0 +1,81 @@
+{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
+{% import "Ceres::PageDesign.Macros.ItemName" as ItemName %}
+
+{# set itemAttributes  = services.item.getAttributeNameMap(item.data.item.id)#}
+{% set itemUrl =  item.data | itemURL %}
+{% set currencycheck = currencycheck ?? 'EUR' %}
+{% set img = (item.data.images.all[0].urlPreview ?? '') %}
+{% set itemName = item.data | itemName %}
+
+    <div class="cat-item has-rrp has-variations" data-eg-item="{{ item.data.variation.itemId }}">
+        <div class="article-header text-center col-12 cat-article-header-info">
+            <span class="col-7">
+                {% if item.data.prices.default.unitPrice.value and item.data.prices.rrp.unitPrice.value is not empty %}
+            {% set percent = (1 - item.data.prices.default.unitPrice.value / item.data.prices.rrp.unitPrice.value ) * -100 %}
+            {% set percent = percent | number_format(dezimalcount, ',', '.') %}
+                {% endif %}
+                {% set storeSpecialClass = 'i-action-sale' %}
+                {% set storeSpecialTxt = '' %}
+            {% if storeSpecialClass is not empty %} 
+             <span class="item-action {{ storeSpecialClass }}">
+                {{ storeSpecialTxt }}{{ percent }}%
+            </span>  
+            {% endif %}
+            {% set isSustainable = (item.data.tags is iterable ? item.data.tags | filter(tag => tag.id == 284) : []) | length > 0 %}
+
+
+            {% if isSustainable %}
+                <span class="item-action i-action-nachhaltig-cat">{{ translations.tSustainability }}</span>
+            {% endif %}
+            {% import "GuardiansBasic::Category.Macros.render-rating" as Rating %}
+
+            {% set feedbackRatingDecimal = item.data.item.feedbackDecimal ?? 0 %}
+            {% set feedbackCount = item.data.item.feedbackCount ?? 0 %}
+
+            {% if feedbackCount > 0 %}
+                <span class="item-action2">
+                {{ Rating.renderRating(feedbackRatingDecimal, 5) }}
+                </span>
+            {% else %}
+                <span class="item-action2 invisible">&nbsp;</span>
+            {% endif %}
+            </span>
+            <span class="col-5">
+            {% set rawLogo = item.data.item.manufacturer.logo %}
+            {% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+            {% if vendorlogo is not empty %}
+                <img src="" data-src="{{ vendorlogo }}" class="lozad cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">
+            {% elseif rawLogo is not empty %}
+                <img src="" data-src="{{ rawLogo }}" class="lozad cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">
+            {% endif %}
+            </span>
+        </div>
+            <div class="article-body cat-item-image text-center {% if isShoeCategory %}cat-item-shoe{% endif %}">
+            <a class="product-list article a" href="{{ itemUrl }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" title="{{ itemName }}">   
+                <picture>
+                    <source srcset="" type="image/avif" data-srcset="{{ img }}.avif" class="lozad">
+                    <img src="" decoding="async" data-src="{{ img }}" width="225px" height="300px" class="lozad" alt="{{ itemName }}" title="{{ itemName }}">
+                </picture>
+            </a>
+        </div>
+        <div class="article-footer cat-item-data ptpb">
+            <hr class="m-0">
+            <div class="tcenter"><span class="outlet-green sizebox">{{ translations.tAvailSizes }}</span>
+                <div class="cat-attr-sizes">                   
+                    {% include "GuardiansBasic::Category.Item.Partials.CategoryAttributes" with { 'itemId': item.data.variation.itemId, 'itemFlag': item.data.item.flagTwo, 'transLabels': transLabels } %}
+                </div>
+            </div>       
+            <hr class="m-0">
+            <a href="{{ itemUrl }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" class="product-list article a thumb-title cat-item-name mb-0" title="{{ itemName }}">
+                {{ itemName }}
+            </a>
+                <div class="col-12 paddinlr">
+                        <span class="bold font-12">{{ translations.tStatt }} <span class="cat-rrp-price">{{ item.data.prices.rrp.unitPrice.formatted }}*</span></span>
+                        <span class="bold outlet-green font-18">
+                            {{ item.data.prices.default.unitPrice.formatted }}
+                        </span>                                                                   
+                </div>
+               <button class="btn-primary linkabso idwk-80" data-href="https://b2b.outlet46.de{{ itemUrl }}?quickViewItem=true"><span class="icon-online-shopping-cart mr-2"></span>{{ translations.tInBasket }}</button> 
+        </div>	
+    </div>
+    

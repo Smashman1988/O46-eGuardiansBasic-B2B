@@ -1,0 +1,201 @@
+{% set details = null %}
+{% if category is defined and category is not null %}
+    {% set details = category.details[0] %}
+{% endif %}
+
+{# Grundwerte initialisieren #}
+{% set robots = '' %}
+{% set description = '' %}
+{% set keywords = '' %}
+{% set image = '' %}
+{% set title = '' %}
+
+{# Sprachabhängige Seitennummerierung #}
+{% set currentPage = request.get('page') | default(1) %}
+{% set pageMax = pageMax | default(1) %}
+{% set isEmptyPage = pageMax > 1 and currentPage > pageMax %}
+{% set lang = locale | split('_') | first %}
+{% set pageText = {
+    'de': 'Seite',
+    'en': 'Page',
+    'fr': 'Page',
+    'it': 'Pagina',
+    'es': 'Página'
+}[lang] | default('Page') %}
+
+{# ROBOTS setzen #}
+{% if block('robots') is defined %}
+    {% set robotsRaw = block('robots') | trim | upper %}
+    {% if robotsRaw == 'ALL' %}
+        {% set robots = 'INDEX,FOLLOW' %}
+    {% else %}
+        {% set robots = block('robots') | trim %}
+    {% endif %}
+{% elseif details is not null %}
+    {% set metaRaw = details.metaRobots | trim | upper %}
+    {% if metaRaw == 'ALL' %}
+        {% set robots = 'INDEX,FOLLOW' %}
+    {% else %}
+        {% set robots = details.metaRobots | replace({'_': ', '}) %}
+    {% endif %}
+{% elseif '&' in queryString() %}
+    {% set robots = 'NOINDEX,FOLLOW' %}
+{% elseif '?' in queryString() %}
+    {% set robots = 'INDEX,FOLLOW' %}
+{% else %}
+    {% set robots = 'INDEX,FOLLOW' %}
+{% endif %}
+
+{# Beschreibung und Keywords #}
+{% if block('description') is defined %}
+    {% set description = block('description') %}
+{% elseif details is not null %}
+    {% set description = details.metaDescription %}
+{% endif %}
+
+{% if block('keywords') is defined %}
+    {% set keywords = block('keywords') %}
+{% elseif details is not null %}
+    {% set keywords = details.metaKeywords %}
+{% endif %}
+
+{# Bild setzen #}
+{% if block('image') is defined %}
+    {% set image = block('image') | default(ceresConfig.header.companyLogo) %}
+{% elseif details is not null %}
+    {% set image = details.imagePath | default(ceresConfig.header.companyLogo) %}
+    {% if not (image starts with 'https://' or image starts with 'http://' or image starts with 'images/')  %}
+        {% set image = webstoreConfig.domainSsl | trim('/') ~ '/documents/' ~ image %}
+    {% endif %}
+{% endif %}
+
+{# Titel setzen #}
+{% if block('title') is defined %}
+    {% set title = block('title') %}
+{% elseif details is not null %}
+    {% set title = details.metaTitle | default(details.name) %}
+{% endif %}
+{% set title = title | trim %}
+{% set type  = block('type') | default('article') %}
+{% set url   = block('url') | default(services.url.getCanonicalURL()) | default(webstoreConfig.domainSsl) %}
+
+{# Bildpfad korrigieren #}
+{% if not (image starts with 'https://' or image starts with 'layout/' or image starts with '/documents/') %}
+    {% set image = plugin_path('Ceres') ~ '/' ~ image %}
+{% endif %}
+
+{# === Parameter-Pools === #}
+{% set hardNoindexParams = ['query=', 'currency=', 'quickviewitem=', 'facets=', 'sorting='] %}
+{% set softNoindexParams = [
+    'referrerid=', 'gclid=', 'utm_nooverride=', 'glid=',
+    'browsestartlimit=', 'multishop_id=', 'aoff=',
+    'utm_source=', 'utm_medium=', 'utm_campaign=', 'utm_content=', 'utm_term=', 'utm_id=',
+    'gclsrc=', 'fbclid=', 'at_gd=', 'idealoiD=', 'vmtrack_id=', 'vmst_id=',
+    'inf=', 'mdrv=', 'gad=', 'partner=', 'campaign=', 'srsltd=',
+    'itemsorting=', 'setcurrentcategoryview=', 'wgu=', 'em_src=', 'gad_source=',
+    'wgexpiry=', 'iclid=', 'qscroll=', 'epi=', '_gl=', 'plentyid=', 'bid=', 'adcref=', 'wbraid=', 'gbraid=', 'uselayout='
+] %}
+
+{% set isHardNoindex = false %}
+{% set queryLower = queryString() | lower %}
+{% set urlLower = url | lower %}
+
+{# Prüfe auf harte Ausschlüsse #}
+{% for param in hardNoindexParams %}
+    {% if param in queryLower or param in urlLower %}
+        {% set isHardNoindex = true %}
+    {% endif %}
+{% endfor %}
+
+{# === neue Bedingung: keine Artikel mehr auf der Seite === #}
+{% set isEmptyPage = pageMax > 1 and currentPage > pageMax %}
+
+
+
+{# ---------------- META ROBOTS FINAL ---------------- #}
+{% if isHardNoindex or isEmptyPage %}
+    <meta name="robots" content="NOINDEX,FOLLOW">
+{% else %}
+    {# page > 1 = paginierte Seite → bleibt indexierbar #}
+    {% if category is not null and currentPage is defined and (currentPage > 1 or '-' in currentPage) %}
+        <meta name="robots" content="INDEX,FOLLOW">
+    {% elseif forceNoIndex is defined and forceNoIndex %}
+        <meta name="robots" content="NOINDEX">
+    {% elseif block('robots') is defined %}
+        {% set robotsRaw = block('robots') | trim | upper %}
+        {% if robotsRaw == 'ALL' %}
+            <meta name="robots" content="INDEX,FOLLOW">
+        {% else %}
+            <meta name="robots" content="{{ robotsRaw }}">
+        {% endif %}
+    {% elseif details is not null %}
+        {% set metaRaw = details.metaRobots | trim | upper %}
+        {% if metaRaw == 'ALL' %}
+            <meta name="robots" content="INDEX,FOLLOW">
+        {% else %}
+            <meta name="robots" content="{{ details.metaRobots | replace({'_': ', '}) }}">
+        {% endif %}
+    {% else %}
+        <meta name="robots" content="INDEX,FOLLOW">
+    {% endif %}
+{% endif %}
+
+
+
+
+{# Weitere Meta-Tags #}
+{% if description | trim is not empty %}
+    {% if currentPage > 1 %}
+        <meta name="description" content="{{ description | trim ~ ' – ' ~ pageText ~ ' ' ~ currentPage }}">
+    {% else %}
+        <meta name="description" content="{{ description | trim }}">
+    {% endif %}
+{% endif %}
+
+{% if keywords | trim is not empty %}
+    <meta name="keywords" content="{{ keywords | trim }}">
+{% endif %}
+{% if isQuickView %}
+{# Open Graph & Social Tags #}
+<meta property="og:title" content="{{ (title ~ (currentPage > 1 ? ' – ' ~ pageText ~ ' ' ~ currentPage : '')) | raw }}"/>
+<meta property="og:description" content="{{ (description ~ (currentPage > 1 ? ' – ' ~ pageText ~ ' ' ~ currentPage : '')) | trim }}"/>
+{% set ogType = 'website' %}
+{% if category is not null and category.id == 0 %}
+    {% set ogType = 'article' %}
+{% elseif category is defined and category.id > 0 %}
+    {% set ogType = 'website' %}
+{% elseif isSearchPage %}
+    {% set ogType = 'website' %}
+{% endif %}
+<meta property="og:type" content="{{ ogType }}"/>
+<meta property="og:site_name" content="{{ webstoreConfig.name }}"/>
+<meta property="og:locale" content="{{ locale | replace({'_': '-'}) }}"/>
+<meta property="og:url" content="{{ url | trim }}"/>
+<meta property="og:image" content="{{ image }}"/>
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ (title ~ (currentPage > 1 ? ' – ' ~ pageText ~ ' ' ~ currentPage : '')) | raw }}">
+<meta name="twitter:description" content="{{ (description ~ (currentPage > 1 ? ' – ' ~ pageText ~ ' ' ~ currentPage : '')) | trim }}">
+<meta name="twitter:image" content="{{ image }}">
+
+{# JSON-LD Schema.org #}
+<script type="application/ld+json">
+{% block schemaOrg %}
+{
+    "@context": "http://schema.org",
+    "@type": "WebSite",
+    "url": {{ url | json_encode | raw }},
+    "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ services.webstoreConfig.getWebstoreConfig().domainSsl ~ urls.search }}?query={search_term}",
+        "query-input": "required name=search_term"
+    }
+}
+{% endblock %}
+</script>
+{% endif %}
+{# TITLE Tag mit Seitennummerierung #}
+{% if currentPage > 1 %}
+    <title>{{ title ~ ' – ' ~ pageText ~ ' ' ~ currentPage | raw }}</title>
+{% else %}
+    <title>{{ title | raw }}</title>
+{% endif %}

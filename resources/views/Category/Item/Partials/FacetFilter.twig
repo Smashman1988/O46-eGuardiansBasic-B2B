@@ -1,0 +1,127 @@
+{% set canonicalURL = services.url.getCanonicalURL() %}
+<section data-eg-target=".facet-item-value-chk" data-eg-event="change" data-eg-facets data-eg-catid="{{ category.id }}" data-eg-searchstring="{{ request.get("query") }}" data-eg-defaultitemsperpage="{{ searchOptions.defaultItemsPerPage }}">
+    <div class="filter-container">
+        
+        <div class="wrap-filter-mobile">
+            <div class="row">
+                <div class="col-12">
+                    <div class="light-big-txt filter-head mt-lg-3 mt-xl-0">
+                        <span class="modal-title">Filter</span>
+                        <button class="basket-prev-close close d-lg-none" data-eg-handler="tgClass" data-eg-event="click" data-eg-param="html,filter-open" aria-label="Schließen">
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    </div>
+                </div> 
+            </div>
+            <div class="wrap-filter-mobile-scrollable">
+                <div class="row rowFilter">
+                    {% set activeFacets = request.get("facets")|split(',') %}
+                    {% set activeFacetList = {} %}
+                    {% for facet in facets %}
+                        <div class="col-12 colFilter">
+                            <div class="cat-facet eg-dropdown">
+                                <div class="cat-facet-name eg-dropdown-value">{{ facet.name }} <span class="icon-down-open-big"></span></div>
+                                <div class="eg-dropdown-content">
+                                    <ul class="list-no-style {% if facet.id==1 %} facet-color d-flex{% endif %} facetgroup-{{ facet.id }}">
+                                    {% if facet.id==8 %} 
+                                        <li> 
+                                            <div class="input-group m-b-1">
+                                                <div class="input-group-prepend">
+                                                  <div class="input-group-text">{{ currencyData[currencyFormat] }}</div>
+                                                </div>
+                                                <input type="number" class="form-control facet-input-price-min" min="1" placeholder="Min." {% if request.get("priceMin") is not empty %}value="{{ request.get("priceMin") }}"{% endif %}>
+                                            </div>
+                                            <div class="input-group m-b-1">
+                                                <div class="input-group-prepend">
+                                                  <div class="input-group-text">{{ currencyData[currencyFormat] }}</div>
+                                                </div>
+                                                <input type="number" class="form-control facet-input-price-max" placeholder="Max." {% if request.get("priceMax") is not empty %}value="{{ request.get("priceMax") }}"{% endif %}>
+                                            </div>
+                                            <button class="btn btn-secondary btn-small btn-block m-b-1 pricefilter" data-eg-event="click" data-eg-handler="facetFilter" aria-label="Filter anwenden">Anwenden</button>
+                                        </li>
+                                    {% else %}
+                                        {% for facetValue in facet.values %}
+                                            {% if facetValue.id in activeFacets %}
+                                                {%  
+                                                set activeFacetInfos = {
+                                                    facetId: facetValue.id,
+                                                    facetName: facetValue.name 
+                                                } 
+                                                %}
+                                                {% set activeFacetList = activeFacetList|merge([activeFacetInfos]) %}
+                                            {% endif %}
+                                            <li data-eg-facet-itemcount="{{ facetValue.count }}">  
+
+                                                <input id="facet-item-{{ facetValue.id }}"  type="checkbox" class="hidden-xs-up facet-item-value-chk" data-eg-handler="facetFilter" data-eg-facetvalueid="{{ facetValue.id }}" {% if facetValue.id in activeFacets %}checked{% endif %} />
+                                                <label for="facet-item-{{ facetValue.id }}" class="facet-item-value">
+                                                    {% if facet.id==1 %}
+                                                        <span>{{ facetValue.name }}</span>
+                                                    {% else %}
+                                                    <span class="chk-box">
+                                                        <svg viewBox="0,0,50,50">
+                                                            <path d="M5 30 L 20 45 L 45 5"></path>
+                                                        </svg>
+                                                    </span>
+                                                    {{ facetValue.name }}
+                                                    <span class="chk-count">{{ facetValue.count }}</span>
+                                                    {% endif %}    
+                                                </label>
+
+                                            </li>
+                                        {% endfor %}
+                                    {% endif %} 
+                                    </ul>
+                                {% if facet.id!=8 %} 
+                                <button class="btn btn-primary btn-small btn-block mt-2 btn-single-filter" data-eg-btnfilter aria-label="Filtern">
+                                    <span></span> Produkte anzeigen
+                                </button>
+                                {% endif %}
+                                </div>
+
+                            </div>
+                        </div>       
+                    {% endfor %}
+                </div>
+                <button class="btn btn-primary btn-big d-lg-none btnfilter-mobile" data-eg-btnfilter  aria-label="Produkte anzeigen">
+                    <span></span> Produkte anzeigen
+                </button>
+                
+            </div>
+        </div>
+                
+        {% if activeFacetList or request.get("priceMax") is not empty or request.get("priceMin") is not empty %}
+            <div class="row mt-3 mt-lg-0 mb-3">
+                <div class="col-12">
+                    <p class="category-title mb-3 d-none d-lg-block">Ausgewählte Filter</p>
+                    {% if request.get("priceMax") is not empty or request.get("priceMin") is not empty %}
+                        <label class="btn btn-secondary facet-remove-btn facet-remove-price" data-eg-handler="facetFilter" data-eg-event="click">
+                            <span class="facet-item-value facet-value-remove">
+                            {{ request.get("priceMin")~" "~currencyData[currencyFormat] }}&nbsp;-&nbsp;{{ request.get("priceMax")~" "~currencyData[currencyFormat] }}<span class="icon-cross"></span>
+                            </span>
+                        </label>
+                    {% endif %}
+                    {% for activeFacet in activeFacetList %}
+                        <label class="btn btn-secondary facet-remove-btn" for="facet-item-{{ activeFacet.facetId }}">
+                            <span class="facet-item-value facet-value-remove">
+                            {{ activeFacet.facetName }} <span class="icon-cross"></span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                    <a href="{{ canonicalURL ~ queryString({'facets':null,'priceMin':null,'priceMax':null}) }}" class="btn btn-secondary facet-remove-btn facet-remove-price facet-remove-all">
+                        <label class="facet-item-value facet-value-remove">
+                        Alle Filter zurücksetzen
+                        </label>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        {#<div class="row">
+            <div class="col-12 text-center">
+                <button class="btn btn-primary btn-big mt-3" data-eg-btnfilter aria-label="Produkte anzeigen">
+                    <span></span> Produkte anzeigen
+                </button>
+            </div>
+        </div>#}
+        
+    </div>
+</section>

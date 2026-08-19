@@ -1,0 +1,97 @@
+{% import "GuardiansBasic::Category.Macros.render-rating" as Rating %}
+
+{% set itemFeedbacks = feedbackItems %}
+
+<div class="row">
+    {% for feedbackEntrie in itemFeedbacks.entries %}
+        {% if feedbackEntrie.isVisible == "true" %}
+            <div class="col-12 col-md-6 col-lg-4 col-xl-4 mb-3">
+                <div class="feedback clearfix" data-eg-feedbackitem data-eg-feedbackvalue="{{ feedbackEntrie.feedbackRating.rating.ratingValue }}" data-eg-feedbackdate="{{ feedbackEntrie.updatedAt }}">
+                    <div class="feedback-comment">
+                        <div class="feedback-attributes-list display-none">
+                            <p>
+                                <span class="feedback-attributes">
+                                    {% set attrFeedbackName = feedbackEntrie.targetRelation.targetRelationName | raw %}
+                                    {{ attrFeedbackName[0] }}
+                                </span>
+                            </p>
+                        </div>
+
+                        <p class="feedback-comment-text mb-1">
+                            <span class="icon-user"></span>
+                            <strong>
+                                <span>
+                                    {% set customerNameFeedback = feedbackEntrie.sourceRelation[0].sourceRelationLabel | split(' ', 2) %}
+                                    {% if customerNameFeedback[1] %}
+                                        {{ customerNameFeedback[0] ~ ' ' ~ customerNameFeedback[1]|first ~ '.' }}
+                                    {% else %}
+                                        {{ customerNameFeedback[0] }}
+                                    {% endif %}
+                                    {% if feedbackEntrie.feedbackComment.comment.message %}
+                                        {{ trans("GuardiansBasic::Template.says") }}:
+                                    {% endif %}
+                                </span>
+                            </strong>
+                            {{ feedbackEntrie.feedbackComment.comment.message }}
+                        </p>
+
+                        <div class="col-12 nopadding disp-flexi">
+                            <div class="col-8 fontGreen nopadding txt-al-start">
+                                <span><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasic::Template.verifiedbuy") }}</span>
+                            </div>
+                            <div class="col-4 feedback-rating mb-1 nopadding txt-al-end">
+                                {{ Rating.renderRatingStatic(feedbackEntrie.feedbackRating.rating.ratingValue) }}
+                            </div>
+                        </div>
+
+                        {% if feedbackEntrie.replies is defined and feedbackEntrie.replies[0].feedbackComment.comment.message is defined %}
+                            <div class="feedback clearfix italic" data-eg-feedbackitem data-eg-feedbackvalue="{{ feedbackEntrie.feedbackRating.rating.ratingValue }}" data-eg-feedbackdate="{{ feedbackEntrie.updatedAt }}">
+                                <div class="feedback-comment">
+                                    <p class="feedback-comment-title">
+                                        {{ trans("GuardiansBasic::Template.Outlet46deteamanswer") }}
+                                    </p>
+                                    <p class="feedback-comment-text mb-1">
+                                        <span class="feedback-info-segment">
+                                            <span class="icon-user"></span>
+                                            <strong>
+                                                <span>
+                                                    {{ feedbackEntrie.replies[0].sourceRelation[0].sourceRelationLabel }} {{ trans("GuardiansBasic::Template.says") }}:
+                                                </span>
+                                            </strong>
+                                        </span>
+                                        {{ feedbackEntrie.replies[0].feedbackComment.comment.message }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# ✅ JSON-LD structured data: NUR EINMAL für die erste Bewertung #}
+            {% if loop.first %}
+                <script type="application/ld+json">
+                {
+                    "@context": "http://schema.org/",
+                    "@type": "Product",
+                    "@id": "{{ itemData.variation.id | default('') }}",
+                    "review": [{
+                        "@type": "Review",
+                        "author": {
+                            "@type": "Person",
+                            "name": "{{ customerNameFeedback[0] }} {{ customerNameFeedback[1]|default('') }}"
+                        },
+                        "datePublished": "{{ feedbackEntrie.createdAt }}",
+                        "reviewBody": "{{ feedbackEntrie.feedbackComment.comment.message }}",
+                        "name": "{{ feedbackEntrie.title }}",
+                        "reviewRating": {
+                            "@type": "Rating",
+                            "ratingValue": "{{ feedbackEntrie.feedbackRating.rating.ratingValue }}"
+                        }
+                    }]
+                }
+                </script>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+</div>

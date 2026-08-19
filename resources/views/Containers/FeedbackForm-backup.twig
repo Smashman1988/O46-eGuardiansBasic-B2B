@@ -1,0 +1,54 @@
+{% set variationsWithAttributes = services.item.getVariationAttributeMap(sItemId) %}
+{% set customerHasBuyThisItem = false %}
+{% set buyedVariationId = 0 %}
+{# GIBT ES EINEN BESSEREN WEG UM HERAUSZUFINDEN OB DER ARTIKEL VON DEM KUNDEN BEREITS GEKAUFT WURDE???? #}
+{% if services.customer.getContactId() > 0 %}
+ {% set customerOrders = services.customer.getOrders().toArray() %}
+ {% set sdfentries = customerOrders.entries %}
+ {% for customerOrder in customerOrders.entries if customerHasBuyThisItem==false %}
+     {% for singleVariation in variationsWithAttributes if customerHasBuyThisItem==false %}   
+         {% for singleOrder in customerOrder.order.orderItems if customerHasBuyThisItem==false %}
+             {% if singleOrder.itemVariationId==singleVariation.variationId %}
+                 {% set buyedVariationId = singleVariation.variationId %}
+                 {% set customerHasBuyThisItem = true %}
+             {% endif %}
+         {% endfor %}
+     {% endfor %}
+ {% endfor %}
+{% endif %}
+    {# KANN WIEDER RAUS WENN PLENTY ALLE GROESSEN AUSSPIELT AUCH OHNE STOCK - NIMMT DIE ERSTE VERFÜGBARE VARIANTE ALS buyedVariationId #}
+    {% if buyedVariationId==0 %}
+        {% set buyedVariationId = variationsWithAttributes[0].variationId %}
+        {% set customerHasBuyThisItem = true %}
+    {% endif %}
+{% if customerHasBuyThisItem and services.customer.getContactId() > 0 %}
+<div class="createFeedback"  data-buyed-variation="{{ buyedVariationId }}">
+   <div class="stars">
+       <input id="star-5" type="radio" value="5" name="ratingValue" class="star star-5" checked="checked"> 
+       <label for="star-5" class="star star-5"></label> <input id="star-4" type="radio" value="4" name="ratingValue" class="star star-4"> 
+       <label for="star-4" class="star star-4"></label> <input id="star-3" type="radio" value="3" name="ratingValue" class="star star-3"> 
+       <label for="star-3" class="star star-3"></label> <input id="star-2" type="radio" value="2" name="ratingValue" class="star star-2"> 
+       <label for="star-2" class="star star-2"></label> <input id="star-1" type="radio" value="1" name="ratingValue" class="star star-1"> 
+       <label for="star-1" class="star star-1"></label>
+   </div>
+   <div class="form-group mb-3">
+       <input type="text" id="title" name="title" placeholder="Titel" required="required" class="form-control rating-title-txt" data-eg-ratingtitle>
+   </div>
+   <div class="form-group mb-3">
+       <textarea id="message" name="message" rows="3" placeholder="Rezensionstext" class="form-control rating-descr-txt"  data-eg-ratingmessage></textarea>
+   </div>
+    <div class="btn-cr-fee">
+        <button class="btn btn-primary" data-eg-handler="createFeedback" data-eg-event="click" aria-label="Feedback senden">
+        Rezension senden
+        </button>
+    </div>
+</div>
+{% else %}
+<div class="rating-login">
+    {% set itemFeedbacks = getFeedbackItemList(sItemId, 1, 100) %}
+    <div class="login-for-rev-head">Bitte logge dich in deinem Kundenkonto ein<br /> um eine Bewertung abzugeben.</div>
+    <button data-eg-event="click" data-eg-href="/loginPreview/" data-eg-handler="modalContent" data-eg-title="Anmelden" class="btn btn-secondary btn-big" aria-label="Login öffnen">
+        Jetzt anmelden
+    </button>
+</div>
+{% endif %}

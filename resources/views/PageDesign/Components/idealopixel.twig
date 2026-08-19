@@ -1,0 +1,30 @@
+{% set maxCount = 0 %}
+{% for itemOrderData in data.order.orderItems %}  
+            {% if itemOrderData.typeId<=2 %}
+       	{% set maxCount = maxCount + 1 %}
+            {% endif %}
+{% endfor %}
+
+{% set counter = 0 %}
+{% set amaountswihtoutshipping = data.order.amounts[0].grossTotal - data.order.amounts[0].shippingCostsGross  %}
+{% set idealoUrl = "//marketing.net.idealo-partner.com/ts/i5619682/tsa?typ=i&trc=basket&ctg=sale&sid=checkout&cid="~ data.order.amounts[0].orderId ~"&orv="~ amaountswihtoutshipping ~"&orc=EUR&bsk=" %}
+
+        {% for itemOrderData in data.order.orderItems %}  
+            {% if itemOrderData.typeId<=2 %}
+                {% set counter = counter + 1 %}
+                {% set itemData = services.item.getVariation(itemOrderData.itemVariationId) %}
+
+                {% set idealoUrl = idealoUrl ~ '%7B%22pid%22%3A%22' ~ itemOrderData.itemVariationId ~ '%22%2C' %}
+                {% set idealoUrl = idealoUrl ~ '%22prn%22%3A%22' ~ itemOrderData.orderItemName|replace({' ': '%20'}) ~ '%22%2C' %}
+                {% set idealoUrl = idealoUrl ~ '%22brn%22%3A%22' ~ itemData.documents[0].data.item.manufacturer.externalName ~'%22%2C' %}
+                {% set idealoUrl = idealoUrl ~ '%22pri%22%3A%22' ~ itemOrderData.amounts[0].priceGross ~ '%22%2C' %}
+                {% set idealoUrl = idealoUrl ~ '%22qty%22%3A%22' ~ itemOrderData.quantity~'%22%7D' %}
+                {% if counter < maxCount %}
+                    {% set idealoUrl = idealoUrl ~ '%2C' %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        {% set idealoUrl = idealoUrl ~ '' %}
+        <!-- BEGIN IDEALO PARTNER TRACKING CODE -->
+        <img class="display-none" src="{{ idealoUrl }}" width="1" height="1" border="0">

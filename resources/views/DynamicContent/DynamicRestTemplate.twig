@@ -1,0 +1,7 @@
+{% set shopBuilderTemplate = shop_builder_category_template(categoryId) %}
+<div class="mb-4 pb-4">
+    {{ shopBuilderTemplate | raw }}
+</div>
+<script>
+    $('.widget-accordion > .card:first-child .collapse').addClass('show')
+</script>

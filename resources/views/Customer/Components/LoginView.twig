@@ -1,0 +1,31 @@
+{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
+{% set backlink = request.get("backlink") %}
+
+
+<script type="x/template" id="vue-login-view" >
+    <div class="container-max login">
+        <div class="row">
+            
+            <div class="col-12 col-sm-6">
+                <p class="h2">{{ trans("GuardiansBasic::Template.logininfo") }}</p>
+                <hr />
+                <div>
+                    
+                    <login backlink="{{ backlink | url_encode }}" :has-to-forward="true"></login>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6">
+                <p class="h2">{{ trans("GuardiansBasic::Template.registrationinfo") }}</p>
+                <hr />
+                <div class="row">
+                        <a class="btn btn-primary btn-block" href="{{ urls.registration }}{% if backlink | trim is not empty %}?backlink={{ backlink | url_encode}}{% endif %}">
+                            <i class="fa fa-user-plus" aria-hidden="true"></i>
+                            {{ trans("Ceres::Template.loginRegister") }}
+                        </a>
+                    
+                    {{ LayoutContainer.show("Ceres::Login.AdditionalContentAfterButtons") }}
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

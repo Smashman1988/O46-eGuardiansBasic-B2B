@@ -1,0 +1,155 @@
+{% macro get_children(category, currentScopeUrl, level) %}
+    {# set megaMenuLevels = not config('Ceres.header.megamenu_levels') ? 1 : config('Ceres.header.megamenu_levels') #}
+    {% set categoryBreadcrumbs = services.category.getHierarchy() %}
+    {% set megaMenuLevels = 6 %}
+    {% set maxitems = { "1": config('Ceres.header.megamenu_items_stage_1'), "2": config('Ceres.header.megamenu_items_stage_2') ,"3": config('Ceres.header.megamenu_items_stage_3')} %}
+    {% import _self as childlist %}
+    {% set counter = 0 %}
+    {% set lang = services.localizationRepository.getLanguage() %}
+    {# if level < megaMenuLevels #}
+    <ul class="{% if level == 2 %}cccount{% endif %} scrollable-nav cat-{{ category.id }}">
+        {% for child in category.children %}
+            {% if (child.details | length > 0) %}
+                {% if counter==0 %}
+                <li class="d-lg-none">
+                    <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">{{ trans("GuardiansBasic::Template.showall") }}&raquo;</a>
+                </li>
+                {% endif %}
+                <li class="cat-{{ child.id }} level{{ level }}{% if child.children %} eg-ddown {% for breadcrumb in categoryBreadcrumbs %}{% if child.id == breadcrumb.id %}active ddown-open{% endif %}{% endfor %}{% endif %}">
+                    {% set newScope = currentScopeUrl ~ "/" ~ child.details[0].nameUrl %}
+                    <a href="/{{ lang }}{{ newScope }}/" title="{{ child.details[0].name }}">
+                        <span>{{ child.details[0].name }}</span>
+                        {% if child.children %}
+                        <span class="d-lg-none open-ddown" data-eg-open-ddown data-eg-handler="ddownOpen">
+                        </span>
+                        {% endif %}
+                    </a>
+                    {% if child.children %}
+
+                        <div class="ddown-wrap transition">
+                            <button class="hidden-lg-up back-ddown" data-eg-back-ddown  data-eg-handler="ddownBack" aria-label="Menü zurück">
+                               &laquo;&nbsp;{{ trans("GuardiansBasic::Template.back") }}
+                            </button>
+                            {% if level == 1 %}
+
+                                    <ul>
+                            {% endif %}
+
+                                {{ childlist.get_children(child, newScope, level + 1) }}
+                            {% if level == 1 %}
+                                    </ul>
+
+                            {% endif %}
+                        </div>
+
+
+                    {% endif %}
+                </li>
+                {% set counter = counter + 1 %}
+            {% endif %}
+        {% endfor %}
+    </ul>
+    {# endif #}
+{% endmacro %}
+{% macro get_nav_bar(categories, currentScopeUrl) %}
+    {% set categoryBreadcrumbs = services.category.getHierarchy() %}
+
+    {% import _self as navbar %}
+    {% set counter = 0 %}
+    {% set megaMenuLevels = 6 %}
+    {# set catIcons = [26:"",] #}
+    {% for category in categories %}
+
+        {% if category.details | length > 0 %}
+
+            {% set currentScopeUrl = "/" ~ category.details[0].nameUrl %}
+
+            {% if category.children and category.id!=60 %}
+
+
+                <li class="eg-ddown cat-{{ category.id }}{% for breadcrumb in categoryBreadcrumbs %}{% if category.id == breadcrumb.id %} active ddown-open{% endif %}{% endfor %}">
+                    <a href="/{{ lang }}{{ currentScopeUrl }}/" title="{{ category.details[0].name }}">
+                        <span class="nav-cat-name">{{ category.details[0].name }}</span>
+                        <span class="d-lg-none open-ddown" data-eg-open-ddown data-eg-handler="ddownOpen"></span>
+                    </a>
+
+                    <div class="ddown-wrap transition">
+                        <button class="hidden-lg-up back-ddown" data-eg-back-ddown  data-eg-handler="ddownBack" aria-label="Menü zurück">
+                           &laquo;&nbsp;{{ trans("GuardiansBasic::Template.back") }}
+                        </button>
+                        <div class="container scrollable-nav">
+                            <div class="row align-items-center">
+                                <div class="{% if category.id==41 %}col-12{% else %}col-lg-8{% endif %}">
+                                    {% set counter = counter + 1 %}
+                                    {% if megaMenuLevels == "1" %}
+
+                                        <ul class="d-lg-flex">
+
+                                        {% for child in category.children %}
+                                            {% if child.details | length > 0 %}
+                                                <li>
+                                                    <a href="/{{ lang }}{{ currentScopeUrl }}/{{ child.details[0].nameUrl }}/" title="{{ child.details[0].name }}">
+                                                        {{ child.details[0].name }}
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        {{ navbar.get_children(category, currentScopeUrl, 2) }}
+                                    {% endif %}
+                                </div>
+                                {% if category.id!=41 %}
+                                <div class="{% if category.id==41 %}col-12{% else %}col-lg-4{% endif %}">
+                                    <div class="nav-img">
+                                            {% set catDetails = services.category.get(category.id) %}
+                                            {% if category.details[0].image2Path is not empty %}
+                                                <img data-src="/documents/{{ category.details[0].image2Path }}" class="img-fluid lozad" alt="{{ category.details[0].name }}" />
+                                            {% endif %}
+
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
+            {% else %}
+                <li class="cat-{{ category.id }}">
+                    <a href="/{{ lang }}{{ currentScopeUrl }}/" title="{{ category.details[0].name }}">
+                        <span class="nav-cat-name">{{ category.details[0].name }}</span>
+                    </a>
+                </li>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+{% endmacro %}
+
+{% macro get_sidemenu(breadcrumbs, categories, currentScopeUrl) %}
+
+    {% import _self as sidemenu %}
+
+    {% set urlNow = currentScopeUrl %}
+    {% set activeCat = category.id %}
+    {% set categoryBreadcrumbs = services.category.getHierarchy() %}
+    {% for categorySub in categories %}
+        {% if categorySub.parentCategoryId==category.id %}
+        <ul class="cat-undercats-links row">
+        {% set urlNow = currentScopeUrl ~ "/" ~ categorySub.details[0].nameUrl %}
+        {% if categorySub.details[0] and categorySub.linklist == "Y" %}
+
+                <li class="col col-6 col-sm-4 col-md-3 col-xl-6 m-b-15">
+                    <a href="/{{ lang }}{{ urlNow }}" title="{{ categorySub.details[0].name }}" {% for breadcrumb in categoryBreadcrumbs %}{% if categorySub.id == breadcrumb.id %}class="active"{% endif %}{% endfor %}>{{ category.details[0].name }}</a>
+                   {# {% if categorySub.children is not empty %}
+                        {{ sidemenu.get_sidemenu(breadcrumbs, categorySub.children, urlNow) }}
+                    {% endif %}#}
+                </li>
+
+        {% endif %}
+        </ul>
+        {% endif %}
+    {% endfor %}
+
+{% endmacro %}

@@ -1,0 +1,42 @@
+{% set itemListPipe = "" %}
+        {% set itemListComma = "" %}
+        {% for itemOrderData in data.order.orderItems %}
+            {% set itemListComma = itemListComma~itemOrderData.itemVariationId %}
+            {% set itemListPipe = itemListPipe~itemOrderData.itemVariationId %}
+            {% if not loop.last %}
+                {% set itemListComma = itemListComma~"," %}
+                {% set itemListPipe = itemListPipe~"|" %}
+            {% endif %}
+        {% endfor %}
+        <script type="text/javascript">
+            /* <![CDATA[ */
+            var google_conversion_id = 1030271873;
+            var google_conversion_language = "fr";
+            var google_conversion_format = "3";
+            var google_conversion_color = "ffffff";
+            var google_conversion_label = "ekQsCMz9gYsBEIHnousD";
+            var google_conversion_value = "{{ data.order.amounts[0].grossTotal }}";
+            var google_conversion_currency = "{{ data.order.amounts[0].currency }}";
+            var google_remarketing_only = false;
+            var google_conversion_transaction_id = "{{ data.order.id }}";
+            /* ]]> */
+        </script>
+        <script type="text/javascript" src="//www.googleadservices.com/pagead/conversion.js"></script>
+        <noscript><div style="display:inline;"><img height="1" width="1" style="border-style:none;" alt="" src="//www.googleadservices.com/pagead/conversion/1030271873/?value={{ data.order.amounts[0].grossTotal }}&amp;currency_code={{ data.order.amounts[0].currency }}&amp;label=ekQsCMz9gYsBEIHnousD&amp;guid=ON&amp;script=0"/></div></noscript>
+        <script type="text/javascript">
+            var google_tag_params = {
+                ecomm_prodid: '{{ itemListComma }}',
+                ecomm_pagetype: 'purchase',
+                ecomm_totalvalue: {{ data.order.amounts[0].grossTotal }},
+            };
+        </script>
+        <script type="text/javascript">
+            /* <![CDATA[ */
+            var google_conversion_id = 1030271873;
+            var google_conversion_label = "ekQsCMz9gYsBEIHnousD";
+            var google_custom_params = window.google_tag_params;
+            var google_remarketing_only = true;
+            /* ]]> */
+        </script>
+        <script type="text/javascript" src="//www.googleadservices.com/pagead/conversion.js"></script>
+        <noscript><div style="display:inline;"><img height="1" width="1" style="border-style:none;" alt="" src="//googleads.g.doubleclick.net/pagead/viewthroughconversion/1030271873/?value=0&amp;label=ekQsCMz9gYsBEIHnousD&amp;guid=ON&amp;script=0"></div></noscript>

@@ -1,0 +1,152 @@
+
+{% set currencycheck = services.checkout.getCurrencyData.name %}
+{#{% cacheblock use "footer." ~ lang ~ "." ~ currencycheck %}#}
+<footer class="d-print-none">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 col-md-4 col-lg-4 col-xl-3">
+                <p class="footer-title footer-title-first">{{ trans("GuardiansBasic::Template.Wehelpyou") }}!</p>
+                <div class="footer-content">
+                    <div class="italic fontGreen mb-3">{{ trans("GuardiansBasic::Template.Wewouldbehappytoadviseyou") }}</div>
+                    <div class="mb-3"><span>{{ trans("GuardiansBasic::Template.email") }}: <a href="mailto:b2b@outlet46.de?subject={{ trans("GuardiansBasic::Template.Ihaveaquestion") }}" class="fontGreen">b2b@outlet46.de</a></span></div>
+                    <div>{{ trans("GuardiansBasic::Template.Yourrequestinfo") }}<br /></div> 
+                </div>
+            </div>
+            <div class="col-12 col-md-4 col-lg-4 col-xl-3">
+                <p class="footer-title clickable-title">{{ trans("GuardiansBasic::Template.Shopsafely") }}</p>
+                <div class="footer-content">
+                    <div id="mybadge_con"><img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/SSL-Zertifikatx.jpg" class="lozad footer-security-badge" alt="Wird sind SSL Zertifiziert - für Deine Sicherheit" title="Unser SSL Zertifikat" width="144px" height="64px"><img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/google.png" class="lozad" title="Google Zertifizierter Händler" alt="Google Zertifizierter Händler" width="210px" height="63px"></div>
+                </div>
+            </div>
+            <div class="col-12 d-none d-md-none d-lg-none"><hr /></div>
+            <div class="col-12 col-md-4 col-lg-4 col-xl-3">
+                <p class="footer-title clickable-title">{{ trans("GuardiansBasic::Template.benefits") }}</p>
+                <div class="footer-content">
+                    <ul class="list-no-style list-footer-usp">
+                        <li><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasic::Template.b2boriginal") }}</li>
+                        <li><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasic::Template.b2bfirst") }}</li>
+                        <li><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasic::Template.b2bbuy") }}</li>
+                        <li><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasic::Template.b2bnombw") }}</li>
+                        <li><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasic::Template.b2bsale") }}</li>
+                        <li><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasic::Template.b2bfreechoose") }}</li>
+                    </ul>
+                </div>   
+            </div>
+            <div class="col-12 d-none d-lg-block d-xl-none"><hr /></div>
+            <div class="col-12 col-md-4 col-lg-3 col-xl-3">
+                <p class="footer-title clickable-title">{{ trans("GuardiansBasic::Template.findusinfo") }}</p>
+                <div class="footer-social footer-content">
+                    <a class="icon-facebook21" rel="noopener" href="https://www.facebook.com/Outlet46" data-toggle="tooltip" data-placement="top" data-original-title="Like uns bei Facebook" target="_blank" alt="Facebook" aria-label="Outlet46.de auf Facebook"></a> 
+                    <a class="icon-youtube ml-2" rel="noopener" href="https://www.youtube.com/channel/UCY7Tl5TqZdlu7VBIDLynBUg" data-toggle="tooltip" data-placement="top" data-original-title="Besuche uns auf YouTube" target="_blank" alt="YouTube" aria-label="Outlet46.de auf YouTube"></a>
+                    <a class="icon-twitter ml-2" rel="noopener" href="https://twitter.com/Outlet46_de" data-toggle="tooltip" data-placement="top" data-original-title="Folge uns auf Twitter" target="_blank" alt="Twitter" aria-label="Outlet46.de auf Twitter"></a> 
+                    <a class="icon-instagram-1 ml-2" rel="noopener" href="https://instagram.com/outlet46.de/" data-toggle="tooltip" data-placement="top" data-original-title="Besuche uns auf Instagram" target="_blank" alt="Instagram" aria-label="Outlet46.de auf Instagram"></a>
+		</div>
+            </div>
+            <div class="col-12 d-none d-md-block d-lg-none d-xl-block"><hr /></div>
+            <div class="col-12 col-md-6 col-lg-3 col-xl-3 col-xlg-2">
+                {% set linksInformations = [31, 32, 29, 550, 5044, 5046, 5047] %}
+                <p class="footer-title clickable-title">{{ trans("GuardiansBasic::Template.information") }}</p>
+                <div class="footer-link-list clearfix footer-content">
+                    {% for linkIdInfo in linksInformations %}
+                        {% set categoryByRoute = services.category.get(linkIdInfo, lang) %}
+                        {% set caturl = services.category.getURL( categoryByRoute ) %}
+                        <a href="{{ caturl }}" title="{{ categoryByRoute.details[0].name }}">&raquo; {{ categoryByRoute.details[0].name }}</a>
+                    {% endfor %}                
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3 col-xl-3 col-xlg-2">
+                {% set linksService = [5407, 5414, 26] %}
+                <p class="footer-title clickable-title">{{ trans("GuardiansBasic::Template.Service") }}</p>
+                <div class="footer-link-list clearfix footer-content">
+                    {% for linkIdInfo in linksService %}
+                        {% set categoryByRoute = services.category.get(linkIdInfo, lang) %}
+                        {% set caturl = services.category.getURL( categoryByRoute ) %}
+                        <a href="{{ caturl }}" title="{{ categoryByRoute.details[0].name }}">&raquo; {{ categoryByRoute.details[0].name }}</a>
+                    {% endfor %}               
+                </div>
+            </div>
+            <div class="col-12 d-none d-md-block d-lg-none d-xl-none"><hr /></div>
+            <div class="col-12 col-md-6 col-lg-3 col-xl-3 col-xlg-2">
+                {% set linksads = [6364] %}
+                <p class="footer-title clickable-title">{{ trans("GuardiansBasic::Template.o46ads") }}</p>
+                <div class="footer-link-list clearfix footer-content">
+                    {% for linkIdInfo in linksads %}
+                        {% set categoryByRoute = services.category.get(linkIdInfo, lang) %}
+                        {% set caturl = services.category.getURL( categoryByRoute ) %}
+                        <a href="{{ caturl }}" title="{{ categoryByRoute.details[0].name }}">&raquo; {{ categoryByRoute.details[0].name }}</a>
+                    {% endfor %}               
+                </div>
+            </div>
+            <div class="col-12 d-none d-md-none d-xl-none d-lg-block"><hr /></div>
+            <div class="col-12 col-md-6 col-lg-6 col-xl-3 col-xlg-3">
+                <p class="footer-title clickable-title">{{ trans("GuardiansBasic::Template.Awards") }}</p>
+                <div class="footer-link-list clearfix footer-content">
+                    <div>
+			<a href="{{ services.category.getURLById(550) }}" aria-label="Outlet46.de bekannt aus">
+                        <div class="footer-press-logos">
+                          <img src=""
+                               data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/focustv.jpg"
+                               class="lozad footer-press-logo footer-logo-focus"
+                               alt="Outlet46.de bekannt aus Focus TV"
+                               title="Outlet46.de bekannt aus Focus TV">
+                          <img src=""
+                               data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/sat1.jpg"
+                               class="lozad footer-press-logo footer-logo-sat1"
+                               alt="Outlet46.de bekannt aus SAT.1"
+                               title="Outlet46.de bekannt aus SAT.1">
+                          <img src=""
+                               data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/galileo.png"
+                               class="lozad footer-press-logo footer-logo-galileo"
+                               alt="Outlet46.de bekannt aus Galileo (ProSieben)"
+                               title="Outlet46.de bekannt aus Galileo (ProSieben)"><br>
+                          <img src=""
+                               data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/ntv.png"
+                               class="lozad footer-press-logo footer-logo-ntv"
+                               alt="Outlet46.de bekannt aus ntv"
+                               title="Outlet46.de bekannt aus ntv">
+                          <img src=""
+                               data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/OMR.png"
+                               class="lozad footer-press-logo footer-logo-omr"
+                               alt="Outlet46.de bekannt aus OMR"
+                               title="Outlet46.de bekannt aus OMR">
+                        </div></a>        
+                    </div>
+		</div>
+            </div>
+            <div class="col-12 d-none d-md-block d-lg-none d-xl-block d-xlg-none"><hr /></div>
+            <div class="col-12 col-md-12 col-lg-6 col-xl-12 col-xlg-3">
+                <p class="footer-title">{{ trans("GuardiansBasic::Template.Paymentmethods") }}</p>
+                <div class="footer-link-pay clearfix footer-content">
+                    {#<img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/klarna.png" alt="Klarna" class="lozad" width="120px" height="50px">#}
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/paypal.png" alt="PayPal" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/sepa.png" alt="SEPA - Lastschrift" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/kreditkarte.png" alt="Kreditkarte" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/vorkasse.png" alt="Vorkasse" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/rechnung_dark.png" alt="Kauf auf Rechnung" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/amazon-payv2.png" alt="Amazon Pay" class="lozad" width="120px" height="50px">
+                    {#<img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/giropay.png" alt="Giropay" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/sofort.png" alt="SOFORT" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/blik.png" alt="gg" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/eps.png" alt="gg" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/trustly.png" alt="gg" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/mybank.png" alt="gg" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/bancontact.png" alt="gg" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/przelewy.png" alt="gg" class="lozad" width="120px" height="50px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/ideal.png" alt="gg" class="lozad" width="120px" height="50px">#}
+                </div>
+                <p class="footer-title">{{ trans("GuardiansBasic::Template.Wesendwith") }}</p>
+                <div class="footer-link-pay clearfix footer-content">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/dpd-new.jpg" alt="DPD" class="lozad" width="120px" height="43px">
+                    <img src="" data-src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/footer/dhl-new.jpg" alt="DHL" class="lozad" width="120px" height="43px">
+                </div>
+            </div>
+        </div>
+        <button onclick="topFunction()" id="totop" title="Go to top"><i class="icon-angle-up"></i></button>
+        <div class="row">
+            <div class="col-12 text-center mt-4 copyrighttext">
+                <span>{{ trans("GuardiansBasic::Template.footerinfo1") }} {{ "now"|date("Y") }} {{ trans("GuardiansBasic::Template.footerinfo2") }}</span>
+            </div>
+        </div>
+    </div>
+</footer>
+{#{% endcacheblock %}#}                

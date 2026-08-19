@@ -1,0 +1,46 @@
+{% extends getPartial('page-design') %}
+
+{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
+
+{% block PartialHead %}
+    {% embed getPartial('page-metadata') %}
+        {% block title "404" %}
+    {% endembed %}
+{% endblock %}
+
+{% block PageBody %}
+
+    <div class="container-max page-content page-not-found">
+        <div class="row">
+            <div class="col-12">
+                <div class="jumbotron bg-transparent">
+                    <div class="row">
+                        <div class="col-md-12 offset-lg-2 col-lg-8 text-center">
+                            <h1 class="display-3 head404">{# trans("Ceres::Template.pageNotFoundOops") #} Error 404</h1>
+                            <p class="lead under-404">{# trans("Ceres::Template.pageNotFoundPage") #} Du stehst leider im Abseits. Nutze unsere Suche und bring dich wieder ins Spiel</p>
+                            <div class="searchbox-404 mb-4">
+                                <form action="/search" method="get">
+                                    <input type="text" class="form-control input-ff-search" placeholder="Suche" data-eg-event="load" data-eg-handler="initLiveSearch" data-eg-livesearch="" name="query" autocomplete="off">
+                                    <button class="btn-set-search"><span class="icon-search"></span></button>
+                                </form>
+                                <div data-eg-search></div>
+                            </div>
+                            {#<hr class="my-4">
+                            <p class="lead">
+                                <a class="btn btn-primary btn-lg" href="{{ homepageURL }}" role="button">
+                                    {{ trans("Ceres::Template.pageNotFoundHomepage") }}
+                                    <i class="fa fa-home default-float ml-2" aria-hidden="true"></i>
+                                </a>
+                            </p>#}
+                            
+                        </div>
+                    </div>
+                </div>
+
+                {{ LayoutContainer.show("Ceres::StaticPages.PageNotFound") }}
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

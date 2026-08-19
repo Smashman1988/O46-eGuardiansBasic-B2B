@@ -1,0 +1,30 @@
+{% macro renderRating(rating, stars) %}
+    {% set rating = rating is defined ? rating|round(0, 'ceil') : 0 %}
+    {% set stars = stars is defined ? stars : 5 %}
+    {% set percent = (rating / stars) * 100 %}
+
+    <div class="item-ratings-head clearfix d-inline-block item-ratings-first" aria-label="{{ rating|number_format(1, '.', '') }} von {{ stars }} Sternen">
+        <div class="rating-grey f-size12">
+            {% for i in 1..stars %}
+                <span class="icon-star" aria-hidden="true"></span>
+            {% endfor %}
+        </div>
+        <div class="rating-fuller" style="width: {{ percent }}%">
+            <div class="rating-fuller-inner f-size12">
+                {% for i in 1..stars %}
+                    <span class="icon-star" aria-hidden="true"></span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+{% macro renderRatingStatic(rating) %}
+    {% set rating = rating is defined ? rating|round(0, 'ceil') : 0 %}
+    {% for i in 1..5 %}
+        {% if i <= rating %}
+            <i class="icon-star full-star"></i>
+        {% else %}
+            <i class="icon-star"></i>
+        {% endif %}
+    {% endfor %}
+{% endmacro %}

@@ -1,0 +1,22 @@
+{% extends getPartial('page-design') %}
+
+{% block PartialHead %}
+    <meta name="robots" content="NOINDEX, NOFOLLOW">
+    <title>{{ trans("Ceres::Template.login") }} | {{ trans("Ceres::Template.headerCompanyName") }}</title>
+{% endblock %}
+
+{% block PageBody %}
+    {{ component( "GuardiansBasic::Customer.Components.LoginView") }}
+    {{ component( "Ceres::Customer.Components.Login") }}
+
+    <login-view template-override="#vue-login-view"
+            backlink="{{ request.get("backlink") | default("") }}"
+            guest-email="{{ services.sessionStorageRepository.getSessionValue("guestEmail") }}">
+        <template #extend-overlay-buttons>
+            {{ LayoutContainer.show("Ceres::LoginOverlay.ExtendOverlayButtons") }}
+        </template>
+        <template #additional-content-after-buttons>
+            {{ LayoutContainer.show("Ceres::Login.AdditionalContentAfterButtons") }}
+        </template>
+    </login-view>
+{% endblock %}

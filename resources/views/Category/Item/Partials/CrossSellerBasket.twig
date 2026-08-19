@@ -1,0 +1,72 @@
+{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
+{% import "Ceres::PageDesign.Macros.ItemName" as ItemName %}
+
+{% set itemUrl =  item.data | itemURL %}
+{% set image = null %}
+{% if item.data.images.variation | length > 0 %}
+    {% set image = item.data.images.variation | orderByKey('position') | first %}
+{% else %}
+    {% set image = item.data.images.all | orderByKey('position') | first %}
+{% endif %}
+{% set hasRRP = false %}
+{% if item.data.prices.rrp is defined and item.data.prices.rrp.price.value != 0 and item.data.prices.rrp.price.value > item.data.prices.default.unitPrice.value %}
+{% set hasRRP = true %}
+{% endif %}    
+<article>
+
+    <div class="cat-item{% if hasRRP==true %} has-rrp{% endif %} d-md-flex mb-3" data-eg-item="{{ item.data.variation.itemId }}">
+        <div class="cat-item-image-cross text-center margin-right-10">
+            <a href="{{ itemUrl }}" class="linkabso" title="{{ item.data | itemName }}">
+                {{ ItemName.get(item.data | itemName, item.data.variation.bundleType) }}
+            </a>  
+            {% set storeSpecialClass = '' %}
+            {% set storeSpecialTxt = '' %}
+            {% if  item.data.item.storeSpecial.id == 2 %}
+                {% set storeSpecialClass = 'i-action-top' %}
+                {% set storeSpecialTxt = 'Top' %}
+            {% endif %}
+            {% if itemData.item.storeSpecial.id == 3 %}
+                {% set storeSpecialClass = 'i-action-new' %}
+                {% set storeSpecialTxt = 'Neu' %}
+            {% endif %}
+            {% if hasRRP %}
+                {% set storeSpecialClass = 'i-action-sale' %}
+                {% set storeSpecialTxt = 'Sale' %}
+            {% endif %}
+            {% if storeSpecialClass is not empty %}
+             <span class="item-action {{ storeSpecialClass }}">
+                {{ storeSpecialTxt }}
+            </span>  
+            {% endif %}
+            <img src="" alt="{{ item.data | itemName }}"  data-src="{{ image.urlMiddle }}" class="lozad">
+            <noscript>
+                <img src="{{ image.url }}" alt="{{ item.data | itemName }}">
+            </noscript>
+        </div>
+        <div class="cat-item-data">
+            {#<span class="cat-item-producer">{{ item.data.item.manufacturer.externalName }}</span>#}
+             
+            <span class="thumb-title cat-item-name">{{ ItemName.get(item.data | itemName, item.data.variation.bundleType) }}</span>
+            <div class="cat-item-prices clearfix">
+                {% if hasRRP==true %}
+                    {% set percent = (1 - item.data.prices.default.unitPrice.value / item.data.prices.rrp.price.value ) * -100 %}
+                    {% set percent = percent | number_format(dezimalcount, ',', '.') %}
+                    <div class="cat-rrp-price-wrap">
+                        <span class="d-lg-none d-xl-inline-block">{{ trans("GuardiansBasic::Template.statt") }}</span>&nbsp;<span class="cat-rrp-price">{{ item.data.prices.rrp.price.formatted }}</span>
+                        <span class="cat-rrp-percent">{{ percent }}% {{ trans("GuardiansBasic::Template.saveup") }}!</span>
+                    </div>
+                    
+                {% endif %}
+                <div class="cat-price">
+                    {% if item.data.prices.graduatedPrices|length>1 %}
+                        {% set gruadtedPrice = item.data.prices.graduatedPrices %}
+                        {{ trans("GuardiansBasic::Template.ab") }} {{ gruadtedPrice[0].price.formatted }}
+                    {% else %}
+                    {{ item.data.prices.default.unitPrice.formatted | specialOffer(item.data.prices, "unitPrice", "formatted") }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</article>
+        

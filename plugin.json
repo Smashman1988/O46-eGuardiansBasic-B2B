@@ -1,0 +1,28 @@
+{
+    "version": "1.0.6",
+    "license"           :   "AGPL-3.0",
+    "name"              :   "GuardiansBasic",
+    "marketplaceName"   :   {"de":"eGuardiansBasic","en":"eGuardiansBasic"},
+    "pluginIcon"        :   "icon_plugin_xs.png",
+    "authorIcon"        :   "icon_author_xs.png",
+    "email"             :   "kontakt@eGuardians.de",
+    "phone"             :   "+49 561 407 04 929",
+    "description"       :   "eGuardiansBasic.",
+    "shortDescription"  :   { "de": "Ein Basic Theme von eGuardians.", "en": "A basic theme from eGuardians." },
+    "namespace"         :   "GuardiansBasic",
+    "author"            :   "eGuardians",
+    "keywords"          :   ["plentymarkets", "plugins", "layout", "theme", "ceres"],
+    "price"             :   0,
+    "categories"        :   [3518],
+    "type"              :   "theme",
+    "require"           :   ["Ceres"],
+    "serviceProvider"   :   "GuardiansBasic\\Providers\\GuardiansBasicServiceProvider",
+    "dataProviders"     :
+    [
+        {
+            "key"           :"GuardiansBasic\\Containers\\GuardiansBasicContainer",
+            "name"          :"Stylesheet",
+            "description"   :"Add changes to the CSS file"
+        }
+    ]
+}

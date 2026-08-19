@@ -1,0 +1,579 @@
+{
+  "formatVersion": 1,
+  "menu": {
+    "Config.TemplatesTab": {
+      "label": "Config.TemplatesTab",
+      "formFields": {
+        "templates.override": {
+          "type": "multiCheckBox",
+          "required": false,
+          "label": "Config.templatesOverrideLabel",
+          "options": {
+            "defaultValue": "",
+            "checkBoxValues": [
+              {
+                "value": "page_design",
+                "caption": "Config.templatesOverridePossibleValuePageDesign"
+              },
+              {
+                "value": "head",
+                "caption": "Config.templatesOverridePossibleValueHead"
+              },
+              {
+                "value": "header",
+                "caption": "Config.templatesOverridePossibleValueHeader"
+              },
+              {
+                "value": "footer",
+                "caption": "Config.templatesOverridePossibleValueFooter"
+              },
+              {
+                "value": "homepage",
+                "caption": "Config.templatesOverridePossibleValueHomepage"
+              },
+              {
+                "value": "basket",
+                "caption": "Config.templatesOverridePossibleValueBasket"
+              },
+              {
+                "value": "checkout",
+                "caption": "Config.templatesOverridePossibleValueCheckout"
+              },
+              {
+                "value": "order_confirmation",
+                "caption": "Config.templatesOverridePossibleValueOrderConfirmation"
+              },
+              {
+                "value": "login",
+                "caption": "Config.templatesOverridePossibleValueLogin"
+              },
+              {
+                "value": "register",
+                "caption": "Config.templatesOverridePossibleValueRegister"
+              },
+              {
+                "value": "item",
+                "caption": "Config.templatesOverridePossibleValueItem"
+              },
+              {
+                "value": "category_view",
+                "caption": "Config.templatesOverridePossibleValueCategoryView"
+              },
+              {
+                "value": "my_account",
+                "caption": "Config.templatesOverridePossibleValueMyAccount"
+              },
+              {
+                "value": "cancellation_rights",
+                "caption": "Config.templatesOverridePossibleValueCancellationRights"
+              },
+              {
+                "value": "legal_disclosure",
+                "caption": "Config.templatesOverridePossibleValueLegalDisclosure"
+              },
+              {
+                "value": "privacy_policy",
+                "caption": "Config.templatesOverridePossibleValuePrivacyPolicy"
+              },
+              {
+                "value": "terms_conditions",
+                "caption": "Config.templatesOverridePossibleValueTermsConditions"
+              },
+              {
+                "value": "item_not_found",
+                "caption": "Config.templatesOverridePossibleValueItemNotFound"
+              },
+              {
+                "value": "page_not_found",
+                "caption": "Config.templatesOverridePossibleValuePageNotFound"
+              },
+              {
+                "value": "category_content",
+                "caption": "Config.templatesOverridePossibleValueCategoryContent"
+              },
+              {
+                "value": "category_item",
+                "caption": "Config.templatesOverridePossibleValueCategoryItem"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "Config.HeadTabUsp": {
+      "label": "Config.HeadTabUsp",
+      "formFields": {
+                
+        "global.uspHeadContainer1": {
+           "type": "verticalContainer",
+           "label": "Config.uspHeadContainer1",
+           "options": {
+              "containerEntries":
+              { 
+                "headUspTxt_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.headUspTxt_1"
+                }
+              }
+           }
+        },
+        
+        
+        "global.uspHeadContainer2": {
+           "type": "verticalContainer",
+           "label": "Config.uspHeadContainer2",
+           "options": {
+              "containerEntries":
+              {  
+                "headUspTxt_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.headUspTxt_2"
+                }
+              }
+           }
+        },    
+        "global.uspHeadContainer3": {
+           "type": "verticalContainer",
+           "label": "Config.uspHeadContainer3",
+           "options": {
+              "containerEntries":
+              {    
+                "headUspTxt_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.headUspTxt_3"
+                }
+              }
+           }
+        } 
+      }
+    },
+    "Config.HomeTabDe": {
+      "label": "Config.HomeTabDe",
+      "formFields": {
+                
+        "global.sliderContainer1": {
+           "type": "verticalContainer",
+           "label": "Config.sliderContainer1",
+           "options": {
+              "containerEntries":
+              {         
+                "homeSliderImageDesktop_1": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeSliderImageDesktop_1"
+                },
+                "homeSliderImageMobile_1": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeSliderImageMobile_1"
+                },
+                "homeSliderTxt_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderTxt_1"
+                },
+                "homeSliderTxtColor_1": {
+                  "type": "colorPicker",
+                  "required": false,
+                  "scss": false,
+                  "label": "Config.homeSliderTxtColor_1",
+                  "options": {
+                    "defaultValue": "#ffffff"
+                  }
+                },
+                "homeSliderLink_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLink_1"
+                },
+                "homeSliderLinkTxt_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkTxt_1"
+                },
+                "homeSliderLinkItem_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkItem_1"
+                },
+                "homeSliderLinkItemTxt_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkItemTxt_1"
+                }
+              }
+           }
+        },
+        "global.sliderContainer2": {
+           "type": "verticalContainer",
+           "label": "Config.sliderContainer2",
+           "options": {
+              "containerEntries":
+              {         
+                "homeSliderImageDesktop_2": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeSliderImageDesktop_2"
+                },
+                "homeSliderImageMobile_2": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeSliderImageMobile_2"
+                },
+                "homeSliderTxt_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderTxt_2"
+                },
+                "homeSliderTxtColor_2": {
+                  "type": "colorPicker",
+                  "required": false,
+                  "scss": false,
+                  "label": "Config.homeSliderTxtColor_2",
+                  "options": {
+                    "defaultValue": "#ffffff"
+                  }
+                },
+                "homeSliderLink_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLink_2"
+                },
+                "homeSliderLinkTxt_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkTxt_2"
+                },
+                "homeSliderLinkItem_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkItem_2"
+                },
+                "homeSliderLinkItemTxt_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkItemTxt_2"
+                }
+              }
+           }
+        },
+        "global.sliderContainer3": {
+           "type": "verticalContainer",
+           "label": "Config.sliderContainer3",
+           "options": {
+              "containerEntries":
+              {         
+                "homeSliderImageDesktop_3": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeSliderImageDesktop_3"
+                },
+                "homeSliderImageMobile_3": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeSliderImageMobile_3"
+                },
+                "homeSliderTxt_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderTxt_3"
+                },
+                "homeSliderTxtColor_3": {
+                  "type": "colorPicker",
+                  "required": false,
+                  "scss": false,
+                  "label": "Config.homeSliderTxtColor_3",
+                  "options": {
+                    "defaultValue": "#ffffff"
+                  }
+                },
+                "homeSliderLink_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLink_3"
+                },
+                "homeSliderLinkTxt_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkTxt_3"
+                },
+                "homeSliderLinkItem_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkItem_3"
+                },
+                "homeSliderLinkItemTxt_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkItemTxt_3"
+                }
+              }
+           }
+        },
+        "global.sliderContainer4": {
+           "type": "verticalContainer",
+           "label": "Config.sliderContainer4",
+           "options": {
+              "containerEntries":
+              {         
+                "homeSliderImageDesktop_4": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeSliderImageDesktop_4"
+                },
+                "homeSliderImageMobile_4": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeSliderImageMobile_4"
+                },
+                "homeSliderTxt_4": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderTxt_4"
+                },
+                "homeSliderTxtColor_4": {
+                  "type": "colorPicker",
+                  "required": false,
+                  "scss": false,
+                  "label": "Config.homeSliderTxtColor_4",
+                  "options": {
+                    "defaultValue": "#ffffff"
+                  }
+                },
+                "homeSliderLink_4": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLink_4"
+                },
+                "homeSliderLinkTxt_4": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkTxt_4"
+                },
+                "homeSliderLinkItem_4": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkItem_4"
+                },
+                "homeSliderLinkItemTxt_4": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeSliderLinkItemTxt_4"
+                }
+              }
+           }
+        }
+        
+        
+      }
+    },
+    "Config.HomeTabBannerFirst": {
+      "label": "Config.HomeTabBannerFirst",
+      "formFields": {
+                
+        "global.bannerContainerFirst1": {
+           "type": "verticalContainer",
+           "label": "Config.bannerContainerFirst1",
+           "options": {
+              "containerEntries":
+              {         
+                "homeBannerImage_1": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeBannerImage_1"
+                },
+                "homeBannerLink_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLink_1"
+                },
+                "homeBannerLinkTxt_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLinkTxt_1"
+                }
+              }
+           }
+        },
+        "global.bannerContainerFirst2": {
+           "type": "verticalContainer",
+           "label": "Config.bannerContainerFirst2",
+           "options": {
+              "containerEntries":
+              {         
+                "homeBannerImage_2": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeBannerImage_2"
+                },
+                "homeBannerLink_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLink_2"
+                },
+                "homeBannerLinkTxt_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLinkTxt_2"
+                }
+              }
+           }
+        },
+        "global.bannerContainerFirst3": {
+           "type": "verticalContainer",
+           "label": "Config.bannerContainerFirst3",
+           "options": {
+              "containerEntries":
+              {         
+                "homeBannerImage_3": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeBannerImage_3"
+                },
+                "homeBannerLink_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLink_3"
+                },
+                "homeBannerLinkTxt_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLinkTxt_3"
+                }
+              }
+           }
+        }
+        
+        
+      }
+    },
+    "Config.HomeTabUsp": {
+      "label": "Config.HomeTabUsp",
+      "formFields": {
+                
+        "global.uspHomeContainer1": {
+           "type": "verticalContainer",
+           "label": "Config.uspHomeContainer1",
+           "options": {
+              "containerEntries":
+              {         
+                
+                "homeUspHead_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeUspHead_1"
+                },
+                "homeUspTxt_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeUspTxt_1"
+                }
+              }
+           }
+        },
+        
+        
+        "global.uspHomeContainer2": {
+           "type": "verticalContainer",
+           "label": "Config.uspHomeContainer2",
+           "options": {
+              "containerEntries":
+              {         
+                
+                "homeUspHead_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeUspHead_2"
+                },
+                "homeUspTxt_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeUspTxt_2"
+                }
+              }
+           }
+        },
+        
+        "global.uspHomeContainer3": {
+           "type": "verticalContainer",
+           "label": "Config.uspHomeContainer3",
+           "options": {
+              "containerEntries":
+              {         
+                "homeUspHead_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeUspHead_3"
+                },
+                "homeUspTxt_3": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeUspTxt_3"
+                }
+              }
+           }
+        } 
+      }
+    }
+    ,
+    "Config.HomeTabBannerSecond": {
+      "label": "Config.HomeTabBannerSecond",
+      "formFields": {
+                
+        "global.bannerContainerSecond1": {
+           "type": "verticalContainer",
+           "label": "Config.bannerContainerSecond1",
+           "options": {
+              "containerEntries":
+              {         
+                "homeBannerImageSecond_1": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeBannerImageSecond_1"
+                },
+                "homeBannerLinkSecond_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLinkSecond_1"
+                },
+                "homeBannerLinkTxtSecond_1": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLinkTxtSecond_1"
+                }
+              }
+           }
+        },
+        "global.bannerContainerSecond2": {
+           "type": "verticalContainer",
+           "label": "Config.bannerContainerSecond2",
+           "options": {
+              "containerEntries":
+              {         
+                "homeBannerImageSecond_2": {
+                  "type": "inputFile",
+                  "required": false,
+                  "label": "Config.homeBannerImageSecond_2"
+                },
+                "homeBannerLinkSecond_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLinkSecond_2"
+                },
+                "homeBannerLinkTxtSecond_2": {
+                  "type": "inputText",
+                  "required": false,
+                  "label": "Config.homeBannerLinkTxtSecond_2"
+                }
+              }
+           }
+        }  
+      }
+    }
+    
+    
+  }
+}

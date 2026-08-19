@@ -1,0 +1,318 @@
+{% 
+    set jugendKlassen = {
+        "g_jugend" : trans("GuardiansBasic::Config.g_jugend"),
+        "f_jugend" : trans("GuardiansBasic::Config.f_jugend"),
+        "e_jugend" : trans("GuardiansBasic::Config.e_jugend"),
+        "d_jugend" : trans("GuardiansBasic::Config.d_jugend"),
+        "c_jugend" : trans("GuardiansBasic::Config.c_jugend"),
+        "b_jugend" : trans("GuardiansBasic::Config.b_jugend"),
+        "a_jugend" : trans("GuardiansBasic::Config.a_jugend")
+    } 
+    %}
+    {% set facetsAltersklasse = '' %}
+    {% set facetsUntergrund = ''  %}
+    {% set facetsBalloberflaeche = '' %}
+
+    {% set filterOfCat = getFacetsFromCat(18) %}
+    {% for facet in filterOfCat.facets %}
+       {% if facet.id==26 %}
+           {% set facetsAltersklasse = facet %}
+       {% endif %}
+       {% if facet.id==27 %}
+           {% set facetsUntergrund = facet %}
+       {% endif %}
+       {% if facet.id==28 %}
+           {% set facetsBalloberflaeche = facet %}
+       {% endif %}
+    {% endfor %}
+ 
+     {% set configAll = config("GuardiansBasic") %}
+
+      {# include "GuardiansBasic::Category.Item.Partials.FacetFilter" with { 'facets': filterOfCat.facets } #}  
+      <script>
+          {% set configAllEncode = configAll | json_encode %}
+          {% set configAllprg = configAllEncode|replace({"'": ""}) %}
+          var configGlobal = JSON.parse('{{ configAllprg | raw }} ');
+          console.log(configGlobal)
+      </script>
+    <section class="ball-berater">   
+        <h1>Unser Ballberater – mit wenigen Klicks zum passenden Fussball</h1>
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="ball-berater-wrap" data-eg-step-active="1" data-eg-step-thema-active="start" data-eg-thema-active="">
+                        <div class="ball-berater-steps">
+                            {# ------------------------------------------ ALL ----------------------------------------------------#}
+                            {# STEP 1 ALL - ALTERSKLASSE STATIC #}
+                            <div class="ball-berater-step active-step" data-eg-content-step="1" data-eg-step-thema="start">
+                                <div class="step-head text-center">
+                                    <span>Spieler</span>
+                                    <span>Welche Altersklasse?</span>
+                                </div>
+                                <div class="row">
+                                    {% for facetVal in facetsAltersklasse.values %}
+                                        <div class="col">
+                                            <button data-eg-step-thema-change="{{ facetVal.name|lower }}" data-eg-next-step="2" class="step-value" data-eg-step-facetval="{{ facetVal.id }}">
+                                                <span class="step-value-image">
+                                                    {% if facetVal.id==93 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/step-jugend.png" />
+                                                    {% elseif facetVal.id==94 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/step-herren.png" />    
+                                                    {% endif %}
+                                                </span>
+                                                <span class="step-value-name">{{ facetVal.name }}</span>
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {# STEP 2 ALL - BALLART FACETGROUP 10 #}
+                            <div class="ball-berater-step step-after-active" data-eg-content-step="2" data-eg-step-facetgroup="10">
+                                <div class="step-head text-center">
+                                    <span>Ballart</span>
+                                    <span>Welche Ballart?</span>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <button data-eg-next-step="3" class="step-value" data-eg-step-facetval="28">
+                                            <span class="step-value-image">
+                                                <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/stadion.png" />
+                                            </span>
+                                            <span class="step-value-name">Spielball</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button data-eg-next-step="3" class="step-value" data-eg-step-facetval="29">
+                                            <span class="step-value-image">
+                                                <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/training.png" />
+                                            </span>
+                                            <span class="step-value-name">Trainingsball</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {# ------------------------------------------ ALL END ----------------------------------------------------#}
+                            {# ------------------------------------------ JUGEND ----------------------------------------------------#}
+                            {# STEP 3 JUGEND - VERBÄNDE #}  
+                            <div class="ball-berater-step step-after-active" data-eg-content-step="3" data-eg-step-thema="jugend">
+                                <div class="step-head text-center">
+                                    <span>Fussballverbände</span>
+                                    <span>Wähle den passenden Verband aus</span>
+                                </div> 
+                                <div class="row">
+                                    {% for configKey, configValue in configAll %}
+                                        {% if "home" in configKey %}
+                                        {% elseif configKey!="templates" %}
+                                            <div class="col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2">
+                                                <button data-eg-next-step="4" class="step-value isVerband" data-eg-step-value-tmp="{{ configKey }}">
+                                                    <span class="step-value-image">
+                                                        <img src="{{ configValue.vereinslogo }}" />
+                                                    </span>
+                                                    <span class="step-value-name">{{ trans("GuardiansBasic::Config."~configKey)  }}</span>
+                                                </button>
+                                            </div>
+                                            {#<div class="col-lg-2">
+                                                <button>{{ trans("GuardiansBasic::Config."~configKey)  }}</button>
+                                            </div>#}
+                                        {% endif %}
+                                    {% endfor %}    
+                                </div>
+                            </div>
+                            {# STEP 4 JUGEND - ALTERSKLASSE #}
+                            <div class="ball-berater-step step-after-active" data-eg-content-step="4" data-eg-step-thema="jugend">
+                                <div class="step-head text-center">
+                                    <span>Altersklasse</span>
+                                    <span>Wähle die Altersklasse aus</span>
+                                </div>
+                                <div class="row">
+                                    {% for facetKey, facetVal in jugendKlassen %}
+                                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                            <button data-eg-next-step="5" class="step-value step-green-btn" data-eg-ball-filter="{{ facetKey }}">
+                                                {% set facetValSplit = facetVal|split('(')  %}
+                                                {% set facetValSplit2 = facetValSplit[1]|replace({')':''})  %}
+                                                <span class="step-value-image">
+                                                    {{ facetValSplit2 }}
+                                                </span>
+                                                <span class="step-value-name">{{ facetValSplit[0] }}</span>
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                    
+                                </div>
+                            </div>
+                            {# STEP 5 JUGEND - UNTERGRUND #}
+                            <div class="ball-berater-step step-after-active" data-eg-content-step="5" data-eg-step-thema="jugend" data-eg-step-facetgroup="{{ facetsUntergrund.id }}">
+                                <div class="step-head text-center">
+                                    <span>Untergrund</span>
+                                    <span>Wähle den passenden Untergrund aus</span>
+                                </div>
+                                <div class="row">
+                                {% for facetVal in facetsUntergrund.values %}
+                                    <div class="col-6 col-sm-4">
+                                        <button data-eg-next-step="6" class="step-value" data-eg-step-facetval="{{ facetVal.id }}" data-eg-step-thema-change="end">
+                                            <span class="step-value-image">
+                                                {% if facetVal.id==95 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/rasen.png" />
+                                                {% elseif facetVal.id==96 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/kunstrasen_1.png" />
+                                                {% elseif facetVal.id==97 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/asche.png" />    
+                                                {% endif %}
+                                            </span>
+                                            <span class="step-value-name">{{ facetVal.name }}</span>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                                </div>
+                            </div> 
+                            {# ------------------------------------------ JUGEND END ----------------------------------------------------#}
+                            {# ------------------------------------------ HERREN ----------------------------------------------------#}
+                            {# STEP 3 HERREN - UNTERGRUND #}
+                            <div class="ball-berater-step step-after-active" data-eg-content-step="3" data-eg-step-thema="herren" data-eg-step-facetgroup="{{ facetsUntergrund.id }}">
+                                <div class="step-head text-center">
+                                    <span>Untergrund</span>
+                                    <span>Wähle den passenden Untergrund aus</span>
+                                </div>
+                                <div class="row">
+                                {% for facetVal in facetsUntergrund.values %}
+                                    <div class="col-6 col-sm-4">
+                                        <button data-eg-next-step="4" class="step-value" data-eg-step-facetval="{{ facetVal.id }}">
+                                            <span class="step-value-image">
+                                                {% if facetVal.id==95 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/rasen.png" />
+                                                {% elseif facetVal.id==96 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/kunstrasen.png" />
+                                                {% elseif facetVal.id==97 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/asche.png" />    
+                                                {% endif %}
+                                            </span>
+                                            <span class="step-value-name">{{ facetVal.name }}</span>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                                </div>
+                            </div>  
+                            {# STEP 4 HERREN - BALLOBERFLÄCHE #} 
+                            <div class="ball-berater-step step-after-active" data-eg-content-step="4" data-eg-step-thema="herren" data-eg-step-facetgroup="{{ facetsBalloberflaeche.id }}">
+                                <div class="step-head text-center">
+                                    <span>Balloberfläche</span>
+                                    <span>Glatt oder strukturiert?</span>
+                                </div>
+                                <div class="row">
+                                {% for facetVal in facetsBalloberflaeche.values %}
+                                    <div class="col-6">
+                                        <button data-eg-next-step="6" class="step-value" data-eg-step-facetval="{{ facetVal.id }}" data-eg-step-thema-change="end">
+                                            <span class="step-value-image">
+                                                {% if facetVal.id==98 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/ball_glatt.png" />
+                                                {% elseif facetVal.id==99 %}
+                                                    <img src="https://cdn02.plentymarkets.com/cmj9dsr9tp66/frontend/Ballberater/ball_strukturiert.png" /> 
+                                                {% endif %}
+                                            </span>
+                                            <span class="step-value-name">{{ facetVal.name }}</span>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                                </div>
+                            </div>
+                            {# ------------------------------------------ HERREN END ----------------------------------------------------#}
+                            {# STEP END  #} 
+                            <div class="ball-berater-step step-after-active" data-eg-content-step="6" data-eg-step-thema="end">
+                                <div class="step-head text-center ball-items-counter-wrap">
+                                    <span>Deine Suche</span>
+                                    <span><span class="ball-items-counter"></span> Artikel gefunden</span>
+                                    <div class="ball-items-infotxt"></div>
+                                </div>
+                                
+                                <div class="loading-ballberater-items">
+                                    <div>
+                                        <span class="icon-ball load-rotate"></span>
+                                    </div>
+                                </div>
+                                <div class="category-product-list row">
+                                    
+                                    <div class="col-6 col-sm-6 col-md-4 col-lg-3 m-b-2 copy-result-item">
+                                        <article>
+                                            <div class="cat-item has-rrp">
+                                                <div class="cat-item-image text-center">
+                                                    <a href="/">
+                                                        <img src="">
+                                                    </a>
+                                                </div>
+                                                <div class="cat-item-data">
+                                                    <a href="/" class="thumb-title cat-item-name">
+                                                    </a>   
+                                                    <div class="cat-item-prices clearfix">
+                                                        <div class="cat-rrp-price-wrap">
+                                                            statt <span class="cat-rrp-price"></span>
+                                                            <span class="cat-rrp-percent"><span></span> sparen!</span>
+                                                        </div>
+                                                        <div class="cat-price">
+                                                        
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ball-berater-nav">
+                            <span class="step-cursor transition"></span>
+                            <div class="data-steps-nav transition dt-st-nav" data-eg-step-thema="jugend">
+                                <div class="row align-items-center justify-content-center">
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="1" data-eg-step-thema-change="start">1. <span>Bereich</span></button>
+                                    </div>
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="2">2. <span>Ballart</span></button>
+                                    </div>
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="3">3. <span>Fußballverband</span></button>
+                                    </div>
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="4">4. <span>Altersklasse</span></button>
+                                    </div>
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="5">5. <span>Untergrund</span></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="data-steps-nav transition dt-st-nav" data-eg-step-thema="herren">
+                                <div class="row align-items-center justify-content-center">
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="1" data-eg-step-thema-change="start">1. <span>Bereich</span></button>
+                                    </div>
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="2">2. <span>Trainingsball / Spielball</span></button>
+                                    </div>
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="3">3. <span>Untergrund</span></button>
+                                    </div>
+                                    <div class="col">
+                                        <button class="btn-step-nav" data-eg-step="4">4. <span>Balloberfläche</span></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="data-steps-start transition dt-st-nav" data-eg-step-thema="start">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="btn-step-nav d-flex align-items-center justify-content-center" data-eg-step="1">Bitte wählen Sie Ihre Altersklasse</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="data-steps-end transition dt-st-nav" data-eg-step-thema="end">
+                                <div class="row">
+                                    <div class="col">
+                                        <button class="btn-step-nav d-flex align-items-center justify-content-center" data-eg-step="6" data-eg-step-thema-change="" data-eg-prev-step="">Zurück zum Ballberater</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>    
+                    </div>
+                </div>  
+            </div>
+        </div>
+        
+    </section>

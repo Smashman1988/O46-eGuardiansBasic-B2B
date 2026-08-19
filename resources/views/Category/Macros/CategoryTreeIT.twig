@@ -1,0 +1,1086 @@
+{% macro currencyUrl(url, currency) %}
+    {{- url -}}{% if currency != "EUR" %}?currency={{ currency }}{% endif %}
+{% endmacro %}
+
+{% macro get_nav_bar(categories, currentScopeUrl) %}
+{% set currencycheck = services.checkout.getCurrencyData.name %}
+
+    
+        
+    <li class="cat-5618">
+        <a href="{{ _self.currencyUrl('/it/tutti-gli-articoli/', currencycheck) }}" title="Tutti gli articoli">
+            <span class="nav-cat-name">Tutti gli articoli</span>
+        </a>
+    </li>
+    
+ <span class="nav-cat-name d-lg-block cat-name-i">|</span>
+   <li class="eg-ddown cat-4814">
+        <a href="{{ _self.currencyUrl('/it/uomo/', currencycheck) }}" title="Uomo">
+            <span class="nav-cat-name">Uomo</span>
+            <span class="d-lg-none open-ddown" data-eg-open-ddown="" data-eg-handler="ddownOpen"></span>
+        </a>
+
+        <div class="ddown-wrap transition">
+            <button class="hidden-lg-up back-ddown" data-eg-back-ddown="" data-eg-handler="ddownBack" aria-label="Menu Indietro">
+                «&nbsp;Indietro
+            </button>
+            <div class="container scrollable-nav">
+                <div class="row align-items-center">
+                    <div class="col-lg-12">
+                        <ul class="cccount scrollable-nav cat-52">
+                            <li class="level2">
+                                <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">Mostra tutti gli articoli da uomo »</a>
+                            </li>
+                            
+                            <li class="cat-52 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/', currencycheck) }}" title="Scarpe da uomo">
+                                    <span class="f-size20"><u>Scarpe da uomo</u></span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-53 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/scarpe-da-ginnastica/', currencycheck) }}" title="Scarpe da ginnastica">
+                                    <span>Scarpe da ginnastica</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-56 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/scarpe-da-escursionismo-e-scarpe-da-trekking/', currencycheck) }}" title="Scarpe da escursionismo e scarpe da trekking">
+                                    <span>Scarpe da escursionismo e scarpe da trekking</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-55 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/stivali/', currencycheck) }}" title="Stivali">
+                                    <span>Stivali</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-54 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/scarpe-stringate-e-mocassini/', currencycheck) }}" title="Scarpe stringate e mocassini">
+                                    <span>Scarpe stringate e mocassini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-325 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/pantofole/', currencycheck) }}" title="Pantofole">
+                                    <span>Pantofole</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-58 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/sandali/', currencycheck) }}" title="Sandali">
+                                    <span>Sandali</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-59 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/scarpe-da-vela-e-scarpe-da-barca/', currencycheck) }}" title="Scarpe da vela e scarpe da barca">
+                                    <span>Scarpe da vela e scarpe da barca</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-57 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-uomo/pantofole-e-mocassini/', currencycheck) }}" title="Pantofole e mocassini">
+                                    <span>Pantofole e mocassini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-36 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/', currencycheck) }}" title="Abbigliamento da uomo">
+                                    <span class="f-size20"><u>Abbigliamento da uomo</u></span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-37 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/jeans-e-pantaloni/', currencycheck) }}" title="Jeans e pantaloni">
+                                    <span>Jeans e pantaloni</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-40 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/giacche-e-cappotti/', currencycheck) }}" title="Giacche e cappotti">
+                                    <span>Giacche e cappotti</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-42 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/intimo-e-calzini/', currencycheck) }}" title="Intimo e calzini">
+                                    <span>Intimo e calzini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-38 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/maglioni/', currencycheck) }}" title="Maglioni">
+                                    <span>Maglioni</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-39 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/t-shirt-e-canotte/', currencycheck) }}" title="T-shirt e canotte">
+                                    <span>T-shirt e canotte</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-41 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/camicie-e-polo/', currencycheck) }}" title="Camicie e polo">
+                                    <span>Camicie e polo</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-43 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/pantaloncini-e-bermuda/', currencycheck) }}" title="Pantaloncini e bermuda">
+                                    <span>Pantaloncini e bermuda</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-308 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/pigiami-e-costumi-da-bagno/', currencycheck) }}" title="Pigiami e costumi da bagno">
+                                    <span>Pigiami e costumi da bagno</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-280 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/pantaloni-da-jogging-e-moda-fitness/', currencycheck) }}" title="Pantaloni da jogging e moda fitness">
+                                    <span>Pantaloni da jogging e moda fitness</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-5489 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/giacca-e-blazer/', currencycheck) }}" title="Giacca e blazer">
+                                    <span>Giacca e blazer</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3084 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/taglie-forti/', currencycheck) }}" title="Taglie Forti">
+                                    <span>Taglie Forti</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-599 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/fragranze-da-uomo/', currencycheck) }}" title="Fragranze da uomo">
+                                    <span>Fragranze da uomo</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-616 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/orologi-da-uomo/', currencycheck) }}" title="Orologi da uomo">
+                                    <span>Orologi da uomo</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-6509 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-da-uomo/boxer/', currencycheck) }}" title="Boxer">
+                                    <span>Boxer</span>
+                                </a>
+                            </li>
+                            
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+ <span class="nav-cat-name d-lg-block cat-name-i">|</span>
+    <li class="eg-ddown cat-4813">
+        <a href="{{ _self.currencyUrl('/it/donna/', currencycheck) }}" title="Donna">
+            <span class="nav-cat-name">Donna</span>
+            <span class="d-lg-none open-ddown" data-eg-open-ddown="" data-eg-handler="ddownOpen"></span>
+        </a>
+
+        <div class="ddown-wrap transition">
+            <button class="hidden-lg-up back-ddown" data-eg-back-ddown="" data-eg-handler="ddownBack" aria-label="Menu Indietro">
+                «&nbsp;Indietro
+            </button>
+            <div class="container scrollable-nav">
+                <div class="row align-items-center">
+                    <div class="col-lg-12">
+                        <ul class="cccount scrollable-nav cat-44">
+                            <li class="level2">
+                                <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">Mostra tutti gli articoli da donna »</a>
+                            </li>
+                             
+                            <li class="cat-44 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/', currencycheck) }}" title="Scarpe da donna">
+                                    <span class="f-size20"><u>Scarpe da donna</u></span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-45 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/scarpe-da-ginnastica/', currencycheck) }}" title="Scarpe da ginnastica">
+                                    <span>Scarpe da ginnastica</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-49 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/stivali/', currencycheck) }}" title="Stivali">
+                                    <span>Stivali</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-48 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/scarpe-basse-e-pumps/', currencycheck) }}" title="Scarpe basse e Pumps">
+                                    <span>Scarpe basse e Pumps</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-326 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/pantofole/', currencycheck) }}" title="Pantofole">
+                                    <span>Pantofole</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-51 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/sandali/', currencycheck) }}" title="Sandali">
+                                    <span>Sandali</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-50 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/scarpe-da-escursionismo-e-scarpe-da-trekking/', currencycheck) }}" title="Scarpe da escursionismo e scarpe da trekking">
+                                    <span>Scarpe da escursionismo e scarpe da trekking</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-47 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/ballerine-e-pantofole/', currencycheck) }}" title="Ballerine e pantofole">
+                                    <span>Ballerine e pantofole</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-46 level2">
+                                <a href="{{ _self.currencyUrl('/it/scarpe-da-donna/scarpe-da-barca-e-da-vela/', currencycheck) }}" title="Scarpe da barca e da vela">
+                                    <span>Scarpe da barca e da vela</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-35 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/', currencycheck) }}" title="Abbigliamento Donna">
+                                    <span class="f-size20"><u>Abbigliamento Donna</u></span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-87 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/pantaloni-e-jeans/', currencycheck) }}" title="Pantaloni e jeans">
+                                    <span>Pantaloni e jeans</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-495 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/top-e-magliette/', currencycheck) }}" title="Top e magliette">
+                                    <span>Top e magliette</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-568 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/polo-e-camicette/', currencycheck) }}" title="Polo e camicette">
+                                    <span>Polo e camicette</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-89 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/maglioni/', currencycheck) }}" title="Maglioni">
+                                    <span>Maglioni</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-88 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/cappotti-e-giacche/', currencycheck) }}" title="Cappotti e Giacche">
+                                    <span>Cappotti e Giacche</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-281 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/moda-fitness-e-pantaloni-da-jogging/', currencycheck) }}" title="Moda fitness e pantaloni da jogging">
+                                    <span>Moda fitness e pantaloni da jogging</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-90 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/calze-e-biancheria-intima/', currencycheck) }}" title="Calze e biancheria intima">
+                                    <span>Calze e biancheria intima</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3738 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/pantaloncini-e-bermuda/', currencycheck) }}" title="Pantaloncini e bermuda">
+                                    <span>Pantaloncini e bermuda</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3740 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/abiti/', currencycheck) }}" title="Abiti">
+                                    <span>Abiti</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3739 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/gonne/', currencycheck) }}" title="Gonne">
+                                    <span>Gonne</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3741 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/tute/', currencycheck) }}" title="Tute">
+                                    <span>Tute</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-91 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/borse/', currencycheck) }}" title="Borse">
+                                    <span>Borse</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-323 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/costumi-da-bagno-e-biancheria-da-notte/', currencycheck) }}" title="Costumi da bagno e biancheria da notte">
+                                    <span>Costumi da bagno e biancheria da notte</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-5016 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/cardigan/', currencycheck) }}" title="Cardigan">
+                                    <span>Cardigan</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-5488 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/blazer-e-giacca/', currencycheck) }}" title="Blazer e giacca">
+                                    <span>Blazer e giacca</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-1567 level2">
+                                <a href="{{ _self.currencyUrl('/it/abbigliamento-donna/taglie-forti/', currencycheck) }}" title="Taglie Forti">
+                                    <span>Taglie Forti</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-598 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/fragranze-femminili/', currencycheck) }}" title="Fragranze femminili">
+                                    <span>Fragranze femminili</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-615 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/orologi-da-donna/', currencycheck) }}" title="Orologi da donna">
+                                    <span>Orologi da donna</span>
+                                </a>
+                            </li>
+                            
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+<span class="nav-cat-name d-lg-block cat-name-i">|</span>
+
+
+    <li class="eg-ddown cat-81">
+        <a href="{{ _self.currencyUrl('/it/bambini/', currencycheck) }}" title="Bambini">
+            <span class="nav-cat-name">Bambini</span>
+            <span class="d-lg-none open-ddown" data-eg-open-ddown="" data-eg-handler="ddownOpen"></span>
+        </a>
+
+        <div class="ddown-wrap transition">
+            <button class="hidden-lg-up back-ddown" data-eg-back-ddown="" data-eg-handler="ddownBack" aria-label="Menu Indietro">
+                «&nbsp;Indietro
+            </button>
+            <div class="container scrollable-nav">
+                <div class="row align-items-center">
+                    <div class="col-lg-12">
+                        <ul class="cccount scrollable-nav cat-81">
+                            <li class="level2">
+                                <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">Mostra tutti gli articoli per bambini »</a>
+                            </li>
+                            
+                            <li class="cat-92 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/mocassini/', currencycheck) }}" title="Mocassini">
+                                    <span>Mocassini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-566 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/pantofole/', currencycheck) }}" title="Pantofole">
+                                    <span>Pantofole</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-95 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/sandali/', currencycheck) }}" title="Sandali">
+                                    <span>Sandali</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-96 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/scarpe-da-calcio-per-bambini/', currencycheck) }}" title="Scarpe da calcio per bambini">
+                                    <span>Scarpe da calcio per bambini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-94 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/stivali/', currencycheck) }}" title="Stivali">
+                                    <span>Stivali</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-93 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/scarpe-da-ginnastica/', currencycheck) }}" title="Scarpe da ginnastica">
+                                    <span>Scarpe da ginnastica</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3972 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/camicie-e-polo/', currencycheck) }}" title="Camicie e polo">
+                                    <span>Camicie e polo</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3968 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/giacche-e-cappotti/', currencycheck) }}" title="Giacche e cappotti">
+                                    <span>Giacche e cappotti</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3967 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/jeans-e-pantaloni/', currencycheck) }}" title="Jeans e pantaloni">
+                                    <span>Jeans e pantaloni</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3975 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/pantaloni-da-jogging-e-moda-fitness/', currencycheck) }}" title="Pantaloni da jogging e moda fitness">
+                                    <span>Pantaloni da jogging e moda fitness</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-97 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/biancheria-intima-per-bambini/', currencycheck) }}" title="Biancheria intima per bambini">
+                                    <span>Biancheria intima per bambini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3976 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/abiti-e-gonne/', currencycheck) }}" title="Abiti e gonne">
+                                    <span>Abiti e gonne</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3970 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/maglioni/', currencycheck) }}" title="Maglioni">
+                                    <span>Maglioni</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3973 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/pantaloncini-e-bermuda/', currencycheck) }}" title="Pantaloncini e bermuda">
+                                    <span>Pantaloncini e bermuda</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3971 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/t-shirt-e-canotte/', currencycheck) }}" title="T-shirt e canotte">
+                                    <span>T-shirt e canotte</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3977 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/tute/', currencycheck) }}" title="Tute">
+                                    <span>Tute</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-98 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/borse-per-bambini/', currencycheck) }}" title="Borse per bambini">
+                                    <span>Borse per bambini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3974 level2">
+                                <a href="{{ _self.currencyUrl('/it/bambini/pigiami-e-costumi-da-bagno/', currencycheck) }}" title="Pigiami e costumi da bagno">
+                                    <span>Pigiami e costumi da bagno</span>
+                                </a>
+                            </li>
+                            
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+
+<span class="nav-cat-name d-lg-block cat-name-i">|</span>
+  
+
+
+ <li class="cat-6425">
+        <a href="{{ _self.currencyUrl('/it/offerte-limitate/', currencycheck) }}" title="OFFERTE LIMITATE">
+            <span class="nav-cat-name font-red">OFFERTE LIMITATE</span>
+        </a>
+    </li>
+
+<span class="nav-cat-name d-lg-block cat-name-i">|</span>
+
+    <li class="eg-ddown cat-3813">
+        <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/', currencycheck) }}" title="Tutto sotto i X€!">
+            <span class="nav-cat-name">Tutto sotto i X€!</span>
+            <span class="d-lg-none open-ddown" data-eg-open-ddown="" data-eg-handler="ddownOpen"></span>
+        </a>
+
+        <div class="ddown-wrap transition">
+            <button class="hidden-lg-up back-ddown" data-eg-back-ddown="" data-eg-handler="ddownBack" aria-label="Menu Indietro">
+                «&nbsp;Indietro
+            </button>
+            <div class="container scrollable-nav">
+                <div class="row align-items-center">
+                    <div class="col-lg-12">
+                        <ul class="cccount scrollable-nav cat-3813">
+                            <li class="level2">
+                                <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">Mostra tutto sotto i X euro »</a>
+                            </li>
+                            <li class="cat-3817 level2">
+                                <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/tutto-sotto-i-5-euro/', currencycheck) }}" title="Tutto sotto i 5 euro!">
+                                    <span>Tutto sotto i 5 euro!</span>
+                                </a>
+                            </li>
+                            <li class="cat-3815 level2">
+                                <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/tutto-sotto-i-10-euro/', currencycheck) }}" title="Tutto sotto i 10 euro!">
+                                    <span>Tutto sotto i 10 euro!</span>
+                                </a>
+                            </li>
+                            <li class="cat-3819 level2">
+                                <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/tutto-sotto-i-15-euro/', currencycheck) }}" title="Tutto sotto i 15 euro!">
+                                    <span>Tutto sotto i 15 euro!</span>
+                                </a>
+                            </li>
+                            <li class="cat-3879 level2">
+                                <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/tutto-sotto-i-20-euro/', currencycheck) }}" title="Tutto sotto i 20 euro!">
+                                    <span>Tutto sotto i 20 euro!</span>
+                                </a>
+                            </li>
+                            <li class="cat-3879 level2">
+                                <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/tutto-sotto-i-30-euro/', currencycheck) }}" title="Tutto sotto i 30 euro!">
+                                    <span>Tutto sotto i 30 euro!</span>
+                                </a>
+                            </li>
+                            {#<li class="cat-3879 level2">
+                                <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/tutto-sotto-i-40-euro/', currencycheck) }}" title="Tutto sotto i 40 euro!">
+                                    <span>Tutto sotto i 40 euro!</span>
+                                </a>
+                            </li>
+                            <li class="cat-3879 level2">
+                                <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/tutto-sotto-i-50-euro/', currencycheck) }}" title="Tutto sotto i 50 euro!">
+                                    <span>Tutto sotto i 50 euro!</span>
+                                </a>
+                            </li>#}
+                            <li class="cat-3879 level2">
+                                <a href="{{ _self.currencyUrl('/it/tutto-sotto-i-x-euro/articolo-gratuito/', currencycheck) }}" title="articolo gratuito!">
+                                    <span>articolo gratuito!</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+<span class="nav-cat-name d-lg-block cat-name-i">|</span>
+
+
+    <li class="eg-ddown cat-80">
+        <a href="{{ _self.currencyUrl('/it/articoli-sportivi/', currencycheck) }}" title="Articoli Sportivi">
+            <span class="nav-cat-name">Articoli Sportivi</span>
+            <span class="d-lg-none open-ddown" data-eg-open-ddown="" data-eg-handler="ddownOpen"></span>
+        </a>
+
+        <div class="ddown-wrap transition">
+            <button class="hidden-lg-up back-ddown" data-eg-back-ddown="" data-eg-handler="ddownBack" aria-label="Menu Indietro">
+                «&nbsp;Indietro
+            </button>
+            <div class="container scrollable-nav">
+                <div class="row align-items-center">
+                    <div class="col-lg-12">
+                        <ul class="cccount scrollable-nav cat-80">
+                            <li class="level2">
+                                <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">Mostra tutti gli articoli sportivi »</a>
+                            </li>
+                            
+                            <li class="cat-3957 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/sport-con-la-palla/', currencycheck) }}" title="Sport con la palla">
+                                    <span>Sport con la palla</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3959 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/sport-ricreativi/', currencycheck) }}" title="Sport ricreativi">
+                                    <span>Sport ricreativi</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3951 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/ciclismo/', currencycheck) }}" title="Ciclismo">
+                                    <span>Ciclismo</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3953 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/skate-sport/', currencycheck) }}" title="Skate sport">
+                                    <span>Skate sport</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3979 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/sport-di-danza/', currencycheck) }}" title="Sport di danza">
+                                    <span>Sport di danza</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3646 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/attrezzatura-da-boxe-e-sparring/', currencycheck) }}" title="Attrezzatura da boxe e sparring">
+                                    <span>Attrezzatura da boxe e sparring</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-543 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/scarpe-da-golf/', currencycheck) }}" title="Scarpe da golf">
+                                    <span>Scarpe da golf</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-108 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/borse-sportive/', currencycheck) }}" title="Borse sportive">
+                                    <span>Borse sportive</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3958 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/sport-acquatici/', currencycheck) }}" title="Sport acquatici">
+                                    <span>Sport acquatici</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3952 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/sport-invernali/', currencycheck) }}" title="Sport invernali">
+                                    <span>Sport invernali</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3954 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/campeggio-e-attivita-all-aperto/', currencycheck) }}" title="Campeggio e attività all'aperto">
+                                    <span>Campeggio e attività all'aperto</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-105 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/scarpe-da-calcio/', currencycheck) }}" title="Scarpe da calcio">
+                                    <span>Scarpe da calcio</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-107 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/scarpe-da-interni/', currencycheck) }}" title="Scarpe da interni">
+                                    <span>Scarpe da interni</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-106 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/scarpe-da-corsa-e-da-jogging/', currencycheck) }}" title="Scarpe da corsa e da jogging">
+                                    <span>Scarpe da corsa e da jogging</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-656 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/attrezzatura-sportiva/', currencycheck) }}" title="Attrezzatura sportiva">
+                                    <span>Attrezzatura sportiva</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-103 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/abbigliamento-sportivo/', currencycheck) }}" title="Abbigliamento sportivo">
+                                    <span>Abbigliamento sportivo</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-104 level2">
+                                <a href="{{ _self.currencyUrl('/it/articoli-sportivi/intimo-sportivo/', currencycheck) }}" title="Intimo sportivo">
+                                    <span>Intimo sportivo</span>
+                                </a>
+                            </li>
+                            
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+
+
+<span class="nav-cat-name d-lg-block cat-name-i">|</span>
+
+
+    <li class="eg-ddown cat-78">
+        <a href="{{ _self.currencyUrl('/it/accessori/', currencycheck) }}" title="Accessori">
+            <span class="nav-cat-name">Accessori</span>
+            <span class="d-lg-none open-ddown" data-eg-open-ddown="" data-eg-handler="ddownOpen"></span>
+        </a>
+
+        <div class="ddown-wrap transition">
+            <button class="hidden-lg-up back-ddown" data-eg-back-ddown="" data-eg-handler="ddownBack" aria-label="Menu Indietro">
+                «&nbsp;Indietro
+            </button>
+            <div class="container scrollable-nav">
+                <div class="row align-items-center">
+                    <div class="col-lg-12">
+                        <ul class="cccount scrollable-nav cat-78">
+                            <li class="level2">
+                                <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">Mostra tutti gli accessori »</a>
+                            </li>
+                            
+                            <li class="cat-1252 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/bicchieri/', currencycheck) }}" title="Bicchieri">
+                                    <span>Bicchieri</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-102 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/cappelli-e-caps/', currencycheck) }}" title="Cappelli e Caps">
+                                    <span>Cappelli e Caps</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-598 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/fragranze-femminili/', currencycheck) }}" title="Fragranze femminili">
+                                    <span>Fragranze femminili</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-615 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/orologi-da-donna/', currencycheck) }}" title="Orologi da donna">
+                                    <span>Orologi da donna</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-99 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/cinture/', currencycheck) }}" title="Cinture">
+                                    <span>Cinture</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3960 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/capelli/', currencycheck) }}" title="Capelli">
+                                    <span>Capelli</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-372 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/guanti-e-sciarpe/', currencycheck) }}" title="Guanti e sciarpe">
+                                    <span>Guanti e sciarpe</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-599 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/fragranze-da-uomo/', currencycheck) }}" title="Fragranze da uomo">
+                                    <span>Fragranze da uomo</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-616 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/orologi-da-uomo/', currencycheck) }}" title="Orologi da uomo">
+                                    <span>Orologi da uomo</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-637 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/cura-del-corpo-e-benessere/', currencycheck) }}" title="Cura del corpo e benessere">
+                                    <span>Cura del corpo e benessere</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3961 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/cosmetici-e-trucco/', currencycheck) }}" title="Cosmetici e trucco">
+                                    <span>Cosmetici e trucco</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-324 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/zaini-e-borse/', currencycheck) }}" title="Zaini e borse">
+                                    <span>Zaini e borse</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-1276 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/gioielleria/', currencycheck) }}" title="Gioielleria">
+                                    <span>Gioielleria</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-2303 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/accessori-per-scarpe-e-cura-delle-scarpe/', currencycheck) }}" title="Accessori per scarpe e cura delle scarpe">
+                                    <span>Accessori per scarpe e cura delle scarpe</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-79 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/occhiali-da-sole/', currencycheck) }}" title="Occhiali da sole">
+                                    <span>Occhiali da sole</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-101 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/calzini/', currencycheck) }}" title="Calzini">
+                                    <span>Calzini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-100 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/biancheria-intima/', currencycheck) }}" title="Biancheria intima">
+                                    <span>Biancheria intima</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-534 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/asciugamani/', currencycheck) }}" title="asciugamani">
+                                    <span>asciugamani</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-3980 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/orologi-per-bambini/', currencycheck) }}" title="Orologi per bambini">
+                                    <span>Orologi per bambini</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-5163 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/maschera-viso/', currencycheck) }}" title="Maschera viso">
+                                    <span>Maschera viso</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-374 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/portafogli-e-portamonete/', currencycheck) }}" title="Portafogli e portamonete">
+                                    <span>Portafogli e portamonete</span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li class="cat-792 level2">
+                                <a href="{{ _self.currencyUrl('/it/accessori/grembiuli-e-accessori-per-cinture/', currencycheck) }}" title="Grembiuli e accessori per cinture">
+                                    <span>Grembiuli e accessori per cinture</span>
+                                </a>
+                            </li>
+                            
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+<span class="nav-cat-name d-lg-block cat-name-i">|</span>
+
+ <li class="cat-5081">
+        <a href="{{ _self.currencyUrl('/it/grandi-sconti-su-articoli-unici-e-ultime-taglie/', currencycheck) }}" title="Ultima dimensione">
+            <span class="nav-cat-name">Ultima dimensione</span>
+        </a>
+    </li>
+<span class="nav-cat-name d-lg-block cat-name-i">|</span>
+
+
+
+    {#<li class="eg-ddown cat-4103">
+        <a href="{{ _self.currencyUrl('/it/casa-e-vita/', currencycheck) }}" title="Casa e vita">
+            <span class="nav-cat-name">Casa e vita</span>
+            <span class="d-lg-none open-ddown" data-eg-open-ddown="" data-eg-handler="ddownOpen"></span>
+        </a>
+
+        <div class="ddown-wrap transition">
+            <button class="hidden-lg-up back-ddown" data-eg-back-ddown="" data-eg-handler="ddownBack" aria-label="Menu Indietro">
+                «&nbsp;Indietro
+            </button>
+            <div class="container scrollable-nav">
+                <div class="row align-items-center">
+                    <div class="col-lg-12">
+                        <ul class="cccount scrollable-nav cat-4103">
+                            <li class="level2">
+                                <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">Mostra tutti gli articoli su casa e arredamento »</a>
+                            </li>
+                            <li class="cat-1385 level2">
+                                <a href="{{ _self.currencyUrl('/it/casa-e-vita/set-da-bagno-e-accessori/', currencycheck) }}" title="Set da bagno e accessori">
+                                    <span>Set da bagno e accessori</span>
+                                </a>
+                            </li>
+                            <li class="cat-2345 level2">
+                                <a href="{{ _self.currencyUrl('/it/casa-e-vita/articoli-per-la-casa/', currencycheck) }}" title="Articoli per la casa">
+                                    <span>Articoli per la casa</span>
+                                </a>
+                            </li>
+                            <li class="cat-1889 level2">
+                                <a href="{{ _self.currencyUrl('/it/casa-e-vita/tessuti-per-la-casa/', currencycheck) }}" title="Tessuti per la casa">
+                                    <span>Tessuti per la casa</span>
+                                </a>
+                            </li>
+                                <li class="cat-4105 level2">
+                                <a href="{{ _self.currencyUrl('/it/casa-e-vita/lampade-e-illuminazione/', currencycheck) }}" title="Lampade e illuminazione">
+                                    <span>Lampade e illuminazione</span>
+                                </a>
+                            </li>
+                            <li class="cat-4108 level2">
+                                <a href="{{ _self.currencyUrl('/it/casa-e-vita/mobili-e-tavoli/', currencycheck) }}" title="Mobili e tavoli">
+                                    <span>Mobili e tavoli</span>
+                                </a>
+                            </li>
+                            <li class="cat-4107 level2">
+                                <a href="{{ _self.currencyUrl('/it/casa-e-vita/sedie-e-gruppi-di-sedute/', currencycheck) }}" title="Sedie e gruppi di sedute">
+                                    <span>Sedie e gruppi di sedute</span>
+                                </a>
+                            </li>
+                            <li class="cat-4104 level2">
+                                <a href="{{ _self.currencyUrl('/it/casa-e-vita/tappeti-e-tessuti-per-la-casa/', currencycheck) }}" title="Tappeti e tessuti per la casa">
+                                    <span>Tappeti e tessuti per la casa</span>
+                                </a>
+                            </li>
+                            <li class="cat-4106 level2">
+                                <a href="{{ _self.currencyUrl('/it/casa-e-vita/decorazioni-per-la-casa/', currencycheck) }}" title="Decorazioni per la casa">
+                                    <span>Decorazioni per la casa</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+<span class="nav-cat-name d-lg-block cat-name-i">|</span>
+#}
+
+    <li class="cat-60">
+        <a href="{{ _self.currencyUrl('/it/marca/', currencycheck) }}" title="Marca A-Z">
+            <span class="nav-cat-name">Marca A-Z</span>
+        </a>
+    </li>
+
+
+
+
+
+
+
+{% endmacro %}

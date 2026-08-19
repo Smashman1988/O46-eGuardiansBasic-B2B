@@ -1,0 +1,48 @@
+{# GuardiansBasic::Partials.CrossSelling.twig #}
+
+{% if items is not empty %}
+    <div class="crossselling-container mt-5">
+        <h3 class="crossselling-title">
+            {{ trans("GuardiansBasic::Template.crossselling.title") }}
+        </h3>
+
+        <div class="row">
+            {% for crossItem in items %}
+                {% set data = crossItem.data %}
+                {% set url = data | itemURL %}
+
+                <div class="col-6 col-md-4 col-lg-3 mb-4">
+                    <div class="crossselling-item card h-100">
+                        <a href="{{ url }}" title="{{ data.texts.name1 }}" class="text-decoration-none">
+
+                            <picture class="text-center">
+                                <source type="image/avif" data-srcset="{{ data.images.all[0].urlPreview }}.avif">
+                                <img class="lozad card-img-top"
+                                     loading="lazy"
+                                     data-src="{{ data.images.all[0].urlPreview }}"
+                                     alt="{{ data.texts.name1 }}">
+                            </picture>
+
+                            <div class="card-body p-2 text-center">
+                                <h4 class="product-title mb-1 font-14">
+                                    {{ data.texts.name1 }}
+                                </h4>
+
+                                <div class="product-price font-16">
+                                    {{ data.prices.default.unitPrice.value | number_format(2, ',', '.') }}
+                                    {{ data.prices.default.unitPrice.currency }}
+                                </div>
+
+                                {% if data.item.feedbackCount > 0 %}
+                                    <div class="crossselling-rating mt-1">
+                                        {{ Rating.renderRating(data.item.feedbackDecimal, 5) }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}

@@ -1,0 +1,10 @@
+{% set refId = request.get("ReferrerID") %}
+{% set pixelMap = {
+    34: "https://pin.outlet46.de/jsTag?ap=1650743749",
+    46: "https://to.outlet46.de/jsTag?ap=1963991560",
+    47: "https://go.outlet46.de/jsTag?ap=1968260932",
+    48: "https://at.outlet46.de/jsTag?ap=1970752041"
+} %}
+{% if refId in pixelMap|keys %}
+    <script defer src="{{ pixelMap[refId] }}"></script>
+{% endif %}

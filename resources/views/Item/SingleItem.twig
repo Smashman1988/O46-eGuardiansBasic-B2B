@@ -1,0 +1,610 @@
+{% set df = services.ItemCrossSellingService.setType('Accessory') %}
+{% extends getPartial('page-design') %}
+{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
+{# === Basisdaten sammeln === #}
+{% set itemData = item.documents[0].data %}
+          {% set attributeCache = {
+    46: trans("GuardiansBasic::Template.mainmaterial"),
+    115: trans("GuardiansBasic::Template.materialcomposition"),
+    105: trans("GuardiansBasic::Template.materialconstruction"),
+    196: trans("GuardiansBasic::Template.lining"),
+    197: trans("GuardiansBasic::Template.insole"),
+    198: trans("GuardiansBasic::Template.outsole"),
+    7: trans("GuardiansBasic::Template.colour"),
+    107: trans("GuardiansBasic::Template.ablution"),
+    108: trans("GuardiansBasic::Template.style"),
+    122: trans("GuardiansBasic::Template.producttype"),
+    111: trans("GuardiansBasic::Template.cutout"),
+    73: trans("GuardiansBasic::Template.mfit"),
+    127: trans("GuardiansBasic::Template.shoewidth"),
+    110: trans("GuardiansBasic::Template.fitcut"),
+    109: trans("GuardiansBasic::Template.waistband"),
+    123: trans("GuardiansBasic::Template.sleevelength"),
+    124: trans("GuardiansBasic::Template.sleevetype"),
+    106: trans("GuardiansBasic::Template.dimensions"),
+    118: trans("GuardiansBasic::Template.length"),
+    119: trans("GuardiansBasic::Template.stridelength"),
+    125: trans("GuardiansBasic::Template.heelheight"),
+    102: trans("GuardiansBasic::Template.movementtype"),
+    103: trans("GuardiansBasic::Template.display"),
+    101: trans("GuardiansBasic::Template.careinstructions"),
+    104: trans("GuardiansBasic::Template.clasp")
+} %}
+{% set translations = {
+    tSustainability: trans("GuardiansBasic::Template.sustainability"),
+    tAvailSizes: trans("GuardiansBasic::Template.availsizes"),
+    tStatt: trans("GuardiansBasic::Template.statt"),
+    tInBasket: trans("GuardiansBasic::Template.inbasket")
+} %}
+{% set transLabels = {
+    availsizedeal: trans("GuardiansBasic::Template.availsizedeal"),
+    availsizeonesize: trans("GuardiansBasic::Template.availsizeonesize"),
+    morethen18: trans("GuardiansBasic::Template.morethen18")
+} %}
+{% set itemId = itemData.item.id %}
+{% set variationId = itemData.variation.id %}
+{% set mainImg = itemData.images.all | orderByKey('position') | first %}
+
+{# === Services & Daten === #}
+{% set detailurl = services.url.getCanonicalURL() %}
+{% set variationsWithAttributes = services.item.getVariationAttributeMap(itemId) %}
+{% set variationList = services.item.getVariationList(itemId, true) %}
+{% set basketItems = services.basket.getBasketForTemplate() %}
+{% set basePriceList = getBasePriceList(variationList) %}
+{% set crossSellingList = services.item.getItemCrossSellingList(itemId) %}
+{% set enabledRoutes = config("IO.routing.enabled_routes") | split(', ') %}
+{% set lang = services.localizationRepository.getLanguage() %}
+{% set itemAttributes = services.item.getAttributeNameMap(itemId) %}
+{% set isInWishList = services.wishList.isItemInWishList(variationId) %}
+{% set itemPrices = itemData.prices %}
+{% set hasRRP = itemPrices.rrp is defined and itemPrices.rrp.price.value != 0 and itemPrices.rrp.price.value > itemPrices.default.unitPrice.value %}
+ 
+{% import "Ceres::PageDesign.Macros.ItemName" as ItemName %}
+{% block PartialHead %}
+{% if isQuickView %}
+    <link rel="preload" href="{{ itemData.images.all[0].urlMiddle }}" as="image">
+{% set vendorlogo = itemData.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+{% if vendorlogo and itemData.item.manufacturer.url is not empty %}
+<link rel="preload" href="{{ vendorlogo }}" as="image">    
+{% elseif itemData.item.manufacturer.logo and itemData.item.manufacturer.url is not empty %}
+<link rel="preload" href="{{ itemData.item.manufacturer.logo }}" as="image">{% endif %}
+{% endif %}
+    {% embed getPartial('page-metadata') %}
+        {% block title          ItemName.get(itemData | itemName, itemData.variation.bundleType) %}
+        {% block description    itemData.texts.metaDescription %}
+        {% block keywords       itemData.texts.keywords %}
+        {% block image          itemData.images.all[0].url %}
+        {% block schemaOrg %}
+            {
+                "@context"      : "http://schema.org/",
+                "@type"         : "Product",
+                "@id"           : "{{ itemData.variation.id }}",
+                "name"          : "{{ ItemName.get(itemData | itemName, itemData.variation.bundleType) | trim }}",
+                "category"      : "{{ defaultCategory.details[0].name | raw  }}",
+                "releaseDate"   : "{{ itemData.variation.releasedAt }}",
+                "image"         : "{{ itemData.images.all[0].urlMiddle }}",
+                "identifier"    : "{{ itemData.variation.id }}",
+                "description"   : "{{ itemData.texts.description | striptags | filterTabs }}",
+                "disambiguatingDescription" : "{{ itemData.texts.shortDescription }}",
+                "brand"         : {
+                    "@type"         : "Brand",
+                    "name"          : "{{ itemData.item.manufacturer.externalName }}"
+                },
+                "manufacturer"  : {
+                    "@type"         : "Organization",
+                    "name"          : "{{ itemData.item.manufacturer.externalName }}"
+                },
+                "sku"           : "{{ itemData.variation.number }}",
+                "gtin13"          : "{{ itemData.barcodes[0].code }}",
+                "offers": {
+                    "@type"         : "Offer",
+                    "priceCurrency" : "{{ itemData.prices.default.currency }}",
+                    "price"         : "{{ itemData.prices.default.unitPrice.value | number_format(2, '.', '') }}",
+                    "priceValidUntil": "2040-11-20",
+                    "url"           : "{{ detailurl }}",
+                    {% if itemData.prices.default.baseLot > 0 %}
+                    "priceSpecification": {
+                        "@type": "UnitPriceSpecification",
+                        "price": "{{ item.documents[0].data.prices.default.baseSinglePrice | number_format(2, '.', '') }}",
+                        "priceCurrency": "{{ item.documents[0].data.prices.default.currency }}",
+                        "priceValidUntil": "2040-11-20",
+                        "referenceQuantity": {
+                            "@type": "QuantitativeValue",
+                            "value": "{{ item.documents[0].data.prices.default.baseLot }}",
+                            "unitCode": "{{ item.documents[0].data.prices.default.baseUnit }}"
+                        }
+                    },
+                    {% endif %}
+                    "availability"  : "{{ itemData.variation.availability.mappedAvailability }}",
+                    "itemCondition" : "{{ conditionOfItem }}",
+                    "serialNumber"  : "{{ itemData.variation.number }}"
+                },
+                "depth": {
+                    "@type"         : "QuantitativeValue",
+                    "value"         : "0"
+                },
+                "width": {
+                    "@type"         : "QuantitativeValue",
+                    "value"         : "0"
+                },
+                "height": {
+                    "@type"         : "QuantitativeValue",
+                    "value"         : "0"
+                },
+                "weight": {
+                    "@type"         : "QuantitativeValue",
+                    "value"         : "{{ itemData.variation.weightG }}"
+                }
+                {% if itemData.item.feedbackCount > 0 %}
+                    ,"aggregateRating": {
+                      "@type": "AggregateRating",
+                      "ratingValue": "{{ itemData.item.feedbackDecimal }}",
+                      "ratingCount": "{{ itemData.item.feedbackCount }}",
+                      "bestRating": "5",
+                      "worstRating": "1"
+                    }
+                {% endif %}
+            }
+        {% endblock %}
+    {% endembed %}
+{% endblock %}
+{% block PageBody %}
+{% if not isQuickView %}
+<script>
+(function () {
+    try {
+        var url = new URL(window.location.href);
+        if (url.searchParams.get('quickViewItem') === 'true') {
+            url.searchParams.delete('quickViewItem');
+            window.location.replace(url.origin + url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+        }
+    } catch (e) {
+        console.warn('[MiniFailsafe] Fehler:', e);
+    }
+})();
+</script>
+{% endif %}
+<article class="single" data-item data-eg-active-variation="{{ itemData.variation.id }}" data-mainitemid="{{ itemData.item.id }}">  
+    <div class="container">
+        <div class="d-lg-block clearfix">
+            {% if isQuickView %}
+            <div class="col-12 col-xl-6 pull-lg-left stickyarticle z-index1">
+                <div class="row">                   
+                    <div class="col-md-2 col-lg-2 col-xl-2 d-none d-md-block">
+                        {% if itemData.images.all | length>1 %}
+                         {% set stepIndex = 0 %}
+                        <div class="single-prev-images d-none d-md-block">
+                            {% for prevImg in itemData.images.all  | orderByKey('position') %}
+                                <a href="{{ prevImg.url }}" rel="zoom-id:ItemImgZoom" data-image="{{ prevImg.urlMiddle }}" title="{{ itemData | itemName }}" data-stepindex="{{ stepIndex - 3 }}">
+                                    <img src="" data-src="{{ prevImg.urlSecondPreview }}" alt="{{ itemData | itemName }}" title="{{ itemData | itemName }}" class="lozad" width="100%" height="100%"/>
+                                </a>
+                                {% set stepIndex = stepIndex+1 %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-10 col-lg-10 col-xl-10">
+                        {% set image = item.data.images.all | first %}
+                        <div class="relative">
+                            {% set storeSpecialClass = '' %}
+                            {% set storeSpecialTxt = '' %}
+                            {% if  item.data.item.storeSpecial.id == 2 %}
+                                {% set storeSpecialClass = 'i-action-top' %}
+                                {% set storeSpecialTxt = 'Top' %}
+                            {% endif %}
+                            {% if itemData.item.storeSpecial.id == 3 %}
+                                {% set storeSpecialClass = 'i-action-new' %}
+                                {% set storeSpecialTxt = 'Neu' %}
+                            {% endif %}
+							{% if hasRRP %}
+                            {% set percent = (1 - itemPrices.default.unitPrice.value / itemPrices.rrp.unitPrice.value ) * -100 %}
+                            {% set percent = percent | number_format(dezimalcount, ',', '.') %}
+							{% set storeSpecialClass = 'i-action-sale' %}
+							{% set storeSpecialTxt = '' %}
+							{% endif %}
+							{% if storeSpecialClass is not empty %}
+							<span class="item-action {{ storeSpecialClass }}">
+                                                            {{ storeSpecialTxt }}<span data-eg-item-rrp-percent>{{ percent }}</span>%
+							</span>  
+							{% endif %}
+                                                        {% for tag in itemData.tags %}
+                                                        {% if tag.id == 284 %}
+                                                        <span class="item-action i-action-nachhaltig-item">{{ trans("GuardiansBasic::Template.sustainability") }}</span>
+                                                        {% endif %}
+                                                        {% endfor %}
+                                                        <span class="wishlist-info1">
+				<button aria-label="In die Merkliste" data-eg-event="click" data-eg-handler="watchListTrigger" class="btn btn-watch-h align-items-center justify-content-center btn-secondary wishlist-count1{% if isInWishList %} item-in-wishlist{% endif %}"><span class="icon-heart-o"></span></button>
+                            </span>
+                            <a href="{{ mainImg.url }}" aria-label="{{ itemData | itemName }}" title="{{ itemData | itemName }}" id="ItemImgZoom" class="MagicZoomPlus" data-options="zoomMode: off; transitionEffect: false; lazyZoom: true; cssClass: white-bg; textBtnClose: Closes; textBtnNext: Nexts; textBtnPrev: Previouss; textHoverZoomHint: ; textClickZoomHint: ; textExpandHint:    " data-mobile-options="zoomMode: off; textTouchZoomHint: ; textClickZoomHint: ; textExpandHint: ">
+                                <img fetchpriority="high" src="{{ mainImg.urlMiddle }}" alt="{{ itemData | itemName }}" title="{{ itemData | itemName }}"  width="560px" height="560px">
+                            </a>
+                            {# Modeldaten zwischenspeichern – nur ein Loop! #}
+                            {% set modelHeight = null %}
+                            {% set modelWeight = null %}
+                            {% set modelSize = null %}
+
+                            {% for prop in item.documents[0].data.properties %}
+                                {% if prop.property.id == 231 and prop.texts.value is not empty %}
+                                    {% set modelHeight = prop.texts.value %}
+                                {% elseif prop.property.id == 78 and prop.texts.value is not empty %}
+                                    {% set modelWeight = prop.texts.value %}
+                                {% elseif prop.property.id == 77 and prop.texts.value is not empty %}
+                                    {% set modelSize = prop.texts.value %}
+                                {% endif %}
+                            {% endfor %}
+
+                            {# Ausgabe nur wenn etwas vorhanden ist #}
+                            {% if modelHeight is not empty %}
+                            <div class="modelinfo-1" style="">
+                              <span class="modelinfo-2" style="" data-darkreader-inline-bgcolor="">
+                                <span class="modelinfo-3" style="" data-darkreader-inline-color="">
+                                  {{ trans("GuardiansBasic::Template.ourmodelis") }} ({{ modelHeight }} {{ trans("GuardiansBasic::Template.cmtall") }}
+                                  {% if modelWeight %} - {{ modelWeight }}{{ trans("GuardiansBasic::Template.kg") }}{% endif %})
+                                  {% if modelSize %}
+                                    <br>{{ trans("GuardiansBasic::Template.ourmodelwearssize") }}: {{ modelSize }}
+                                  {% endif %}
+                                </span>
+                              </span>
+                            </div>
+                            {% endif %}
+
+                            <div class="lupe-1"><span class="" style=""><span class="" style=""><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="s-icon s-icon-icon-zoom-in" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="m14.473 13.526-2.453-2.453a5.975 5.975 0 0 0 1.314-3.74 6 6 0 1 0-6 6 5.975 5.975 0 0 0 3.74-1.313l2.453 2.453c.26.26.687.26.947 0a.672.672 0 0 0 0-.947ZM2.668 7.333a4.663 4.663 0 0 1 4.667-4.667A4.663 4.663 0 0 1 12 7.333a4.673 4.673 0 0 1-1.34 3.273.142.142 0 0 1-.033.02l-.007.007c-.006.007-.013.02-.02.027a4.663 4.663 0 0 1-7.933-3.327Zm7.333 0A.67.67 0 0 1 9.334 8H8v1.333C8 9.7 7.7 10 7.333 10a.669.669 0 0 1-.666-.667V8H5.334a.669.669 0 0 1-.667-.667c0-.367.3-.667.667-.667h1.333V5.333c0-.367.3-.667.667-.667.366 0 .666.3.666.667v1.333h1.334c.366 0 .666.3.666.667Z"/></svg></span></span></div>
+                            {% if itemData.images.all|length>1 %}
+                            <button class="zoombtnnav zoomnavleft" aria-label="Bild zurück"><span class="icon-left-open-big fontGreen"></span></button>
+                            <button class="zoombtnnav zoomnavright" aria-label="Bild vor"><span class="icon-right-open-big fontGreen"></span></button> 
+                            {% endif %}
+                            <div class="zoom-nav-list mt-3 mb-3 d-md-none"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+           {% endif %}
+           {% if isQuickView %}
+            <div class="col-12 col-xl-6 pull-lg-right" data-eg-loading-attr>
+                {% endif %}
+                <h1 class="item-title" data-eg-item-title>{{ itemData | itemName }}</h1>
+                 {% if isQuickView %}
+                    {% if itemData.item.feedbackCount>0 %}
+                        {% set percentTotal = (itemData.item.feedbackDecimal / 5) * 100 %}
+                    <div class="item-ratings-top item-ratings-head clearfix d-inline-block item-ratings-first bew-abstand display-flex-important">
+                        <div class="rating-grey f-size14">
+                            {% for i in 1..5 %}
+                            <span class="icon-star"></span>
+                            {% endfor %}
+                        </div>
+                        <div class="rating-fuller" style="width: {{ percentTotal }}%"> 
+                            <div class="rating-fuller-inner f-size14">
+                                {% for i in 1..5 %}
+                                <span class="icon-star"></span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    <div class="tab-rating-info"><a href="#tabrating" title="Bewertung {{ itemData.item.feedbackCount }}" class="slideToRating">{{ trans("GuardiansBasic::Template.ratingtitle") }}</a></div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+                <hr class="hr-style">
+                {% if isQuickView %}
+                    {% if itemData.filter.hasManufacturer %}
+                        {% set hasLogo = itemData.item.manufacturer.logo is not empty %}
+                        {% set hasUrl = itemData.item.manufacturer.url is not empty %}
+                        {% if hasLogo and hasUrl %}
+                            {% set vendorlogo = itemData.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+
+                            {# Default-URLs setzen #}
+                            {% set categoryURL = '#' %}
+                            {% set categoryURLint = '#' %}
+
+                            {# Wenn manufacturer.url numerisch ist, als categoryId behandeln #}
+                            {% if itemData.item.manufacturer.url matches '/^[0-9]+$/' %}
+                                {% set prodcatid = itemData.item.manufacturer.url | int %}
+                                {% set categoryURLService = services.url.getCategoryURL(prodcatid) %}
+                                {% set categoryURL = categoryURLService.toAbsoluteUrl(false) %}
+                                {% set categoryURLint = categoryURLService.toAbsoluteUrl(true) %}
+                            {% endif %}
+
+                            <div class="col-5 pull-right">
+                                <span class="item-producer-img mt-0">
+                                    <a href="{{ lang == 'de' ? categoryURL : categoryURLint }}">
+                                        <img src="{{ vendorlogo }}" alt="{{ itemData.item.manufacturer.externalName }} Logo" title="{{ itemData.item.manufacturer.externalName }}" width="100px" height="100px">
+                                    </a>
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    <div class="col-7 padding-10-0{% if itemData.prices.graduatedPrices|length>1 %}hasGruadetPrices{% endif %}">
+                    <span class="bold single-item-price">
+                      <span data-eg-item-price class="bold single-item-price">
+                        {{ (itemPrices.default.unitPrice.value ?? 0)|number_format(2, ',', '.') }}
+                      </span>
+                      {{ currencyData[currencyFormat] }} <span class="mwstinfo">{{ trans("GuardiansBasic::Template.exklmwst") }}</span>
+                    </span>
+
+                    {% set rabatt = ((itemPrices.rrp.unitPrice.value ?? 0) - (itemPrices.default.unitPrice.value ?? 0))|number_format(2, ',', '.') %}
+
+                    <div class="cat-rrp-item">
+                      <span class="cat-rrp-item-price">
+                        {{ trans("GuardiansBasic::Template.statt") }}
+                        <span data-eg-item-rrp class="cat-rrp-item-price">
+                          {{ (itemPrices.rrp.unitPrice.value ?? 0)|number_format(2, ',', '.') }}
+                        </span>
+                        {{ currencyData[currencyFormat] }}
+                      </span>*</div>
+
+                    <div class="cat-rrp-item">
+                      <span class="single-item-rabatt">
+                        {{ trans("GuardiansBasic::Template.Dusparst") }}
+                        <span data-eg-item-rrp-spar class="single-item-rabatt">{{ rabatt }}</span>
+                        {{ currencyData[currencyFormat] }}!
+                      </span>
+                    </div>
+
+                    </div>
+
+                        {#<a href="#" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{% if lang == "de" %}{% elseif lang == "en" %}/en{% elseif lang == "fr" %}/fr{% elseif lang == "it" %}/it{% elseif lang == "es" %}/es{% endif %}/getShopBuilderContent?categoryId=5934" data-eg-title="{{ trans("GuardiansBasic::Template.10percentcode") }}"><div class="benefit-detailview"><span class="benefit-detailview--text">{{ trans("GuardiansBasic::Template.10percentcode") }}</span></div></a>#}
+                    <hr class="hr-style">
+                {% endif %} 
+                            {# Ausgabe nur wenn etwas vorhanden ist #}
+                            {% if modelHeight is not empty %}
+                            <div class="" style="">
+                              <span class="modelinfo-2" style="" data-darkreader-inline-bgcolor="">
+                                <span class="modelinfo-3" style="" data-darkreader-inline-color="">
+                                  {{ trans("GuardiansBasic::Template.ourmodelis") }} ({{ modelHeight }} {{ trans("GuardiansBasic::Template.cmtall") }}
+                                  {% if modelWeight %} - {{ modelWeight }}{{ trans("GuardiansBasic::Template.kg") }}{% endif %})
+                                  {% if modelSize %}{{ trans("GuardiansBasic::Template.ourmodelwearssize") }}: {{ modelSize }}
+                                  {% endif %}
+                                </span>
+                              </span>
+                            </div>
+                            {% endif %}                           
+<div data-item-variation class="row"
+     data-eg-handler="initVariation"
+     data-eg-event="load"
+     data-eg-variations="{{ variationsWithAttributes | json_encode | e('html_attr') }}">
+
+{% set sizeAttr = null %}
+{% set colorAttr = null %}
+
+{# Tokens für Attribut-Namen in deinen Sprachen #}
+{% set sizeTokens  = ['größe','groesse','size','taille','taglia','dimensione','misura','tamaño','tamano'] %}
+{% set colorTokens = ['farb','farbe','color','couleur','colore'] %}
+
+{% for a in attributes %}
+  {% set an = (a.name is defined and a.name ? a.name : '')|lower %}
+  {% set aValuesLen = (a.values is defined and a.values ? a.values|length : 0) %}
+
+  {# --- SIZE --- #}
+  {% set isSize = false %}
+  {% for t in sizeTokens %}
+    {% if t in an %}{% set isSize = true %}{% endif %}
+  {% endfor %}
+
+  {% if isSize %}
+    {% if sizeAttr is null %}
+      {% set sizeAttr = a %}
+    {% else %}
+      {% set curLen = (sizeAttr.values is defined and sizeAttr.values ? sizeAttr.values|length : 0) %}
+      {% if aValuesLen > curLen %}
+        {% set sizeAttr = a %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+
+  {# --- COLOR --- #}
+  {% set isColor = false %}
+  {% for t in colorTokens %}
+    {% if t in an %}{% set isColor = true %}{% endif %}
+  {% endfor %}
+
+  {% if isColor %}
+    {% if colorAttr is null %}
+      {% set colorAttr = a %}
+    {% else %}
+      {% set curLenC = (colorAttr.values is defined and colorAttr.values ? colorAttr.values|length : 0) %}
+      {% if aValuesLen > curLenC %}
+        {% set colorAttr = a %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+
+{% set hasSize = sizeAttr and (sizeAttr.values is defined) and (sizeAttr.values|length > 0) %}
+{% set hasColor = colorAttr and (colorAttr.values is defined) and (colorAttr.values|length > 0) %}
+
+{% set mode = 'none' %}
+{% if hasSize and hasColor %}
+  {% set mode = 'size_color' %}
+{% elseif hasSize %}
+  {% set mode = 'size' %}
+{% elseif hasColor %}
+  {% set mode = 'color' %}
+{% endif %}
+
+<div class="col-md-12 padding-10-0">
+  <div data-item-variation-select class="attribute-box">
+    <p class="data-stock-warn"></p>
+
+    {% if "<table" in itemData.texts.technicalData|raw %}
+      <p class="size-chart-linkname">{{ trans("GuardiansBasic::Template.sizetable") }}</p>
+    {% endif %}
+
+    <div class="eg-size-matrix"
+         data-eg-size-matrix
+         data-eg-mode="{{ mode }}"
+         data-eg-size-attribute-id="{{ hasSize ? sizeAttr.attributeId : '' }}"
+         data-eg-color-attribute-id="{{ hasColor ? colorAttr.attributeId : '' }}"
+         data-eg-size-values="{{ hasSize ? (sizeAttr.values | json_encode | e('html_attr')) : '[]' }}"
+         data-eg-color-values="{{ hasColor ? (colorAttr.values | json_encode | e('html_attr')) : '[]' }}"
+         data-eg-base-variation-id="{{ itemData.variation.id }}">
+
+      <div class="eg-size-matrix-head" style="display:flex; font-weight:700; padding:10px; background:#6b9f01; color:#fff;">
+        {% if mode == 'size_color' %}
+          <div style="flex:1; text-align:center;" data-eg-col="size">{{ trans("GuardiansBasic::Template.sizematrix") }}</div>
+          <div style="flex:1; text-align:center;" data-eg-col="color">{{ trans("GuardiansBasic::Template.colormatrix") }}</div>
+        {% elseif mode == 'size' %}
+          <div style="flex:1; text-align:center;" data-eg-col="size">{{ trans("GuardiansBasic::Template.sizematrix") }}</div>
+        {% elseif mode == 'color' %}
+          <div style="flex:1; text-align:center;" data-eg-col="color">{{ trans("GuardiansBasic::Template.colormatrix") }}</div>
+        {% endif %}
+
+        <div style="flex:1; text-align:center;" data-eg-col="stock">{{ trans("GuardiansBasic::Template.stockmatrix") }}</div>
+        <div style="flex:1; text-align:center;" data-eg-col="price">{{ trans("GuardiansBasic::Template.epricematrix") }}</div>
+        <div style="flex:1; text-align:center;" data-eg-col="ean">{{ trans("GuardiansBasic::Template.eanmatrix") }}</div>
+        <div style="flex:1; text-align:center;" data-eg-col="sub">{{ trans("GuardiansBasic::Template.submatrix") }}</div>
+        <div style="flex:1; text-align:center;" data-eg-col="qty">{{ trans("GuardiansBasic::Template.qtymatrix") }}</div>
+      </div>
+
+      {# Body bleibt leer -> JS baut IMMER korrekt (keine Doppel-Render / keine kaputten Zeilen) #}
+      <div class="eg-size-matrix-body"></div>
+
+      <div class="eg-size-matrix-footer" style="padding:12px 10px;">
+        <div class="row" style="margin-bottom:10px;">
+          <div class="col-6 tcenter">{{ trans("GuardiansBasic::Template.gesamtstmatrix") }} <span data-eg-total-qty>0</span></div>
+          <div class="col-6 tcenter">{{ trans("GuardiansBasic::Template.submatrix") }} <span data-eg-total-sum>0,00 €</span></div>
+        </div>
+
+        <button type="button"
+                class="btn btn-primary d-flex align-items-center justify-content-center btn-big product-list add-to-basket-lg-container item-actions"
+                data-eg-matrix-add>
+          <span class="icon-online-shopping-cart mr-2"></span>{{ trans("GuardiansBasic::Template.inbasket") }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</div>
+                {% if isQuickView %}
+                    <hr>
+            
+             {% endif %}
+            {% if isQuickView %}
+                <div class="col-12 padding-10-0 pull-lg-right">
+<div>
+    {% if "<table" in itemData.texts.technicalData|raw %}
+<div class="property-box">
+  {{ itemData.texts.technicalData|raw }}
+</div>
+{% endif %}
+  {{ itemData.texts.description|raw }}
+      <div class="property-box">
+{% set orderedKeys = [46, 115, 105, 196, 197, 198, 7, 107, 108, 122, 111, 73, 127, 110, 109, 123, 124, 106, 118, 119, 125, 102, 103, 101, 104] %}
+{% for id in orderedKeys %}
+    {% set property = item.documents[0].data.properties | filter(p => p.property.id == id) | first %}
+    {% if property is defined %}
+        {% set label = attributeCache[id] %}
+        {% set value = property.texts.value ?? property.selection.name ?? null %}
+        {% if value %}
+            <div>
+                <span class="span-item1">{{ label }}:</span>
+                <span> {{ value }}</span>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endfor %}
+    </div>
+    {% if itemData.item.manufacturer.street or itemData.item.manufacturer.houseNo or itemData.item.manufacturer.postcode or itemData.item.manufacturer.town or itemData.item.manufacturer.email or itemData.item.manufacturer.contactUrl or itemData.item.manufacturer.phoneNumber or itemData.item.manufacturer.responsibleName or itemData.item.manufacturer.responsibleStreet or itemData.item.manufacturer.responsibleHouseNo or itemData.item.manufacturer.responsiblePostCode or itemData.item.manufacturer.responsibleTown or itemData.item.manufacturer.responsibleEmail or itemData.item.manufacturer.responsibleContactUrl or itemData.item.manufacturer.responsiblePhoneNo is not empty %}
+    <button class="collapsible font-w700">{{ trans("GuardiansBasic::Template.EUresponsibleperson") }}</button>
+<div class="content">
+        {% if itemData.item.manufacturer.street or itemData.item.manufacturer.houseNo or itemData.item.manufacturer.postcode or itemData.item.manufacturer.town or itemData.item.manufacturer.email or itemData.item.manufacturer.contactUrl or itemData.item.manufacturer.phoneNumber is not empty %}
+        {{ trans("GuardiansBasic::Template.Manufacturer") }}
+        <div><span class="span-item1">{{ itemData.item.manufacturer.name }}</span></div>
+        <div><span class="span-item1">{{ itemData.item.manufacturer.street }} {{ itemData.item.manufacturer.houseNo }}</span></div>        
+        <div><span class="span-item1">{{ itemData.item.manufacturer.postcode }} {{ itemData.item.manufacturer.town }}</span></div>       
+        <div><span class="span-item1">{{ itemData.item.manufacturer.countryObject.name }}</span></div>
+        <div><span class="span-item1"><a href="mailto:{{ itemData.item.manufacturer.email }}">{{ itemData.item.manufacturer.email }}</a></span></div>
+        <div><span class="span-item1">{{ itemData.item.manufacturer.contactUrl }}</span></div>
+        {% if itemData.item.manufacturer.phoneNumber is not empty %}
+        <div><span class="span-item1">{{ trans("GuardiansBasic::Template.phone") }}: {{ itemData.item.manufacturer.phoneNumber }}</span></div>   
+        {% endif %}
+        <br> <br>
+        {% endif %}
+        {% if itemData.item.manufacturer.responsibleName or itemData.item.manufacturer.responsibleStreet or itemData.item.manufacturer.responsibleHouseNo or itemData.item.manufacturer.responsiblePostCode or itemData.item.manufacturer.responsibleTown or itemData.item.manufacturer.responsibleEmail or itemData.item.manufacturer.responsibleContactUrl or itemData.item.manufacturer.responsiblePhoneNo is not empty %}
+        {{ trans("GuardiansBasic::Template.EUresponsibleperson") }}
+        <div><span class="span-item1">{{ itemData.item.manufacturer.responsibleName }}</span></div>
+        <div><span class="span-item1">{{ itemData.item.manufacturer.responsibleStreet }} {{ itemData.item.manufacturer.responsibleHouseNo }}</span></div>        
+        <div><span class="span-item1">{{ itemData.item.manufacturer.responsiblePostCode }} {{ itemData.item.manufacturer.responsibleTown }}</span></div>       
+        <div><span class="span-item1">{{ itemData.item.manufacturer.responsibleCountryObject.name }}</span></div>
+        <div><span class="span-item1"><a href="mailto:{{ itemData.item.manufacturer.responsibleEmail }}">{{ itemData.item.manufacturer.responsibleEmail }}</a></span></div>
+        <div><span class="span-item1">{{ itemData.item.manufacturer.responsibleContactUrl }}</span></div>
+        {% if itemData.item.manufacturer.responsiblePhoneNo is not empty %}
+        <div><span class="span-item1">{{ trans("GuardiansBasic::Template.phone") }}: {{ itemData.item.manufacturer.responsiblePhoneNo }}</span></div>  
+        {% endif %}
+        {% endif %}
+</div>
+{% endif %}
+</div>
+                </div> 
+            {% endif %}
+        </div>
+    </div> </div>
+         {% if isQuickView %}
+           <hr> 
+        <div class="row">
+        {% set currentCategory = services.category.getCurrentCategory() %}
+        {% if currentCategory and currentCategory.id is defined and currentCategory.id > 0 %}
+            {% set currentcatId = currentCategory.id %}
+            {% set currentItemId = itemData.item.id %}
+            {% set allCrossSimiliar = services.itemList.getItemList("category", currentcatId, "variation.position_desc", 5).documents %}
+
+            {% set crossSimiliar = [] %}
+            {% set count = 0 %}
+
+            {% for cross in allCrossSimiliar %}
+                {% if cross.data.item.id is defined and cross.data.item.id != currentItemId %}
+                    {% set crossSimiliar = crossSimiliar | merge([cross]) %}
+                    {% set count = count + 1 %}
+                {% endif %}
+                {% if count >= 4 %}
+                {% endif %}
+            {% endfor %}
+
+            {% set crossSimiliar = crossSimiliar | slice(0, 4) %}
+            {% if crossSimiliar|length > 0 %}
+                <div class="home-slider-title col-12">
+                    {% set catURL = services.url.getCategoryURL(currentcatId).toAbsoluteUrl(false) %}
+                    {% set catURLint = services.url.getCategoryURL(currentcatId).toAbsoluteUrl(true) %}
+                    <a href="{{ lang == 'de' ? catURL : catURLint }}?sorting=item.feedbackDecimal_desc">
+                        <span>{{ trans("GuardiansBasic::Template.moreinterestingarticles") }}</span>
+                    </a>
+                </div>
+                <div class="col-12">
+                    <div class="category-product-list row disp-flexi">
+                        {% for itemCross in crossSimiliar %}
+                            <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 col-xlg-3 col-xxlg-3">
+                                {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem" with {
+                                    'item': itemCross,
+                                    'currencycheck': currencycheck,
+                                    'isShoeCategory': isShoeCategory,
+                                    'translations': translations,
+                                    'transLabels': transLabels
+                                } %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        </div>
+         <div class="container">
+        <div class="row">
+    <div class="col-12">
+        <hr class="hr-style2">
+        {% include "GuardiansBasic::Containers.FeedbackContainer" with { 'itemId': itemData.item.id, 'longDescription' : false } %}
+        <hr class="hr-style2">
+    </div> </div> </div>
+    {% endif %} 
+</article>
+    <script>
+window.dataLayer = window.dataLayer || [];
+
+window.addEventListener("load", function() {
+  dataLayer.push({ 'itemid': '{{ itemData.item.id }}' });
+});
+</script>
+
+{% endblock %}
