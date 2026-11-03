@@ -10,7 +10,167 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
-## Ausgangszustand und Branch-Ablauf
+## Twig-Kompatibilitätsprüfung und Korrektur (2026-11-03)
+
+Ausgang dieses Folgeauftrags: sauberer `develop` bei
+`0342310d2b4cb6e915b662557aa445bbef916934` (`baseline anpassung name`).
+Die zuvor vorbereitete Plugin-Umbenennung liegt damit inzwischen im Commit vor.
+Diese Folgeänderung bleibt lokal, uncommittet und unstaged auf `develop`;
+`main` bleibt bei `9fd71bc173bec1a3f9815a807f0cf22292a0e998`.
+
+**Ergebnis: alle sieben ursprünglichen Befunde geklärt und korrigiert;
+168/168 Twig-Dateien parsebar unter Twig 2.16.1 und 3.30.0.**
+Zehn gefilterte Schleifen in sechs Dateien verwenden jetzt eine Bedingung im
+Schleifenkörper. In einer weiteren Datei wurde die unwirksame bedingte Hülle
+einer Blockdefinition entfernt. Kein neuer `filter`-Filter und keine neue
+Plenty-Erweiterung werden benötigt.
+
+### Ursachen, Korrekturen und Verhalten
+
+Alle Dateipfade in der Tabelle sind relativ zu `resources/views/`;
+Zeilen beziehen sich auf den Ausgangscommit `0342310`.
+
+| Datei / ursprüngliche Zeile | Ursprünglicher Fehler / Ursache | Korrektur und Verhalten | Gezielte Prüfung |
+| --- | --- | --- | --- |
+| `Category/Components/CategoryBreadcrumbs.twig:12` | `for … if not break`: veraltete Schleifenbedingung; `break` wird im Körper verändert. | Bedingung innerhalb der Schleife. Nach der ersten fehlenden Kategorieübersetzung keine weiteren Zwischenkategorien; letzte Kategorie bleibt separat. | 5 Fälle: leer, einzelne Kategorie, normale Folge, erster Eintrag fehlt, Lücke in der Mitte. Links und Reihenfolge identisch. |
+| `Category/Item/CategoryItemBrands.twig:26` | `for … if children.details[0]`: alte Filtersyntax im Zähler für übersetzte Kinder. | Unveränderte Bedingung um die Zählererhöhung. Markenlisten, Logo-Fallback und übrige Schleifen bleiben gleich. | 5 Fälle einschließlich leerer Details, gemischter Kinder und nicht fortlaufender Schlüssel. Auswahl und Zähler identisch. |
+| `Checkout/OrderDetails.twig:186` | `for … if not amout.isSystemCurrency`: alte Filtersyntax; daneben bereits bestehende Schreibweisen `item.amouts` und `amout`. | Nur Bedingung in den Schleifenkörper verschoben. Datenfelder, Reihenfolge, letzter zugewiesener Betrag und Netto-/Bruttoauswahl bleiben unverändert. | 6 Fälle: kanonisches `amounts` ohne `amouts`, Legacy-Feld mit mehreren Beträgen, globale Bedingung true/false, leere Folge; Preise und Auswahl identisch. |
+| `Containers/FeedbackContainer-backup.twig:38` | Drei verschachtelte `for … if customerHasBuyThisItem==false`; Flag ändert sich beim ersten Treffer. | Alle drei Bedingungen an derselben Verarbeitungsebene vor dem jeweiligen Körper geprüft. Erster Treffer und bestehender Varianten-Fallback bleiben gleich. | 7 Fälle: erster/später Treffer, abweichende Varianten-/Bestellpositionen-Reihenfolge, kein Treffer, keine Bestellungen, Gast, leere Varianten. Besuchsfolge und Ergebnis identisch. |
+| `Containers/FeedbackForm-backup.twig:8` | Dieselben drei verschachtelten Legacy-Schleifen. | Gleiche begrenzte Korrektur; Formular und bestehende Kauf-/Fallbackentscheidung unverändert. | Dieselben 7 Fälle separat gegen diese Datei geprüft. |
+| `DynamicContent/DynamicCatPreviewImages.twig:6` | `for … if hasAttrImages==false`; Flag ändert sich beim ersten Bildfund. | Bedingung um die bestehende innere Schleife. Erkennung stoppt wie bisher nach dem ersten Attribut mit Bild; spätere Ausgabeschleife zeigt weiterhin alle passenden Bilder. | 5 Fälle: leer, keine Bilder, erster/später/letzter Fund. Besuchsfolge, Bildreihenfolge und `null`-Fallback identisch. |
+| `Checkout/OrderConfirmation.twig:9` | `block title` unter `if` im `embed`: Blockregistrierung hängt unter Twig 2 nicht von der Bedingung ab; Twig 3 lehnt diese Struktur ab. | Nur die unwirksame `if`-Hülle entfernt. Der übersetzte Bestätigungstitel bleibt wie im tatsächlichen Twig-2-Verhalten immer gesetzt. Kein neuer Kategorie-Titel-Fallback eingeführt. | 3 Renderfälle: Kategorie undefiniert, null und vorhanden; in allen Fällen derselbe Bestätigungstitel wie vor der Änderung. |
+
+
+<details>
+<summary>Vollständige ursprüngliche Fehlermeldungen (Twig 3.30.0, Ausgangscommit)</summary>
+
+```text
+resources/views/Category/Components/CategoryBreadcrumbs.twig
+Unexpected token "name" of value "if" ("end of statement block" expected) in "resources/views/Category/Components/CategoryBreadcrumbs.twig" at line 12 column 95.
+
+resources/views/Category/Item/CategoryItemBrands.twig
+Unexpected token "name" of value "if" ("end of statement block" expected) in "resources/views/Category/Item/CategoryItemBrands.twig" at line 26 column 62.
+
+resources/views/Checkout/OrderConfirmation.twig
+A "block" tag cannot be under a "if" tag (line 7) in "resources/views/Checkout/OrderConfirmation.twig" at line 9.
+
+resources/views/Checkout/OrderDetails.twig
+Unexpected token "name" of value "if" ("end of statement block" expected) in "resources/views/Checkout/OrderDetails.twig" at line 186 column 58.
+
+resources/views/Containers/FeedbackContainer-backup.twig
+Unexpected token "name" of value "if" ("end of statement block" expected) in "resources/views/Containers/FeedbackContainer-backup.twig" at line 38 column 49.
+
+resources/views/Containers/FeedbackForm-backup.twig
+Unexpected token "name" of value "if" ("end of statement block" expected) in "resources/views/Containers/FeedbackForm-backup.twig" at line 8 column 49.
+
+resources/views/DynamicContent/DynamicCatPreviewImages.twig
+Unexpected token "name" of value "if" ("end of statement block" expected) in "resources/views/DynamicContent/DynamicCatPreviewImages.twig" at line 6 column 64.
+```
+
+</details>
+
+**Einordnung A–D:** Die sieben Meldungen sind keine fehlenden Plenty-Funktionen (C).
+Sie betreffen unter Twig 2 noch akzeptierte, inzwischen veraltete Syntax (B), die
+unter Twig 3 zu tatsächlichen Syntaxfehlern führt (A). Die beiden Parser-Versionen
+wurden unverändert eingesetzt. Der Vergleich beweist keine konkrete Plenty-Version:
+`plugin.json` verlangt Ceres ohne Versionsbindung, und der Checkout enthält weder
+die installierte Ceres-/IO-Version noch den Plenty-Twig-Runtime-Lock (D).
+Die genaue installierte Version und die vollständige PlentyONE-Ausführung bleiben
+**NOT_RUN / nicht verifiziert**.
+
+In keiner der zehn betroffenen Schleifen wird `loop.index`, `loop.index0`,
+`loop.first`, `loop.last`, `loop.length`, `loop.parent` oder ein Include im
+geänderten Körper verwendet. Die `loop`-Zugriffe in anderen Schleifen von
+`OrderDetails.twig` bleiben unberührt. Ein vorab angewandter Filter wäre insbesondere
+bei veränderlichen Abbruchflags ungeeignet; die Bedingungen müssen bei jeder
+Iteration den aktuellen Zustand prüfen. Reihenfolge, Schlüssel und bestehende
+Zuweisungen bleiben erhalten. Zusätzliche Einrückungs-Leerzeichen zwischen HTML-Tags
+werden beim Rendervergleich normalisiert; fachliche Werte und Besuchsfolgen werden exakt verglichen.
+
+Das Verhalten der Titelüberschreibung wurde zuerst unter Twig 2 reproduziert:
+die alte Bedingung wirkte bereits dort nicht. Eine Änderung auf `parent()` bei
+vorhandener Kategorie hätte das bestehende Verhalten verändert und wurde deshalb
+nicht vorgenommen. Ebenso wurden die bestehenden Betragsfeld-Schreibweisen nicht
+automatisch auf `amounts`/`amount` korrigiert: Das wäre eine gesonderte Änderung der
+Preis-/Währungsauswahl. Diese Datenzuordnung bleibt ein offener Bestandsbefund,
+kein verbliebener Twig-Syntaxfehler. Die Backup-Templates wurden beibehalten;
+ihre tatsächliche Nutzung im Shop wurde nicht behauptet.
+
+Referenzen: [Twig 2: Deprecations](https://twig.symfony.com/doc/2.x/deprecated.html),
+[Twig 2: Schleifenbedingungen und loop-Variablen](https://twig.symfony.com/doc/2.x/tags/for.html),
+[Twig: Vererbung und Blockdefinitionen](https://twig.symfony.com/doc/3.x/tags/extends.html),
+[PlentyONE-Theme-Dokumentation](https://developers.plentymarkets.com/en-gb/developers/main/plentyshop-plugins/theme-plugins.html).
+
+### Testergebnisse und Grenzen der lokalen Umgebung
+
+Neue reproduzierbare Prüfung: `tests/twig_regression.php`. Sie liest die tatsächlichen
+Templates beziehungsweise den fest referenzierten Ausgangscommit und prüft zusätzlich
+zur vollständigen Syntaxinventur gezielt alle geänderten Schleifen und den Titelblock.
+Die Beispiele verwenden ausschließlich lokale Daten und begrenzte Testservices.
+
+| Lauf / Prüfung | Ergebnis |
+| --- | --- |
+| Ausgangsstand, Twig 3.30.0 | 161/168 parsebar; alle sieben ursprünglichen Fehler reproduziert; erwarteter Exit 1 |
+| Ausgangsstand, Twig 2.16.1 | 168/168 parsebar, 38/38 Verhaltenstests erfolgreich; Exit 0 |
+| Korrigierter Stand, Twig 2.16.1 | 168/168 parsebar, 38/38 Verhaltenstests, 38/38 Vergleiche zum Ausgangsstand erfolgreich; Exit 0 |
+| Korrigierter Stand, Twig 3.30.0 | 168/168 parsebar, 38/38 Verhaltenstests, 38/38 Vergleiche zum Twig-2-Ausgangsstand erfolgreich; Exit 0 |
+| PHP 8.4.23, `php -l` | 8/8 produktive PHP-Dateien plus 1/1 neue Testdatei gültig |
+| JSON | 15/15 gültig; `plugin.json` mit `GuardiansBasicB2B`, Version 1.0.7 unverändert |
+| PHP-Namespaces und Provider | 8/8 Namespaces korrekt, Service-/DataProvider vorhanden; PHP-Code unverändert |
+| Eigene Template-/ResultField-Referenzen | Unverändert 49/53 vorhanden; dieselben vier Bestandslücken wie unten |
+| Eigene Ressourcen / Manifest | 42/42 aktive konkrete Ressourcendateien, 8/8 Manifest-Icon-Einträge vorhanden; Manifest unverändert |
+| Dynamische Plugin-Pfade | Alle 97 eigenen Aufrufe unverändert; keine alten internen Namespaces, keine festen numerischen Pluginset-Pfade |
+| Inhaltserhalt | JS, CSS, Bilder, Sprachdateien, PHP, Konfiguration und Manifest unverändert; produktiver Diff auf genau sieben Twig-Dateien begrenzt |
+| `git diff --check` | erfolgreich |
+
+Die Syntaxprüfung registriert ausdrücklich benannte Plenty-/IO-/Ceres-Funktionen
+und Filter sowie eigene Funktionen aus `Base_Extension`. Unbekannte Namen werden
+nicht pauschal akzeptiert. Die Syntax-Platzhalter werfen bei versehentlicher
+Ausführung einen Fehler; sie gelangen nicht in produktiven Code. Die Renderfälle
+verwenden eigene konkrete Testcallbacks und prüfen tatsächliche Ausgaben/Zustände.
+
+Ein anfänglicher Testaufbau-Fehler war getrennt zu beheben: Twig 2.16.1 erkennt die
+unter PHP 8.4 geänderten Reflection-Namen anonymer Closures nicht zuverlässig.
+Die Testcallbacks werden deshalb als gewöhnliche Objektmethoden registriert.
+Keine Änderung am Twig-Parser, keine abgeschwächte Assertion und keine produktive
+Anpassung war hierfür erforderlich. Der erste Archivdownload scheiterte an der
+Sandbox-DNS-Auflösung; der anschließende Download des offiziellen Twig-2.16.1-Archivs
+und die finalen Läufe waren erfolgreich. Keine Test-Timeouts.
+
+Deprecations werden separat im JSON-Bericht erfasst, nicht als Syntaxerfolg
+verschwiegen. Twig 2 unter PHP 8.4 meldet im finalen Lauf 24 unterschiedliche
+Engine-Deprecations. Twig 3 meldet zwei unveränderte Hinweise auf außerhalb des
+Template-Roots definierte Makros: `Category/Item/CategoryItem.twig:166` und
+`Category/Item/CategoryItemContent.twig:91`. Diese sind keine Syntaxfehler der
+geprüften Version und wurden außerhalb des Auftrags nicht umgebaut.
+
+Beispielaufrufe aus dem Repository-Root (externe Autoloader und Ausgabeordner einsetzen;
+Twig-Versionen in getrennten PHP-Prozessen ausführen):
+
+```text
+php tests/twig_regression.php <twig2-autoload.php> <vorher.json> --baseline
+php tests/twig_regression.php <twig2-autoload.php> <nachher-twig2.json> --compare=<vorher.json>
+php tests/twig_regression.php <twig3-autoload.php> <nachher-twig3.json> --compare=<vorher.json>
+```
+
+Keine Testbibliothek und kein `vendor/` werden im Plugin mitgeliefert. Der Bericht
+enthält vollständige Syntaxmeldungen, einzelne Fälle, Vergleichsergebnis und
+Deprecations. Die verwendeten lokalen Parser und Rohberichte liegen außerhalb des
+Repositories; für Wiederholungen dieselben Parser-Versionen verwenden.
+
+**Weiterhin NOT_RUN:** vollständiger PlentyONE-Build und Render mit realen Services,
+tatsächliche installierte PHP-/Twig-/Ceres-/IO-Versionen, Kategorie-/Markenseiten,
+Variantenbilder/Quickview, reale Bestellungen mit Netto-/Brutto-/Fremdwährungsdaten,
+Bestätigung mit/ohne verknüpfte Kategorie, Feedback bei tatsächlicher Nutzung der
+Backup-Templates sowie Warenkorb/Checkout/Amazon Pay. Die unten dokumentierten
+vier fehlenden Templates und 20 Übersetzungslücken bleiben unverändert offen.
+
+**Dateien dieses Folgeauftrags:** die sieben Tabellenzeilen, `tests/twig_regression.php`,
+`README.md`, `meta/documents/changelog_de.md` und `meta/documents/changelog_en.md`.
+Keine Änderung an Version, Plugin-Identität, Ressourcenpfaden oder anderen Shop-Funktionen.
+Kein Commit, Push, Merge, Tag, Release, Deploy, Sync oder PlentyONE-Schreibzugriff.
+
+## Historischer Ausgangszustand und Branch-Ablauf der Baseline
 
 - `main`: `9fd71bc173bec1a3f9815a807f0cf22292a0e998`, Erstimport.
 - `develop`: `61b84a2fcd5bd0cae0450f3c8a032e42df0f6849`, vorhandener Commit `pluginpath`.
@@ -89,7 +249,7 @@ Das B2B-Manifest bleibt `B2B.Outlet46.de`; seine acht Icon-Einträge verwenden
 `../images/icon/...`, relativ zur Manifest-URL und ohne Twig im JSON.
 
 Die im Auftrag genannten 74 entsprechen **74 ersetzten Quelltextzeilen** in elf
-Dateien (`git diff --numstat main..develop`). Die eigenständige B2B-Zählung ergibt
+Dateien (`git diff --numstat 9fd71bc..61b84a2`). Die eigenständige B2B-Zählung ergibt
 **105 feste URL-Vorkommen**: 101 eigene, zwei Ceres- und zwei Amazon-Pay-Referenzen.
 Mehrere URLs stehen in derselben CSS-/HTML-Zeile. Diese Umstellung war bereits im
 Commit `pluginpath` enthalten; sie wurde nicht erneut durchgeführt.
@@ -114,7 +274,7 @@ Fallbacks bleiben erhalten. Externe URLs, insbesondere `frontend/Payments/`, ble
 unverändert. Dateinamen, JS-Versionen, Ladefolge, `defer`/`async`, CSS, Bilder,
 Preislogik, Mindestbestellwert und andere B2B-Bedingungen wurden nicht umgebaut.
 
-## Tatsächlich ausgeführte lokale Prüfungen
+## Lokale Prüfungen der ursprünglichen Baseline (vor der Twig-Korrektur)
 
 Inventar: **2.606 versionierte Dateien**, ohne Git-Metadaten. Geprüft wurden alle
 15 JSON-Dateien, alle acht PHP-Dateien, alle 168 Twig-Dateien und sämtliche
@@ -149,7 +309,7 @@ Es fand keine Ausführung der Plenty-Services, kein vollständiger Shop-Render u
 keine HTTP-/PlentyONE-Abnahme statt. Die installierte PHP-/Twig-Version und externe
 Ceres-/AmazonPayCheckout-Ressourcen müssen im Test-Pluginset geprüft werden.
 
-### Unveränderte Bestandsprobleme
+### Ursprüngliche Twig-Befunde der Baselineprüfung
 
 Twig 3.30.0 meldet dieselben Fehler bereits in `develop` vor der Umbenennung:
 
@@ -159,8 +319,11 @@ Twig 3.30.0 meldet dieselben Fehler bereits in `develop` vor der Umbenennung:
   ältere `for … if …`-Syntax.
 - `Checkout/OrderConfirmation.twig:9`: Block innerhalb eines `if` bei Template-Vererbung.
 
-Diese Pfade sind relativ zu `resources/views/`. Ob die verwendete Plenty-Laufzeit
-diese Syntax unterstützt, bleibt offen; keine pauschale vollständige Syntaxfreigabe.
+Diese Pfade sind relativ zu `resources/views/`. Die sieben Syntaxbefunde sind
+inzwischen wie oben beschrieben behoben und unter Twig 2 sowie Twig 3 geprüft.
+Die PlentyONE-Laufzeitabnahme bleibt separat offen.
+
+### Weitere unveränderte Bestandsprobleme
 
 Der ServiceProvider referenziert bei aktivierten Overrides vier nicht vorhandene
 Templates: `StaticPages.CancellationRights`, `StaticPages.LegalDisclosure`,
@@ -221,7 +384,7 @@ Alle folgenden Tests sind **NOT_RUN** und erst im B2B-Test-Pluginset durchzufüh
 Es wurden keine PlentyONE-Einstellungen, Pluginsets, Installationen, Aktivierungen,
 Deaktivierungen, Löschungen oder Synchronisierungen durchgeführt.
 
-## Geänderte Dateien dieser Vorbereitung
+## Geänderte Dateien der ursprünglichen Baseline-Vorbereitung
 
 60 Dateien gegenüber `develop` (`61b84a2`): `plugin.json`, acht PHP-Dateien,
 46 Twig-Dateien und fünf Dokumentationsdateien. Das Manifest ist bereits im

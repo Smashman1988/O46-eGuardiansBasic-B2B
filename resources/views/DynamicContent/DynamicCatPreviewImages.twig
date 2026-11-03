@@ -3,12 +3,14 @@
 {% set attrNameMapWithImages = getImageAttributeList(sItemId, itemAttributes.attributes) %}
 
 {% set hasAttrImages = false %}
-{% for itemAttributeKey,itemAttribute in attrNameMapWithImages if hasAttrImages==false %}
+{% for itemAttributeKey,itemAttribute in attrNameMapWithImages %}
+  {% if hasAttrImages==false %}
     {% for itemAttributeValueKey,itemAttributeValue in itemAttribute.values %}
         {% if itemAttribute.images[itemAttributeValueKey] is not empty %}
             {% set hasAttrImages = true %}  
         {% endif %}      
-    {% endfor %} 
+    {% endfor %}
+  {% endif %}
 {% endfor %}
 {% if hasAttrImages %}
 <div class="variation-cat-img">

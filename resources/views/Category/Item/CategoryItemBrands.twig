@@ -23,8 +23,10 @@
                             {% set currentScopeUrl = "/" ~ category.details[0].nameUrl %}
                         {% endif %}
                         {% set translatedChildren = 0 %}
-                        {% for children in category.children if children.details[0] %}
-                            {% set translatedChildren = translatedChildren + 1 %}
+                        {% for children in category.children %}
+                            {% if children.details[0] %}
+                                {% set translatedChildren = translatedChildren + 1 %}
+                            {% endif %}
                         {% endfor %}
 
                         {% set counter = counter + 1 %}

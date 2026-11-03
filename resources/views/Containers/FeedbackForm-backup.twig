@@ -5,15 +5,21 @@
 {% if services.customer.getContactId() > 0 %}
  {% set customerOrders = services.customer.getOrders().toArray() %}
  {% set sdfentries = customerOrders.entries %}
- {% for customerOrder in customerOrders.entries if customerHasBuyThisItem==false %}
-     {% for singleVariation in variationsWithAttributes if customerHasBuyThisItem==false %}   
-         {% for singleOrder in customerOrder.order.orderItems if customerHasBuyThisItem==false %}
+ {% for customerOrder in customerOrders.entries %}
+   {% if customerHasBuyThisItem==false %}
+     {% for singleVariation in variationsWithAttributes %}
+       {% if customerHasBuyThisItem==false %}
+         {% for singleOrder in customerOrder.order.orderItems %}
+           {% if customerHasBuyThisItem==false %}
              {% if singleOrder.itemVariationId==singleVariation.variationId %}
                  {% set buyedVariationId = singleVariation.variationId %}
                  {% set customerHasBuyThisItem = true %}
              {% endif %}
+           {% endif %}
          {% endfor %}
+       {% endif %}
      {% endfor %}
+   {% endif %}
  {% endfor %}
 {% endif %}
     {# KANN WIEDER RAUS WENN PLENTY ALLE GROESSEN AUSSPIELT AUCH OHNE STOCK - NIMMT DIE ERSTE VERFÜGBARE VARIANTE ALS buyedVariationId #}

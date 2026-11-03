@@ -183,8 +183,10 @@
                             {% endif %}
 
                             {% set itemAmount = item.amounts[0] %}
-                            {% for amount in item.amouts if not amout.isSystemCurrency %}
-                                {% set itemAmount = amount %}
+                            {% for amount in item.amouts %}
+                                {% if not amout.isSystemCurrency %}
+                                    {% set itemAmount = amount %}
+                                {% endif %}
                             {% endfor %}
 
                             {% set itemPrice = 0 %}
