@@ -43,7 +43,7 @@
             </span>
             <span class="col-5">
             {% set rawLogo = item.data.item.manufacturer.logo %}
-            {% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+            {% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasic') ~ '/images/vendors/'}) %}
             {% if vendorlogo is not empty %}
                 <img src="{{ vendorlogo }}" class="cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">
             {% elseif rawLogo is not empty %}

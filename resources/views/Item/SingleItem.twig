@@ -63,7 +63,7 @@
 {% block PartialHead %}
 {% if isQuickView %}
     <link rel="preload" href="{{ itemData.images.all[0].urlMiddle }}" as="image">
-{% set vendorlogo = itemData.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+{% set vendorlogo = itemData.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasic') ~ '/images/vendors/'}) %}
 {% if vendorlogo and itemData.item.manufacturer.url is not empty %}
 <link rel="preload" href="{{ vendorlogo }}" as="image">    
 {% elseif itemData.item.manufacturer.logo and itemData.item.manufacturer.url is not empty %}
@@ -290,7 +290,7 @@
                         {% set hasLogo = itemData.item.manufacturer.logo is not empty %}
                         {% set hasUrl = itemData.item.manufacturer.url is not empty %}
                         {% if hasLogo and hasUrl %}
-                            {% set vendorlogo = itemData.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+                            {% set vendorlogo = itemData.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasic') ~ '/images/vendors/'}) %}
 
                             {# Default-URLs setzen #}
                             {% set categoryURL = '#' %}

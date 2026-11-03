@@ -44,7 +44,7 @@
                             <img src="/documents/{{ child.details[0].image2Path }}" alt="{{ child.details[0].name }}" title="{{ child.details[0].name }}">
                              </noscript></picture> 
                         {% else %}
-                         <img src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/no-logo-platzhalter.png" alt="{{ child.details[0].name }}" class="position-relative rounded"></picture> 
+                         <img src="{{ plugin_path('GuardiansBasic') }}/images/no-logo-platzhalter.png" alt="{{ child.details[0].name }}" class="position-relative rounded"></picture> 
                          {% endif %}
                         <span class="align-self-center flex-grow-1 text-center">{{ child.details[0].name }} ({{ child.itemCount[0].count }})</span></a>
             </div>

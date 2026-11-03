@@ -25,9 +25,9 @@
 {#{% cacheblock use "header.topbar." ~ lang ~ "." ~ currencycheck %}#}
 <div class="container nopadding">
         <div class="col-12 text-right lang-switcher nopadding">
-           <span class="f-size16"><a href="{{ googlereviewlink }}">{{ trans("GuardiansBasic::Template.trustpilotinfo") }} <img fetchpriority="low" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/g-Logo.svg" alt="Outlet46.de" class="margin-right-10" style="vertical-align: middle;max-height: 25px;max-width: 80px;"></a></span>
+           <span class="f-size16"><a href="{{ googlereviewlink }}">{{ trans("GuardiansBasic::Template.trustpilotinfo") }} <img fetchpriority="low" src="{{ plugin_path('GuardiansBasic') }}/images/g-Logo.svg" alt="Outlet46.de" class="margin-right-10" style="vertical-align: middle;max-height: 25px;max-width: 80px;"></a></span>
             <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5638" data-eg-title="Currency">{{ services.checkout.getCurrencyData()['symbol'] }}</button>
-            <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5640" data-eg-title="{{ trans('GuardiansBasic::Template.langchange') }}" aria-label="{{ trans('GuardiansBasic::Template.langchange') }}"><img fetchpriority="low" src="https://cdn02.outlet46.de/plugin/427/ceres/images/flags/4x3/{{ flags[lang]|default('de') }}.svg" class="flag-icon" alt="flag-{{ flags[lang]|default('de') }}"></button>
+            <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5640" data-eg-title="{{ trans('GuardiansBasic::Template.langchange') }}" aria-label="{{ trans('GuardiansBasic::Template.langchange') }}"><img fetchpriority="low" src="{{ plugin_path('Ceres') }}/images/flags/4x3/{{ flags[lang]|default('de') }}.svg" class="flag-icon" alt="flag-{{ flags[lang]|default('de') }}"></button>
         </div>
 </div>
 {#{% endcacheblock %}#}
@@ -38,7 +38,7 @@
             <div class="row align-items-center">
                 <div class="col-5 col-sm-5 col-lg-3 col-xlg-3 col-xxlg-3 no-pad-right">
                     <a href="{{ langSlug }}/{{ currencyParam }}" title="Outlet46.de" class="company-logo"> 
-                        <img fetchpriority="low" src="https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/b2b-outlet46-logo.png" alt="B2B.Outlet46.de" class="o-logo"/>
+                        <img fetchpriority="low" src="{{ plugin_path('GuardiansBasic') }}/images/b2b-outlet46-logo.png" alt="B2B.Outlet46.de" class="o-logo"/>
                     </a>
                 </div>  
                 <div class="col-12 col-lg-5 col-xxlg-5 search-box">

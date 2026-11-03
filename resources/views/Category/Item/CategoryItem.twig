@@ -34,7 +34,7 @@
     {% if category.id!=60 %}
     {% for item in itemList[:2] %}
         <link rel="preload" href="{{ item.data.images.all[0].urlPreview }}.avif" as="image">
-        {% set vendorlogo = item.data.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': 'https://cdn02.outlet46.de/plugin/427/guardiansbasic/images/vendors/'}) %}
+        {% set vendorlogo = item.data.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasic') ~ '/images/vendors/'}) %}
         {% if vendorlogo is not empty %}
             <link rel="preload" href="{{ vendorlogo }}" as="image">
         {% elseif item.data.item.manufacturer.logo is not empty %}
