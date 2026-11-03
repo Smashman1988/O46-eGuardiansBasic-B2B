@@ -1,6 +1,6 @@
 <?php
 
-namespace GuardiansBasic\Containers;
+namespace GuardiansBasicB2B\Containers;
 
 use Plenty\Plugin\Templates\Twig;
 
@@ -8,6 +8,6 @@ class GuardiansBasicContainer
 {
     public function call(Twig $twig):string
     {
-        return $twig->render('GuardiansBasic::Stylesheet');
+        return $twig->render('GuardiansBasicB2B::Stylesheet');
     }
 }

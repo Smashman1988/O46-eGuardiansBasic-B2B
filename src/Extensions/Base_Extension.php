@@ -1,6 +1,6 @@
 <?php
 
-namespace GuardiansBasic\Extensions;
+namespace GuardiansBasicB2B\Extensions;
 
 use Plenty\Plugin\Templates\Extensions\Twig_Extension;
 use Plenty\Plugin\Templates\Factories\TwigFactory;
@@ -364,7 +364,7 @@ class Base_Extension extends Twig_Extension
         $resultItems['query'] = ['items' => $maxItemsPerPage, 'sorting' => "variation.createdAt_desc"];
         $resultItems['selectedFacets'] = $ownFacets;
 
-        return  $this->twig->render('GuardiansBasic::Category.Item.CategoryItemContent', $resultItems);
+        return  $this->twig->render('GuardiansBasicB2B::Category.Item.CategoryItemContent', $resultItems);
     }
 
     public function getItemsFromCatSimple($categoryId, $maxItemsPerPage, $ownFacets, $priceFilter = [0,0])
@@ -398,7 +398,7 @@ class Base_Extension extends Twig_Extension
         $itemSearchService = pluginApp(ItemSearchService::class);
         $results = $itemSearchService->getResults($searchParams);
 
-        return $this->twig->render('GuardiansBasic::Category.Item.Partials.CategoryGridOnly', [
+        return $this->twig->render('GuardiansBasicB2B::Category.Item.Partials.CategoryGridOnly', [
             'itemList' => $results['itemList']['documents']
         ]);
     }

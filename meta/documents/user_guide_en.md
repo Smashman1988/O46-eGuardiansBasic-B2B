@@ -1,47 +1,34 @@
-# Ceres Vanilla – A Vanilla Theme for Ceres
+# eGuardiansBasic B2B – Setup
 
-**Ceres Vanilla** is a simple theme plugin that contains no style or design for Ceres. With the help of this theme, you can display your own CSS in Ceres. Furthermore, the templates of Ceres can be overridden with your own templates.
+This theme contains the existing Outlet46 B2B content and functionality.
+Technical plugin name and namespace: `GuardiansBasicB2B`; baseline version: `1.0.7`.
+The B2C plugin remains `GuardiansBasic` and belongs in its separate plugin set.
 
-## Displaying your own CSS
+## Later setup in the B2B test plugin set
 
-After installing and deploying the plugin, enter your own CSS in the plugin detail view.
+The baseline is initially reviewed locally on `develop`. Installation, deployment
+and synchronisation have not been performed. Before making changes, preserve the
+existing B2B configuration values and content/container mappings.
 
-##### Entering your own CSS:
+- For plentyDevTool, the local plugin folder must be named `GuardiansBasicB2B`.
+  The current Git working folder remains in place until the manual adjustment.
+- Set up the new plugin separately in the B2B test plugin set. Do not delete or
+  replace existing plugins; do not activate B2C and B2B together in the same set.
+- Check existing B2B values in the new plugin configuration and transfer them
+  manually where needed. Template overrides are configured under `templates.override`.
+  Do not enable all overrides indiscriminately: four legal-page templates are
+  already missing in the existing code; see the README for details.
+- Content mappings use the new provider key
+  `GuardiansBasicB2B\Containers\GuardiansBasicContainer`.
+  The `Stylesheet.twig` template currently contains only commented includes;
+  active CSS resources are loaded in the head.
+- After later deployment, test all B2B workflows and resources in the test plugin
+  set. Local syntax validation does not replace this acceptance process.
 
-1. Go to **Plugins » Plugin overview**.<br /> → The plugin overview will open. 
-2. Click on **CeresVanilla**.<br /> → The plugin will open. 
-3. Click on **resources » css » main.css** in the directory tree.
-4. Enter your CSS code.  
-7. **Save** the settings.<br /> → The CSS changes will be available after deploying the plugin again.
-
-##### Activating your own CSS:
-
-1. Go to **Plugins » Content**. 
-2. Go to the **Stylesheet (CeresVanilla)** area.
-3. Select the container **Template: Style**. 
-4. **Save** the settings.<br /> → The CSS will be displayed in the online store.
-
-## Displaying your own templates
-
-**CeresVanilla** allows you to override the templates of **Ceres** with your own content. To do so, enter the code in the template and override the template. In the following, setting up the homepage is explained. Set up the other templates the same way.
-
-##### Entering the code for your own homepage:
-
-1. Go to **Plugins » Plugin overview**.<br /> → The plugin overview will open. 
-2. Click on **CeresVanilla**.<br /> → The plugin will open. 
-3. Click on **resources » views » Homepage » Homepage.twig** in the directory tree.
-4. Enter the code for your homepage.  
-7. **Save** the settings.<br /> → The template changes will be available after deploying the plugin again.
-
-##### Activating your own homepage:
-
-
-1. Go to **Plugins » Plugin overview**.<br /> → The plugin overview will open. 
-2. Click on **CeresVanilla**.<br /> → The plugin will open. 
-3. Click on **Configuration** in the directory tree.
-4. Activate **Homepage** under **Override partials and templates**.  
-7. **Save** the settings.<br /> → The homepage will be displayed.
+Full validation results, existing issues, branch/release rules and manual steps
+are documented in the [README](../../README.md). Historical changelog entries
+remain in [changelog_en.md](changelog_en.md).
 
 ## License
 
-This project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE. – find further information in the [LICENSE](https://github.com/plentymarkets/plugin-ceres-vanilla/blob/master/LICENSE).
+GNU AFFERO GENERAL PUBLIC LICENSE; see [LICENSE](../../LICENSE).

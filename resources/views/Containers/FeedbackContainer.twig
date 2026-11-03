@@ -1,6 +1,6 @@
 {# Optimierte Feedback-Sektion mit Macro-Nutzung #}
 
-{% import "GuardiansBasic::Category.Macros.render-rating" as Rating %}
+{% import "GuardiansBasicB2B::Category.Macros.render-rating" as Rating %}
 
 
 {# Nur ein API-Aufruf für Feedbacks #}
@@ -34,7 +34,7 @@
             <div class="col-12">
                 <div class="title-rating-main mb-4 d-flex align-items-center flex-wrap">
                     <div class="d-inline-block hhdh" id="quickrating">
-                        {{ trans("GuardiansBasic::Template.ratingtitle") }}
+                        {{ trans("GuardiansBasicB2B::Template.ratingtitle") }}
                     </div>
                     {{ Rating.renderRating(ratingsAverage.averageValue, 5) }}
                 </div>
@@ -45,7 +45,7 @@
             <div class="{% if longDescription %}col-12 col-md-6{% else %}col-12 col-lg-6 col-xlg-4{% endif %}">
                 <div class="feedback-container">
                     {% if ratingsAverage.ratingsCountTotal == 0 %}
-                        <p class="mt-0">{{ trans("GuardiansBasic::Template.norating") }}</p>
+                        <p class="mt-0">{{ trans("GuardiansBasicB2B::Template.norating") }}</p>
                     {% endif %}
                     <div class="feedback-bars">
                         {% for i in 5..1 %}
@@ -67,7 +67,7 @@
             <div class="row">
                 <div class="col-12">
                     <button data-eg-param="html, openfeedback-on" data-eg-event="click" data-eg-handler="tgClass" class="btn btn-primary btn-openfeedback">
-                        {{ trans("GuardiansBasic::Template.openreviews") }}
+                        {{ trans("GuardiansBasicB2B::Template.openreviews") }}
                     </button>
                 </div>
             </div>
@@ -77,7 +77,7 @@
             <div class="row">
                 <div class="col-xs-12 px-3">
                     <div class="feedback-list mt-3">
-                        {% include "GuardiansBasic::DynamicContent.DynamicFeedbacks" with { 'itemId': itemId, 'feedbackItems': itemFeedbacks } %}
+                        {% include "GuardiansBasicB2B::DynamicContent.DynamicFeedbacks" with { 'itemId': itemId, 'feedbackItems': itemFeedbacks } %}
                     </div>
                 </div>
             </div>

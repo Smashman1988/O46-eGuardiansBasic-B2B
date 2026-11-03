@@ -30,7 +30,7 @@
                             {% endif %}
                             <div class="dsp-flex-f-14">
                             <div class="col-6 nopadding cat-rrp-price">
-                                <strong>{{ trans("GuardiansBasic::Template.statt") }} <span class="line-trough">{{ basketItem.variation.data.prices.rrp.unitPrice.formatted }}*</span></strong>
+                                <strong>{{ trans("GuardiansBasicB2B::Template.statt") }} <span class="line-trough">{{ basketItem.variation.data.prices.rrp.unitPrice.formatted }}*</span></strong>
                             </div>
                             <div class="col-6 nopadding outlet-green font-18 font-w600">                                 
                                    <strong>{{ basketItem.price|number_format(2, ',','.') }} {{ services.checkout.getCurrencyData()['symbol'] }}</strong>
@@ -50,14 +50,14 @@
         <div class="basket-prev-bottom">
             <div class="basket-prev-results">
                 <div class="row bold m-t-1">
-                    <div class="col-6 outlet-green font-18 mt-auto mb-auto">{{ trans("GuardiansBasic::Template.yourprice") }}</div>
+                    <div class="col-6 outlet-green font-18 mt-auto mb-auto">{{ trans("GuardiansBasicB2B::Template.yourprice") }}</div>
                     <div class="col-6 text-right outlet-green font-18">
                         {{ basketData.itemSum|number_format(2, ',','.') }} {{ services.checkout.getCurrencyData()['symbol'] }}
                     </div>
                 </div>
                   
                 <div class="row bold">
-                    <div class="col-9 outlet-green font-18 font-w600"><a href="{{ services.category.getURLById(5548) }}" target="_blank"><u>{{ trans("GuardiansBasic::Template.shipping") }}</u></a></div>
+                    <div class="col-9 outlet-green font-18 font-w600"><a href="{{ services.category.getURLById(5548) }}" target="_blank"><u>{{ trans("GuardiansBasicB2B::Template.shipping") }}</u></a></div>
                     <div class="col-3 text-right outlet-green font-18 font-w600  mt-auto mb-auto">
                         {{ basketData.shippingAmount }} {{ services.checkout.getCurrencyData()['symbol'] }}
                     </div>
@@ -69,11 +69,11 @@
                         </div>
                      {% if basketData.itemSum<29 and lieferland==1  %}
                         <div class="vsk-frei vsku29info">
-                            {{ trans("GuardiansBasic::Template.Orderforanadditional") }} {{ 29 - basketData.itemSum }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasic::Template.andwellgiveyou699") }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasic::Template.shippincostsThroughoutGermany") }}
+                            {{ trans("GuardiansBasicB2B::Template.Orderforanadditional") }} {{ 29 - basketData.itemSum }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasicB2B::Template.andwellgiveyou699") }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasicB2B::Template.shippincostsThroughoutGermany") }}
                         </div>
                     {% else %}
                         <div class="vsk-frei vsku29info">
-                            {{ trans("GuardiansBasic::Template.29eurocleared699") }}
+                            {{ trans("GuardiansBasicB2B::Template.29eurocleared699") }}
                         </div>
                     {% endif %}
                     </div>
@@ -83,7 +83,7 @@
                         <div class="mt-auto mb-auto f-size30">%
                         </div>
                        <div class="vsk-frei vsku29info">
-                           {{ trans("GuardiansBasic::Template.Orderforanadditional") }} {{ 29 - basketData.itemSum  }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasic::Template.andwellgiveyou10") }}{{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasic::Template.oftheshippingcostsoutsideofGermany") }}
+                           {{ trans("GuardiansBasicB2B::Template.Orderforanadditional") }} {{ 29 - basketData.itemSum  }} {{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasicB2B::Template.andwellgiveyou10") }}{{ services.checkout.getCurrencyData()['symbol'] }} {{ trans("GuardiansBasicB2B::Template.oftheshippingcostsoutsideofGermany") }}
                         </div>
                         </div>
                         {% endif %}
@@ -92,7 +92,7 @@
                         <div class="mt-auto mb-auto f-size30">%
                         </div>
                        <div class="vsk-frei vsku29info">
-                           {{ trans("GuardiansBasic::Template.29eurocleared10") }}
+                           {{ trans("GuardiansBasicB2B::Template.29eurocleared10") }}
                         </div>
                         </div>
                       {% endif %}
@@ -111,11 +111,11 @@
     </div>
     <div class="basket-prev-notitems text-center hidden mt-4">
         <div><span class="icon-online-shopping-cart"></span></div>
-        {{ trans("GuardiansBasic::Template.basketempty") }}
+        {{ trans("GuardiansBasicB2B::Template.basketempty") }}
     </div>
 {% else %}
     <div class="basket-prev-notitems text-center mt-4">
         <div><span class="icon-online-shopping-cart"></span></div>
-         {{ trans("GuardiansBasic::Template.basketempty") }}
+         {{ trans("GuardiansBasicB2B::Template.basketempty") }}
     </div>
 {% endif %}

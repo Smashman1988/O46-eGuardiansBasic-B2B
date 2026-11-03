@@ -12,7 +12,7 @@
             {% if (child.details | length > 0) %}
                 {% if counter==0 %}
                 <li class="d-lg-none">
-                    <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">{{ trans("GuardiansBasic::Template.showall") }}&raquo;</a>
+                    <a href="javascript:void(0)" title="Alle anzeigen" class="menuShowAll">{{ trans("GuardiansBasicB2B::Template.showall") }}&raquo;</a>
                 </li>
                 {% endif %}
                 <li class="cat-{{ child.id }} level{{ level }}{% if child.children %} eg-ddown {% for breadcrumb in categoryBreadcrumbs %}{% if child.id == breadcrumb.id %}active ddown-open{% endif %}{% endfor %}{% endif %}">
@@ -28,7 +28,7 @@
 
                         <div class="ddown-wrap transition">
                             <button class="hidden-lg-up back-ddown" data-eg-back-ddown  data-eg-handler="ddownBack" aria-label="Menü zurück">
-                               &laquo;&nbsp;{{ trans("GuardiansBasic::Template.back") }}
+                               &laquo;&nbsp;{{ trans("GuardiansBasicB2B::Template.back") }}
                             </button>
                             {% if level == 1 %}
 
@@ -75,7 +75,7 @@
 
                     <div class="ddown-wrap transition">
                         <button class="hidden-lg-up back-ddown" data-eg-back-ddown  data-eg-handler="ddownBack" aria-label="Menü zurück">
-                           &laquo;&nbsp;{{ trans("GuardiansBasic::Template.back") }}
+                           &laquo;&nbsp;{{ trans("GuardiansBasicB2B::Template.back") }}
                         </button>
                         <div class="container scrollable-nav">
                             <div class="row align-items-center">

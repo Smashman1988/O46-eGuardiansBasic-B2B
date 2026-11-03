@@ -4,13 +4,13 @@
         <div class="login-form-wrap">
             <form class="login-form transition-long">
                 <div class="form-group">
-                    <label class="form-control-label" for="login-mail">{{ trans("GuardiansBasic::Template.email") }}</label>
-                    <input type="email" class="form-control" id="login-mail" placeholder="{{ trans("GuardiansBasic::Template.email") }}">
+                    <label class="form-control-label" for="login-mail">{{ trans("GuardiansBasicB2B::Template.email") }}</label>
+                    <input type="email" class="form-control" id="login-mail" placeholder="{{ trans("GuardiansBasicB2B::Template.email") }}">
                     <span class="error-input-msg">{{ trans("Ceres::Template.loginEnterConfirmEmail") }}</span>
                 </div>
                 <div class="form-group">
-                    <label class="form-control-label" for="login-password">{{ trans("GuardiansBasic::Template.pw") }}</label>
-                    <input type="password" class="form-control" id="login-password" placeholder="{{ trans("GuardiansBasic::Template.pw") }}">
+                    <label class="form-control-label" for="login-password">{{ trans("GuardiansBasicB2B::Template.pw") }}</label>
+                    <input type="password" class="form-control" id="login-password" placeholder="{{ trans("GuardiansBasicB2B::Template.pw") }}">
                     <span class="error-input-msg">{{ trans("Ceres::Template.loginEmptyPassword") }}</span>
                 </div> 
                 <div class="d-flex justify-content-between align-items-center login-form-action">
@@ -20,8 +20,8 @@
             </form>
             <hr />
             <div class="loginpreview-register text-center">
-                <div class="h2 m-b-1">{{ trans("GuardiansBasic::Template.registrationinfo") }}</div>
-                <a href="{% if lang == "de" %}/registrieren/{% elseif lang == "en" %}/en/register/{% elseif lang == "fr" %}/fr/enregistrer/{% elseif lang == "it" %}/it/registrare/{% elseif lang == "es" %}/es/registrarse/{% endif %}" class="btn btn-secondary btn-small m-b-2">{{ trans("GuardiansBasic::Template.joinnow") }}</a>
+                <div class="h2 m-b-1">{{ trans("GuardiansBasicB2B::Template.registrationinfo") }}</div>
+                <a href="{% if lang == "de" %}/registrieren/{% elseif lang == "en" %}/en/register/{% elseif lang == "fr" %}/fr/enregistrer/{% elseif lang == "it" %}/it/registrare/{% elseif lang == "es" %}/es/registrarse/{% endif %}" class="btn btn-secondary btn-small m-b-2">{{ trans("GuardiansBasicB2B::Template.joinnow") }}</a>
             </div>
 
         </div>    
@@ -30,8 +30,8 @@
                 {{ trans("Ceres::Template.loginForgotPasswordInfo") }}
             </div>
             <div class="form-group">
-                <label class="form-control-label" for="login-mail">{{ trans("GuardiansBasic::Template.email") }}</label>
-                <input type="email" class="form-control" id="pwd-reset-mail" placeholder="{{ trans("GuardiansBasic::Template.email") }}">
+                <label class="form-control-label" for="login-mail">{{ trans("GuardiansBasicB2B::Template.email") }}</label>
+                <input type="email" class="form-control" id="pwd-reset-mail" placeholder="{{ trans("GuardiansBasicB2B::Template.email") }}">
                 <span class="error-input-msg">{{ trans("Ceres::Template.loginEnterConfirmEmail") }}</span>
             </div>
             <div class="d-flex justify-content-between align-items-center pwd-reset-action">
@@ -45,13 +45,13 @@
     {% else %}
         {% set contactData = services.customer.getContact() %}
         <div class="loginpreview-form">
-            <p class="h2">{{ trans("GuardiansBasic::Template.hello") }} {{ contactData.firstName }}</p>
-            <p>{{ trans("GuardiansBasic::Template.Youareloggedin") }}!</p>
+            <p class="h2">{{ trans("GuardiansBasicB2B::Template.hello") }} {{ contactData.firstName }}</p>
+            <p>{{ trans("GuardiansBasicB2B::Template.Youareloggedin") }}!</p>
         </div>
         <hr />
         <div class="loginpreview-register text-center">
-            <a href="{{ services.category.getURLById(5178) }}" class="btn btn-primary btn-small mb-2 mb-md-0">{{ trans("GuardiansBasic::Template.mykonto") }}</a>
-            <button class="btn btn-secondary btn-small"  data-eg-handler="logoutUser" data-eg-event="click">{{ trans("GuardiansBasic::Template.logout") }}</button>
+            <a href="{{ services.category.getURLById(5178) }}" class="btn btn-primary btn-small mb-2 mb-md-0">{{ trans("GuardiansBasicB2B::Template.mykonto") }}</a>
+            <button class="btn btn-secondary btn-small"  data-eg-handler="logoutUser" data-eg-event="click">{{ trans("GuardiansBasicB2B::Template.logout") }}</button>
         </div>
     {% endif %}
 </div>

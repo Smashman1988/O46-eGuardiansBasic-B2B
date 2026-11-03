@@ -1,6 +1,6 @@
 <?php //strict
 
-namespace GuardiansBasic\Resources;
+namespace GuardiansBasicB2B\Resources;
 
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\CategoryItems;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\Facets;

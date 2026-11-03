@@ -1,6 +1,6 @@
 <?php
 
-namespace GuardiansBasic\Resources;
+namespace GuardiansBasicB2B\Resources;
 
 use IO\Api\ApiResource;
 use IO\Api\ApiResponse;

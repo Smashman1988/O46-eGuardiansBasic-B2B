@@ -1,8 +1,8 @@
 {% set variationAttributes = getAttributesWithImages(itemId) %}
 {% set transLabels = transLabels ?? {
-    availsizedeal: trans("GuardiansBasic::Template.availsizedeal"),
-    availsizeonesize: trans("GuardiansBasic::Template.availsizeonesize"),
-    morethen18: trans("GuardiansBasic::Template.morethen18")
+    availsizedeal: trans("GuardiansBasicB2B::Template.availsizedeal"),
+    availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize"),
+    morethen18: trans("GuardiansBasicB2B::Template.morethen18")
 } %}
 
 {% if variationAttributes.attributes is defined and variationAttributes.attributes | length > 0 %}

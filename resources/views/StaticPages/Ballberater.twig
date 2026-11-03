@@ -1,12 +1,12 @@
 {% 
     set jugendKlassen = {
-        "g_jugend" : trans("GuardiansBasic::Config.g_jugend"),
-        "f_jugend" : trans("GuardiansBasic::Config.f_jugend"),
-        "e_jugend" : trans("GuardiansBasic::Config.e_jugend"),
-        "d_jugend" : trans("GuardiansBasic::Config.d_jugend"),
-        "c_jugend" : trans("GuardiansBasic::Config.c_jugend"),
-        "b_jugend" : trans("GuardiansBasic::Config.b_jugend"),
-        "a_jugend" : trans("GuardiansBasic::Config.a_jugend")
+        "g_jugend" : trans("GuardiansBasicB2B::Config.g_jugend"),
+        "f_jugend" : trans("GuardiansBasicB2B::Config.f_jugend"),
+        "e_jugend" : trans("GuardiansBasicB2B::Config.e_jugend"),
+        "d_jugend" : trans("GuardiansBasicB2B::Config.d_jugend"),
+        "c_jugend" : trans("GuardiansBasicB2B::Config.c_jugend"),
+        "b_jugend" : trans("GuardiansBasicB2B::Config.b_jugend"),
+        "a_jugend" : trans("GuardiansBasicB2B::Config.a_jugend")
     } 
     %}
     {% set facetsAltersklasse = '' %}
@@ -26,9 +26,9 @@
        {% endif %}
     {% endfor %}
  
-     {% set configAll = config("GuardiansBasic") %}
+     {% set configAll = config("GuardiansBasicB2B") %}
 
-      {# include "GuardiansBasic::Category.Item.Partials.FacetFilter" with { 'facets': filterOfCat.facets } #}  
+      {# include "GuardiansBasicB2B::Category.Item.Partials.FacetFilter" with { 'facets': filterOfCat.facets } #}
       <script>
           {% set configAllEncode = configAll | json_encode %}
           {% set configAllprg = configAllEncode|replace({"'": ""}) %}
@@ -108,11 +108,11 @@
                                                     <span class="step-value-image">
                                                         <img src="{{ configValue.vereinslogo }}" />
                                                     </span>
-                                                    <span class="step-value-name">{{ trans("GuardiansBasic::Config."~configKey)  }}</span>
+                                                    <span class="step-value-name">{{ trans("GuardiansBasicB2B::Config."~configKey)  }}</span>
                                                 </button>
                                             </div>
                                             {#<div class="col-lg-2">
-                                                <button>{{ trans("GuardiansBasic::Config."~configKey)  }}</button>
+                                                <button>{{ trans("GuardiansBasicB2B::Config."~configKey)  }}</button>
                                             </div>#}
                                         {% endif %}
                                     {% endfor %}    

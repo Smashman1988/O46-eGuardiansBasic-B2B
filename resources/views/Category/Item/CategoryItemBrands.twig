@@ -2,10 +2,10 @@
 <div class="categoriegrid pt-0 page-content container-max">
     <div class="row">
         <div class="col-12">
-                        <h1 class="center tcenter">{{ trans("GuardiansBasic::Template.brandstitle") }}</h1>
+                        <h1 class="center tcenter">{{ trans("GuardiansBasicB2B::Template.brandstitle") }}</h1>
             <br>
                         <p class="tcenter"><a  href="#A" class="brands-box" rel="" target="" type="default">A</a><a  href="#B" rel="" class="brands-box" target="" type="default">B</a><a  href="#C" rel="" class="brands-box" target="" type="default">C</a><a  href="#D" rel="" class="brands-box" target="" type="default">D</a><a  href="#E" rel="" class="brands-box" target="" type="default">E</a><a  href="#F" rel="" class="brands-box" target="" type="default">F</a><a  href="#G" rel="" class="brands-box" target="" type="default">G</a><a  href="#H" rel="" class="brands-box" target="" type="default">H</a><a  href="#I" rel="" class="brands-box" target="" type="default">I</a><a  href="#J" rel="" class="brands-box" target="" type="default">J</a><a  href="#K" rel="" class="brands-box" target="" type="default">K</a><a  href="#L" rel="" class="brands-box" target="" type="default">L</a><a  href="#M" rel="" class="brands-box" target="" type="default">M</a><a  href="#N" rel="" class="brands-box" target="" type="default">N</a><a  href="#O" rel="" class="brands-box" target="" type="default">O</a><a  href="#P" rel="" class="brands-box" target="" type="default">P</a><a  href="#Q" rel="" class="brands-box" target="" type="default">Q</a><a  href="#R" rel="" class="brands-box" target="" type="default">R</a><a  href="#S" rel="" class="brands-box" target="" type="default">S</a><a  href="#T" rel="" class="brands-box" target="" type="default">T</a><a  href="#U" rel="" class="brands-box" target="" type="default">U</a><a  href="#V" rel="" class="brands-box" target="" type="default">V</a><a  href="#W" rel="" class="brands-box" target="" type="default">W</a><a  href="#X" rel="" class="brands-box" target="" type="default">X</a><a  href="#Y" rel="" class="brands-box" target="" type="default">Y</a><a  href="#Z" rel="" class="brands-box" target="" type="default">Z</a><a  href="#end" rel="" class="brands-box" target="" type="default">0 - 9</a></p>
-            <div class="col-12"><p class="text-center"><a href="{{ services.category.getURLById(5618) }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}">- {{ trans("GuardiansBasic::Template.showall") }} -</a></p></div>
+            <div class="col-12"><p class="text-center"><a href="{{ services.category.getURLById(5618) }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}">- {{ trans("GuardiansBasicB2B::Template.showall") }} -</a></p></div>
                         <div class="widget widget-step-by-step-navigation widget-none brandTiles">
                 <div class="widget-inner">
                     <div class="row">
@@ -44,7 +44,7 @@
                             <img src="/documents/{{ child.details[0].image2Path }}" alt="{{ child.details[0].name }}" title="{{ child.details[0].name }}">
                              </noscript></picture> 
                         {% else %}
-                         <img src="{{ plugin_path('GuardiansBasic') }}/images/no-logo-platzhalter.png" alt="{{ child.details[0].name }}" class="position-relative rounded"></picture> 
+                         <img src="{{ plugin_path('GuardiansBasicB2B') }}/images/no-logo-platzhalter.png" alt="{{ child.details[0].name }}" class="position-relative rounded"></picture>
                          {% endif %}
                         <span class="align-self-center flex-grow-1 text-center">{{ child.details[0].name }} ({{ child.itemCount[0].count }})</span></a>
             </div>

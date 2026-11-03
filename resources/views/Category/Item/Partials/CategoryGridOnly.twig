@@ -1,20 +1,20 @@
 {% set translations = {
-    tSustainability: trans("GuardiansBasic::Template.sustainability"),
-    tAvailSizes: trans("GuardiansBasic::Template.availsizes"),
-    tStatt: trans("GuardiansBasic::Template.statt"),
-    tInBasket: trans("GuardiansBasic::Template.inbasket")
+    tSustainability: trans("GuardiansBasicB2B::Template.sustainability"),
+    tAvailSizes: trans("GuardiansBasicB2B::Template.availsizes"),
+    tStatt: trans("GuardiansBasicB2B::Template.statt"),
+    tInBasket: trans("GuardiansBasicB2B::Template.inbasket")
 } %}
 {% set transLabels = {
-    availsizedeal: trans("GuardiansBasic::Template.availsizedeal"),
-    availsizeonesize: trans("GuardiansBasic::Template.availsizeonesize"),
-    morethen18: trans("GuardiansBasic::Template.morethen18")
+    availsizedeal: trans("GuardiansBasicB2B::Template.availsizedeal"),
+    availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize"),
+    morethen18: trans("GuardiansBasicB2B::Template.morethen18")
 } %}
 {% set currencycheck = services.checkout.getCurrencyData.name %}
 {% set isShoeCategory = category.id in [44, 52] or category.parentCategoryId in [44, 52] %}
 <div class="category-product-list row disp-flexi">
   {% for item in itemList %}
     <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">
-      {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem" with {
+      {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem" with {
         'item': item,
         'currencycheck': currencycheck,
         'isShoeCategory': false,

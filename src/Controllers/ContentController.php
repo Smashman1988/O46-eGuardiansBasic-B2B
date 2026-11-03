@@ -1,10 +1,10 @@
 <?php
-namespace GuardiansBasic\Controllers;
+namespace GuardiansBasicB2B\Controllers;
 
 use Plenty\Plugin\Controller;
 use Plenty\Plugin\Templates\Twig;
 use IO\Services\ItemService;
-use GuardiansBasic\Extensions\Base_Extension;
+use GuardiansBasicB2B\Extensions\Base_Extension;
 use Plenty\Modules\Feedback\Contracts\FeedbackRepositoryContract;
 use Plenty\Plugin\Http\Request;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\VariationAttributeMap;
@@ -27,20 +27,20 @@ class ContentController extends Controller
         $templateData = array(
             'currentItems' => ""
         );
-        $arrayData = array("data" => $twig->render('GuardiansBasic::DynamicContent.DynamicLogin',  $templateData));
-        return json_encode($arrayData);//$twig->render('GuardiansBasic::DynamicContent.DynamicLogin',  $templateData);
+        $arrayData = array("data" => $twig->render('GuardiansBasicB2B::DynamicContent.DynamicLogin',  $templateData));
+        return json_encode($arrayData);//$twig->render('GuardiansBasicB2B::DynamicContent.DynamicLogin',  $templateData);
     } 
     public function dynamicBasketPreview(Twig $twig):string
     {
         $templateData = array(
             'currentItems' => ""
         );
-        $arrayData = array("data" => $twig->render('GuardiansBasic::DynamicContent.DynamicBasketPreview',  $templateData));
+        $arrayData = array("data" => $twig->render('GuardiansBasicB2B::DynamicContent.DynamicBasketPreview',  $templateData));
         return json_encode($arrayData);
     } 
     public function dynamicBasketPreviewSmall(Twig $twig):string
     {
-        $arrayData = array("data" => $twig->render('GuardiansBasic::DynamicContent.DynamicBasketPreviewSmall'));
+        $arrayData = array("data" => $twig->render('GuardiansBasicB2B::DynamicContent.DynamicBasketPreviewSmall'));
         return json_encode($arrayData);
     } 
     public function dynamicCatPreviewImages(Twig $twig):string
@@ -48,7 +48,7 @@ class ContentController extends Controller
         $templateData = array(
             'sItemId' => $_GET["itemid"]
         );
-        $arrayData = array("data" => $twig->render('GuardiansBasic::DynamicContent.DynamicCatPreviewImages',  $templateData));
+        $arrayData = array("data" => $twig->render('GuardiansBasicB2B::DynamicContent.DynamicCatPreviewImages',  $templateData));
         return json_encode($arrayData);
     }  
     private function getItemData($itemId){
@@ -80,7 +80,7 @@ class ContentController extends Controller
             'feedbackItems' => $feedbackItems
         );
         
-        $arrayData = array("data" => $twig->render('GuardiansBasic::DynamicContent.DynamicFeedbacks',  $templateData));
+        $arrayData = array("data" => $twig->render('GuardiansBasicB2B::DynamicContent.DynamicFeedbacks',  $templateData));
         return json_encode($arrayData);
     }
     public function getShopBuilderContent(Twig $twig):string
@@ -88,7 +88,7 @@ class ContentController extends Controller
         $templateData = array(
             'categoryId' => $_GET["categoryId"]
         );
-        $response = $twig->render('GuardiansBasic::DynamicContent.DynamicRestTemplate', $templateData);
+        $response = $twig->render('GuardiansBasicB2B::DynamicContent.DynamicRestTemplate', $templateData);
         $htmlClean = preg_replace('#<script2(.*?)>(.*?)</script2>#is', '', $response);
         $arrayData = array("data" => $htmlClean);
         
@@ -96,7 +96,7 @@ class ContentController extends Controller
     } 
     public function getTrackings(Twig $twig):string
     {
-        $arrayData = array("data" => $twig->render('GuardiansBasic::PageDesign.Components.Trackings'));
+        $arrayData = array("data" => $twig->render('GuardiansBasicB2B::PageDesign.Components.Trackings'));
         return json_encode($arrayData);
     }
 }

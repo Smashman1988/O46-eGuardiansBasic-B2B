@@ -28,7 +28,7 @@
             {% if isSustainable %}
                 <span class="item-action i-action-nachhaltig-cat">{{ translations.tSustainability }}</span>
             {% endif %}
-            {% import "GuardiansBasic::Category.Macros.render-rating" as Rating %}
+            {% import "GuardiansBasicB2B::Category.Macros.render-rating" as Rating %}
 
             {% set feedbackRatingDecimal = item.data.item.feedbackDecimal ?? 0 %}
             {% set feedbackCount = item.data.item.feedbackCount ?? 0 %}
@@ -43,7 +43,7 @@
             </span>
             <span class="col-5">
             {% set rawLogo = item.data.item.manufacturer.logo %}
-            {% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasic') ~ '/images/vendors/'}) %}
+            {% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'}) %}
             {% if vendorlogo is not empty %}
                 <img src="{{ vendorlogo }}" class="cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">
             {% elseif rawLogo is not empty %}
@@ -63,7 +63,7 @@
             <hr class="m-0">
             <div class="tcenter"><span class="outlet-green sizebox">{{ translations.tAvailSizes }}</span>
                 <div class="cat-attr-sizes">
-                    {% include "GuardiansBasic::Category.Item.Partials.CategoryAttributes" with { 'itemId': item.data.variation.itemId, 'itemFlag': item.data.item.flagTwo, 'transLabels': transLabels } %}
+                    {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryAttributes" with { 'itemId': item.data.variation.itemId, 'itemFlag': item.data.item.flagTwo, 'transLabels': transLabels } %}
                 </div>
             </div>                             
             <hr class="m-0">

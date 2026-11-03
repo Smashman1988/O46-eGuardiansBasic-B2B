@@ -32,17 +32,17 @@
                     <div class="col-12">
                         <div class="section-slider">
                         {% for i in 1..6 %}    
-                            {% if config("GuardiansBasic.homeSliderImageDesktop_"~ i) is not empty %} 
+                            {% if config("GuardiansBasicB2B.homeSliderImageDesktop_"~ i) is not empty %}
                                 <div class="home-slider-main">
                                     <div class="home-slider-link-wrap">
-                                        <h3 style="color: {{ config("GuardiansBasic.homeSliderTxtColor_"~ i) }};">{{ config("GuardiansBasic.homeSliderTxt_"~ i) | raw }}</h3>
-                                        <a href="{{ config("GuardiansBasic.homeSliderLink_"~ i) }}" title="{{ config("GuardiansBasic.homeSliderLinkTxt_"~ i) }}">
-                                            {{ config("GuardiansBasic.homeSliderLinkTxt_"~ i) }} &raquo;
+                                        <h3 style="color: {{ config("GuardiansBasicB2B.homeSliderTxtColor_"~ i) }};">{{ config("GuardiansBasicB2B.homeSliderTxt_"~ i) | raw }}</h3>
+                                        <a href="{{ config("GuardiansBasicB2B.homeSliderLink_"~ i) }}" title="{{ config("GuardiansBasicB2B.homeSliderLinkTxt_"~ i) }}">
+                                            {{ config("GuardiansBasicB2B.homeSliderLinkTxt_"~ i) }} &raquo;
                                         </a>
                                     </div>
-                                    <picture class="lozad" data-iesrc="{{ config("GuardiansBasic.homeSliderImageDesktop_"~ i) }}" data-alt="{{ config("GuardiansBasic.homeSliderTxt_"~ i) }}">
-                                        <source srcset="{{ config("GuardiansBasic.homeSliderImageDesktop_"~ i) }}" media="(min-width: 768px)">
-                                        <source srcset="{{ config("GuardiansBasic.homeSliderImageMobile_"~ i) }}" media="(min-width: 0px)">
+                                    <picture class="lozad" data-iesrc="{{ config("GuardiansBasicB2B.homeSliderImageDesktop_"~ i) }}" data-alt="{{ config("GuardiansBasicB2B.homeSliderTxt_"~ i) }}">
+                                        <source srcset="{{ config("GuardiansBasicB2B.homeSliderImageDesktop_"~ i) }}" media="(min-width: 768px)">
+                                        <source srcset="{{ config("GuardiansBasicB2B.homeSliderImageMobile_"~ i) }}" media="(min-width: 0px)">
                                     </picture>
                                 </div>    
                             {% endif %} 
@@ -56,11 +56,11 @@
             <div class="container">
                 <div class="row">
                     {% for i in 1..3 %}
-                        {% if config("GuardiansBasic.homeBannerImage_"~ i) is not empty %} 
+                        {% if config("GuardiansBasicB2B.homeBannerImage_"~ i) is not empty %}
                         <div class="col-12 col-md-4">
-                            <a href="{{ config("GuardiansBasic.homeBannerLink_"~ i) }}" title="">
-                                <img src="" data-src="{{ config("GuardiansBasic.homeBannerImage_"~ i) }}" alt="{{ config("GuardiansBasic.homeBannerLinkTxt_"~ i) }}" class="lozad" />
-                                <span>{{ config("GuardiansBasic.homeBannerLinkTxt_"~ i) }} &raquo;</span>
+                            <a href="{{ config("GuardiansBasicB2B.homeBannerLink_"~ i) }}" title="">
+                                <img src="" data-src="{{ config("GuardiansBasicB2B.homeBannerImage_"~ i) }}" alt="{{ config("GuardiansBasicB2B.homeBannerLinkTxt_"~ i) }}" class="lozad" />
+                                <span>{{ config("GuardiansBasicB2B.homeBannerLinkTxt_"~ i) }} &raquo;</span>
                             </a>
                         </div>
                         {% endif %} 
@@ -80,8 +80,8 @@
                                             <span class="icon-star3"></span>
                                         </div>
                                         <div class="home-usp-txt">
-                                            <span>{{ config("GuardiansBasic.homeUspHead_1") }}</span>
-                                            <span>{{ config("GuardiansBasic.homeUspTxt_1") }}</span>
+                                            <span>{{ config("GuardiansBasicB2B.homeUspHead_1") }}</span>
+                                            <span>{{ config("GuardiansBasicB2B.homeUspTxt_1") }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -91,9 +91,9 @@
                                             <span class="icon-star3"></span>
                                         </div>
                                         <div class="home-usp-txt">
-                                            <span>{{ config("GuardiansBasic.homeUspHead_2") }}</span>
+                                            <span>{{ config("GuardiansBasicB2B.homeUspHead_2") }}</span>
                                             
-                                            <span>{{ config("GuardiansBasic.homeUspTxt_2") |replace({':tsrate': trustedJson.response.data.shop.qualityIndicators.reviewIndicator.overallMark }) }}</span>
+                                            <span>{{ config("GuardiansBasicB2B.homeUspTxt_2") |replace({':tsrate': trustedJson.response.data.shop.qualityIndicators.reviewIndicator.overallMark }) }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -103,8 +103,8 @@
                                             <span class="icon-star3"></span>
                                         </div>
                                         <div class="home-usp-txt">
-                                            <span>{{ config("GuardiansBasic.homeUspHead_3") }}</span>
-                                            <span>{{ config("GuardiansBasic.homeUspTxt_3") }}</span>
+                                            <span>{{ config("GuardiansBasicB2B.homeUspHead_3") }}</span>
+                                            <span>{{ config("GuardiansBasicB2B.homeUspTxt_3") }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -118,15 +118,15 @@
             <div class="container">
                 <div class="row">
                     <div class="col-12 col-md-4">
-                        <a href="{{ config("GuardiansBasic.homeBannerLinkSecond_1") }}" title="{{ config("GuardiansBasic.homeBannerLinkTxtSecond_1") }}" class="middle-img-txt">
-                            <img src="" data-src="{{ config("GuardiansBasic.homeBannerImageSecond_1") }}" alt="{{ config("GuardiansBasic.homeBannerLinkTxtSecond_1") }}" class="lozad" />
-                            <span>{{ config("GuardiansBasic.homeBannerLinkTxtSecond_1") }} &raquo;</span>
+                        <a href="{{ config("GuardiansBasicB2B.homeBannerLinkSecond_1") }}" title="{{ config("GuardiansBasicB2B.homeBannerLinkTxtSecond_1") }}" class="middle-img-txt">
+                            <img src="" data-src="{{ config("GuardiansBasicB2B.homeBannerImageSecond_1") }}" alt="{{ config("GuardiansBasicB2B.homeBannerLinkTxtSecond_1") }}" class="lozad" />
+                            <span>{{ config("GuardiansBasicB2B.homeBannerLinkTxtSecond_1") }} &raquo;</span>
                         </a>
                     </div>
                     <div class="col-12 col-md-8">
-                        <a href="{{ config("GuardiansBasic.homeBannerLinkSecond_2") }}" title="{{ config("GuardiansBasic.homeBannerLinkTxtSecond_2") }}" class="right-bottom-txt">
-                            <img src="" data-src="{{ config("GuardiansBasic.homeBannerImageSecond_2") }}" alt="{{ config("GuardiansBasic.homeBannerLinkTxtSecond_2") }}" class="lozad" />
-                            <span>{{ config("GuardiansBasic.homeBannerLinkTxtSecond_2") }} &raquo;</span>
+                        <a href="{{ config("GuardiansBasicB2B.homeBannerLinkSecond_2") }}" title="{{ config("GuardiansBasicB2B.homeBannerLinkTxtSecond_2") }}" class="right-bottom-txt">
+                            <img src="" data-src="{{ config("GuardiansBasicB2B.homeBannerImageSecond_2") }}" alt="{{ config("GuardiansBasicB2B.homeBannerLinkTxtSecond_2") }}" class="lozad" />
+                            <span>{{ config("GuardiansBasicB2B.homeBannerLinkTxtSecond_2") }} &raquo;</span>
                         </a>
                     </div>
                 </div>
@@ -146,7 +146,7 @@
                         <div class="home-slider-items">
                         {% for item in itemListHomeTopSell %}
                             <div class="col-12">
-                                {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem" with { 'item': item } %}
+                                {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem" with { 'item': item } %}
                             </div>
                         {% endfor %}
                         </div>

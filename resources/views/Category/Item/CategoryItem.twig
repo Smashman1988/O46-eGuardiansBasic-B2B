@@ -5,15 +5,15 @@
 {% set catDetails = category.details[0] %}
 {% set isShoeCategory = category.id in [44, 52] or category.parentCategoryId in [44, 52] %}
 {% set translations = {
-    tSustainability: trans("GuardiansBasic::Template.sustainability"),
-    tAvailSizes: trans("GuardiansBasic::Template.availsizes"),
-    tStatt: trans("GuardiansBasic::Template.statt"),
-    tInBasket: trans("GuardiansBasic::Template.inbasket")
+    tSustainability: trans("GuardiansBasicB2B::Template.sustainability"),
+    tAvailSizes: trans("GuardiansBasicB2B::Template.availsizes"),
+    tStatt: trans("GuardiansBasicB2B::Template.statt"),
+    tInBasket: trans("GuardiansBasicB2B::Template.inbasket")
 } %}
 {% set transLabels = {
-    availsizedeal: trans("GuardiansBasic::Template.availsizedeal"),
-    availsizeonesize: trans("GuardiansBasic::Template.availsizeonesize"),
-    morethen18: trans("GuardiansBasic::Template.morethen18")
+    availsizedeal: trans("GuardiansBasicB2B::Template.availsizedeal"),
+    availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize"),
+    morethen18: trans("GuardiansBasicB2B::Template.morethen18")
 } %}
 
 {% block PartialHead %}
@@ -34,7 +34,7 @@
     {% if category.id!=60 %}
     {% for item in itemList[:2] %}
         <link rel="preload" href="{{ item.data.images.all[0].urlPreview }}.avif" as="image">
-        {% set vendorlogo = item.data.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasic') ~ '/images/vendors/'}) %}
+        {% set vendorlogo = item.data.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'}) %}
         {% if vendorlogo is not empty %}
             <link rel="preload" href="{{ vendorlogo }}" as="image">
         {% elseif item.data.item.manufacturer.logo is not empty %}
@@ -100,32 +100,32 @@
         <div class="col-12">
             <div class="leftsidecat">
                 {% if isSearch %}
-                    <h1 class="category-title">{{ trans("GuardiansBasic::Template.searchresultfor") }} "{{ searchString }}" ({{ itemCountTotal }})</h1>
+                    <h1 class="category-title">{{ trans("GuardiansBasicB2B::Template.searchresultfor") }} "{{ searchString }}" ({{ itemCountTotal }})</h1>
                      <div class="row d-lg-none">
                         <div class="col-6">
                             
                         </div>
                         <div class="col-6">
                             <button data-eg-event="click" data-eg-param="html,filter-open" data-eg-handler="tgClass" class="btn btn-primary btn-block mb-3" aria-label="Filter öffnen">
-                                {{ trans("GuardiansBasic::Template.whatareyoulookingfor") }}
+                                {{ trans("GuardiansBasicB2B::Template.whatareyoulookingfor") }}
                             </button>
                         </div>
                     </div>
-                    {% include "GuardiansBasic::Category.Item.Partials.FacetFilter3" %}
+                    {% include "GuardiansBasicB2B::Category.Item.Partials.FacetFilter3" %}
                 {% else %}
                     <div class="row d-lg-none">
                         <div class="col-6">
                             <button data-eg-event="click" data-eg-param="html,menu-open" data-eg-handler="tgClass" class="btn btn-primary btn-block mb-3" aria-label="Kategorien">
-                                {{ trans("GuardiansBasic::Template.categories") }}
+                                {{ trans("GuardiansBasicB2B::Template.categories") }}
                             </button>
                         </div>
                         <div class="col-6">
                             <button data-eg-event="click" data-eg-param="html,filter-open" data-eg-handler="tgClass" class="btn btn-primary btn-block mb-3" aria-label="Filter öffnen">
-                                {{ trans("GuardiansBasic::Template.whatareyoulookingfor") }}
+                                {{ trans("GuardiansBasicB2B::Template.whatareyoulookingfor") }}
                             </button>
                         </div>
                     </div>
-                    {% include "GuardiansBasic::Category.Item.Partials.FacetFilter2" %}
+                    {% include "GuardiansBasicB2B::Category.Item.Partials.FacetFilter2" %}
                 {% endif %}
 
             </div>
@@ -137,7 +137,7 @@
                     <div class="d-flex justify-content-between">
                         {% if isQuickView %}
                         <div class="align-items-center d-flex mr-md-2">
-                            <span class="light-big-txt l-b-t-2 d-none d-md-inline-block">{{ trans("GuardiansBasic::Template.sortby") }}</span>
+                            <span class="light-big-txt l-b-t-2 d-none d-md-inline-block">{{ trans("GuardiansBasicB2B::Template.sortby") }}</span>
                             <div class="eg-dropdown eg-dropdown-sort eg-dropdown-normal mb-4 mb-md-0" data-eg-activesorting="{{ query.sorting }}" data-eg-defaultsorting="{{ searchOptions.defaultSorting }}">
                                 <div class="eg-dropdown-value">
                                     <span class="sort-val">{{ searchOptions.sorting[query.sorting] }}</span> <span class="icon-down-open-big"></span>
@@ -155,7 +155,7 @@
                         </div>
                         {% endif %}
                         <div class="eg-pagination">
-                            {% include "GuardiansBasic::Category.Item.Partials.Pagination" %}
+                            {% include "GuardiansBasicB2B::Category.Item.Partials.Pagination" %}
                         </div>
                     </div>
                 </div>
@@ -166,7 +166,7 @@
                 {% macro categoryItem(item, variant, currencycheck, isShoeCategory, translations, transLabels) %}
                     <article class="post col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">
                         {% if variant == 1 %}
-                            {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem2" with {
+                            {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2" with {
                                 'item': item,
                                 'currencycheck': currencycheck,
                                 'isShoeCategory': isShoeCategory,
@@ -174,7 +174,7 @@
                                 'transLabels': transLabels
                             } %}
                         {% else %}
-                            {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem" with {
+                            {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem" with {
                                 'item': item,
                                 'currencycheck': currencycheck,
                                 'isShoeCategory': isShoeCategory,
@@ -197,10 +197,10 @@
 
                 </div>
                 <div class="scroller-status"><div class="loader-wheel infinite-scroll-request"><i><i><i><i><i><i><i><i><i><i><i><i></i></i></i></i></i></i></i></i></i></i></i></i></div>
-                    <p class="infinite-scroll-last tcenter">{{ trans("GuardiansBasic::Template.iscrollinfo1") }} {{ itemCountTotal }} {% if isSearch %} "{{ searchString }}"{% else %} {{ trans("GuardiansBasic::Template.items") }} {{ trans("GuardiansBasic::Template.iscrollinfo2") }} {{ catDetails.name }}{% endif %} {{ trans("GuardiansBasic::Template.iscrollinfo3") }}
-                        <br><br>{{ trans("GuardiansBasic::Template.iscrollinfo4") }}
-                        <br><br>{{ trans("GuardiansBasic::Template.iscrollinfo5") }} <a href="{% if lang=="en" %}/en/All-Articles/{% elseif lang=="fr" %}/fr/tous-les-articles/{% else %}/alle-artikel/{% endif %}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" title="{{ item.data | itemName }}">{{ trans("GuardiansBasic::Template.iscrollinfo6") }}</a></p>
-                    <p class="infinite-scroll-error tcenter">{{ trans("GuardiansBasic::Template.iscrollinfo7") }}</p>
+                    <p class="infinite-scroll-last tcenter">{{ trans("GuardiansBasicB2B::Template.iscrollinfo1") }} {{ itemCountTotal }} {% if isSearch %} "{{ searchString }}"{% else %} {{ trans("GuardiansBasicB2B::Template.items") }} {{ trans("GuardiansBasicB2B::Template.iscrollinfo2") }} {{ catDetails.name }}{% endif %} {{ trans("GuardiansBasicB2B::Template.iscrollinfo3") }}
+                        <br><br>{{ trans("GuardiansBasicB2B::Template.iscrollinfo4") }}
+                        <br><br>{{ trans("GuardiansBasicB2B::Template.iscrollinfo5") }} <a href="{% if lang=="en" %}/en/All-Articles/{% elseif lang=="fr" %}/fr/tous-les-articles/{% else %}/alle-artikel/{% endif %}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" title="{{ item.data | itemName }}">{{ trans("GuardiansBasicB2B::Template.iscrollinfo6") }}</a></p>
+                    <p class="infinite-scroll-error tcenter">{{ trans("GuardiansBasicB2B::Template.iscrollinfo7") }}</p>
                 </div>
         </div>     
     </div>
@@ -208,7 +208,7 @@
         <div class="col-12">
             <div class="pull-right">
                 <div class="eg-pagination">
-                    {% include "GuardiansBasic::Category.Item.Partials.Pagination" %}
+                    {% include "GuardiansBasicB2B::Category.Item.Partials.Pagination" %}
                 </div>
             </div>
         </div>
@@ -225,7 +225,7 @@
     {% endif %}
 </section>
     {% else %}
-        {% include "GuardiansBasic::Category.Item.CategoryItemBrands" %} 
+        {% include "GuardiansBasicB2B::Category.Item.CategoryItemBrands" %}
 {% endif %}
 {% if currentPage > 1 %}
 <script>

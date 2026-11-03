@@ -46,7 +46,7 @@
                                                 </div>
                                                 <input type="number" class="form-control facet-input-price-max" placeholder="Max." {% if priceMax is not empty %}value="{{ priceMax }}"{% endif %}>
                                             </div>
-                                            <button class="btn btn-secondary btn-small btn-block m-b-1 pricefilter" data-eg-event="click" data-eg-handler="facetFilter" aria-label="Filter anwenden">{{ trans("GuardiansBasic::Template.apply") }}</button>
+                                            <button class="btn btn-secondary btn-small btn-block m-b-1 pricefilter" data-eg-event="click" data-eg-handler="facetFilter" aria-label="Filter anwenden">{{ trans("GuardiansBasicB2B::Template.apply") }}</button>
                                         </li>
                                     {% else %}
                                         {% set activeFacetIds = activeFacets|map(v => v|default(0)) %}
@@ -63,7 +63,7 @@
                                                         <span>{{ facetValue.name }}</span>
                                                     {% else %}
                                                     <span class="chk-box">
-                                                          {% include "GuardiansBasic::Category.Item.Partials.check-icon" %}
+                                                          {% include "GuardiansBasicB2B::Category.Item.Partials.check-icon" %}
                                                         </span>
                                                     {{ facetValue.name }}
                                                     <span class="chk-count">{{ facetValue.count }}</span>
@@ -89,7 +89,7 @@
     <hr class="hr-style">
     <div class="row mt-2 mb-3 tcenter">
         <div class="col-12">
-            <p class="category-title mb-3 d-lg-block">{{ trans("GuardiansBasic::Template.selectedfilters") }}</p>
+            <p class="category-title mb-3 d-lg-block">{{ trans("GuardiansBasicB2B::Template.selectedfilters") }}</p>
             {% if priceMax or priceMin %}
                 <label class="btn btn-secondary facet-remove-btn facet-remove-price" data-eg-handler="facetFilter" data-eg-event="click">
                     <span class="facet-item-value facet-value-remove">
@@ -106,7 +106,7 @@
             {% endfor %}
             <a href="{{ canonicalURL ~ queryString({'facets':null,'priceMin':null,'priceMax':null}) }}" class="btn btn-secondary facet-remove-btn facet-remove-price facet-remove-all">
                 <label class="facet-item-value facet-value-remove">
-                    {{ trans("GuardiansBasic::Template.resetallfilters") }}
+                    {{ trans("GuardiansBasicB2B::Template.resetallfilters") }}
                 </label>
             </a>
         </div>

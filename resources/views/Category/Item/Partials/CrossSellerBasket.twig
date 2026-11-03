@@ -52,15 +52,15 @@
                     {% set percent = (1 - item.data.prices.default.unitPrice.value / item.data.prices.rrp.price.value ) * -100 %}
                     {% set percent = percent | number_format(dezimalcount, ',', '.') %}
                     <div class="cat-rrp-price-wrap">
-                        <span class="d-lg-none d-xl-inline-block">{{ trans("GuardiansBasic::Template.statt") }}</span>&nbsp;<span class="cat-rrp-price">{{ item.data.prices.rrp.price.formatted }}</span>
-                        <span class="cat-rrp-percent">{{ percent }}% {{ trans("GuardiansBasic::Template.saveup") }}!</span>
+                        <span class="d-lg-none d-xl-inline-block">{{ trans("GuardiansBasicB2B::Template.statt") }}</span>&nbsp;<span class="cat-rrp-price">{{ item.data.prices.rrp.price.formatted }}</span>
+                        <span class="cat-rrp-percent">{{ percent }}% {{ trans("GuardiansBasicB2B::Template.saveup") }}!</span>
                     </div>
                     
                 {% endif %}
                 <div class="cat-price">
                     {% if item.data.prices.graduatedPrices|length>1 %}
                         {% set gruadtedPrice = item.data.prices.graduatedPrices %}
-                        {{ trans("GuardiansBasic::Template.ab") }} {{ gruadtedPrice[0].price.formatted }}
+                        {{ trans("GuardiansBasicB2B::Template.ab") }} {{ gruadtedPrice[0].price.formatted }}
                     {% else %}
                     {{ item.data.prices.default.unitPrice.formatted | specialOffer(item.data.prices, "unitPrice", "formatted") }}
                     {% endif %}

@@ -1,4 +1,4 @@
-{% import "GuardiansBasic::Category.Macros.render-rating" as Rating %}
+{% import "GuardiansBasicB2B::Category.Macros.render-rating" as Rating %}
 
 {% set itemFeedbacks = feedbackItems %}
 
@@ -28,7 +28,7 @@
                                         {{ customerNameFeedback[0] }}
                                     {% endif %}
                                     {% if feedbackEntrie.feedbackComment.comment.message %}
-                                        {{ trans("GuardiansBasic::Template.says") }}:
+                                        {{ trans("GuardiansBasicB2B::Template.says") }}:
                                     {% endif %}
                                 </span>
                             </strong>
@@ -37,7 +37,7 @@
 
                         <div class="col-12 nopadding disp-flexi">
                             <div class="col-8 fontGreen nopadding txt-al-start">
-                                <span><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasic::Template.verifiedbuy") }}</span>
+                                <span><span class="icon-ok mr-1"></span>{{ trans("GuardiansBasicB2B::Template.verifiedbuy") }}</span>
                             </div>
                             <div class="col-4 feedback-rating mb-1 nopadding txt-al-end">
                                 {{ Rating.renderRatingStatic(feedbackEntrie.feedbackRating.rating.ratingValue) }}
@@ -48,14 +48,14 @@
                             <div class="feedback clearfix italic" data-eg-feedbackitem data-eg-feedbackvalue="{{ feedbackEntrie.feedbackRating.rating.ratingValue }}" data-eg-feedbackdate="{{ feedbackEntrie.updatedAt }}">
                                 <div class="feedback-comment">
                                     <p class="feedback-comment-title">
-                                        {{ trans("GuardiansBasic::Template.Outlet46deteamanswer") }}
+                                        {{ trans("GuardiansBasicB2B::Template.Outlet46deteamanswer") }}
                                     </p>
                                     <p class="feedback-comment-text mb-1">
                                         <span class="feedback-info-segment">
                                             <span class="icon-user"></span>
                                             <strong>
                                                 <span>
-                                                    {{ feedbackEntrie.replies[0].sourceRelation[0].sourceRelationLabel }} {{ trans("GuardiansBasic::Template.says") }}:
+                                                    {{ feedbackEntrie.replies[0].sourceRelation[0].sourceRelationLabel }} {{ trans("GuardiansBasicB2B::Template.says") }}:
                                                 </span>
                                             </strong>
                                         </span>

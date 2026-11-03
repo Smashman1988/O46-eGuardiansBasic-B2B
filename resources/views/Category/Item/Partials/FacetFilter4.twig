@@ -45,7 +45,7 @@
                                                         <span>{{ facetValue.name }}</span>
                                                     {% else %}
                                                         <span class="chk-box">
-                                                          {% include "GuardiansBasic::Category.Item.Partials.check-icon" %}
+                                                          {% include "GuardiansBasicB2B::Category.Item.Partials.check-icon" %}
                                                         </span>
                                                         {{ facetValue.name }}
                                                         <span class="chk-count">{{ facetValue.count }}</span>
@@ -71,7 +71,7 @@
     <hr class="hr-style">
     <div class="row mt-2 mb-3 tcenter">
         <div class="col-12">
-            <p class="category-title mb-3 d-lg-block">{{ trans("GuardiansBasic::Template.selectedfilters") }}</p>
+            <p class="category-title mb-3 d-lg-block">{{ trans("GuardiansBasicB2B::Template.selectedfilters") }}</p>
             {% if priceMax or priceMin %}
                 <label class="btn btn-secondary facet-remove-btn facet-remove-price" data-eg-handler="facetFilter" data-eg-event="click">
                     <span class="facet-item-value facet-value-remove">
@@ -88,7 +88,7 @@
             {% endfor %}
             <a href="{{ canonicalURL ~ queryString({'facets':null,'priceMin':null,'priceMax':null}) }}" class="btn btn-secondary facet-remove-btn facet-remove-price facet-remove-all">
                 <label class="facet-item-value facet-value-remove">
-                    {{ trans("GuardiansBasic::Template.resetallfilters") }}
+                    {{ trans("GuardiansBasicB2B::Template.resetallfilters") }}
                 </label>
             </a>
         </div>

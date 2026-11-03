@@ -1,46 +1,34 @@
-# Ceres Vanilla – Ein Vanilla Theme für Ceres
+# eGuardiansBasic B2B – Einrichtung
 
-**Ceres Vanilla** ist ein einfaches Theme-Plugin, welches noch keine Design-Anpassungen für Ceres enthält. Mithilfe des Themes kann eigenes CSS in Ceres angezeigt werden. Zudem können Templates von Ceres durch eigene Templates überschrieben werden.
+Dieses Theme enthält die bestehenden Outlet46-B2B-Inhalte und Funktionen.
+Technischer Plugin-Name und Namespace: `GuardiansBasicB2B`; Baseline-Version: `1.0.7`.
+Das B2C-Plugin heißt weiterhin `GuardiansBasic` und gehört in sein separates Pluginset.
 
-## Eigenes CSS anzeigen
+## Spätere Einrichtung im B2B-Test-Pluginset
 
-Nach Installation und Bereitstellung des Plugins geben Sie Ihr eigenes CSS in der Plugin-Detailansicht ein.
+Die Baseline wird zunächst lokal auf `develop` geprüft. Installation, Bereitstellung
+und Synchronisierung sind noch nicht durchgeführt. Vor Änderungen vorhandene
+B2B-Konfigurationswerte und Content-/Container-Zuordnungen sichern.
 
-##### Eigenes CSS eingeben:
+- Für plentyDevTool muss der lokale Plugin-Ordner `GuardiansBasicB2B` heißen.
+  Der bisherige Git-Arbeitsordner bleibt bis zur manuellen Umstellung erhalten.
+- Das neue Plugin gesondert im B2B-Test-Pluginset einrichten. Bestehende Plugins
+  nicht löschen oder ersetzen; B2C und B2B nicht zusammen im selben Pluginset aktivieren.
+- Vorhandene B2B-Werte in der neuen Plugin-Konfiguration prüfen und bei Bedarf
+  manuell übertragen. Template-Overrides stehen unter `templates.override`.
+  Keine pauschale Aktivierung aller Overrides: vier Rechtstext-Templates fehlen
+  bereits im Bestand; Details stehen in der README.
+- Content-Zuordnungen verwenden den neuen Provider-Key
+  `GuardiansBasicB2B\Containers\GuardiansBasicContainer`.
+  Das Template `Stylesheet.twig` enthält derzeit nur kommentierte Einbindungen;
+  die aktiven CSS-Ressourcen werden im Head geladen.
+- Nach späterer Bereitstellung alle B2B-Abläufe und Ressourcen im Test-Pluginset
+  prüfen. Eine lokale Syntaxprüfung ersetzt diese Abnahme nicht.
 
-1. Öffnen Sie das Menü **Plugins » Plugin-Übersicht**.<br /> → Die Plugin-Übersicht wird geöffnet. 
-2. Klicken Sie auf **CeresVanilla**.<br /> → Das Plugin wird geöffnet. 
-3. Klicken Sie im Verzeichnisbaum auf **resources » css » main.css**.
-4. Geben Sie Ihre CSS-Änderungen ein.
-5. **Speichern** Sie die Einstellungen.<br /> → Die CSS-Änderungen werden nach der nächsten Plugin-Bereitstellung verfügbar.
-
-##### Eigenes CSS aktivieren:
-
-1. Öffnen Sie das Menü **Plugins » Content**.
-2. Wählen Sie den Bereich **Stylesheet (CeresVanilla)**. 
-3. Aktivieren Sie den Container **Template: Style**.
-4. **Speichern** Sie die Einstellungen.<br /> → Das CSS wird im Webshop angezeigt.
-
-## Eigene Templates anzeigen
-
-**CeresVanilla** ermöglicht es Ihnen die Templates von **Ceres** mit Ihren eigenen Inhalten zu überschreiben. Geben Sie dafür Ihren Template-Code im Template ein und überschreiben Sie das Template. Dies wird nachfolgend am Beispiel der Startseite erklärt. Richten Sie andere Templates analog ein.
-
-##### Code für eigene Startseite eingeben:
-
-1. Öffnen Sie das Menü **Plugins » Plugin-Übersicht**.<br /> → Die Plugin-Übersicht wird geöffnet. 
-2. Klicken Sie auf **CeresVanilla**.<br /> → Das Plugin wird geöffnet. 
-3. Klicken Sie im Verzeichnisbaum auf **resources » views » Homepage » Homepage.twig**.
-4. Geben Sie den Code für die Startseite ein.
-5. **Speichern** Sie die Einstellungen.<br /> → Die Template-Anpassungen werden nach der nächsten Plugin-Bereitstellung verfügbar.
-
-##### Eigene Startseite aktivieren:
-
-1. Öffnen Sie das Menü **Plugins » Plugin-Übersicht**.<br /> → Die Plugin-Übersicht wird geöffnet. 
-2. Klicken Sie auf **CeresVanilla**.<br /> → Das Plugin wird geöffnet. 
-3. Klicken Sie im Verzeichnisbaum auf **Konfiguration**.
-4. Aktivieren Sie **Homepage** unter **Override partials and templates**.
-5. **Speichern** Sie die Einstellungen.<br /> → Die Startseite wird angezeigt.
+Vollständige Prüfergebnisse, Bestandsprobleme, Branch-/Release-Regeln und manuelle
+Schritte stehen in der [README](../../README.md). Die historischen Changelog-Einträge
+bleiben in [changelog_de.md](changelog_de.md) erhalten.
 
 ## Lizenz
 
-Das gesamte Projekt unterliegt der GNU AFFERO GENERAL PUBLIC LICENSE – weitere Informationen finden Sie in der [LICENSE](https://github.com/plentymarkets/plugin-ceres-vanilla/blob/master/LICENSE).
+GNU AFFERO GENERAL PUBLIC LICENSE; siehe [LICENSE](../../LICENSE).

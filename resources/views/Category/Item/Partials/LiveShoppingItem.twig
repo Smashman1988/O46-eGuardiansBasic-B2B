@@ -4,7 +4,7 @@
         {% set timestamp = 'now'|date('U') %}
         {% if timestamp <= liveShoppingData.liveShopping.toTime %}
             {% set itemData = {'data':liveShoppingData.item } %}
-            {% include "GuardiansBasic::Category.Item.Partials.CategoryListItem" with { 'item': itemData} %}
+            {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem" with { 'item': itemData} %}
         {% endif %}
     {% endif %}
 {% endif %}
