@@ -1,0 +1,54 @@
+<div class="o46-b2b-contact-widget" id="o46-b2b-contact-widget">
+    <button class="o46-b2b-contact-toggle" type="button" aria-expanded="false" aria-controls="o46-b2b-contact-panel" aria-haspopup="dialog">
+        <span class="o46-b2b-contact-label">{{ trans("GuardiansBasicB2B::Template.o46B2bContactLauncher") }}</span>
+        <span class="o46-b2b-contact-bubble" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M20 11.5a8 8 0 0 1-8 8H5l-4 3 1.6-6A8 8 0 1 1 20 11.5Z" transform="translate(1 -1) scale(.95)"/>
+                <path d="M7 9h9M7 13h6"/>
+            </svg>
+        </span>
+    </button>
+
+    <section class="o46-b2b-contact-panel" id="o46-b2b-contact-panel" role="dialog" aria-modal="false" aria-labelledby="o46-b2b-contact-title" aria-describedby="o46-b2b-contact-intro" hidden>
+        <div class="o46-b2b-contact-header">
+            <button class="o46-b2b-contact-close" type="button" aria-label="{{ trans('GuardiansBasicB2B::Template.o46B2bContactClose') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+                    <path d="m6 6 12 12M18 6 6 18"/>
+                </svg>
+            </button>
+            <h2 class="o46-b2b-contact-title" id="o46-b2b-contact-title">{{ trans("GuardiansBasicB2B::Template.o46B2bContactGreeting") }} <span aria-hidden="true">👋</span></h2>
+            <p class="o46-b2b-contact-welcome">{{ trans("GuardiansBasicB2B::Template.o46B2bContactWelcome") }}</p>
+            <p class="o46-b2b-contact-intro" id="o46-b2b-contact-intro">{{ trans("GuardiansBasicB2B::Template.o46B2bContactIntro") }}</p>
+        </div>
+
+        <div class="o46-b2b-contact-options">
+            <a class="o46-b2b-contact-option" href="https://whatsapp.com/channel/0029VbDashBBPzjbqTzmQb3m" target="_blank" rel="noopener noreferrer" aria-label="{{ trans('GuardiansBasicB2B::Template.o46B2bContactWhatsappLabel') }}">
+                <span class="o46-b2b-contact-icon o46-b2b-contact-icon-whatsapp" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.3-4.8A8.5 8.5 0 1 1 20.5 11.7Z"/>
+                        <path d="m8.4 7.3 1.2-.1 1 2.4-.9 1.1a7.2 7.2 0 0 0 3.5 3.1l1-1 2.3 1.1-.1 1.2c-.2 1-1.5 1.6-2.5 1.3-3.8-1-6.7-3.9-7.3-6.6-.2-1 .5-2.3 1.8-2.5Z" stroke-width="1.2"/>
+                    </svg>
+                </span>
+                <span class="o46-b2b-contact-option-text">
+                    <span class="o46-b2b-contact-option-title">{{ trans("GuardiansBasicB2B::Template.o46B2bContactWhatsappTitle") }}</span>
+                    <span class="o46-b2b-contact-option-subtitle">{{ trans("GuardiansBasicB2B::Template.o46B2bContactWhatsappSubtitle") }}</span>
+                </span>
+                <svg class="o46-b2b-contact-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>
+            </a>
+
+            <a class="o46-b2b-contact-option" href="mailto:b2b@outlet46.de">
+                <span class="o46-b2b-contact-icon o46-b2b-contact-icon-email" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <rect x="3" y="5" width="18" height="14" rx="3"/>
+                        <path d="m4 7 8 6 8-6"/>
+                    </svg>
+                </span>
+                <span class="o46-b2b-contact-option-text">
+                    <span class="o46-b2b-contact-option-title">Outlet46 B2B</span>
+                    <span class="o46-b2b-contact-option-subtitle">{{ trans("GuardiansBasicB2B::Template.o46B2bContactEmailSubtitle") }}</span>
+                </span>
+                <svg class="o46-b2b-contact-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>
+            </a>
+        </div>
+    </section>
+</div>

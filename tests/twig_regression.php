@@ -66,10 +66,19 @@ $syntaxOnly = function () { throw new RuntimeException('Syntax-only Plenty place
 foreach ($functions as $name) { $syntax->addFunction(new Twig\TwigFunction($name, $syntaxOnly)); }
 foreach ($filters as $name) { $syntax->addFilter(new Twig\TwigFilter($name, $syntaxOnly)); }
 $files = [];
-foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/resources/views')) as $file) {
-    if ($file->getExtension() === 'twig') { $files[] = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1)); }
+if ($baseline) {
+    // New components need not exist in the historical regression baseline.
+    $process = proc_open(['git', 'ls-tree', '-r', '--name-only', BASELINE, '--', 'resources/views'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
+    $inventory = stream_get_contents($pipes[1]); $error = stream_get_contents($pipes[2]);
+    fclose($pipes[1]); fclose($pipes[2]);
+    if (proc_close($process) !== 0) { throw new RuntimeException($error); }
+    $files = array_values(array_filter(explode("\n", trim($inventory)), function ($file) { return substr($file, -5) === '.twig'; }));
+} else {
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/resources/views')) as $file) {
+        if ($file->getExtension() === 'twig') { $files[] = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1)); }
+    }
 }
-sort($files); ensure(count($files) === 168, 'Unexpected Twig inventory');
+sort($files); ensure(count($files) === ($baseline ? 168 : 169), 'Unexpected Twig inventory');
 foreach ($files as $file) {
     try { $syntax->parse($syntax->tokenize(new Twig\Source(source($file), $file))); $report['syntax'][$file] = 'PASS'; }
     catch (Throwable $e) { $report['syntax'][$file] = $e->getMessage(); }
@@ -245,4 +254,4 @@ foreach ($argv as $argument) {
 file_put_contents($argv[2], json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 echo json_encode(['twig' => $report['twig'], 'source' => $report['source'], 'syntaxPass' => $report['syntaxPass'],
     'syntaxTotal' => count($files), 'casePass' => $report['casePass'], 'comparison' => $report['comparison'], 'failures' => $report['failures'], 'deprecations' => count($notices)], JSON_PRETTY_PRINT), PHP_EOL;
-exit($report['syntaxPass'] === 168 && !$report['failures'] ? 0 : 1);
+exit($report['syntaxPass'] === count($files) && !$report['failures'] ? 0 : 1);

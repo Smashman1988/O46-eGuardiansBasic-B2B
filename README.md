@@ -10,6 +10,140 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Kontakt-Widget für B2B (2026-11-03)
+
+Lokal auf dem zuvor sauberen `develop` bei `0b31a98b198d5c48be4aaa6c9e56edfd3678ed98`
+ergänzt. Die folgenden Änderungen sind uncommittet und unstaged zur Kontrolle in
+GitHub Desktop. Plugin-Identität, Version und vorhandene Konfigurationen bleiben erhalten.
+
+Der schwebende Button **„Kontakt / Beratung“** besteht aus einer weißen
+Beschriftungsfläche und einem runden Chat-Symbol in Outlet46-Grün. Er bleibt auf
+vollständigen Shopseiten sichtbar. Der Button öffnet ein freundliches Kontaktfenster
+mit genau zwei vollständig anklickbaren Kontaktzeilen:
+
+1. **Outlet46 auf WhatsApp – Unser WhatsApp-Kanal:**
+   [WhatsApp-Kanal](https://whatsapp.com/channel/0029VbDashBBPzjbqTzmQb3m),
+   neuer Tab mit `rel="noopener noreferrer"`. Dies ist ein Kanal; individuelle
+   Beratung oder Antworten über WhatsApp werden nicht versprochen.
+2. **Outlet46 B2B – Kontakt per E-Mail:** `mailto:b2b@outlet46.de`, dieselbe
+   Adresse wie im vorhandenen B2B-Footer.
+
+Das X schließt ausschließlich das Kontaktfenster. Erneuter Klick auf den Button,
+Escape innerhalb des Widgets, ein Außenklick oder der Fokuswechsel zu einer
+anderen Shopkontrolle schließen es ebenfalls. Beim Öffnen erhält das X den Fokus;
+beim Schließen per X/Escape/Button kehrt er zum Button zurück. Tab kann das
+nicht-modale Fenster verlassen. Der Button besitzt `aria-expanded`, `aria-controls`
+und `aria-haspopup`; Dialogtitel, beschriftete Schaltflächen und sichtbare
+Tastaturfokus-Zustände sind vorhanden. Es gibt keinen dauerhaften Ausblendschalter
+und keinen Storage-/Cookie-Zustand für dieses Widget.
+
+### Einbindung und Darstellung
+
+- `PageDesign.twig` bindet das CSS im Head und das Twig-Partial mit einem
+  aufgeschobenen Vanilla-JavaScript am Body-Ende **außerhalb von `#vue-app`** ein.
+  Die vorhandene Bedingung `isQuickView` bedeutet in diesem Theme tatsächlich
+  „kein `quickViewItem` angefordert“. Innerhalb dieser Abgrenzung wird das Widget
+  auf vollständigen Seiten einmal eingebunden; Quickview-Ausgaben erhalten weder
+  Widget noch dessen CSS/JS. Es gibt keine Einbindung in wiederholte Item-Partials.
+- Beide Ressourcen verwenden `plugin_path('GuardiansBasicB2B')` und den bestehenden
+  `buildHash`. Keine feste Pluginset-ID, keine externe Bibliothek, kein zusätzlicher
+  Dienst und kein Build-Schritt. SVGs sind inline; das Widget führt beim Laden
+  keine externen HTTP-Anfragen aus. Die Initialisierung ist gegen doppelte
+  Skriptausführung abgesichert und verändert keine Ceres-Komponente.
+- Voraussetzung ist das bereits vorhandene B2B-Override `page_design` bzw. `all`.
+  Der Provider und die expliziten PlentyONE-Einstellungen werden nicht verändert.
+  Die tatsächliche Zuordnung im Test-Pluginset bleibt zu prüfen.
+- Desktop: 380 px breites Fenster über dem Button. Mobil: auf die verfügbare
+  Breite begrenzt, Safe-Area-Abstände und dynamische Viewporthöhe berücksichtigt;
+  bei geringer Höhe scrollt nur das Fenster. Kontaktzeilen sind mindestens 82 px,
+  das X 44 px und das Chat-Symbol 56 px groß. Reduzierte Animationen werden beachtet.
+- Alle eigenen Klassen beginnen mit `o46-b2b-contact-`. Die einzige Anpassung
+  einer vorhandenen Kontrolle ist der Abstand des `#totop`-Buttons auf vollständigen
+  Widget-Seiten, damit er den Kontaktbutton nicht überlagert. `z-index: 990` hält
+  Warenkorb-Backdrop (997), Warenkorb und Shop-Modals darüber bedienbar.
+- Neun neue Schlüssel `Template.o46B2bContact…` je Sprache sind im vorhandenen
+  Übersetzungssystem ergänzt: Deutsch, Englisch, Französisch, Italienisch und
+  Spanisch. Der deutsche Text liegt unter `de`; bestehende Schlüssel und die
+  konfigurierte Shop-Sprache werden nicht verändert.
+- Gestaltung nach der beschriebenen [bedrop-Referenz](https://bedrop.de/), angepasst
+  an Outlet46. Der übergebene Anhang enthält nur Text; separate Referenz-Screenshots
+  lagen diesem Auftrag nicht bei.
+
+### Dateien dieses Auftrags
+
+| Datei | Zweck |
+| --- | --- |
+| `resources/views/PageDesign/Components/ContactWidget.twig` | Neue Komponente mit lokalen SVGs und Kontaktlinks |
+| `resources/css/contact-widget.css` | Layout, Farben, responsive Größen und Fokuszustände |
+| `resources/js/contact-widget.js` | Öffnen/Schließen, Fokus und einmalige Initialisierung |
+| `resources/views/PageDesign/PageDesign.twig` | Zentrale Einbindung und eigene Body-Klasse |
+| `resources/lang/de/Template.properties` | Neue deutsche Widget-Texte |
+| `resources/lang/en/Template.properties` | Neue englische Widget-Texte |
+| `resources/lang/fr/Template.properties` | Neue französische Widget-Texte |
+| `resources/lang/it/Template.properties` | Neue italienische Widget-Texte |
+| `resources/lang/es/Template.properties` | Neue spanische Widget-Texte |
+| `tests/contact_widget.php` | Lokale Twig-Render-/Einbindungstests und HTML-Vorschauen |
+| `tests/contact_widget.cjs` | Lokale Browserprüfung gegen die echten Widget-Dateien |
+| `tests/twig_regression.php` | Neues 169. Template; Baseline-Inventur aus dem historischen Git-Stand |
+| `README.md` | Einbindung, Verhalten, Dateien und Abnahmegrenzen |
+| `meta/documents/changelog_de.md` | Deutscher Änderungseintrag |
+| `meta/documents/changelog_en.md` | Englischer Änderungseintrag |
+
+### Lokale Tests und offene Abnahme
+
+| Prüfung | Exaktes Ergebnis |
+| --- | --- |
+| Twig 2.16.1 / 3.30.0, PHP 8.4.23 | Je **169/169** Templates parsebar; **38/38** bestehende Verhaltenstests und **38/38** Vergleiche zur Twig-2-Baseline erfolgreich |
+| Widget-Einbindung, beide Twig-Versionen | Je **50/50** Layoutfälle: neun vollständige Seitentypen plus Quickview, jeweils DE/EN/FR/IT/ES; Widget/CSS/JS genau einmal bzw. im Quickview nullmal; außerhalb von Vue |
+| Übersetzungen und Links | **45/45** neue Texte vorhanden, neun identische eindeutige Schlüssel je Sprache; WhatsApp-Kanal und Mailadresse exakt; kein Telegram |
+| Chromium 149.0.7827.55, Node 22.14.0 | **55/55** Szenarien, **1332/1332** Assertions; **0** JavaScript-Seitenfehler, **0** externe HTTP-Anfragen |
+| Browserumfang | Isoliert, Standard-Theme, Kategorie-, Artikel- und Checkout-CSS einschließlich bestehendem Main-Stylesheet; DE bei 1440×900, 1024×768, 768×1024, 390×844, 320×568, 280×480 und 568×320; EN/FR/IT/ES je CSS-Variante bei 320×568 |
+| Bedienung / Integrität | Öffnen per Klick/Enter/Leertaste; X, Escape, Umschalten, Außenklick, Tab-Verlassen; Fokus, doppelte Initialisierung und erneuter Seitenaufruf erfolgreich; Shop-Außenkontrolle und Modals behalten Priorität; Storage-/Cookie-Zugriffe würden den Test abbrechen |
+| Layout / Sichtprüfung | Keine gemessenen Layoutverschiebungen und kein horizontaler Überlauf in den 55 Fällen; vollständige Kontaktzeilen erreichbar, Button und Nach-oben-Kontrolle getrennt; Desktop und Smartphone visuell geprüft |
+| Kontraste | Fünf geprüfte Farbpaare mindestens 4,75:1; Header-/Launcher-Symbol 6,11:1, Kontakttext 15,65:1, Untertitel 6,62:1 |
+| Syntax / Diff | Beide Test-PHP-Dateien mit `php -l`, Widget-JavaScript und Browserprüfung mit `node --check`, `git diff --check`: erfolgreich |
+
+Die Layoutfälle rendern das tatsächliche B2B-Seitenlayout mit ausdrücklich lokalen
+Plenty-/Ceres-Service- und Template-Fixtures. Sie beweisen die Einbindung und ersetzen
+keinen vollständigen Shop-Render. Der vorhandene Twig-Regressionstest prüft weiterhin
+alle bisherigen 38 Fälle unverändert; nur die aktuelle Inventur ist um die neue
+Komponente erweitert. Der historische `--baseline`-Lauf liest die damaligen 168 Dateien
+aus Git und verlangt unverändert 168 erfolgreiche Ergebnisse. Engine-Deprecations
+werden separat im Bericht behalten (Twig 2: 24, Twig 3: zwei bestehende Makrohinweise).
+
+Wiederholung mit externen Twig-Autoloadern und externem Playwright, ohne produktive
+Testabhängigkeiten zu installieren:
+
+```text
+php tests/contact_widget.php <twig-autoload.php> .cache/contact-widget
+node --check resources/js/contact-widget.js
+node --check tests/contact_widget.cjs
+node tests/contact_widget.cjs .cache/contact-widget .cache/contact-widget/browser-report.json
+```
+
+Für eine vorhandene Playwright-Installation optional `O46_PLAYWRIGHT_MODULE` auf
+deren Modulpfad und `O46_BROWSER_EXECUTABLE` auf das lokale Chromium setzen.
+Die bereits oben dokumentierten Twig-Regression-Aufrufe bleiben verwendbar.
+Vorschauen, Screenshots, Parser und JSON-Berichte liegen lokal im ignorierten
+Ordner `.cache/contact-widget/`; `preview-de-theme.html` lässt sich lokal öffnen.
+Keine Testbibliothek wird als Plugin-Ressource mitgeliefert.
+
+Der erste Parser-Download scheiterte an der Sandbox-DNS-Auflösung; der anschließende
+Download der offiziellen Twig-Archive war erfolgreich. Der erste Headless-Browserstart
+wurde von der Windows-Sandbox abgebrochen (Exit 3221225506); der freigegebene Lauf
+außerhalb dieser Sandbox war erfolgreich. Keine Test-Timeouts im finalen Lauf.
+
+**NOT_RUN / offen:** PlentyONE-Build und Test-Pluginset-Render mit realer
+`page_design`-Zuordnung, Shop-Startseite/Kategorien/Artikel/Suche, Kundenkonto,
+echter Warenkorb und Checkout einschließlich Zahlungs-/Amazon-Pay-Abläufen,
+konfigurierte Einwilligungs-/B2B-Auswahldialoge und weitere Plugins. Ebenso offen:
+reale Safari-/iOS-/Android-Geräte samt Safe-Area und virtueller Tastatur sowie das
+tatsächliche Öffnen der WhatsApp-/Mail-Apps. Die Linkziele und Browserattribute sind
+lokal geprüft; es wurde keine Nachricht versendet und keine Bestellung ausgelöst.
+
+Keine Änderungen in B2C oder an `main`; kein Commit, Push, Merge, Tag, Release,
+Deploy, Sync oder PlentyONE-Schreibzugriff im Rahmen dieses Auftrags.
+
 ## Twig-Kompatibilitätsprüfung und Korrektur (2026-11-03)
 
 Ausgang dieses Folgeauftrags: sauberer `develop` bei

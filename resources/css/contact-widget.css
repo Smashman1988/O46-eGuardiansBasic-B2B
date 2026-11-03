@@ -1,0 +1,240 @@
+.o46-b2b-contact-widget {
+    --o46-b2b-contact-edge: 20px;
+    --o46-b2b-contact-size: 56px;
+    position: fixed;
+    right: calc(var(--o46-b2b-contact-edge) + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--o46-b2b-contact-edge) + env(safe-area-inset-bottom, 0px));
+    z-index: 990; /* Below the existing basket backdrop (997) and shop modals. */
+    max-width: calc(100vw - 2 * var(--o46-b2b-contact-edge) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    color: #20251b;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.o46-b2b-contact-widget *,
+.o46-b2b-contact-widget *::before,
+.o46-b2b-contact-widget *::after {
+    box-sizing: border-box;
+}
+
+.o46-b2b-contact-widget .o46-b2b-contact-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 28px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    transition: transform 160ms ease;
+}
+
+.o46-b2b-contact-label {
+    min-width: 0;
+    padding: 12px 16px;
+    border: 1px solid #e3e7dc;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 18px rgb(25 35 12 / 12%);
+    font-weight: 700;
+}
+
+.o46-b2b-contact-bubble {
+    display: grid;
+    flex: 0 0 var(--o46-b2b-contact-size);
+    place-items: center;
+    width: var(--o46-b2b-contact-size);
+    height: var(--o46-b2b-contact-size);
+    border-radius: 50%;
+    background: #76ae00;
+    color: #17230b;
+    box-shadow: 0 4px 18px rgb(25 35 12 / 18%);
+}
+
+.o46-b2b-contact-bubble svg {
+    display: block;
+    width: 28px;
+    height: 28px;
+}
+
+.o46-b2b-contact-widget .o46-b2b-contact-panel {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 12px);
+    width: 380px;
+    max-width: calc(100vw - 2 * var(--o46-b2b-contact-edge) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-height: calc(100vh - var(--o46-b2b-contact-size) - 2 * var(--o46-b2b-contact-edge) - 12px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - var(--o46-b2b-contact-size) - 2 * var(--o46-b2b-contact-edge) - 12px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid #dfe5d6;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 12px 44px rgb(20 29 9 / 18%);
+}
+
+.o46-b2b-contact-widget .o46-b2b-contact-panel[hidden] {
+    display: none;
+}
+
+.o46-b2b-contact-header {
+    position: relative;
+    padding: 26px 24px 24px;
+    background: linear-gradient(130deg, #8ac121, #76ae00);
+    color: #17230b;
+}
+
+.o46-b2b-contact-widget .o46-b2b-contact-close {
+    display: grid;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 10px;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 24%);
+    color: inherit;
+    cursor: pointer;
+}
+
+.o46-b2b-contact-close svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
+.o46-b2b-contact-widget .o46-b2b-contact-title {
+    margin: 0 36px 12px 0;
+    color: inherit;
+    font: inherit;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.o46-b2b-contact-widget .o46-b2b-contact-welcome {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.o46-b2b-contact-widget .o46-b2b-contact-intro {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.o46-b2b-contact-options {
+    display: grid;
+    gap: 10px;
+    padding: 18px;
+}
+
+.o46-b2b-contact-widget .o46-b2b-contact-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 82px;
+    padding: 14px 12px;
+    border: 1px solid #e3e7dc;
+    border-radius: 14px;
+    background: #fff;
+    color: #20251b;
+    text-decoration: none;
+    transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.o46-b2b-contact-icon {
+    display: grid;
+    flex: 0 0 44px;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: #fff;
+}
+
+.o46-b2b-contact-icon svg {
+    display: block;
+    width: 26px;
+    height: 26px;
+}
+
+.o46-b2b-contact-icon-whatsapp { background: #128449; }
+.o46-b2b-contact-icon-email { background: #283120; }
+
+.o46-b2b-contact-option-text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.o46-b2b-contact-option-title,
+.o46-b2b-contact-option-subtitle {
+    display: block;
+}
+
+.o46-b2b-contact-option-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.o46-b2b-contact-option-subtitle {
+    margin-top: 3px;
+    color: #56604c;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.o46-b2b-contact-arrow {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    color: #56604c;
+}
+
+.o46-b2b-contact-widget button:focus-visible,
+.o46-b2b-contact-widget a:focus-visible {
+    outline: 3px solid #273d0d;
+    outline-offset: 3px;
+}
+
+/* Keep the theme's existing back-to-top control above the launcher. */
+.o46-b2b-contact-page #totop {
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (hover: hover) {
+    .o46-b2b-contact-toggle:hover { transform: translateY(-2px); }
+    .o46-b2b-contact-widget .o46-b2b-contact-option:hover {
+        border-color: #a4bc7f;
+        background: #f6f9f0;
+    }
+    .o46-b2b-contact-close:hover { background: rgb(255 255 255 / 45%); }
+}
+
+@media (max-width: 480px) {
+    .o46-b2b-contact-widget { --o46-b2b-contact-edge: 12px; }
+    .o46-b2b-contact-label { padding: 11px 13px; }
+    .o46-b2b-contact-header { padding: 24px 18px 20px; }
+    .o46-b2b-contact-options { padding: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .o46-b2b-contact-widget .o46-b2b-contact-toggle,
+    .o46-b2b-contact-widget .o46-b2b-contact-option { transition: none; }
+    .o46-b2b-contact-toggle:hover { transform: none; }
+}

@@ -80,9 +80,10 @@
         {% if isItem %}
             {{ LayoutContainer.show("Ceres::SingleItem.Styles") }}
         {% endif %}
+        <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/contact-widget.css?v={{ buildHash }}">
         {% endif %}
     </head>
-    <body class="hold-transition" {% if isVueView %}id="isVueView"{% endif %}>
+    <body class="hold-transition{% if isQuickView %} o46-b2b-contact-page{% endif %}" {% if isVueView %}id="isVueView"{% endif %}>
         {% if isQuickView %}
         {{ context.renderState() }}
         <!-- SSR:app() -->
@@ -417,6 +418,8 @@
             {% include "GuardiansBasicB2B::PageDesign.Components.b2babfrage" ~ langCodeMap[lang] %}
             {% endif %}
             <div class="ccklayer"></div> 
+             {% include "GuardiansBasicB2B::PageDesign.Components.ContactWidget" %}
+             <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/contact-widget.js?v={{ buildHash }}" defer></script>
 {% endif %}
     </body> 
 </html>
