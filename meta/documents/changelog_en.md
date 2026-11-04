@@ -2,6 +2,16 @@
 
 ## v1.0.8 (2026-11-04) – prepared locally
 
+### Targeted refinement, still 1.0.8
+
+- Desktop: seven existing dropdown categories in row one and four direct links in row two; shared Twig markup and mobile order remain entirely unchanged.
+- Dark active dropdown background and white arrow, opening below both rows, cancellation of pending close delays when switching menus, hover and keyboard support. CSS reading-flow with the unchanged DOM as fallback.
+- White desktop header increased from 72 to 82 px, centered content up to 1600 px, search capped at 760 px, wider spacing and complete basket totals. Navigation remains 57 px.
+- Updated only the existing header CSS suffix, production minified file and critical CSS; header2 cache key without changing the plugin version. No production JavaScript, macro, Header Twig, widget or configuration changes.
+- Re-ran and extended all previous local header checks: 175 layout cases / 9698 assertions, 50 control cases / 709 assertions, 15 keyboard cases / 334 assertions, all passing. Further evidence, measurements and screenshots are in the README. Actual PlentyONE acceptance NOT_RUN; local uncommitted changes on develop only.
+
+### Initial implementation
+
 - Premium Compact header retaining the B2B logo, with a wider search field, horizontal customer controls and integrated reviews/language/currency controls. Compacted the benefits bar while preserving its content.
 - One shared category structure with two black desktop rows (28 + 1 + 28 = 57 px), all eleven categories in the agreed order, red Limited Deals and white Home & Living. Desktop dropdowns sit below both rows and support hover and keyboard focus through CSS.
 - Activated the existing Home & Living blocks (cat-4103) in DE/EN/FR/IT/ES, retaining B2B URLs, currency parameters and eight children per language. Preserved Magic menu styling and handlers; the shared top-level category order also applies on mobile.

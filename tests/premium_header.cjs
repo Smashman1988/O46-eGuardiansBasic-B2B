@@ -13,7 +13,10 @@ const probe = process.argv.includes('--probe');
 const integration = process.argv.includes('--integration');
 const sticky = process.argv.includes('--sticky');
 const boundaries = process.argv.includes('--boundaries');
-const widths = probe ? [1440, 992, 390, 320] : boundaries ? [575,576,577,767,769,1201,1401,1681,1901,2501] : sticky ? [2560,1920,1600,1440,1366,1280,1200,1024,992,991,768,430,390,375,320] : [2560,1920,1600,1440,1366,1280,1200,1024,992,991,768,430,390,375,320,993,1199,1399,1400,1679,1680,1899,1900,2499,2500];
+const focusOrder = process.argv.includes('--focus-order');
+const widths = probe ? [1920,1440,1024,992,390,320] : boundaries ? [575,576,577,767,769,1201,1401,1681,1901,2501] : sticky ? [2560,1920,1600,1440,1366,1280,1200,1024,992,991,768,430,390,375,320] : [2560,1920,1600,1440,1366,1280,1200,1024,992,991,768,430,390,375,320,993,1199,1399,1400,1679,1680,1899,1900,2499,2500];
+const mobileOrder=[5618,4814,4813,81,80,4103,6425,3813,78,5081,60];
+const dropdownOrder=[4814,4813,81,80,4103,3813,78], directOrder=[5618,6425,5081,60];
 const report = { baseline, cases: [], assertions: 0, pageErrors: [], consoleErrors: [], missingResources: [], serviceRequests: [], externalRequests: [], plentyONE: 'NOT_RUN' };
 function check(ok, message) { assert.ok(ok, message); report.assertions++; }
 const server = http.createServer((req, res) => {
@@ -49,7 +52,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     const origin = `http://127.0.0.1:${server.address().port}`;
     const browser = await chromium.launch({headless: true, ...(process.env.O46_BROWSER_EXECUTABLE ? {executablePath:process.env.O46_BROWSER_EXECUTABLE} : {})});
     try {
-        for (const language of integration ? [] : sticky ? ['de'] : probe ? ['de', 'fr'] : ['de','en','fr','it','es']) {
+        for (const language of integration || focusOrder ? [] : sticky ? ['de'] : probe ? ['de', 'fr'] : ['de','en','fr','it','es']) {
             for (const width of widths) {
                 const name = `${language}-${width}`;
                 const context = await browser.newContext({viewport:{width,height:900}});
@@ -69,7 +72,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                     return {header:rect(header),nav:rect(nav),trustbar:rect(bar),total:rect(bar).bottom,overflow:document.documentElement.scrollWidth>innerWidth,
                         sticky:getComputedStyle(header).position, search:rect(document.querySelector('.search-box')),
                         utilities:[...document.querySelectorAll('.lang-switcher, .lang-switcher > *, .lang-switcher img')].map(e=>({tag:e.tagName,class:e.className,rect:rect(e),css:{width:getComputedStyle(e).width,minWidth:getComputedStyle(e).minWidth,flex:getComputedStyle(e).flex}})),
-                        categories:[...document.querySelectorAll('.top-menu > li')].map(e=>({id:e.className,text:e.querySelector('.nav-cat-name').textContent,rect:rect(e.querySelector('a'))})),
+                        categories:[...document.querySelectorAll('.top-menu > li')].map(e=>({id:e.className,categoryId:Number(e.className.match(/cat-(\d+)/)[1]),dropdown:!!e.querySelector(':scope > .ddown-wrap'),text:e.querySelector('.nav-cat-name').textContent,rect:rect(e.querySelector('a'))})),
                         hamburger:getComputedStyle(document.querySelector('[data-eg-param="html,menu-open"]')).display};
                 });
                 report.cases.push({language,width,...metrics});
@@ -91,14 +94,18 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                 }
                 if (!baseline && !probe && !sticky) {
                     check(metrics.categories.length===11, `${name}: eleven shared categories`);
+                    check(JSON.stringify(metrics.categories.map(c=>c.categoryId))===JSON.stringify(mobileOrder),`${name}: unchanged shared DOM/mobile order`);
                     check(!metrics.overflow, `${name}: no page overflow`);
                     if (width >= 992) {
                         check(metrics.utilities.filter(u=>u.tag==='IMG'&&u.class==='margin-right-10').every(img=>img.rect.right<=metrics.utilities.find(u=>u.tag==='BUTTON').rect.x),`${name}: review does not overlap selectors`);
                         check(metrics.hamburger==='none', `${name}: desktop only`);
-                        check(metrics.nav.height>=56 && metrics.nav.height<=64, `${name}: compact navigation ${metrics.nav.height}`);
-                        const rows=[...new Set(metrics.categories.map(c=>c.rect.y))];
+                        check(metrics.nav.height===57, `${name}: compact navigation ${metrics.nav.height}`);
+                        check(metrics.header.height>=80 && metrics.header.height<=84,`${name}: balanced white header height ${metrics.header.height}`);
+                        const rows=[...new Set(metrics.categories.map(c=>c.rect.y))].sort((a,b)=>a-b);
                         check(rows.length===2, `${name}: exactly two rows`);
-                        check(metrics.categories.slice(0,6).every(c=>c.rect.y===rows[0]) && metrics.categories.slice(6).every(c=>c.rect.y===rows[1]), `${name}: six/five split`);
+                        const rowCategories=y=>metrics.categories.filter(c=>c.rect.y===y).sort((a,b)=>a.rect.x-b.rect.x);
+                        check(JSON.stringify(rowCategories(rows[0]).map(c=>c.categoryId))===JSON.stringify(dropdownOrder) && rowCategories(rows[0]).every(c=>c.dropdown),`${name}: seven real dropdowns in row one`);
+                        check(JSON.stringify(rowCategories(rows[1]).map(c=>c.categoryId))===JSON.stringify(directOrder) && rowCategories(rows[1]).every(c=>!c.dropdown),`${name}: four real direct links in row two`);
                         check(metrics.categories.every(c=>c.rect.x>=0 && c.rect.right<=width),`${name}: category boxes inside viewport`);
                         check(await page.locator('.top-menu > li > a').evaluateAll(links=>links.every(a=>{const text=a.querySelector('.nav-cat-name'),r=document.createRange();r.selectNodeContents(text);const t=r.getBoundingClientRect(),b=a.getBoundingClientRect();return t.left>=b.left && t.right<=b.right && t.top>=b.top && t.bottom<=b.bottom;})), `${name}: labels not clipped`);
                         for (const item of await page.locator('.top-menu > .eg-ddown').all()) {
@@ -106,19 +113,54 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                             await link.hover();
                             await dropdown.waitFor({state:'visible'});
                             check(await dropdown.isVisible(),`${name}: hover dropdown`);
+                            check(await link.evaluate(e=>getComputedStyle(e).backgroundColor==='rgb(41, 41, 41)' && getComputedStyle(e.querySelector('.nav-cat-name'),'::after').borderRightColor==='rgb(255, 255, 255)'),`${name}: active dark background and white arrow`);
+                            const visibleMenus=await page.locator('.top-menu > .eg-ddown > .ddown-wrap:visible').evaluateAll(es=>es.map(e=>({id:e.parentElement.className,hover:e.parentElement.matches(':hover'),visibility:getComputedStyle(e).visibility,delay:getComputedStyle(e).transitionDelay})));
+                            check(visibleMenus.length===1,`${name}: one visible dropdown ${JSON.stringify(visibleMenus)}`);
                             const box=await dropdown.boundingBox();
                             check(Math.abs(box.y-metrics.nav.bottom)<=1 && box.x>=0 && box.x+box.width<=width+1,`${name}: dropdown below both rows`);
                             // Follow a vertical mouse path into a first-row dropdown through row two.
                             const top=await link.boundingBox();
+                            if([1440,1920].includes(width)) {
+                                await page.evaluate(id=>{window.headerHoverSamples=[];window.headerHoverSampling=true;const e=document.querySelector('.top-menu > .cat-'+id+' > .ddown-wrap');function sample(){if(!window.headerHoverSampling)return;window.headerHoverSamples.push(getComputedStyle(e).visibility);requestAnimationFrame(sample);}sample();},Number((await item.getAttribute('class')).match(/cat-(\d+)/)[1]));
+                                await page.mouse.move(top.x+top.width/2,metrics.nav.bottom-14,{steps:3});
+                                await delay(100);
+                            }
                             await page.mouse.move(top.x+top.width/2,box.y+8,{steps:3});
                             check(await dropdown.isVisible(),`${name}: continuous hover path`);
-                            await page.mouse.move(1,800);
+                            if([1440,1920].includes(width))check(await page.evaluate(()=>{window.headerHoverSampling=false;return window.headerHoverSamples.length>0 && window.headerHoverSamples.every(v=>v==='visible');}),`${name}: no hidden frame across row two`);
+                            await page.mouse.move(width-1,899);
                             await link.focus();
                             check(await dropdown.isVisible(),`${name}: keyboard dropdown`);
+                            check(await link.evaluate(e=>getComputedStyle(e).backgroundColor==='rgb(41, 41, 41)'),`${name}: keyboard active highlight`);
                             await page.keyboard.press('Tab');
                             check(await item.evaluate(e=>e.contains(document.activeElement) && document.activeElement.closest('.ddown-wrap')),`${name}: Tab reaches submenu`);
                             await page.locator('.search-box input').focus();
                         }
+                        if([1440,1920].includes(width)) {
+                            for(const id of dropdownOrder) {
+                                await page.locator(`.top-menu > .cat-${id} > a`).hover();
+                                check(await page.locator('.top-menu > .eg-ddown > .ddown-wrap:visible').count()===1 && await page.locator(`.top-menu > .cat-${id} > .ddown-wrap`).isVisible(),`${name}: immediate switch to ${id}`);
+                            }
+                            await page.screenshot({path:path.join(directory,`${language}-${width}-active-dropdown.png`)});
+                            await page.mouse.move(width-1,899);
+                        }
+                        const headerSpacing=async()=>page.evaluate(()=>{
+                            const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+                            const boxes=['.premium-header-logo','.search-box','.premium-header-actions'].map(s=>rect(document.querySelector('.premium-header '+s)));
+                            const controls=[...document.querySelectorAll('.premium-header-controls > .btn-mobile-nav')].filter(e=>getComputedStyle(e).display!=='none').map(rect);
+                            const sum=document.querySelector('.header-sum-info'),range=document.createRange();range.selectNodeContents(sum);
+                            const text=range.getBoundingClientRect(),box=sum.getBoundingClientRect();
+                            return {boxes,controls,sumFits:text.left>=box.left-1&&text.right<=box.right+1&&box.right<=innerWidth-15,overflow:document.documentElement.scrollWidth>innerWidth};
+                        });
+                        for(const amount of ['0,00','123.456,78']) {
+                            await page.locator('[data-basket-sum]').evaluate((e,v)=>e.textContent=v,amount);
+                            const spacing=await headerSpacing();
+                            check(spacing.sumFits&&!spacing.overflow,`${name}: full basket total ${amount}`);
+                            check(spacing.boxes[0].x>=15 && spacing.boxes[2].right<=width-15 && spacing.boxes.every((b,i,a)=>i===0||b.x-a[i-1].right>=19),`${name}: logo/search/actions spacing and side insets`);
+                            check(spacing.controls.every((b,i,a)=>i===0||b.x-a[i-1].right>=23),`${name}: customer controls do not compress`);
+                            if(amount==='123.456,78' && language==='de' && [1440,1920].includes(width))await page.screenshot({path:path.join(directory,`${language}-${width}-large-total.png`),clip:{x:0,y:0,width,height:Math.ceil(metrics.total)}});
+                        }
+                        await page.locator('[data-basket-sum]').evaluate(e=>e.textContent='0,00');
                     } else {
                         check(metrics.hamburger!=='none',`${name}: hamburger present`);
                         await page.locator('[data-eg-param="html,menu-open"]').first().click();
@@ -132,6 +174,15 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                         if (width===390) await page.screenshot({path:path.join(directory,`${language}-${width}-magic-home.png`)});
                         await home.locator('[data-eg-back-ddown]').click();
                         check(await home.evaluate(e=>!e.classList.contains('ddown-open')),`${name}: back works`);
+                        if([390,768].includes(width))for(const id of dropdownOrder.filter(id=>id!==4103)) {
+                            const category=page.locator(`.top-menu > .cat-${id}`);
+                            await category.locator(':scope > a > [data-eg-open-ddown]').click();
+                            await delay(350);
+                            check(await category.locator(':scope > .ddown-wrap').isVisible() && await category.evaluate(e=>e.classList.contains('ddown-open')),`${name}: existing mobile submenu ${id} opens`);
+                            await category.locator(':scope > .ddown-wrap > [data-eg-back-ddown]').click();
+                            await delay(350);
+                            check(await category.evaluate(e=>!e.classList.contains('ddown-open')),`${name}: existing mobile submenu ${id} back`);
+                        }
                         await page.locator('.top-menu-wrapper .basket-prev-close').click();
                         check(await page.evaluate(()=>!document.documentElement.classList.contains('menu-open') && getComputedStyle(document.documentElement).overflow!=='hidden'),`${name}: closes and unlocks`);
                         await page.locator('[data-eg-param="html,search-open"]').click();
@@ -142,6 +193,28 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                 await context.close();
             }
             console.log(`${language}: ${widths.length} widths checked`);
+        }
+        if(focusOrder)for(const language of ['de','en','fr','it','es'])for(const width of [992,1440,1920]) {
+            const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();
+            const name=`${language}-${width}-focus`;
+            page.on('pageerror',e=>report.pageErrors.push({name,error:e.message}));
+            page.on('console',m=>{if(m.type()==='error')report.consoleErrors.push({name,error:m.text()});});
+            await page.route('**/*',route=>{if(route.request().url().startsWith(origin))return route.continue();report.externalRequests.push(route.request().url());return route.abort();});
+            await page.goto(`${origin}/${language}-home-EUR.html`);
+            await page.mouse.move(width-1,899);
+            for(const fallback of [false,true]) {
+                if(fallback)await page.locator('.top-menu').evaluate(e=>e.style.readingFlow='normal');
+                const order=fallback?mobileOrder:[...dropdownOrder,...directOrder];
+                check(await page.locator('.top-menu').evaluate((e,v)=>getComputedStyle(e).readingFlow===v,fallback?'normal':'grid-rows'),`${name}: ${fallback?'native fallback':'visual reading flow'}`);
+                for(let i=0;i<order.length-1;i++) {
+                    const item=page.locator(`.top-menu > .cat-${order[i]}`);
+                    await item.locator(':scope > a').focus();
+                    if(dropdownOrder.includes(order[i]))await item.locator('.ddown-wrap a[href]').last().focus();
+                    await page.keyboard.press('Tab');
+                    check(await page.locator(`.top-menu > .cat-${order[i+1]} > a`).evaluate(e=>e===document.activeElement),`${name}: ${fallback?'DOM':'visual'} Tab ${order[i]} -> ${order[i+1]}`);
+                }
+            }
+            report.cases.push({language,width,status:'PASS'});await context.close();
         }
         if (integration) for (const language of ['de','en','fr','it','es']) {
             for (const mode of ['home','category','item','checkout','vue-category']) {
@@ -218,6 +291,12 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                         const href=await home.getAttribute('href');
                         await home.focus();await page.keyboard.press('Enter');await page.waitForURL(new URL(href,origin).href);
                         check(page.url()===new URL(href,origin).href,`${name}: keyboard navigation follows Home link`);
+                        for(const id of directOrder) {
+                            await page.goto(url);
+                            const direct=page.locator(`.top-menu > .cat-${id} > a`), destination=await direct.getAttribute('href');
+                            await direct.click();await page.waitForURL(new URL(destination,origin).href);
+                            check(page.url()===new URL(destination,origin).href,`${name}: row-two direct link ${id} follows its unchanged destination`);
+                        }
                     }
                     report.cases.push({language,mode,width,status:'PASS'});
                     await context.close();
@@ -231,7 +310,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
         check(report.externalRequests.length===0, 'zero external requests');
     } finally {
         await browser.close(); server.close();
-        fs.writeFileSync(path.join(directory,integration?'integration-report.json':sticky?'sticky-report.json':probe?'browser-probe.json':boundaries?'boundary-report.json':'browser-report.json'),JSON.stringify(report,null,2));
+        fs.writeFileSync(path.join(directory,focusOrder?'focus-order-report.json':integration?'integration-report.json':sticky?'sticky-report.json':probe?'browser-probe.json':boundaries?'boundary-report.json':'browser-report.json'),JSON.stringify(report,null,2));
         console.log(JSON.stringify({cases:report.cases.length,assertions:report.assertions,pageErrors:report.pageErrors.slice(0,8),consoleErrors:report.consoleErrors.slice(0,8),missingResources:[...new Set(report.missingResources)],externalRequests:report.externalRequests.length,plentyONE:report.plentyONE}));
     }
 })().catch(e=>{server.close();console.error(e);process.exitCode=1;});

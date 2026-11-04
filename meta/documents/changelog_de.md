@@ -2,6 +2,16 @@
 
 ## v1.0.8 (2026-11-04) – lokal vorbereitet
 
+### Gezielte Nachbesserung, weiterhin 1.0.8
+
+- Desktop: sieben bestehende Dropdown-Kategorien in Zeile 1, vier Direktlinks in Zeile 2; gemeinsame Twig-Struktur und mobile Reihenfolge vollständig unverändert.
+- Aktive Dropdowns dunkelgrau mit weißem Pfeil; Öffnung unter beiden Zeilen, gezielter Abbruch alter Schließverzögerungen beim Menüwechsel, Hover- und Tastaturzugang. CSS reading-flow mit unverändertem DOM als Fallback.
+- Weißer Desktop-Kopf von 72 auf 82 px, zentrierter Inhalt bis 1600 px, Suche maximal 760 px, größere Abstände und vollständige Warenkorbsumme. Navigation weiterhin 57 px.
+- Nur bestehenden Header-CSS-Zusatz, produktive Min-Datei und Critical CSS angepasst; Cache-Key header2 bei unveränderter Plugin-Version. Keine produktive JS-, Macro-, Header-Twig-, Widget- oder Konfigurationsänderung.
+- Alle bisherigen lokalen Header-Prüfungen erneut ausgeführt und erweitert: 175 Layoutfälle / 9698 Assertions, 50 Funktionsfälle / 709 Assertions, 15 Tastaturfälle / 334 Assertions; alle erfolgreich. Weitere Nachweise, Messungen und Screenshots in der README. Echte PlentyONE-Abnahme NOT_RUN; nur lokale uncommittete Änderungen auf develop.
+
+### Erste Umsetzung
+
 - Premium-Kompakt-Header mit bestehendem B2B-Logo, breiter Suche, horizontalen Kundenfunktionen und integrierter Bewertung/Sprach-/Währungswahl. Vorteilsleiste mit unveränderten Inhalten kompakter.
 - Gemeinsame Kategorienstruktur mit zwei schwarzen Desktop-Zeilen (28 + 1 + 28 = 57 px); elf Kategorien in abgestimmter Reihenfolge, Limited-Deals ausschließlich rot, Home & Living weiß. Desktop-Dropdowns unter beiden Zeilen, Hover- und Tastaturzugang per CSS.
 - Vorhandene Home-&-Living-Blöcke (cat-4103) in DE/EN/FR/IT/ES aktiviert; B2B-URLs, Währungsparameter und acht Unterkategorien je Sprache erhalten. Magic-Menü-Optik und Handler unverändert; gemeinsame Hauptkategorien-Reihenfolge gilt auch mobil.
