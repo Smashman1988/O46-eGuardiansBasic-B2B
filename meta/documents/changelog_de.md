@@ -1,5 +1,14 @@
 # Release Notes für eGuardiansBasic B2B
 
+## v1.0.8 (2026-11-04) – lokal vorbereitet
+
+- Premium-Kompakt-Header mit bestehendem B2B-Logo, breiter Suche, horizontalen Kundenfunktionen und integrierter Bewertung/Sprach-/Währungswahl. Vorteilsleiste mit unveränderten Inhalten kompakter.
+- Gemeinsame Kategorienstruktur mit zwei schwarzen Desktop-Zeilen (28 + 1 + 28 = 57 px); elf Kategorien in abgestimmter Reihenfolge, Limited-Deals ausschließlich rot, Home & Living weiß. Desktop-Dropdowns unter beiden Zeilen, Hover- und Tastaturzugang per CSS.
+- Vorhandene Home-&-Living-Blöcke (cat-4103) in DE/EN/FR/IT/ES aktiviert; B2B-URLs, Währungsparameter und acht Unterkategorien je Sprache erhalten. Magic-Menü-Optik und Handler unverändert; gemeinsame Hauptkategorien-Reihenfolge gilt auch mobil.
+- Begrenzter Zusatz zu main.css und zur produktiven main-211025.min.css; deren bisheriger Inhalt bleibt erhalten. Identisches Critical CSS und Cache-Busting im Head; abgesicherter Build nur für den Header-Zusatz. Keine JS-, Kontakt-Widget- oder Konfigurationsänderungen.
+- Lokal: 175/175 Layoutfälle, 50/50 Funktionsfälle, 169/169 Twig-Templates und 38/38 Regressionen je Twig-Version; Kontakt-Widget 55/55 Browserfälle. Messwerte, Screenshots, bestehende Quell-CSS-Parserbefunde und Testgrenzen in der README.
+- Echte PlentyONE-/Ceres-Abnahme NOT_RUN. Änderungen ausschließlich lokal und uncommittet auf develop; keine Commits, Pushes, Merges, Tags, Releases, Deployments oder Synchronisierungen.
+
 ## Unveröffentlicht – Kontakt-Widget (2026-11-03)
 
 - Dauerhaft verfügbarer B2B-Kontaktbutton mit Outlet46-Gestaltung, responsivem Kontaktfenster, lokalem CSS/Vanilla-JavaScript und Inline-SVGs ergänzt. Nur das Fenster ist schließbar; kein dauerhafter Ausblendstatus oder zusätzlicher Dienst.

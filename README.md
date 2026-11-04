@@ -1,6 +1,6 @@
 # Outlet46 – eGuardiansBasic B2B
 
-Technische Baseline **1.0.7**, lokal vorbereitet am **2026-11-03** auf **develop**.
+Version **1.0.8**, lokal vorbereitet am **2026-11-04** auf **develop** (uncommittet).
 Die PlentyONE-Abnahme steht aus. Dies ist noch kein freigegebener Shop-Stand.
 
 Dieses Repository enthält die eigenen Inhalte und Funktionen des B2B-Shops.
@@ -9,6 +9,238 @@ der Marketplace-Name ist in Deutsch und Englisch `eGuardiansBasic B2B`.
 Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repository
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
+
+## Premium-Kompakt-Header – lokale Version 1.0.8 (2026-11-04)
+
+Ausgangsstand: sauberer Branch **develop**, HEAD
+`8eeb24f7732c2cb5558b2dbf148eb85182708f0d` (`tele-box`). Die vorhandenen
+Kontakt-Widget- und Twig-Korrekturen sind darin bereits enthalten und bleiben
+erhalten. Tatsächlicher Repository-/Pluginordner: `O46-B2B/GuardiansBasic`;
+technische Plugin-Identität weiterhin `GuardiansBasicB2B`. Kein Ordner umbenannt.
+Die älteren Abschnitte unten dokumentieren ihre jeweiligen damaligen Arbeitsstände.
+
+### Header, Navigation und Magic-Menü
+
+- Weißer Desktop-Kopf mit **72 px** Höhe: unverändertes B2B-Logo samt Slogan
+  proportional verkleinert, breitere Produktsuche und horizontale grüne Symbole
+  für Merken, Konto und Warenkorb. Warenkorbsumme und Mengenanzeige bleiben erhalten;
+  die Warenkorb-Beschriftung nutzt den vorhandenen Übersetzungsschlüssel.
+- Google-Bewertung, Sprache und Währung sind in den Kopf integriert. Sie sind nun
+  auch mobil Teil des Sticky-Headers; die sichtbare weiße Gesamthöhe bleibt mobil
+  bei 91 px. Bestehende URLs, Suchformular, Livesuche, Modal- und Basket-Attribute
+  sowie alle B2B-Bedingungen bleiben erhalten. Ein überzähliges schließendes
+  `span` im angefassten Merkliste-Link wurde entfernt.
+- Desktop ab **992 px**: eine gemeinsame `top-menu`-Liste als Raster mit sechs
+  und fünf Einträgen. Zeile 1: Alle Artikel, Herren, Damen, Kinder, Sport,
+  Home & Living. Zeile 2: Limited-Deals, Alles unter X€!, Accessoires, Letzte
+  Größe, Marken A-Z. **28 + 1 + 28 = 57 px** Gesamthöhe, schwarze Flächen und
+  graue Trennlinien. Limited-Deals ausschließlich rot; Home & Living weiß.
+- Die vollständigen Sport-/Home-Blöcke wurden in den vorhandenen Makros versetzt,
+  damit DOM- und Tastaturreihenfolge der gewünschten Navigation folgen. Auch die
+  mobile Liste nutzt diese gemeinsame Hauptkategorien-Reihenfolge. Ihre Optik,
+  Dropdown-Struktur, grüner Kopf, weiße Flächen, Pfeile, Zurücknavigation,
+  Öffnen/Schließen, Scrollsperre und vorhandenen Animationen bleiben erhalten.
+  Es gibt weder ein zweites Menü noch eine separat gepflegte Kategorienliste.
+- Desktop-Dropdowns beginnen unter beiden Zeilen. `:focus-within` macht sie
+  mit der Tastatur zugänglich; sichtbare neutrale Fokusrahmen bleiben erhalten.
+  Ein kurzer Sichtbarkeitswechsel (100 ms Öffnen / 160 ms Schließen) erlaubt den
+  Mausweg über die zweite Zeile, ohne deren Links mit einer Fläche zu überdecken.
+  Alle produktiven JS-Dateien und bestehenden Handler sind unverändert.
+- Die Vorteilsleiste behält sämtliche B2B-Texte, Übersetzungen und Symbole;
+  Desktop-Abstände und Schrift sind kompakter. Keine neuen Leistungsversprechen.
+
+### Home & Living in allen fünf Sprachen
+
+Alle fünf B2B-Blöcke waren vorhanden und auskommentiert. DE kommentierte direkt
+den Block aus; EN/IT/ES schlossen den nachfolgenden Trenner ein; FR begann den
+Kommentar bereits am vorangehenden Trenner. Jeder Block wurde einzeln aktiviert.
+Kategorie **4103**, acht Unterkategorien, URLs, Übersetzungen, Kinderreihenfolge,
+Währungsparameter und Event-Attribute sind aus dem jeweiligen B2B-Bestand erhalten.
+Der automatisierte Vergleich bestätigt **55/55 unveränderte Kategorieblöcke**
+(elf pro Sprache, bis auf äußere Aktivierung/Position und Leerraum).
+
+| Sprache | Beschriftung | Vorhandene B2B-URL | Lokales Ergebnis |
+| --- | --- | --- | --- |
+| DE | Home & Living | `/home-living/` | 35/35 Layout; 10/10 Funktionen PASS |
+| EN | Home & Living | `/en/home-living/` | 35/35 Layout; 10/10 Funktionen PASS |
+| FR | Maison & Vie | `/fr/maison-vie/` | 35/35 Layout; 10/10 Funktionen PASS |
+| IT | Casa e vita | `/it/casa-e-vita/` | 35/35 Layout; 10/10 Funktionen PASS |
+| ES | Vida en el hogar | `/es/vida-en-el-hogar/` | 35/35 Layout; 10/10 Funktionen PASS |
+
+Die Tests verfolgen auch die vorhandenen Home-Unterkategorie-Links mit USD.
+Das bestätigt lokale Linkbildung und Browsernavigation; echte Kategorie-Inhalte
+und HTTP-Status im Shop bleiben NOT_RUN.
+
+### CSS-Assets und sicherer Build
+
+Maßgeblich bleibt `resources/css/main-211025.min.css`, eingebunden im
+`Head.twig` einschließlich Noscript-Fallback. **Alle ursprünglichen 200.532
+Bytes dieser lokalen Produktivdatei bleiben als Präfix unverändert.** Nur der
+abgegrenzte Premium-Kompakt-Block wird aus dem Ende von `main.css` minifiziert
+und angehängt (4.209 Bytes minifizierter CSS-Inhalt).
+Derselbe Block wird einmal als Critical CSS im Head eingebunden, damit er schon
+vor dem asynchron geladenen Gesamt-CSS wirkt. Kein zusätzlicher HTTP-Request.
+Beide CSS-URLs verwenden `?v=1.0.8-{{ buildHash }}`.
+
+`scripts/build-header-css.cjs` prüft den eingefrorenen Produktivbestand per
+SHA-256 und stoppt bei einer Abweichung; es baut **nur den Header-Zusatz** mit
+clean-css 5.3.3, ohne Rebase oder globale Optimierung. Die Quelldatei, der
+produktive Zusatz und der Critical-CSS-Block werden gemeinsam geprüft.
+SHA-256 des ursprünglichen CSS, nach CRLF→LF-Normalisierung:
+`c62cf6e83159a8208a0c008b718ebdeb31e7d509ffc95513db967f3c19269d69`.
+
+Die älteren editierbaren CSS-Quellen sind bereits vor diesem Auftrag nicht
+vollständig mit den Produktivdateien synchron. PostCSS meldet unverändert
+`main.css:12714:5 – Unknown word right` und
+`checkout.css:8516:27 – Unknown word //`. Deshalb **kein vollständiger CSS-Build**
+und keine Rekonstruktion. Die produktive main-Min-Datei und der isolierte neue
+Quellblock parsen fehlerfrei. Eine vollständig fehlerfreie Quell-CSS-Syntax wird
+ausdrücklich nicht behauptet. Checkout-CSS, Kontakt-Widget, JS, Konfiguration,
+Übersetzungsdateien und PHP bleiben unverändert.
+
+### Gemessene Höhen und Bildschirmbreiten
+
+Chromium 149, lokale HTTP-Vorschau aus den **echten Twig-Templates**, produktiven
+CSS-Dateien und unveränderten JS-Bundles. Weißer Kopf umfasst vorher auch die
+separate 30-px-Zusatzleiste. Gesamt umfasst Kopf, Navigation und Vorteilsleiste.
+Alle Werte in px, Tabelle für DE. Unter 992 px sind die 5 px der bestehende
+Platzhalter bei geschlossenem Magic-Menü, keine Desktop-Menüzeile.
+
+| Breite | Weißer Kopf vorher → nachher | Navigation/Platzhalter vorher → nachher | Gesamt vorher → nachher | DE/EN/FR/IT/ES |
+| ---: | ---: | ---: | ---: | --- |
+| 2560 | 100 → 72 | 62 → 57 | 198 → 155 | 5/5 PASS |
+| 1920 | 94 → 72 | 59 → 57 | 213 → 155 | 5/5 PASS |
+| 1600 | 94 → 72 | 48,5 → 57 | 196,5 → 155 | 5/5 PASS |
+| 1440 | 94 → 72 | 48,5 → 57 | 196,5 → 172 | 5/5 PASS |
+| 1366 | 93 → 72 | 48,5 → 57 | 189,5 → 172 | 5/5 PASS |
+| 1280 | 93 → 72 | 48,5 → 57 | 189,5 → 172 | 5/5 PASS |
+| 1200 | 93 → 72 | 48,5 → 57 | 189,5 → 172 | 5/5 PASS |
+| 1024 | 91 → 72 | 48,5 → 57 | 181,5 → 172 | 5/5 PASS |
+| 992 | 91 → 72 | 53,5 → 57 | 186,5 → 172 | 5/5 PASS |
+| 991 | 91 → 91 | 5 → 5 | 138 → 138 | 5/5 PASS |
+| 768 | 91 → 91 | 5 → 5 | 138 → 138 | 5/5 PASS |
+| 430 | 91 → 91 | 5 → 5 | 174 → 174 | 5/5 PASS |
+| 390 | 91 → 91 | 5 → 5 | 174 → 174 | 5/5 PASS |
+| 375 | 91 → 91 | 5 → 5 | 174 → 174 | 5/5 PASS |
+| 320 | 91 → 91 | 5 → 5 | 192 → 192 | 5/5 PASS |
+
+Zusätzlich in allen Sprachen geprüft: **575, 576, 577, 767, 769, 993, 1199,
+1201, 1399, 1400, 1401, 1679, 1680, 1681, 1899, 1900, 1901, 2499, 2500,
+2501 px**. Damit 35 Breiten × 5 Sprachen = **175/175 Layoutfälle**.
+Desktop-Navigation stets 57 px, Weißbereich 72 px. Die gesamte Desktop-Höhe
+liegt je nach Textumbruch bei DE/EN/IT zwischen 155 und 172 px, bei FR/ES
+zwischen 155 und 189 px. Keine abgeschnittenen Hauptkategorien, Überlappungen
+oder horizontalen Seiten-Scrollbalken in dieser Matrix.
+
+### Testnachweise und Grenzen
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Hauptmatrix: 25 Breiten × fünf Sprachen | 125/125 PASS, 4454 Assertions |
+| Weitere zehn Randbreiten × fünf Sprachen | 50/50 PASS, 1329 Assertions |
+| Handler/Funktionen: fünf Sprachen × fünf Seitentypen × Desktop/Mobil, USD | 50/50 PASS, 609 Assertions |
+| Echtes Scrollen/Sticky bei allen 15 Pflichtbreiten | 15/15 vorher und 15/15 nachher PASS, je 19 Assertions |
+| Twig 2.16.1 / Twig 3.30.0 | je 169/169 Templates parsebar; je 38/38 bestehende Regressionen einschließlich Baseline-Vergleich |
+| Header-Render mit echtem Twig, fünf Sprachen, fünf Modi, EUR/USD | 50/50 pro Twig-Version PASS |
+| Statische Integrität, Assets, Kategorieblöcke und JSON | 78/78 PASS; 15/15 JSON-Dateien gültig |
+| Build und Critical-CSS-Abgleich | PASS; eingefrorenes Präfix und identischer Zusatz bestätigt |
+| Bestehendes Kontakt-Widget | 50/50 Layoutfälle unter Twig 3; 55/55 Browserfälle, 1332 Assertions PASS |
+| PHP-/Node-Syntax der neuen Test-/Build-Dateien, git diff --check | PASS |
+| Finale Browserfehler / Konsolenfehler / fehlende lokale Ressourcen / externe Requests | jeweils 0 |
+| Echter PlentyONE-/Ceres-Shop, externe Ressourcen und echte Services | **NOT_RUN** |
+
+Die Funktionsmatrix umfasst Home, Kategorie, Artikel, Checkout und die bestehende
+Vue-Kategorie-Bedingung. Sie klickt Konto, Sprach- und Währungsmodal, Merkliste,
+Warenkorb, Home-Unterkategorien und Suchformular; die Livesuche sendet eine Anfrage
+und rendert deren lokale Testantwort. Kein JavaScript-Handler wurde nachgebaut.
+Die Antwortdaten, Login-Inhalte, Kategorienziele und Ceres-Flagge sind jedoch
+explizite Test-Doubles. Eine Flaggen-Test-SVG ersetzt alle lokalen Ceres-Flaggen;
+die tatsächlichen sprachspezifischen Ceres-URLs im Template bleiben erhalten.
+Kein Login mit echten Daten, keine Warenkorbmutation, keine Bestellung.
+
+Zwischenläufe sind keine Abnahme: Der erste Browserstart wurde durch die Sandbox
+abgebrochen; nach freigegebenem lokalem Start liefen die Tests. Einige Browserläufe
+wurden für gezielte Korrekturen manuell beendet. Der lokale PHP-Renderer benötigte
+die Aktivierung des vorhandenen mbstring-Moduls. Testbefunde zu einer falschen
+Unterkategorie-ID im Test, fehlendem Footer-Scrollbutton und URL-Kodierung spanischer
+Links wurden im Testaufbau korrigiert. Ein SVG-Flex-Überlappungsbefund wurde im
+Header-CSS behoben. Die finalen Ergebnisse oben enthalten diese Korrekturen.
+Kein finaler Testlauf wurde durch ein Timeout abgebrochen. Vorhandene Twig-
+Deprecations unter PHP 8.4 werden separat erfasst (24 in Twig 2, zwei in Twig 3).
+
+### Lokale Artefakte und Wiederholung
+
+Die ignorierte Ablage `.cache/premium-header/` enthält Vorher-/Nachher-HTML,
+Screenshots und Rohberichte; sie wird nicht als Plugin-Code ausgeliefert.
+
+- [Vorher, DE 1440 px](.cache/premium-header/before/de-1440-header.png)
+- [Nachher, DE 1440 px](.cache/premium-header/after/de-1440-header.png)
+- [Home-Dropdown, Desktop](.cache/premium-header/after/de-1440-dropdown.png)
+- [Home-Untermenü, Magic-Menü 390 px](.cache/premium-header/after/de-390-magic-home.png)
+- [Vorher-Messwerte](.cache/premium-header/before/browser-report.json),
+  [Nachher-Matrix](.cache/premium-header/after/browser-report.json),
+  [Randbreiten](.cache/premium-header/after/boundary-report.json),
+  [Funktionsmatrix](.cache/premium-header/integration/integration-report.json),
+  [statische Prüfungen](.cache/premium-header/static-report.json).
+
+Weitere Screenshots heißen `{sprache}-{breite}.png` beziehungsweise
+`{sprache}-{breite}-header.png` in `before/` und `after/`.
+Die Vergleichs-Vollbilder decken alle 15 Pflichtbreiten in allen fünf Sprachen ab.
+
+Werkzeuge extern/lokal bereitstellen, keine Laufzeitabhängigkeit ins Plugin aufnehmen:
+
+```powershell
+$env:O46_CLEAN_CSS_MODULE = (Resolve-Path .cache/asset-tools/node_modules/clean-css).Path
+node scripts/build-header-css.cjs --check
+node tests/premium_header_static.cjs .cache/premium-header/static-report.json
+# PHP mit mbstring; autoload2.php oder autoload3.php aus der lokalen Testumgebung:
+php -d extension=mbstring tests/premium_header.php <twig-autoload.php> .cache/premium-header/after
+php -d extension=mbstring tests/premium_header.php <twig-autoload.php> .cache/premium-header/before --baseline
+# Bei externer Installation O46_PLAYWRIGHT_MODULE / O46_BROWSER_EXECUTABLE setzen.
+node tests/premium_header.cjs .cache/premium-header/before --baseline
+node tests/premium_header.cjs .cache/premium-header/after
+node tests/premium_header.cjs .cache/premium-header/after --boundaries
+node tests/premium_header.cjs .cache/premium-header/after --integration
+node tests/premium_header.cjs .cache/premium-header/after --sticky
+```
+
+### Vollständige Dateiliste dieses Header-Auftrags
+
+```text
+plugin.json
+README.md
+meta/documents/changelog_de.md
+meta/documents/changelog_en.md
+resources/views/PageDesign/Partials/Header/Header.twig
+resources/views/PageDesign/Partials/Head.twig
+resources/views/Category/Macros/CategoryTreeDE.twig
+resources/views/Category/Macros/CategoryTreeEN.twig
+resources/views/Category/Macros/CategoryTreeFR.twig
+resources/views/Category/Macros/CategoryTreeIT.twig
+resources/views/Category/Macros/CategoryTreeES.twig
+resources/css/main.css
+resources/css/main-211025.min.css
+scripts/build-header-css.cjs
+tests/premium_header.php
+tests/premium_header.cjs
+tests/premium_header_static.cjs
+```
+
+### Offene PlentyONE-Abnahme und Git-Status
+
+**NOT_RUN:** tatsächlicher B2B-Test-Pluginset-Render mit Ceres/IO, Login/Konto,
+B2B-Preis-/Kundenstatus, echter Warenkorb samt Mengen/Summen, Währungs-/Sprachwechsel,
+Livesuche mit echten Treffern, Checkout, Kategorieinhalte und Ziel-HTTP-Status,
+externe Fonts/Flags/Plugin-Ressourcen, Cache-Busting nach Bereitstellung sowie
+physische Mobilgeräte und andere Browser. Keine lokale Vorschau ersetzt diese Abnahme.
+Bestehende frühere Template-/Übersetzungsbefunde bleiben im Baseline-Abschnitt unten dokumentiert.
+
+Ausschließlich **B2B** geändert; **B2C und main unverändert**. HEAD bleibt
+`8eeb24f7732c2cb5558b2dbf148eb85182708f0d`; `main` bleibt
+`9fd71bc173bec1a3f9815a807f0cf22292a0e998`. Alle 17 Dateien sind lokal,
+uncommittet und unstaged auf **develop**. **Keine Commits, kein Push, kein Merge,
+keine Tags, kein Release, kein PlentyONE-Deployment und keine Synchronisierung.**
+Die spätere Prüfung und der Commit/Push erfolgen durch den Nutzer in GitHub Desktop.
 
 ## Kontakt-Widget für B2B (2026-11-03)
 
