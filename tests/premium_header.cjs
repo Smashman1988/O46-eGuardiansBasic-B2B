@@ -14,7 +14,8 @@ const integration = process.argv.includes('--integration');
 const sticky = process.argv.includes('--sticky');
 const boundaries = process.argv.includes('--boundaries');
 const focusOrder = process.argv.includes('--focus-order');
-const widths = probe ? [1920,1440,1024,992,390,320] : boundaries ? [575,576,577,767,769,1201,1401,1681,1901,2501] : sticky ? [2560,1920,1600,1440,1366,1280,1200,1024,992,991,768,430,390,375,320] : [2560,1920,1600,1440,1366,1280,1200,1024,992,991,768,430,390,375,320,993,1199,1399,1400,1679,1680,1899,1900,2499,2500];
+const appearance = process.argv.includes('--appearance');
+const widths = probe ? [1920,1440,1024,992,390,320] : boundaries ? [575,576,577,767,769,1201,1401,1599,1601,1681,1901,2501] : sticky ? [2560,1920,1600,1440,1366,1280,1200,1024,992,991,768,430,390,375,320] : [2560,1920,1600,1440,1366,1280,1200,1024,992,991,768,430,390,375,320,993,1199,1399,1400,1679,1680,1899,1900,2499,2500];
 const mobileOrder=[5618,4814,4813,81,80,4103,6425,3813,78,5081,60];
 const dropdownOrder=[4814,4813,81,80,4103,3813,78], directOrder=[5618,6425,5081,60];
 const report = { baseline, cases: [], assertions: 0, pageErrors: [], consoleErrors: [], missingResources: [], serviceRequests: [], externalRequests: [], plentyONE: 'NOT_RUN' };
@@ -32,10 +33,10 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, {'Content-Type': types[path.extname(file)] || 'application/octet-stream'});
         return fs.createReadStream(file).pipe(res);
     }
-    if (/autocomplete|loginPreview|getShopBuilderContent/.test(url.pathname)) {
+    if (/autocomplete|loginPreview|getShopBuilderContent|basketPreviewSmall/.test(url.pathname)) {
         report.serviceRequests.push(req.url);
         res.writeHead(200, {'Content-Type':'application/json; charset=utf-8'});
-        const data=url.pathname.includes('autocomplete') ? {item:[{label:'Local test shoe',url:'/fixture-product/',image:'/resources/images/b2b-outlet46-logo.png'}],category:[],suggestion:[]} : '<p>Local service fixture: PlentyONE NOT_RUN</p>';
+        const data=url.pathname.includes('autocomplete') ? {item:[{label:'Local test shoe',url:'/fixture-product/',image:'/resources/images/b2b-outlet46-logo.png'}],category:[],suggestion:[]} : url.pathname.includes('basketPreviewSmall') ? '<p data-local-basket-preview>Local basket preview: PlentyONE NOT_RUN</p>' : '<p>Local service fixture: PlentyONE NOT_RUN</p>';
         return res.end(JSON.stringify({data}));
     }
     if (!path.extname(url.pathname)) {
@@ -47,6 +48,16 @@ const server = http.createServer((req, res) => {
     res.writeHead(404); res.end('Missing local resource');
 });
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function appearanceMetrics(page) {
+    return page.evaluate(() => {
+        const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
+        const logo=document.querySelector('.company-logo img'), input=document.querySelector('.input-ff-search');
+        return {logo:{...rect(logo),naturalWidth:logo.naturalWidth,naturalHeight:logo.naturalHeight,objectFit:getComputedStyle(logo).objectFit},
+            searchInput:rect(input),searchButton:rect(document.querySelector('.btn-set-search')),navigation:rect(document.querySelector('.top-menu')),
+            basketLabelDisplay:getComputedStyle(document.querySelector('.premium-basket-label')).display,
+            basketLabelClip:getComputedStyle(document.querySelector('.premium-basket-label')).clip};
+    });
+}
 (async () => {
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const origin = `http://127.0.0.1:${server.address().port}`;
@@ -76,6 +87,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                         hamburger:getComputedStyle(document.querySelector('[data-eg-param="html,menu-open"]')).display};
                 });
                 report.cases.push({language,width,...metrics});
+                report.cases.at(-1).appearance=await appearanceMetrics(page);
                 if (probe || widths.indexOf(width) < 15) {
                     await page.screenshot({path:path.join(directory,`${language}-${width}.png`)});
                     await page.screenshot({path:path.join(directory,`${language}-${width}-header.png`),clip:{x:0,y:0,width,height:Math.ceil(metrics.total)}});
@@ -92,20 +104,33 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                         await page.screenshot({path:path.join(directory,'de-1440-dropdown.png')});
                     }
                 }
-                if (!baseline && !probe && !sticky) {
+                if (!baseline && !probe && !sticky && !appearance) {
+                    const visual=report.cases.at(-1).appearance;
+                    check(Math.abs(visual.logo.height-visual.logo.width*visual.logo.naturalHeight/visual.logo.naturalWidth)<0.1,`${name}: original logo aspect ratio including embedded slogan`);
+                    check(visual.logo.x>=0 && visual.logo.right<=width && visual.logo.y>=0 && visual.logo.bottom<=metrics.header.bottom,`${name}: full logo inside header`);
+                    check(visual.basketLabelDisplay==='none'||visual.basketLabelClip==='rect(0px, 0px, 0px, 0px)',`${name}: basket caption visually hidden`);
                     check(metrics.categories.length===11, `${name}: eleven shared categories`);
                     check(JSON.stringify(metrics.categories.map(c=>c.categoryId))===JSON.stringify(mobileOrder),`${name}: unchanged shared DOM/mobile order`);
                     check(!metrics.overflow, `${name}: no page overflow`);
                     if (width >= 992) {
+                        const basketLabel=(await page.locator('.premium-basket-label').textContent()).trim();
+                        check(await page.getByRole('link',{name:new RegExp(basketLabel)}).count()===1,`${name}: translated basket link name remains accessible`);
                         check(metrics.utilities.filter(u=>u.tag==='IMG'&&u.class==='margin-right-10').every(img=>img.rect.right<=metrics.utilities.find(u=>u.tag==='BUTTON').rect.x),`${name}: review does not overlap selectors`);
                         check(metrics.hamburger==='none', `${name}: desktop only`);
                         check(metrics.nav.height===57, `${name}: compact navigation ${metrics.nav.height}`);
                         check(metrics.header.height>=80 && metrics.header.height<=84,`${name}: balanced white header height ${metrics.header.height}`);
+                        check(visual.searchInput.height>=32 && visual.searchInput.height<=36 && visual.searchInput.width<=560 && visual.searchButton.height===visual.searchInput.height && visual.searchButton.width===40,`${name}: restrained search field and proportional button`);
+                        check(Math.abs(visual.navigation.x-12)<0.1 && Math.abs(visual.navigation.right-(width-12))<0.1,`${name}: full-width navigation with equal 12px outer insets`);
                         const rows=[...new Set(metrics.categories.map(c=>c.rect.y))].sort((a,b)=>a-b);
                         check(rows.length===2, `${name}: exactly two rows`);
                         const rowCategories=y=>metrics.categories.filter(c=>c.rect.y===y).sort((a,b)=>a.rect.x-b.rect.x);
                         check(JSON.stringify(rowCategories(rows[0]).map(c=>c.categoryId))===JSON.stringify(dropdownOrder) && rowCategories(rows[0]).every(c=>c.dropdown),`${name}: seven real dropdowns in row one`);
                         check(JSON.stringify(rowCategories(rows[1]).map(c=>c.categoryId))===JSON.stringify(directOrder) && rowCategories(rows[1]).every(c=>!c.dropdown),`${name}: four real direct links in row two`);
+                        for(const y of rows) {
+                            const items=rowCategories(y);
+                            check(Math.abs(items[0].rect.x-12)<0.1 && Math.abs(items.at(-1).rect.right-(width-12))<0.1 && items.every((c,i)=>i===0||Math.abs(c.rect.x-items[i-1].rect.right)<0.1),`${name}: row fills available width continuously`);
+                            if(width>=1400 || y===rows[1])check(Math.max(...items.map(c=>c.rect.width))-Math.min(...items.map(c=>c.rect.width))<0.1,`${name}: evenly distributed row slots`);
+                        }
                         check(metrics.categories.every(c=>c.rect.x>=0 && c.rect.right<=width),`${name}: category boxes inside viewport`);
                         check(await page.locator('.top-menu > li > a').evaluateAll(links=>links.every(a=>{const text=a.querySelector('.nav-cat-name'),r=document.createRange();r.selectNodeContents(text);const t=r.getBoundingClientRect(),b=a.getBoundingClientRect();return t.left>=b.left && t.right<=b.right && t.top>=b.top && t.bottom<=b.bottom;})), `${name}: labels not clipped`);
                         for (const item of await page.locator('.top-menu > .eg-ddown').all()) {
@@ -190,6 +215,39 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                         check(await page.locator('.search-box input').isVisible(),`${name}: search opens`);
                     }
                 }
+                if(appearance) {
+                    const samples=[];
+                    const quantity=page.locator('[data-eg-basket-quantity]');
+                    for(const quantityClass of ['header-quant-info','header-quant-info2'])for(const amount of ['0,00','148,69','1.234,56','123.456,78']) {
+                        await page.locator('[data-basket-sum]').evaluate((e,value)=>e.textContent=value,amount);
+                        let first;
+                        for(const count of [0,1,5,9,10,12,99,100]) {
+                            // Model only the text/attribute update made by the unchanged production
+                            // basket handler. Both server-selected legacy classes must handle every count.
+                            await quantity.evaluate((e,v)=>{e.className=v.quantityClass;e.textContent=String(v.count);e.setAttribute('data-eg-basket-quantity',String(v.count));},{quantityClass,count});
+                            const sample=await page.evaluate(()=>{
+                                const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom,cx:r.x+r.width/2,cy:r.y+r.height/2};};
+                                const q=document.querySelector('[data-eg-basket-quantity]'), icon=document.querySelector('.icon-online-shopping-cart'), sum=document.querySelector('.header-sum-info'),r=document.createRange();r.selectNodeContents(q);
+                                const text=r.getBoundingClientRect();
+                                const sumRange=document.createRange();sumRange.selectNodeContents(sum);const sumText=sumRange.getBoundingClientRect();
+                                const controls=[...document.querySelectorAll('.premium-header-controls > .btn-mobile-nav')].filter(e=>getComputedStyle(e).display!=='none').map(rect);
+                                return {quantity:rect(q),textCenter:text.x+text.width/2,icon:rect(icon),sum:rect(sum),sumText:{x:sumText.x,right:sumText.right},controls,logo:rect(document.querySelector('.company-logo img')),quantityText:q.textContent,overflow:document.documentElement.scrollWidth>innerWidth};
+                            });
+                            first??=sample;
+                            samples.push({quantityClass,count,amount,...sample});
+                            if(!baseline) {
+                                check(Math.abs(sample.quantity.cx-sample.icon.cx)<0.1 && Math.abs(sample.textCenter-sample.icon.cx)<0.1,`${name}: ${quantityClass}/${amount}/${count} stays centered`);
+                                check(Math.abs(sample.icon.x-first.icon.x)<0.1 && Math.abs(sample.icon.y-first.icon.y)<0.1 && sample.icon.width===36 && sample.icon.height===36,`${name}: ${quantityClass}/${amount}/${count} does not move icon`);
+                                check(sample.quantity.width<=sample.icon.width && sample.quantity.height>=12 && sample.quantityText===String(count),`${name}: ${count} fully readable in fixed icon cell`);
+                                check(!sample.overflow && sample.sum.x>=0 && sample.sum.right<=width && sample.sum.bottom<=metrics.header.bottom+1,`${name}: complete amount ${amount} inside header: ${JSON.stringify(sample)}`);
+                                check(sample.sumText.x>=sample.sum.x-0.1 && sample.sumText.right<=sample.sum.right+0.1 && sample.controls.every((c,i)=>c.x>=0&&c.right<=width&&(i===0||c.x>=sample.controls[i-1].right)) && sample.logo.right<=sample.controls[0].x,`${name}: ${amount}/${count} text and controls do not overlap`);
+                                if(width>=992)check(Math.abs(sample.sum.x-sample.icon.right-6)<0.1 && Math.abs(sample.sum.cy-sample.icon.cy)<0.1,`${name}: price directly right of icon`);
+                            }
+                            if(language==='de' && quantityClass==='header-quant-info2' && amount==='148,69' && [1440,1920,390,320].includes(width))await page.screenshot({path:path.join(directory,`${language}-${width}-basket-${count}.png`),clip:{x:0,y:0,width,height:Math.ceil(metrics.total)}});
+                        }
+                    }
+                    report.cases.at(-1).basketSamples=samples;
+                }
                 await context.close();
             }
             console.log(`${language}: ${widths.length} widths checked`);
@@ -244,6 +302,19 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                     check(currencyLinks.every(href=>href.endsWith('?currency=USD')),`${name}: currency on every category link`);
                     const handlerAttributes=await page.locator('#page-header [data-eg-handler]').evaluateAll(elements=>elements.map(e=>Object.fromEntries([...e.attributes].filter(a=>a.name.startsWith('data-')).map(a=>[a.name,a.value]))));
                     check(handlerAttributes.some(a=>a['data-eg-param']==='html,menu-open') && handlerAttributes.some(a=>a['data-eg-href']?.endsWith('/loginPreview/')),`${name}: retained control handlers`);
+                    if(mode!=='vue-category' && width>=992) {
+                        // This isolated fixture has no full PageDesign initialization. Supply its
+                        // existing language global and invoke the unchanged preview initializer.
+                        const before=report.serviceRequests.filter(r=>r.includes('/basketPreviewSmall/')).length;
+                        await page.evaluate(lang=>{window.activeLang2=lang==='de'?'':'/'+lang;eGuardians.events.initBasketPreview(document.querySelector('[data-eg-handler="initBasketPreview"]'));},language);
+                        const response=page.waitForResponse(r=>r.url().includes('/basketPreviewSmall/'));
+                        await page.locator('.icon-online-shopping-cart').hover();await response;
+                        await page.locator('[data-local-basket-preview]').waitFor({state:'attached'});
+                        check(await page.locator('.basket-prev-small-data [data-local-basket-preview]').count()===1,`${name}: existing basket preview loads its response`);
+                        await page.mouse.move(0,800);await page.locator('.icon-online-shopping-cart').hover();await delay(80);
+                        check(report.serviceRequests.filter(r=>r.includes('/basketPreviewSmall/')).length===before+1,`${name}: repeat hover adds no API request`);
+                        await page.mouse.move(0,800);
+                    }
                     for(const selector of ['.btn-login-open','.lang-switcher button[data-eg-title="Currency"]','.lang-switcher button[aria-label]']) {
                         const button=page.locator(selector);
                         const route=await button.getAttribute('data-eg-href');
@@ -310,7 +381,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
         check(report.externalRequests.length===0, 'zero external requests');
     } finally {
         await browser.close(); server.close();
-        fs.writeFileSync(path.join(directory,focusOrder?'focus-order-report.json':integration?'integration-report.json':sticky?'sticky-report.json':probe?'browser-probe.json':boundaries?'boundary-report.json':'browser-report.json'),JSON.stringify(report,null,2));
+        fs.writeFileSync(path.join(directory,appearance?'appearance-report.json':focusOrder?'focus-order-report.json':integration?'integration-report.json':sticky?'sticky-report.json':probe?'browser-probe.json':boundaries?'boundary-report.json':'browser-report.json'),JSON.stringify(report,null,2));
         console.log(JSON.stringify({cases:report.cases.length,assertions:report.assertions,pageErrors:report.pageErrors.slice(0,8),consoleErrors:report.consoleErrors.slice(0,8),missingResources:[...new Set(report.missingResources)],externalRequests:report.externalRequests.length,plentyONE:report.plentyONE}));
     }
 })().catch(e=>{server.close();console.error(e);process.exitCode=1;});

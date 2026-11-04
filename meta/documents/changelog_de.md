@@ -2,6 +2,13 @@
 
 ## v1.0.8 (2026-11-04) – lokal vorbereitet
 
+### Optische Optimierung, weiterhin 1.0.8
+
+- Desktop-Navigation ausdrücklich ohne Breitenkappe mit 12 px Außenabstand; sieben gleich breite Felder ab 1400 px, vier Direktlinks über die ganze zweite Zeile. Lange Übersetzungen mit abgestimmter Schriftgrenze; Reihenfolge, 57 px Höhe und Magic-Menü erhalten.
+- Suche 34 px hoch, maximal 560 px breit. Bestehendes PNG-Logo mit Slogan auf allen Breiten proportional. Weißer Header unverändert 82 px Desktop / 91 px mobil.
+- Warenkorb-Beschriftung auf Desktop nur noch für assistive Technik; Symbol, dynamischer Zähler und Preis bleiben. Festes 36-px-Symbol, gleiche Zählermitte bei 0 bis 100, große Summen ohne Überstand. Header-Twig, Bindings, produktive JS-Dateien und API-Verhalten unverändert.
+- Ausschließlich vorhandenen CSS-Zusatz und Critical CSS aktualisiert; Cache-Key header3, Version 1.0.8. Finale lokale Nachweise: 185 Layoutfälle, 8000 Stückzahl-/Preiszustände, 50 Funktionsfälle, Twig-, Widget- und Integritätsprüfungen erfolgreich. Messwerte/Screenshots in README; PlentyONE NOT_RUN. Keine Commits oder Auslieferung.
+
 ### Gezielte Nachbesserung, weiterhin 1.0.8
 
 - Desktop: sieben bestehende Dropdown-Kategorien in Zeile 1, vier Direktlinks in Zeile 2; gemeinsame Twig-Struktur und mobile Reihenfolge vollständig unverändert.

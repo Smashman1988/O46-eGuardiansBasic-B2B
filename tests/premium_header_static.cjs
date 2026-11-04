@@ -7,6 +7,7 @@ const postcss = require(process.env.O46_POSTCSS_MODULE || 'postcss');
 const root = path.resolve(__dirname, '..');
 const baseline = '8eeb24f7732c2cb5558b2dbf148eb85182708f0d';
 const refinementBaseline = '4b4503f29e87f732878ebebf0ecccdc14e61dea5';
+const polishBaseline = 'cfa78ad2afbcde83e28252358e57c3759f1eaba2';
 const read = file => fs.readFileSync(path.join(root, file), 'utf8').replaceAll('\r\n','\n');
 const previous = (file, ref=baseline) => cp.execFileSync('git',['show',`${ref}:${file}`],{cwd:root,encoding:'utf8',maxBuffer:8*1024*1024}).replaceAll('\r\n','\n');
 const files = cp.execFileSync('git',['ls-files'],{cwd:root,encoding:'utf8'}).trim().split('\n');
@@ -54,16 +55,25 @@ check('legacy editable CSS unchanged',()=>assert.equal(source.split(marker)[0].t
 check('production CSS parses',()=>postcss.parse(production));
 check('isolated source patch parses',()=>postcss.parse(source.split(marker)[1]));
 check('critical CSS matches production suffix',()=>assert.equal(read('resources/views/PageDesign/Partials/Head.twig').match(/<style data-premium-header>(.*?)<\/style>/s)[1],production.split(marker+'\n')[1].trim()));
-check('both CSS inclusions have refinement cache busting without a version bump',()=>assert.equal((read('resources/views/PageDesign/Partials/Head.twig').match(/main-211025\.min\.css\?v=1\.0\.8-header2-\{\{ buildHash \}\}/g)||[]).length,2));
+check('both CSS inclusions have polish cache busting without a version bump',()=>assert.equal((read('resources/views/PageDesign/Partials/Head.twig').match(/main-211025\.min\.css\?v=1\.0\.8-header3-\{\{ buildHash \}\}/g)||[]).length,2));
 const headerFile='resources/views/PageDesign/Partials/Header/Header.twig';
 check('complete Header.twig unchanged by refinement',()=>assert.equal(read(headerFile),previous(headerFile,refinementBaseline)));
+check('complete Header.twig including basket, quantity branches, Vue bindings and search unchanged by polish',()=>assert.equal(read(headerFile),previous(headerFile,polishBaseline)));
+check('original B2B logo binary unchanged',()=>assert.deepEqual(fs.readFileSync(path.join(root,'resources/images/b2b-outlet46-logo.png')),cp.execFileSync('git',['show',`${polishBaseline}:resources/images/b2b-outlet46-logo.png`],{cwd:root})));
+check('logo and basket label rules are independent of viewport or digit count',()=>{
+    const patch=source.split(marker)[1];
+    assert.match(patch,/\.premium-header \.company-logo img\s*\{[^}]*height: auto;[^}]*object-fit: contain;/);
+    assert.match(patch,/\.premium-header \.premium-basket-label\s*\{\s*display: none;/);
+    assert.match(patch,/\.premium-header-controls \.header-quant-info,\s*\.premium-header-controls \.header-quant-info2\s*\{[^}]*grid-area: 1 \/ 1;[^}]*width: max-content;[^}]*justify-self: center;/);
+    assert.doesNotMatch(patch,/\[data-eg-basket-quantity[\^$*~|]?=/);
+});
 check('plugin identity and version 1.0.8 unchanged',()=>assert.equal(read('plugin.json'),previous('plugin.json',refinementBaseline)));
 const dataAttributes=text=>[...text.matchAll(/\bdata-[\w-]+(?:="[^"]*")?/g)].map(m=>m[0]).sort();
 check('all header event and data attributes retained',()=>assert.deepEqual(dataAttributes(read(headerFile)),dataAttributes(previous(headerFile))));
 const conditions=text=>[...text.replace(/\{#[\s\S]*?#\}/g,'').matchAll(/\{%[\s\S]*?%\}/g)].map(m=>m[0].replace(/\s+/g,' '));
 check('header Twig conditions and service expressions retained',()=>assert.deepEqual(conditions(read(headerFile)),conditions(previous(headerFile))));
 check('Head differs only by the generated critical patch and two cache keys',()=>{
-    const head=read('resources/views/PageDesign/Partials/Head.twig').replace(/<style data-premium-header>.*?<\/style>\n/s,'').replaceAll('?v=1.0.8-header2-{{ buildHash }}','');
+    const head=read('resources/views/PageDesign/Partials/Head.twig').replace(/<style data-premium-header>.*?<\/style>\n/s,'').replaceAll('?v=1.0.8-header3-{{ buildHash }}','');
     assert.equal(head,previous('resources/views/PageDesign/Partials/Head.twig'));
 });
 for(const file of ['resources/css/main.css','resources/css/checkout.css']) {

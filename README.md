@@ -10,7 +10,168 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
-## Premium-Kompakt – gezielte Nachbesserung, weiterhin 1.0.8 (2026-11-04)
+## Premium-Kompakt – optische Optimierung, weiterhin 1.0.8 (2026-11-04)
+
+Ausgangsstand: sauberes **develop**, HEAD **cfa78ad2afbcde83e28252358e57c3759f1eaba2**
+(`anpassung`). Die vorherigen 1.0.8-Änderungen sind darin bereits enthalten.
+Dieser Folgeauftrag bleibt **lokal, uncommittet und unstaged**. Version unverändert.
+Die folgenden älteren Abschnitte dokumentieren jeweils den damaligen Arbeitsstand.
+
+### Ursache und gezielte Lösung
+
+- **Navigation:** Der lokale Vorher-Render war bereits viewportbreit mit 15 px
+  Außenabstand; eine zusätzliche Breitenkappe ließ sich dort nicht reproduzieren.
+  Die erste Zeile hatte jedoch ungleich breite Kategorienfelder. Der Desktop-
+  Navigationscontainer erhält jetzt ausdrücklich `max-width: none` und beidseitig
+  12 px Abstand. Ab 1400 px sind alle sieben Felder gleich breit, die vier Felder
+  der zweiten Zeile durchgehend. Zwischen 992 und 1399 px bleibt die bewährte
+  Gewichtung für lange Übersetzungen erhalten. Die größere Schrift beginnt bei
+  1600 px; dadurch passt auch „Tout afficher à moins de X€!“ ohne Abschneiden.
+  Beide Zeilen füllen ihre gesamte Breite lückenlos. Reihenfolge weiterhin 7/4,
+  Höhe **57 px**, Dropdowns/aktive Zustände/Tastatur und Magic-Menü unverändert.
+- **Suche:** Statt 40 px Höhe und maximal 760 px Breite jetzt **34 px hoch,
+  maximal 560 px breit**, außerdem nur 88 % ihrer verfügbaren Grid-Spalte.
+  Button 40 × 34 px, Symbol proportional verkleinert. Bei schmalen Desktops
+  kann das Feld trotz dieser Begrenzung etwas breiter als vorher sein, weil
+  die entfallene sichtbare Warenkorb-Beschriftung Platz freigibt.
+  Mobile Suche, Formularziel und Livesuche-Handler sind unverändert.
+- **Logo:** Tatsächlich eingebunden ist die unveränderte PNG
+  `b2b-outlet46-logo.png` mit **1114 × 226 px**, einschließlich Slogan – kein SVG.
+  Legacy-Regeln erzwangen mobil je nach Breakpoint 35/47/59 px Höhe bei einer
+  unabhängig begrenzten Breite. Jetzt gelten durchgehend intrinsische Proportionen
+  (`height: auto`, `object-fit: contain`), maximal 280 px mobil/Tablet und 220 px
+  im Desktop-Grid. Kein Bildaustausch und kein Zuschneiden; Slogan bleibt Bestandteil
+  des vollständig skalierten Originals. Auf 320 px wird er entsprechend klein.
+- **Warenkorb:** Sichtbar nur bestehendes Symbol, dynamische Zahl und unmittelbar
+  rechts der dynamische Preis mit 6 px Abstand. Die übersetzte Beschriftung bleibt
+  auf Desktop unsichtbar für die zugängliche Linkbezeichnung erhalten. Das bestehende
+  Link-Grid legt Symbol und beide vorhandenen Zählerklassen in dieselbe Zelle;
+  das Symbol ist fest **36 × 36 px**, die Zahl wird unabhängig von ihrer Breite
+  zentriert. Keine Regeln für einzelne Zahlen und kein zusätzliches Markup.
+  Mobil darf der vorhandene Logo-Bereich Platz für die unverkleinerten Bedienelemente
+  und lange Summen abgeben. Keine Überlagerung und kein rechter Überstand in der Matrix.
+- **Kopfhöhe:** Desktop weiterhin **82 px**, mobil **91 px**. Der weiße Desktop-
+  Inhaltsbereich behält seine vorhandene 1600-px-Begrenzung; ausschließlich die
+  schwarze Navigation nutzt die gesamte Bildschirmbreite.
+
+### Erhaltener Bestand und CSS-Build
+
+**Header.twig, alle fünf Kategorie-Makros, sämtliche produktiven JavaScript-Dateien,
+Such-URLs, Datenattribute, Vue-/Ceres-Bindings, Übersetzungen, Konfigurationen,
+Kontakt-Widget, Logo-Datei und plugin.json sind unverändert.** Auch die vorhandenen
+Twig-Sonderpfade bleiben erhalten; insbesondere wird im Vue-Kategoriepfad keine
+neue Summenanzeige oder Suchfunktion eingeführt.
+
+Nur der vorhandene Header-Zusatz wurde mit dem bestehenden abgesicherten Builder
+minifiziert: identisch in Quell-CSS, produktiver Min-CSS und Critical CSS in Head.twig.
+Legacy-Präfix unverändert, normalisierter SHA-256
+`c62cf6e83159a8208a0c008b718ebdeb31e7d509ffc95513db967f3c19269d69`.
+Header-Zusatz 8562 Bytes; beide CSS-URLs jetzt `?v=1.0.8-header3-{{ buildHash }}`.
+Keine komplette CSS-Neuerzeugung, neue Bibliothek oder neue API-Abfrage.
+
+### Vorher/Nachher – gemessene Pixelwerte
+
+DE, lokaler Chromium 149.0.7827.55, echte Templates/Assets mit Service-Testantworten.
+Mobil ist die Suchfläche im Normalzustand eingeklappt; ihre Messwerte ändern sich nicht.
+Die 5 px Navigation sind der bestehende Platzhalter des geschlossenen Magic-Menüs.
+
+| Viewport | Weißer Kopf | Navigation | Suchfeld B × H | Logo B × H inklusive Slogan |
+| ---: | ---: | ---: | --- | --- |
+| 2560 | 82 → 82 | 57 → 57 | 760 × 40 → 560 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 1920 | 82 → 82 | 57 → 57 | 760 × 40 → 560 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 1600 | 82 → 82 | 57 → 57 | 760 × 40 → 560 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 1440 | 82 → 82 | 57 → 57 | 734,23 × 40 → 560 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 1366 | 82 → 82 | 57 → 57 | 663,48 × 40 → 560 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 1280 | 82 → 82 | 57 → 57 | 581,27 × 40 → 560 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 1200 | 82 → 82 | 57 → 57 | 504,8 × 40 → 508,28 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 1024 | 82 → 82 | 57 → 57 | 336,55 × 40 → 360,22 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 992 | 82 → 82 | 57 → 57 | 305,95 × 40 → 333,3 × 34 | 220 × 44,63 → 220 × 44,63 |
+| 991 | 91 → 91 | 5 → 5 | 991 × 40 → 991 × 40 | 327 × 59 → 280 × 56,8 |
+| 768 | 91 → 91 | 5 → 5 | 768 × 40 → 768 × 40 | 290 × 59 → 280 × 56,8 |
+| 430 | 91 → 91 | 5 → 5 | 420 × 40 → 420 × 40 | 169,16 × 35 → 169,16 × 34,31 |
+| 390 | 91 → 91 | 5 → 5 | 380 × 40 → 380 × 40 | 152,5 × 35 → 152,5 × 30,94 |
+| 375 | 91 → 91 | 5 → 5 | 365 × 40 → 365 × 40 | 146,25 × 35 → 146,25 × 29,66 |
+| 320 | 91 → 91 | 5 → 5 | 310 × 40 → 310 × 40 | 123,33 × 35 → 100,53 × 20,39 |
+
+Navigation bei 1440 px: **1410 → 1416 px**, bei 1920 px **1890 → 1896 px**.
+Außenabstände jeweils **15 → 12 px**. Der wichtigste sichtbare Unterschied ist
+die gleichmäßige Verteilung der sieben oberen Felder, nicht eine zuvor gemessene
+1600-px-Kappe der schwarzen Navigation.
+
+### Tests am finalen lokalen Stand
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Fünf Sprachen × 25 bisherige Breiten | **125/125 PASS; 8594 Assertions** |
+| Zwölf Randbreiten, darunter neu 1599/1601 px, fünf Sprachen | **60/60 PASS; 3264 Assertions** |
+| Layout gesamt, einschließlich Logo-Proportion, Suchfeld, Navigation, Dropdowns und Magic-Menü | **185/185 PASS; 11858 Assertions** |
+| Stückzahl-/Preismatrix: 125 Sprach-/Breitenfälle × zwei Klassen × acht Zahlen × vier Preise | **8000 Zustände PASS; 46084 Assertions** |
+| Funktionsmatrix: fünf Sprachen × fünf Seitenmodi × Desktop/Mobil | **50/50 PASS; 749 Assertions** |
+| Native Tab-Reihenfolge plus bisheriger DOM-Fallback | **15/15 PASS; 334 Assertions** |
+| Sticky bei echtem Scrollen, vorher und nachher | **je 15/15 PASS; je 19 Assertions** |
+| Twig 2.16.1 und 3.30.0 | **je 169/169 Syntax; 38/38 Regressionen und Baseline-Vergleich** |
+| Header-/Kontakt-Widget-Render in beiden Twig-Versionen | **je 50/50 Fälle pro Renderer/Version** |
+| Bestehende Kontakt-Widget-Browsersuite | **55/55 PASS; 1332 Assertions** |
+| Statische Integrität einschließlich unverändertem vollständigem Header und Logo | **93/93 PASS** |
+| Abgesicherter CSS-Abgleich, Node-Syntax, git diff --check | **PASS** |
+| Finale Browser-/Konsolenfehler, fehlende lokale Ressourcen, externe Requests | **jeweils 0** |
+| Echte PlentyONE-/Ceres-Abnahme | **NOT_RUN** |
+
+Stückzahlen **0, 1, 5, 9, 10, 12, 99, 100**; Preise **0,00 / 148,69 /
+1.234,56 / 123.456,78**. Beide bestehenden Zählerklassen werden mit jedem Wert
+belegt, wie beim vorhandenen Text-/Attributupdate. Gemessen werden Textmittelpunkt,
+unbewegtes Symbol, Textgrenzen, Abstände und Überstände. Das sind lokale DOM-Zustände,
+keine behaupteten echten Warenkorb-/Vue-Updates. Die Funktionsmatrix verwendet die
+unveränderten Handler für Livesuche, Konto, Merkliste, Sprache, Währung und Links.
+Zusätzlich wird die vorhandene Basket-Preview mit lokaler Antwort initialisiert;
+wiederholtes Hover erzeugt keine weitere Anfrage. Der isolierte Test stellt dafür
+das vorhandene Sprachglobal und die Initialisierung des vollständigen Seitenlayouts nach.
+
+Frühe Tests erkannten den französischen Textüberstand bei 1440 px und den mobilen
+Summenüberstand. Ursachen waren Schriftgröße und die alte 20-%-Breite der mobilen
+Buttons; beides ist im Header-Zusatz korrigiert, die vollständigen Matrizen bestehen.
+Keine Tool-/Test-Timeouts. Zwei Hilfsaufrufe (PowerShell-Lesen und Dokumentationsskript) hatten Syntaxfehler
+und wurden korrigiert. Die bekannten Legacy-Quell-CSS-Parserbefunde bleiben unverändert
+(main.css 12714:5, checkout.css 8516:27); Produktiv-CSS und isolierter Zusatz parsen.
+Bestehende Twig-Deprecations: 24 unter Twig 2, 2 unter Twig 3 im Regressionstest.
+
+### Lokale Nachweise und Wiederholung
+
+- 1440 px: [vorher](.cache/premium-header-polish/before/de-1440-header.png),
+  [nachher](.cache/premium-header-polish/after/de-1440-header.png).
+- 1920 px: [vorher](.cache/premium-header-polish/before/de-1920-header.png),
+  [nachher](.cache/premium-header-polish/after/de-1920-header.png).
+- [100 Artikel und 148,69 €](.cache/premium-header-polish/after/de-1440-basket-100.png),
+  [mobil 320 px](.cache/premium-header-polish/after/de-320-basket-100.png),
+  [aktives Dropdown](.cache/premium-header-polish/after/de-1920-active-dropdown.png),
+  [Magic-Untermenü](.cache/premium-header-polish/after/de-390-magic-home.png).
+- JSON-Berichte liegen daneben: `browser-report.json`, `boundary-report.json`,
+  `appearance-report.json`, `integration-report.json`, `focus-order-report.json`,
+  `sticky-report.json`; übergeordnet Twig-/statische Berichte und Widget-Nachweise.
+
+Vorher-Render mit dem bestehenden `tests/premium_header.php` und
+`--baseline=cfa78ad2afbcde83e28252358e57c3759f1eaba2`. Vorhandene Browseraufrufe
+bleiben erhalten; ergänzend `node tests/premium_header.cjs <render-directory> --appearance`.
+Die Ausführung nutzt weiterhin die unten dokumentierten externen lokalen Toolpfade.
+Artefakte unter `.cache/premium-header-polish/` sind ignoriert, nicht Plugin-Code.
+
+### Dateien, Gaps und Status
+
+Acht geänderte Dateien: `resources/css/main.css`, `resources/css/main-211025.min.css`,
+`resources/views/PageDesign/Partials/Head.twig`, `tests/premium_header.cjs`,
+`tests/premium_header_static.cjs`, `README.md` sowie beide vorhandenen Changelogs.
+
+NOT_RUN: echte PlentyONE-/Ceres-Shopintegration, reale Konten/Warenkörbe/Preise,
+tatsächlicher Sprach-/Währungswechsel, Deployment-Cache, externe Ressourcen,
+physische Geräte und andere Browser/Screenreader. Die Ceres-Flagge in der lokalen
+Vorschau ist ein ausdrücklich vereinfachtes Test-SVG. `reading-flow` und der
+bisherige DOM-Fallback bleiben unverändert. Keine Live-Abnahme aus lokalen Tests ableiten.
+
+**Kein Commit, Staging, Push, Merge, Tag, Release, Deployment oder Sync.**
+`develop` bleibt auf cfa78ad2afbcde83e28252358e57c3759f1eaba2;
+`main` unverändert auf 9fd71bc173bec1a3f9815a807f0cf22292a0e998. B2C unberührt.
+
+## Vorherige gezielte Nachbesserung – historisch vor der optischen Optimierung (1.0.8)
 
 Aktueller Auftrag auf dem zuvor sauberen **develop**, HEAD
 `4b4503f29e87f732878ebebf0ecccdc14e61dea5` (`neuer header test`).

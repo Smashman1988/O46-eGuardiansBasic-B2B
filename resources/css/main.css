@@ -12966,8 +12966,78 @@ span.cookie-bar__header-title.h2 {
 .premium-header .premium-basket-label {
     display: none;
 }
+.premium-header .company-logo img {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+}
+/* The existing basket link provides a fixed icon cell; both legacy quantity
+   classes share its center, independently of the text width or digit count. */
+.premium-header-controls .btn-mobile-nav > a {
+    display: grid;
+    grid-template-columns: minmax(36px, max-content);
+    justify-content: center;
+    justify-items: center;
+    align-items: center;
+}
+.premium-header-controls .icon-online-shopping-cart {
+    grid-area: 1 / 1;
+    display: block;
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    text-align: center;
+    margin: 0;
+}
+.premium-header-controls .header-quant-info,
+.premium-header-controls .header-quant-info2 {
+    grid-area: 1 / 1;
+    position: relative;
+    left: auto;
+    top: auto;
+    padding: 0;
+    margin: 0;
+    width: max-content;
+    justify-self: center;
+    transform: translateY(-2px);
+    z-index: 1;
+    text-align: center;
+    font-size: 10px;
+    line-height: 12px;
+}
+.premium-header-controls .header-sum-info {
+    grid-area: 2 / 1;
+    white-space: nowrap;
+}
+.premium-header-controls .header-sum-info .padding-l-10 {
+    padding-left: 0;
+}
 .premium-trustbar {
     background: #fff;
+}
+@media (max-width: 991.98px) {
+    /* Let the logo yield only the space needed by the existing mobile controls
+       and a longer live basket total, without clipping either one. */
+    .premium-header .premium-header-logo {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .premium-header .premium-header-actions {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: none;
+    }
+    .premium-header-controls {
+        gap: 4px;
+    }
+    .premium-header-controls > .btn-mobile-nav {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 36px;
+    }
 }
 @media (min-width: 992px) {
     .premium-header .header-wrap > .container {
@@ -12993,21 +13063,28 @@ span.cookie-bar__header-title.h2 {
         grid-row: 1 / 3;
     }
     .premium-header .company-logo img {
-        display: block;
-        width: 100%;
-        height: auto;
-        max-height: 48px;
-        object-fit: contain;
+        max-width: 220px;
     }
     .premium-header .search-box {
         grid-column: 2;
         grid-row: 1 / 3;
-        width: 100%;
-        max-width: 760px;
+        width: 88%;
+        max-width: 560px;
         justify-self: center;
     }
     .premium-header .search-tel-wrap {
         padding: 0;
+    }
+    .premium-header .search-wrap .input-ff-search {
+        height: 34px;
+        padding: 5px 48px 5px 10px;
+        font-size: 16px;
+        line-height: 22px;
+    }
+    .premium-header .search-wrap .btn-set-search {
+        width: 40px;
+        height: 34px;
+        font-size: 20px;
     }
     .premium-header .premium-header-utilities {
         grid-column: 3;
@@ -13055,9 +13132,21 @@ span.cookie-bar__header-title.h2 {
         flex: 0 0 auto;
     }
     .premium-header-controls .btn-mobile-nav > a {
-        display: flex;
-        align-items: center;
+        grid-template-columns: 36px max-content;
         gap: 6px;
+    }
+    .premium-header-controls .header-sum-info {
+        grid-area: 1 / 2;
+    }
+    /* Keep the existing translated link name for assistive technology. */
+    .premium-header .premium-basket-label {
+        display: block;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
     }
     .premium-header-controls .fs35 {
         font-size: 28px;
@@ -13075,24 +13164,23 @@ span.cookie-bar__header-title.h2 {
     .premium-header-controls .padding-l-10 {
         padding-left: 0;
     }
-    .premium-header-controls .header-quant-info,
-    .premium-header-controls .header-quant-info2 {
-        left: 7px;
-        top: 12px;
-        padding: 0;
-        width: 20px;
-        text-align: center;
-        font-size: 10px;
-    }
-    .premium-header .premium-basket-label {
-        display: inline;
-    }
     .premium-navigation.headpadding {
         padding-bottom: 0;
     }
     .premium-navigation nav {
         border: 0;
         background: #000;
+    }
+    .premium-navigation nav > .container {
+        width: 100%;
+        max-width: none;
+        padding: 0 12px;
+    }
+    .premium-navigation nav > .container > .row {
+        margin: 0;
+    }
+    .premium-navigation .col-static {
+        padding: 0;
     }
     .premium-navigation .top-menu {
         display: grid;
@@ -13216,6 +13304,16 @@ span.cookie-bar__header-title.h2 {
     }
 }
 @media (min-width: 1400px) {
+    /* Equal desktop slots; below 1400px retain extra room for long translations. */
+    .premium-navigation .top-menu > .cat-4814 { grid-area: 1 / 1 / 2 / 5; }
+    .premium-navigation .top-menu > .cat-4813 { grid-area: 1 / 5 / 2 / 9; }
+    .premium-navigation .top-menu > .cat-81 { grid-area: 1 / 9 / 2 / 13; }
+    .premium-navigation .top-menu > .cat-80 { grid-area: 1 / 13 / 2 / 17; }
+    .premium-navigation .top-menu > .cat-4103 { grid-area: 1 / 17 / 2 / 21; }
+    .premium-navigation .top-menu > .cat-3813 { grid-area: 1 / 21 / 2 / 25; }
+    .premium-navigation .top-menu > .cat-78 { grid-area: 1 / 25 / 2 / 29; }
+}
+@media (min-width: 1600px) {
     .premium-navigation .top-menu > li > a {
         font-size: 14px !important;
     }
