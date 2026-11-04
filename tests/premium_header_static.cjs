@@ -55,7 +55,7 @@ check('legacy editable CSS unchanged',()=>assert.equal(source.split(marker)[0].t
 check('production CSS parses',()=>postcss.parse(production));
 check('isolated source patch parses',()=>postcss.parse(source.split(marker)[1]));
 check('critical CSS matches production suffix',()=>assert.equal(read('resources/views/PageDesign/Partials/Head.twig').match(/<style data-premium-header>(.*?)<\/style>/s)[1],production.split(marker+'\n')[1].trim()));
-check('both CSS inclusions have polish cache busting without a version bump',()=>assert.equal((read('resources/views/PageDesign/Partials/Head.twig').match(/main-211025\.min\.css\?v=1\.0\.8-header3-\{\{ buildHash \}\}/g)||[]).length,2));
+check('both CSS inclusions have polish cache busting without a version bump',()=>assert.equal((read('resources/views/PageDesign/Partials/Head.twig').match(/main-211025\.min\.css\?v=1\.0\.8-header4-\{\{ buildHash \}\}/g)||[]).length,2));
 const headerFile='resources/views/PageDesign/Partials/Header/Header.twig';
 check('complete Header.twig unchanged by refinement',()=>assert.equal(read(headerFile),previous(headerFile,refinementBaseline)));
 check('complete Header.twig including basket, quantity branches, Vue bindings and search unchanged by polish',()=>assert.equal(read(headerFile),previous(headerFile,polishBaseline)));
@@ -73,7 +73,7 @@ check('all header event and data attributes retained',()=>assert.deepEqual(dataA
 const conditions=text=>[...text.replace(/\{#[\s\S]*?#\}/g,'').matchAll(/\{%[\s\S]*?%\}/g)].map(m=>m[0].replace(/\s+/g,' '));
 check('header Twig conditions and service expressions retained',()=>assert.deepEqual(conditions(read(headerFile)),conditions(previous(headerFile))));
 check('Head differs only by the generated critical patch and two cache keys',()=>{
-    const head=read('resources/views/PageDesign/Partials/Head.twig').replace(/<style data-premium-header>.*?<\/style>\n/s,'').replaceAll('?v=1.0.8-header3-{{ buildHash }}','');
+    const head=read('resources/views/PageDesign/Partials/Head.twig').replace(/<style data-premium-header>.*?<\/style>\n/s,'').replaceAll('?v=1.0.8-header4-{{ buildHash }}','');
     assert.equal(head,previous('resources/views/PageDesign/Partials/Head.twig'));
 });
 for(const file of ['resources/css/main.css','resources/css/checkout.css']) {

@@ -2,6 +2,10 @@
 
 ## v1.0.8 (2026-11-04) – lokal vorbereitet
 
+### Weißen Header wieder über die volle Breite verteilen
+
+- 1600-px-Begrenzung des weißen Desktop-Headers entfernt; Logo und Kundenfunktionen stehen wieder mit 24 px Außenabstand über die gesamte Breite. Kompakte Suche, Höhe, Navigation und mobile Darstellung erhalten. Nur vorhandene Header-CSS-Regel plus Min-/Critical-CSS angepasst; Cache-Key header4. Version unverändert, keine Auslieferung; lokale Nachweise in README.
+
 ### Optische Optimierung, weiterhin 1.0.8
 
 - Desktop-Navigation ausdrücklich ohne Breitenkappe mit 12 px Außenabstand; sieben gleich breite Felder ab 1400 px, vier Direktlinks über die ganze zweite Zeile. Lange Übersetzungen mit abgestimmter Schriftgrenze; Reihenfolge, 57 px Höhe und Magic-Menü erhalten.

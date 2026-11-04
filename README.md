@@ -10,7 +10,37 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
-## Premium-Kompakt – optische Optimierung, weiterhin 1.0.8 (2026-11-04)
+## Weißen Header wieder auf volle Breite stellen (1.0.8, 2026-11-04)
+
+Gezielte Korrektur auf dem zuvor sauberen `develop`, Ausgangs-HEAD
+`b8c97bedb9493b23a616110edc17916ac16153cd` (`header 3`). Die vorhandene
+`max-width: 1600px` am weißen Desktop-Header verursachte die eingerückten Seiten.
+Jetzt `max-width: none`, weiterhin 24 px Innenabstand pro Seite. Bei 1920 px
+rückt das Logo von x=184 auf x=24; der Warenkorb endet 24 px vor dem rechten Rand.
+Bei 1440 px bleiben die Außenabstände unverändert. Höhe weiterhin 82 px,
+Suche maximal 560 × 34 px. Navigation, Logo-Proportionen, Zähler, Twig und JS erhalten.
+
+Nur diese CSS-Regel geändert und den bestehenden abgesicherten Zusatz in Min-CSS
+und Critical CSS abgeglichen. Legacy-CSS-Präfix unverändert; CSS-Cache-Key `header4`,
+Plugin-Version weiterhin 1.0.8. Statischer Test auf den neuen Cache-Key angepasst.
+Die unten dokumentierte 1600-px-Begrenzung gehört zum vorherigen Stand.
+
+Lokale Nachweise liegen in `.cache/premium-header-fullwidth/`:
+[vorher 1920 px](.cache/premium-header-fullwidth/before/de-1920-header.png),
+[nachher 1920 px](.cache/premium-header-fullwidth/after/de-1920-header.png).
+Erneut bestanden: 125/125 Layoutfälle in fünf Sprachen (8594 Assertions),
+50/50 Funktionsfälle (749 Assertions), zwölf gezielte Stückzahl-/Preisfälle
+(4356 Assertions), 93/93 statische Prüfungen, 50/50 Twig-3-Renderfälle,
+CSS-Build-Abgleich, Node-Syntax und `git diff --check`. Browser-/Konsolenfehler,
+fehlende Ressourcen und externe Requests jeweils 0; keine Test-/Tool-Timeouts.
+Zusätzlicher Geometrievergleich bestätigt die 24-px-Desktopränder und unveränderte
+mobile Geometrie. Die übrigen vollständigen Suites wurden für diese einzelne
+CSS-Breitenkorrektur nicht erneut ausgeführt; ihre älteren Ergebnisse stehen unten.
+Echte PlentyONE-/Ceres-Abnahme weiterhin **NOT_RUN**.
+Alle Änderungen lokal und unstaged auf `develop`; B2C und `main` unverändert.
+Kein Commit, Push, Merge, Deployment oder Sync.
+
+## Premium-Kompakt – optische Optimierung vor der Breitenkorrektur (1.0.8)
 
 Ausgangsstand: sauberes **develop**, HEAD **cfa78ad2afbcde83e28252358e57c3759f1eaba2**
 (`anpassung`). Die vorherigen 1.0.8-Änderungen sind darin bereits enthalten.
