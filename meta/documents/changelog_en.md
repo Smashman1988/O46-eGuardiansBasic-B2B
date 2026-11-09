@@ -1,5 +1,17 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – localized SEO page suffixes (2026-11-09)
+
+- Titles and meta descriptions on valid subsequent pages use the active shop language in the server-rendered HTML. Regional language codes and an empty Twig `locale` are covered.
+- The README documents why HTTP 404 responses inherit the sold-out category metadata and proposes a correction. All 31 empty-category regression cases pass under both Twig versions.
+
+## Unreleased – first page of empty item categories (2026-11-09)
+
+- Following the user's explicit rule, unfiltered empty item categories retain eligibility for their configured indexing directives on the base URL and `page=1`. Zero items no longer force `NOINDEX` there; explicit `NOINDEX`, `NOFOLLOW` and `forceNoIndex` remain preserved.
+- Empty price-filter results, hard filter/search parameters, invalid page inputs and follow-up pages remain restricted. This exception applies to regular item categories; existing treatment of empty embedded content lists is unchanged. No change to item counts, bounds, canonicals or queries, and no URL/category-ID special cases.
+- Added 31 targeted safeguards and updated the previous empty-category first-page expectation. Each Twig 2/3 passed 295/295 SEO cases, 171/171 syntax checks, 38/38 regressions and 60/60 layout cases; JavaScript 111/111 plus 22/22 local Chrome cases, widget browser 55/55 with 1,332 assertions, PHP lint 12/12 passed. No PlentyONE validator/build or deployment of this new PHP fix.
+- Full recheck of preview plugin set 426 still has no overall approval: count/tail-page inconsistencies and the real 404 metadata route remain unresolved; the new first-page exception has not been deployed there. See README for exact evidence and limits.
+
 ## Unreleased – SEO JavaScript delivery asset (2026-11-09)
 
 - Transferred the corrected metadata block from `cat.js` into the actually referenced `cat-020726.min.js` using the existing Terser 5.44.0 installation. Every byte outside that block remains unchanged. No active historical JavaScript build process exists in the current checkout.

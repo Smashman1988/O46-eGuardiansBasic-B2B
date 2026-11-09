@@ -151,6 +151,14 @@ namespace {
         }
     }
     class EmptyService { public function __call($name, $args) { return null; } }
+    class LocalizationRepository {
+        public function __construct(private $language = 'de') {}
+        public function getLanguage() { return $this->language; }
+    }
+    function localizedContext($base, $language) {
+        $base['services']['localizationRepository'] = new LocalizationRepository($language);
+        return $base;
+    }
     function readView($name) { global $root; return file_get_contents($root . '/resources/views/' . $name . '.twig'); }
     function gitSource($file, $reference = SEO_BASELINE) {
         global $root;
@@ -282,8 +290,8 @@ namespace {
         return '<section class="builder">' . $html . '</section>';
     });
     $templateService = new TemplateService(); $urls = new UrlService(); $emptyService = new EmptyService();
-    $base = ['request'=>$request, 'category'=>$context->category, 'lang'=>'de', 'locale'=>'de_DE', 'isShopBuilder'=>false,
-        'services'=>['template'=>$templateService,'category'=>$categoryService,'url'=>$urls,'localizationRepository'=>new class { public function getLanguage() { return 'de'; } },'checkout'=>$emptyService,'customer'=>$emptyService,'webstoreConfig'=>$emptyService],
+    $base = ['request'=>$request, 'category'=>$context->category, 'lang'=>'de', 'isShopBuilder'=>false,
+        'services'=>['template'=>$templateService,'category'=>$categoryService,'url'=>$urls,'localizationRepository'=>new LocalizationRepository(),'checkout'=>$emptyService,'customer'=>$emptyService,'webstoreConfig'=>$emptyService],
         'context'=>new class { public function renderState() { return ''; } },
         'webstoreConfig'=>['domainSsl'=>'https://example.test','name'=>'B2B','defaultLanguage'=>'de'],
         'ceresConfig'=>['global'=>['blockCookies'=>false],'header'=>['companyLogo'=>'/logo.png']],
@@ -446,7 +454,7 @@ namespace {
                 try {
                     $html = $twig->render('regular-head',$ctx);
                     $valid = $max !== null && (int)$number <= $max;
-                    check(meta($html,'robots') === ($valid ? 'INDEX,FOLLOW' : ($number === '1' && $max === null ? 'INDEX,FOLLOW' : 'NOINDEX,FOLLOW')),'Incorrect regular robots');
+                    check(meta($html,'robots') === ($valid || ($number === '1' && ($max === null || $max === 0)) ? 'INDEX,FOLLOW' : 'NOINDEX,FOLLOW'),'Incorrect regular robots');
                     check(canonical($html) === 'https://example.test/damen/' . ($valid && $number !== '1' ? '?page=' . $number : ''),'Incorrect regular canonical');
                     if (!$valid) { check(strpos($html,'rel="prev"') === false && strpos($html,'rel="next"') === false,'Invalid page has prev/next'); }
                 } finally { $templateService->template = 'tpl.category.content'; }
@@ -494,13 +502,45 @@ namespace {
     foreach (['de_DE'=>'Seite','en_GB'=>'Page','fr_FR'=>'Page','it_IT'=>'Pagina','es_ES'=>'Página'] as $locale=>$label) {
         test('language/metadata-' . $locale,function () use ($locale,$label,$request,$twig,$base,&$builderMode) {
             $request->params = ['page'=>'2']; $builderMode = 'single';
-            $html = $twig->render('content',array_replace($base,['locale'=>$locale]));
+            $html = $twig->render('content',localizedContext($base,substr($locale,0,2)) + ['locale'=>$locale]);
             check(strpos($html,'<title>Route title – ' . $label . ' 2</title>') !== false,'Wrong localized title');
             check(meta($html,'description') === 'Route description – ' . $label . ' 2','Wrong localized description');
             foreach (['de','en','fr','it','es'] as $language) {
                 $url = 'https://example.test/' . ($language === 'de' ? '' : $language . '/') . 'damen/?page=2';
                 check(strpos($html,'hreflang="' . $language . '" href="' . $url . '"') !== false,'Missing paginated language URL');
             }
+        });
+    }
+    // The preview supplies the active shop language, but renders a blank locale in the head.
+    foreach (['de'=>'Seite','en'=>'Page','fr'=>'Page','it'=>'Pagina','es'=>'Página'] as $language=>$label) {
+        foreach (['content'=>'tpl.category.content','regular-head'=>'tpl.category.item'] as $view=>$type) {
+            foreach ([1,2,69,70] as $page) {
+                test("language/server-html/$view/$language/$page", function () use ($view,$type,$page,$language,$label,$base,$twig,$request,$templateService) {
+                    $request->params = $page === 1 ? [] : ['page'=>(string)$page];
+                    $templateService->template = $type;
+                    $ctx = localizedContext($base,$language) + ['currentPage'=>$page,'pageMax'=>69,'itemCountTotal'=>1654];
+                    try {
+                        $html = $twig->render($view,$ctx);
+                        $suffix = in_array($page,[2,69],true) ? ' – ' . $label . ' ' . $page : '';
+                        check(strpos($html,'<title>Route title' . $suffix . '</title>') !== false,'Wrong server title');
+                        check(meta($html,'description') === 'Route description' . $suffix,'Wrong server description');
+                        check(canonical($html) === 'https://example.test/damen/' . ($suffix ? '?page=' . $page : ''),'Language changed canonical');
+                        check(meta($html,'robots') === 'NOINDEX,NOFOLLOW','Language changed category directives');
+                    } finally { $templateService->template = 'tpl.category.content'; }
+                });
+            }
+        }
+    }
+    foreach ([
+        ['de','en_US','Seite'], [' IT-ch ','de_DE','Pagina'], ['ES_419','','Página'],
+        ['', ' it_IT ', 'Pagina'], [null,'de-AT','Seite'], [null,null,'Page'], ['nl','de_DE','Page']
+    ] as [$language,$locale,$label]) {
+        test('language/source-' . json_encode([$language,$locale]), function () use ($language,$locale,$label,$base,$twig,$request) {
+            $request->params = ['page'=>'2'];
+            $ctx = localizedContext($base,$language) + ['locale'=>$locale,'seoPage'=>new SeoPage(['page'=>'2'],'tpl.category.item',2,2,48)];
+            $html = $twig->render('metadata',$ctx);
+            check(strpos($html,'<title>Route title – ' . $label . ' 2</title>') !== false,'Wrong language priority or normalization');
+            check(meta($html,'description') === 'Route description – ' . $label . ' 2','Wrong description language');
         });
     }
     test('metadata/force-with-nofollow',function () use ($twig,$request,$base) {
@@ -601,7 +641,7 @@ namespace {
         $builderMode = 'single'; $seen = [];
         foreach ([['2','de_DE',1654],['999','en_GB',10],['1','fr_FR',0],['2','it_IT',50],['1','es_ES',24],['2','de_DE',1654]] as [$page,$locale,$total]) {
             $request->params = ['page'=>$page]; $search->total = $total;
-            $html = $twig->render('content',array_replace($base,['locale'=>$locale]));
+            $html = $twig->render('content',localizedContext($base,substr($locale,0,2)) + ['locale'=>$locale]);
             $seen[] = canonical($html);
             $expected = $page === '2' && $total > 24 ? 'https://example.test/damen/?page=2' : 'https://example.test/damen/';
             check(canonical($html) === $expected,'Data leaked across page/filter/language variants');
@@ -609,6 +649,58 @@ namespace {
         $search->total = 1654; check($seen[0] === $seen[5],'Repeated variant changed');
         return $seen;
     });
+    foreach ([null,'1'] as $number) {
+        foreach (['INDEX,FOLLOW','NOINDEX,FOLLOW','NOFOLLOW','NOINDEX,NOFOLLOW'] as $directive) {
+            foreach ([false,true] as $force) {
+                test('empty-category/first-' . json_encode($number) . '/' . $directive . '/force-' . (int)$force,function () use ($number,$directive,$force,$twig,$request,$base,$templateService,$search) {
+                    $request->params = $number === null ? [] : ['page'=>$number];
+                    $templateService->template = 'tpl.category.item'; $search->calls = [];
+                    $category = $base['category']; $category['details'][0]['metaRobots'] = $directive;
+                    try {
+                        $html = $twig->render('regular-head',array_replace($base,['category'=>$category,'pageMax'=>0,'currentPage'=>1,'itemCountTotal'=>0,'forceNoIndex'=>$force]));
+                        $expected = ($force || strpos($directive,'NOINDEX') !== false ? 'NOINDEX' : 'INDEX') . ',' . (strpos($directive,'NOFOLLOW') !== false ? 'NOFOLLOW' : 'FOLLOW');
+                        check(meta($html,'robots') === $expected,'Empty first category page changed configured restrictions');
+                        check(canonical($html) === 'https://example.test/damen/','Empty category lost base canonical');
+                        $state = json_decode(meta($html,'o46-pagination'),true);
+                        check($state['pageMax'] === 0 && $state['empty'] && !$state['valid'] && $state['currentPage'] === 1 && !$state['noindex'],'Known empty result became a paginated or blocked first page');
+                        check(count($search->calls) === 0,'Robots exception introduced an item query');
+                        check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Empty first category invented pagination');
+                        check(strpos($html,'<title>Route title</title>') !== false && meta($html,'description') === 'Route description','Empty category changed the base metadata');
+                    } finally { $templateService->template = 'tpl.category.content'; }
+                });
+            }
+        }
+    }
+    foreach (['2','999','0','-1','abc',''] as $number) {
+        test('empty-category/invalid-' . json_encode($number),function () use ($number,$twig,$request,$base,$templateService) {
+            $request->params = ['page'=>$number];
+            $templateService->template = 'tpl.category.item';
+            $ctx = $base + ['pageMax'=>0,'currentPage'=>1,'itemCountTotal'=>0];
+            $ctx['category']['details'][0]['metaRobots'] = 'NOFOLLOW';
+            try {
+                $html = $twig->render('regular-head',$ctx);
+                $state = json_decode(meta($html,'o46-pagination'),true);
+                check(meta($html,'robots') === 'NOINDEX,NOFOLLOW','Empty category follow-up or invalid input became indexable');
+                check($state['pageMax'] === 0 && $state['empty'] && !$state['valid'],'Empty category gained valid follow-up pages');
+                check(canonical($html) === 'https://example.test/damen/','Empty category follow-up got its own canonical');
+                check(strpos($html,'<title>Route title</title>') !== false && meta($html,'description') === 'Route description','Empty category follow-up received a page suffix');
+                check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Empty category follow-up has pagination links');
+            } finally { $templateService->template = 'tpl.category.content'; }
+        });
+    }
+    foreach ([['priceMin'=>0],['priceMax'=>0],['facets'=>'3118'],['sorting'=>''],['query'=>''],['currency'=>'EUR'],['quickViewItem'=>'true']] as $query) {
+        test('empty-category/filtered-' . json_encode($query),function () use ($query) {
+            $page = new SeoPage($query,'tpl.category.item',0,1,0);
+            check($page->getRobots('','INDEX,FOLLOW',false) === 'NOINDEX,FOLLOW','Empty filtered results lost noindex');
+        });
+    }
+    foreach ([null,'1'] as $number) {
+        test('empty-category/content-policy-unchanged-' . json_encode($number),function () use ($number) {
+            $page = new SeoPage($number === null ? [] : ['page'=>$number],'tpl.category.content');
+            $page->addList(1,0,0);
+            check($page->getRobots('','INDEX,FOLLOW',false) === 'NOINDEX,FOLLOW','Native-category exception changed embedded-list policy');
+        });
+    }
     foreach ([['content','content',100,'cat'],['regular','regular-head',100,'cat'],
         ['editorial-main','content',31,'main']] as [$name,$view,$categoryId,$asset]) {
         test('asset-inclusion/' . $name,function () use ($name,$view,$categoryId,$asset,$twig,$request,$base,$templateService,&$builderMode) {

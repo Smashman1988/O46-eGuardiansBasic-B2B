@@ -1,5 +1,17 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – lokalisierte SEO-Seitenzusätze (2026-11-09)
+
+- Titel und Meta-Description gültiger Folgeseiten beziehen den Sprachzusatz bereits im Server-HTML aus der aktiven Shop-Sprache. Regionale Sprachcodes und ein leeres Twig-`locale` sind abgedeckt.
+- Die Ursache der Ausverkauft-Metadaten auf HTTP-404-Antworten sowie der Korrekturvorschlag sind in der README dokumentiert. Die 31 Schutzfälle für leere Kategorien bestehen in beiden Twig-Versionen.
+
+## Unveröffentlicht – leere Artikelkategorien auf Seite 1 (2026-11-09)
+
+- Auf ausdrückliche Nutzervorgabe bleiben ungefilterte leere Artikelkategorien auf der Basis-URL und bei `page=1` für ihre vorhandene Indexierungsvorgabe offen. Null Artikel erzwingen dort nicht mehr pauschal `NOINDEX`; explizites `NOINDEX`, `NOFOLLOW` und `forceNoIndex` bleiben erhalten.
+- Leere Preisfilter-Ergebnisse, harte Filter-/Suchparameter, ungültige Seiteneingaben und Folgeseiten bleiben gesperrt. Die Ausnahme betrifft reguläre Artikelkategorien; die bisherige Behandlung leerer eingebetteter Content-Listen bleibt erhalten. Keine Änderung an Artikelzählung, Seitengrenzen, Canonicals oder Abfragen; keine URL-/Kategorie-ID-Sonderfälle.
+- 31 gezielte Schutzfälle ergänzt und den bisherigen Erwartungswert für leere Kategorie-Seite 1 angepasst. Twig 2/3 jeweils 295/295 SEO-Fälle, 171/171 Syntax, 38/38 Regressionen und 60/60 Layoutfälle bestanden; JavaScript 111/111 plus 22/22 lokale Chrome-Fälle, Widget-Browser 55/55 mit 1.332 Assertions, PHP-Lint 12/12 bestanden. PlentyONE-Validator/Build und Bereitstellung dieses neuen PHP-Fixes nicht ausgeführt.
+- Der vollständige Gegencheck im Test-Pluginset 426 bleibt ohne Gesamtfreigabe: Zähl-/Randseitenabweichungen und der reale 404-Metadatenpfad sind weiterhin offen; die neu gewünschte Erstseiten-Ausnahme ist dort noch nicht bereitgestellt. Umfang, genaue Ergebnisse und Grenzen stehen in der README.
+
 ## Unveröffentlicht – Auslieferungsdatei des SEO-JavaScripts (2026-11-09)
 
 - Den korrigierten Metadatenblock aus `cat.js` in die tatsächlich eingebundene `cat-020726.min.js` übernommen. Vorhandenen Terser 5.44.0 verwendet; der gesamte Bundle-Inhalt außerhalb dieses Blocks bleibt bytegleich. Ein aktiver historischer JS-Buildprozess ist im aktuellen Checkout nicht vorhanden.

@@ -70,6 +70,11 @@ class SeoPage
         $empty = $hasList && ($total === 0 || $pageMax === 0);
         $valid = $hasList && !$ambiguous && !$invalidInput && !$empty && $pageMax !== null
             && $requestedPage <= $pageMax && $effectivePage === $requestedPage;
+        // An empty category is still a real landing page. Keep its first page
+        // eligible for the configured robots directives; empty price searches
+        // and unproven follow-up pages retain their existing restrictions.
+        $emptyFirstCategory = $empty && $this->template === 'tpl.category.item' && $requestedPage === 1
+            && !array_key_exists('priceMin', $this->query) && !array_key_exists('priceMax', $this->query);
 
         return [
             'requestedPage' => $requestedPage,
@@ -83,7 +88,7 @@ class SeoPage
             'valid' => $valid,
             // Unknown bounds are not an invented one-page list. Unproven follow-up
             // URLs still get a base canonical and noindex as a conservative fallback.
-            'noindex' => $invalidInput || $empty || ($hasPage && $requestedPage > 1 && !$valid)
+            'noindex' => $invalidInput || ($empty && !$emptyFirstCategory) || ($hasPage && $requestedPage > 1 && !$valid)
         ];
     }
 

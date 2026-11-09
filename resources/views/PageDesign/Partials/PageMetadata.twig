@@ -12,14 +12,15 @@
 {# Sprachabhängige Seitennummerierung #}
 {% set metadataSeoPage = seoPage is defined ? seoPage : createSeoPage(services.template.getCurrentTemplate(), pageMax is defined ? pageMax : null, currentPage is defined ? currentPage : null, itemCountTotal is defined ? itemCountTotal : null) %}
 {% set currentPage = metadataSeoPage.pagination.currentPage %}
-{% set lang = locale | split('_') | first %}
+{% set shopLanguage = services.localizationRepository.getLanguage() | default('') | trim %}
+{% set pageLanguage = shopLanguage | default(locale | default('')) | trim | lower | replace({'_': '-'}) | split('-') | first %}
 {% set pageText = {
     'de': 'Seite',
     'en': 'Page',
     'fr': 'Page',
     'it': 'Pagina',
     'es': 'Página'
-}[lang] | default('Page') %}
+}[pageLanguage] | default('Page') %}
 
 {# One final output. Pagination and query rules can only add restrictions. #}
 {% set blockRobots = block('robots') is defined ? block('robots') : '' %}
