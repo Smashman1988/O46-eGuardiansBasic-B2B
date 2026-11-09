@@ -2,13 +2,6 @@
 
 ## v1.0.8 (2026-11-04) – prepared locally
 
-### Visual polish, still 1.0.8
-
-- Explicit full-width desktop navigation with 12 px outer insets; seven equal slots from 1400 px and four direct links across the second row. Font breakpoint accommodates long translations; order, 57 px height and mobile Magic menu retained.
-- Search is 34 px high and at most 560 px wide. Original PNG logo and embedded slogan retain their intrinsic aspect ratio at every width. White header remains 82 px on desktop / 91 px on mobile.
-- Desktop basket caption is visually hidden but retained for assistive technology. Existing icon, dynamic quantity and adjacent total remain; fixed 36 px icon and constant counter center from 0 to 100. Large totals fit without overflow. Header Twig, bindings, production JavaScript and API behavior are unchanged.
-- Only the existing CSS suffix and critical CSS updated; header3 cache key, plugin version 1.0.8. Final local checks pass: 185 layout cases, 8000 quantity/price states, 50 interaction cases, Twig, widget and integrity tests. Measurements/screenshots in README; PlentyONE NOT_RUN. No commits or deployment.
-
 ### Targeted refinement, still 1.0.8
 
 - Desktop: seven existing dropdown categories in row one and four direct links in row two; shared Twig markup and mobile order remain entirely unchanged.
