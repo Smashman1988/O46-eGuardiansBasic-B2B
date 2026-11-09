@@ -3,6 +3,8 @@
 ## Unveröffentlicht – Kategorienavigation (2026-11-09)
 
 - Home & Living ersetzt „Letzte Größe“ in der B2B-Kategorienavigation für DE, EN, FR, IT und ES. Die vorhandenen sprachspezifischen Unterkategorien sind wieder verfügbar.
+- Die zuvor ausgeblendeten Preisstufen unter „Alles unter X Euro“ sind in allen fünf Sprachversionen wieder verfügbar.
+- Der Eintrag „Gratis-Artikel“ unter „Alles unter X Euro“ ist in allen fünf Sprachversionen ausgeblendet.
 
 ## Unveröffentlicht – Kontakt-Widget (2026-11-03)
 

@@ -3,6 +3,8 @@
 ## Unreleased – category navigation (2026-11-09)
 
 - Home & Living replaces “Last size” in the B2B category navigation for DE, EN, FR, IT, and ES. The existing localized subcategories are available again.
+- The previously hidden price tiers under “Everything under X euros” are available again in all five languages.
+- The “Free article” entry under “Everything under X euros” is hidden in all five languages.
 
 ## Unreleased – contact widget (2026-11-03)
 
