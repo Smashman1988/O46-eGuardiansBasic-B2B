@@ -1,5 +1,10 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – Newsletter-Hinweis (2026-11-09)
+
+- Kompakte B2B-Newsletter-Karte mit fünf Sprachfassungen und Anmeldelinks ergänzt. Sie erscheint ab 2.000 px Scrolltiefe und bleibt auf den Newsletter-Seiten ausgeblendet.
+- Die Karte wartet auf die Antwort des Consent-Managers. Schließen über X merkt die Auswahl sieben Tage in einem eigenen, hostgebundenen B2B-Cookie.
+
 ## Unveröffentlicht – Kategorienavigation (2026-11-09)
 
 - Home & Living ersetzt „Letzte Größe“ in der B2B-Kategorienavigation für DE, EN, FR, IT und ES. Die vorhandenen sprachspezifischen Unterkategorien sind wieder verfügbar.

@@ -78,7 +78,7 @@ if ($baseline) {
         if ($file->getExtension() === 'twig') { $files[] = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1)); }
     }
 }
-sort($files); ensure(count($files) === ($baseline ? 168 : 169), 'Unexpected Twig inventory');
+sort($files); ensure(count($files) === ($baseline ? 168 : 170), 'Unexpected Twig inventory');
 foreach ($files as $file) {
     try { $syntax->parse($syntax->tokenize(new Twig\Source(source($file), $file))); $report['syntax'][$file] = 'PASS'; }
     catch (Throwable $e) { $report['syntax'][$file] = $e->getMessage(); }

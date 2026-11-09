@@ -41,11 +41,13 @@ class ContactEmptyService {
 }
 $layout = file_get_contents($root . '/resources/views/PageDesign/PageDesign.twig');
 $componentName = 'GuardiansBasicB2B::PageDesign.Components.ContactWidget';
+$newsletterName = 'GuardiansBasicB2B::PageDesign.Components.NewsletterPopup';
 $component = file_get_contents($root . '/resources/views/PageDesign/Components/ContactWidget.twig');
-$templates = ['layout' => $layout, $componentName => $component, 'fixture-partial' => ''];
+$templates = ['layout' => $layout, $componentName => $component, 'fixture-partial' => '',
+    $newsletterName => file_get_contents($root . '/resources/views/PageDesign/Components/NewsletterPopup.twig')];
 preg_match_all('/\{%\s*(?:include|import)\s+"([^"]+)"/', $layout, $includes);
 foreach ($includes[1] as $name) {
-    if ($name !== $componentName) { $templates[$name] = ''; }
+    $templates[$name] ??= '';
 }
 foreach (['DE', 'EN', 'FR', 'IT', 'ES'] as $suffix) {
     $templates['GuardiansBasicB2B::PageDesign.Components.nl-element' . $suffix] = '';
@@ -71,13 +73,18 @@ $twig->addFilter(new Twig\TwigFilter('filterFields', [new ContactCallback(functi
 $translations = [];
 twigFunction($twig, 'trans', function ($key) use (&$translations) {
     $short = substr($key, strlen('GuardiansBasicB2B::Template.'));
-    if (strpos($short, 'o46B2bContact') === 0) {
+    if (strpos($short, 'o46B2bContact') === 0 || strpos($short, 'o46B2bNewsletter') === 0) {
         check(isset($translations[$short]), 'Missing widget translation: ' . $key);
         return $translations[$short];
     }
     return $key;
 });
-$pages = ['home', 'category.item', 'item', 'search', 'basket', 'my-account', 'checkout', 'amazon', 'shopbuilder'];
+$pages = ['home', 'category.item', 'item', 'vue-category', 'search', 'basket', 'my-account', 'checkout', 'amazon', 'shopbuilder', 'newsletter'];
+$newsletterPaths = [
+    'de' => '/content/newsletter/', 'en' => '/en/content/newsletter/', 'fr' => '/fr/content/Bulletin/',
+    'it' => '/it/content/newsletter/', 'es' => '/es/content/newsletter/',
+];
+$newsletterBundles = ['home' => 'main', 'category.item' => 'cat', 'item' => 'item', 'vue-category' => 'vue'];
 $cases = [];
 $keySet = null;
 $head = file_get_contents($root . '/resources/views/PageDesign/Partials/Head.twig');
@@ -94,6 +101,12 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
     $keys = array_keys($translations); sort($keys);
     check($keySet === null || $keys === $keySet, 'Widget translation keys differ between languages');
     $keySet = $keys;
+    preg_match_all('/^(o46B2bNewsletter\w+)\s*=\s*(.+)$/mu', file_get_contents($root . '/resources/lang/' . $language . '/Template.properties'), $matches, PREG_SET_ORDER);
+    check(count($matches) === 4, 'Expected four newsletter keys per language');
+    foreach ($matches as $match) {
+        check(!isset($translations[$match[1]]), 'Duplicate newsletter key');
+        $translations[$match[1]] = trim($match[2]);
+    }
     $html = $twig->render($componentName);
     check(strpos($html, 'href="https://wa.me/4917685450807"') !== false, 'Wrong WhatsApp chat link');
     check(strpos($html, 'mailto:b2b@outlet46.de') !== false, 'Wrong email');
@@ -113,10 +126,11 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
         $request = new ContactRequest();
         $request->quick = $page === 'quickview';
         $request->uri = $page === 'amazon' ? '/amazon/expressCheckoutReview' : '/';
+        if ($page === 'newsletter') { $request->uri = rtrim($newsletterPaths[$language], '/') . '?currency=EUR'; }
         $context = ['request' => $request, 'lang' => $language, 'buildHash' => 'local-review',
             'isShopBuilder' => $page === 'shopbuilder', 'assetName' => $page === 'checkout' ? 'ceres-checkout' : 'ceres-app',
-            'category' => ['id' => $page === 'category.item' ? 42 : null],
-            'webstoreConfig' => ['defaultLanguage' => 'de'], 'ceresConfig' => [],
+            'category' => ['id' => ['category.item' => 42, 'vue-category' => 5482][$page] ?? null],
+            'webstoreConfig' => ['defaultLanguage' => 'de'], 'ceresConfig' => ['global' => ['blockCookies' => true]],
             'context' => new ContactEmptyService(), 'services' => [
                 'template' => new ContactTemplateService('tpl.' . $page),
                 'localizationRepository' => new class($language) {
@@ -129,7 +143,13 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
             ]];
         $rendered = $twig->render('layout', $context);
         $expected = $request->quick ? 0 : 1;
+        $expectedNewsletter = in_array($page, ['home', 'category.item', 'item', 'vue-category', 'search', 'my-account'], true) ? 1 : 0;
         check(substr_count($rendered, 'id="o46-b2b-contact-widget"') === $expected, 'Wrong widget count: ' . $page);
+        check(substr_count($rendered, 'id="o46-b2b-newsletter"') === $expectedNewsletter, 'Wrong newsletter count: ' . $page);
+        check(substr_count($rendered, 'href="https://b2b.outlet46.de' . $newsletterPaths[$language] . '"') === $expectedNewsletter, 'Wrong newsletter URL: ' . $page);
+        preg_match_all('~/js/(main|cat|item|vue)-020726\.min\.js\?v=local-review-nl1"~', $rendered, $bundles);
+        check(count($bundles[1]) === $expected, 'Wrong newsletter bundle count: ' . $page);
+        if (isset($newsletterBundles[$page])) { check($bundles[1][0] === $newsletterBundles[$page], 'Wrong bundle: ' . $page); }
         foreach (['css/contact-widget.css', 'js/contact-widget.js'] as $resource) {
             check(substr_count($rendered, '/fixture-plugins/GuardiansBasicB2B/' . $resource . '?v=local-review') === $expected, 'Wrong dynamic asset inclusion: ' . $page);
         }
@@ -141,6 +161,12 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
             libxml_use_internal_errors($previous);
             $xpath = new DOMXPath($dom);
             check($xpath->query('//*[@id="vue-app"]//*[@id="o46-b2b-contact-widget"]')->length === 0, 'Widget must live outside Vue');
+            check($xpath->query('//*[@id="vue-app"]//*[@id="o46-b2b-newsletter"]')->length === 0, 'Newsletter must live outside Vue');
+            if (isset($newsletterBundles[$page])) {
+                $newsletter = $xpath->query('//*[@id="o46-b2b-newsletter"]')->item(0);
+                check($newsletter->hasAttribute('hidden') && $newsletter->getAttribute('data-consent-required') === '1', 'Newsletter must wait for scroll and consent response');
+                file_put_contents($output . '/newsletter-' . $language . '-' . $newsletterBundles[$page] . '.html', $dom->saveHTML($newsletter));
+            }
         }
         $cases[] = $language . '/' . $page;
     }

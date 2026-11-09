@@ -1834,53 +1834,85 @@ function topFunction() {
   document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
 }
 // Gutschein/NL Pop-UP
-$(document).ready(function(){
+$(document).ready(function () {
+    const popup = document.getElementById('o46-b2b-newsletter');
+    if (!popup || popup.dataset.initialized) return;
+    popup.dataset.initialized = '1';
 
-    const lngDate = 7;  // Tage für Cookie-Laufzeit
+    const cookieName = 'o46_b2b_newsletter_dismissed';
+    const scrollLimit = 2000;
+    const cookieLifetime = 7 * 24 * 60 * 60;
+    const controls = document.querySelectorAll('#page-header, #page-header2, .top-top-bar, .filter-container, .btnfilter-mobile');
+    const lowerControls = document.querySelectorAll('#o46-b2b-contact-widget, #totop');
+    let reachedScrollLimit = false;
+    let dismissed = false;
+    let frame = 0;
 
-    // Cookie-Funktionen (unverändert übernommen)
-    function setCookie(name, value, days) {
-        var expires = "";
-        if (days) {
-            var date = new Date();
-            date.setTime(date.getTime() + (days*24*60*60*1000));
-            expires = "; expires=" + date.toUTCString();
-        }
-        document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+    function consentReady() {
+        return typeof ConsentManager !== 'undefined'
+            ? ConsentManager.hasResponse()
+            : popup.dataset.consentRequired !== '1';
     }
 
-    function getCookie(name) {
-        var nameEQ = name + "=";
-        var ca = document.cookie.split(';');
-        for(var i=0;i < ca.length;i++) {
-            var c = ca[i];
-            while (c.charAt(0)==' ') c = c.substring(1,c.length);
-            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    function wasDismissed() {
+        try {
+            return document.cookie.split(';').some(cookie => cookie.trim() === cookieName + '=1');
+        } catch {
+            return false;
         }
-        return null;
     }
 
-    const popup = $('#pop-up');
+    function update() {
+        frame = 0;
+        if (dismissed || !reachedScrollLimit || !consentReady() || wasDismissed()) {
+            popup.hidden = true;
+            return;
+        }
 
-    // Popup zeigen, wenn noch kein Cookie gesetzt
-    if (getCookie('showModal') === null || lngDate === 0) {
-
-        let popupShown = false;
-
-        $(window).on('scroll', function() {
-            const scrollLimit = 2000;
-
-            if (!popupShown && window.scrollY >= scrollLimit) {
-                popup.fadeIn(300);
-                popupShown = true; // Popup nur einmal pro Besuch anzeigen
+        let top = 12;
+        for (const control of controls) {
+            const rect = control.getBoundingClientRect();
+            if (rect.width && rect.height && rect.right > 0 && rect.left < window.innerWidth
+                && rect.bottom > 0 && rect.top < window.innerHeight / 3) {
+                top = Math.max(top, Math.ceil(rect.bottom) + 12);
             }
-        });
+        }
+        let bottom = window.innerHeight - 12;
+        for (const control of lowerControls) {
+            if (control.getClientRects().length) {
+                const controlTop = control.getBoundingClientRect().top;
+                if (controlTop > 0) bottom = Math.min(bottom, controlTop - 12);
+            }
+        }
+        const availableHeight = Math.floor(bottom - top);
+        popup.style.setProperty('--o46-newsletter-top', top + 'px');
+        popup.style.setProperty('--o46-newsletter-height', availableHeight + 'px');
+        popup.hidden = availableHeight < 132;
     }
 
-    // Klick zum Schließen und Cookie setzen (kein Reload mehr!)
-    $('#pop-up-close').click(function(){
-        setCookie('showModal','false', lngDate);
-        popup.fadeOut(300);
+    function scheduleUpdate() {
+        if (reachedScrollLimit && !dismissed && !frame) frame = window.requestAnimationFrame(update);
+    }
+
+    window.addEventListener('scroll', function () {
+        reachedScrollLimit = reachedScrollLimit || window.scrollY >= scrollLimit;
+        scheduleUpdate();
+    }, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    window.addEventListener('pageshow', scheduleUpdate);
+    document.addEventListener('consent-change', scheduleUpdate);
+
+    popup.querySelector('.o46-b2b-newsletter-close').addEventListener('click', function () {
+        dismissed = true;
+        popup.hidden = true;
+        if (consentReady()) {
+            try {
+                // Host-only preference written only when the visitor dismisses the card.
+                document.cookie = cookieName + '=1; Max-Age=' + cookieLifetime + '; Path=/; SameSite=Lax; Secure';
+            } catch {
+                // The card stays closed in this document when the browser blocks cookies.
+            }
+        }
     });
 });
 

@@ -12958,3 +12958,133 @@ span.cookie-bar__header-title.h2 {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
           mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
 }
+
+/* B2B newsletter card */
+.o46-b2b-newsletter {
+    --o46-newsletter-edge: 28px;
+    position: fixed;
+    z-index: 90;
+    top: max(var(--o46-newsletter-top, 12px), calc(12px + env(safe-area-inset-top, 0px)));
+    right: calc(var(--o46-newsletter-edge) + env(safe-area-inset-right, 0px));
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 12px;
+    box-sizing: border-box;
+    width: 360px;
+    max-width: calc(100vw - 2 * var(--o46-newsletter-edge) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-height: var(--o46-newsletter-height);
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 16px 46px 16px 14px;
+    border: 1px solid #e3e7dc;
+    border-left: 4px solid #76ae00;
+    border-radius: 12px;
+    background: #fff;
+    color: #20251b;
+    box-shadow: 0 6px 24px rgb(25 35 12 / 14%);
+    text-align: left;
+    animation: o46-b2b-newsletter-in 300ms ease-out;
+}
+
+.o46-b2b-newsletter[hidden],
+html:is(.menu-open, .search-open, .filter-open, .basket-preview-open) .o46-b2b-newsletter,
+body.modal-open .o46-b2b-newsletter {
+    display: none;
+}
+
+body:has(#shop-mode-modal:not(.smm-hidden), .o46-b2b-contact-toggle[aria-expanded="true"], .top-menu > .eg-ddown.isOpen) .o46-b2b-newsletter {
+    display: none;
+}
+
+.o46-b2b-newsletter-icon {
+    margin-top: 1px;
+    color: #547d00;
+}
+
+.o46-b2b-newsletter h2 {
+    margin: 0 0 4px;
+    color: inherit;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.o46-b2b-newsletter p {
+    margin: 0 0 10px;
+    color: #56604c;
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+.o46-b2b-newsletter .o46-b2b-newsletter-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    background: #547d00;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.o46-b2b-newsletter .o46-b2b-newsletter-link:hover {
+    background: #466a00;
+    color: #fff;
+    text-decoration: none;
+}
+
+.o46-b2b-newsletter .o46-b2b-newsletter-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #56604c;
+    cursor: pointer;
+}
+
+.o46-b2b-newsletter :focus-visible {
+    outline: 2px solid #273d0d;
+    outline-offset: 2px;
+}
+
+.o46-b2b-newsletter .o46-b2b-newsletter-close:focus-visible {
+    outline-offset: -3px;
+}
+
+@keyframes o46-b2b-newsletter-in {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (min-width: 992px) {
+    body:has(.top-menu > .eg-ddown:hover) .o46-b2b-newsletter { display: none; }
+}
+
+@media (max-width: 991px) {
+    .o46-b2b-newsletter {
+        --o46-newsletter-edge: 12px;
+        width: 306px;
+        grid-template-columns: 18px minmax(0, 1fr);
+        gap: 8px;
+        padding: 10px 42px 10px 10px;
+    }
+
+    .o46-b2b-newsletter-icon { width: 18px; height: 18px; }
+    .o46-b2b-newsletter h2 { font-size: 16px; }
+    .o46-b2b-newsletter p { margin-bottom: 6px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .o46-b2b-newsletter { animation: none; }
+}

@@ -10,6 +10,31 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Newsletter-Hinweis für B2B (2026-11-09)
+
+Eine kompakte Karte erscheint nach dem Scrollen ab 2.000 px. Der Link und die
+Texte folgen der Shopsprache DE, EN, FR, IT oder ES. Auf allen fünf
+Newsletter-Anmeldeseiten sowie in Quickviews, im ShopBuilder, Warenkorb und
+Bestellablauf wird die Karte ausgelassen.
+
+- `PageDesign.twig` bindet `NewsletterPopup.twig` außerhalb von Vue ein. Die
+  vorhandenen Popup-Handler in `main`, `cat`, `item` und `vue` verwenden
+  die B2B-Karte. Styles stehen in `main.css` und der geladenen Min-Datei.
+  Die ausgelieferten Assets verwenden `buildHash` mit dem Zusatz `nl1`.
+- Die weiße Karte sitzt rechts unter dem sichtbaren Header und der Vorteilsleiste.
+  Sie ist auf dem Desktop 360 px und mobil höchstens 306 px breit. Bei geöffneten
+  Shop-Menüs, Filtern, Warenkorb oder Kontaktfenster wird sie ausgeblendet.
+  Auf niedrigen Viewports bleibt Platz für die vorhandenen Bedienelemente.
+- Bei aktivem Consent-Manager wartet die Karte auf eine Antwort. Wenn die
+  Cookie-Sperre konfiguriert und der Manager noch nicht verfügbar ist, bleibt
+  sie verborgen. Nur das Schließen über X setzt
+  `o46_b2b_newsletter_dismissed` für sieben Tage. Das Cookie ist hostgebunden
+  und verwendet `Path=/`, `Secure` und `SameSite=Lax`.
+- Lokal geprüft wurden je 60 Layoutfälle mit Twig 2 und 3, alle fünf
+  Linkziele sowie 35 Chromium-Fälle über die sieben angeforderten Breiten.
+  Cookie-Ablauf und Consent wurden mit lokalen Fixtures simuliert.
+  PlentyONE-/Ceres-Abnahme und Live-Anmeldungen sind `NOT_RUN`.
+
 ## Kontakt-Widget für B2B (2026-11-03)
 
 Lokal auf dem zuvor sauberen `develop` bei `0b31a98b198d5c48be4aaa6c9e56edfd3678ed98`
@@ -92,8 +117,8 @@ und keinen Storage-/Cookie-Zustand für dieses Widget.
 
 | Prüfung | Exaktes Ergebnis |
 | --- | --- |
-| Twig 2.16.1 / 3.30.0, PHP 8.4.23 | Je **169/169** Templates parsebar; **38/38** bestehende Verhaltenstests und **38/38** Vergleiche zur Twig-2-Baseline erfolgreich |
-| Widget-Einbindung, beide Twig-Versionen | Je **50/50** Layoutfälle: neun vollständige Seitentypen plus Quickview, jeweils DE/EN/FR/IT/ES; Widget/CSS/JS genau einmal bzw. im Quickview nullmal; außerhalb von Vue |
+| Twig 2.16.1 / 3.30.0, PHP 8.4.23 | Je **170/170** Templates parsebar, **38/38** bestehende Verhaltenstests und **38/38** Vergleiche zur Twig-2-Baseline erfolgreich |
+| Widget-Einbindung, beide Twig-Versionen | Je **60/60** Layoutfälle in DE/EN/FR/IT/ES. Widget, CSS und JS genau einmal pro vollständiger Seite, im Quickview nullmal. Widget außerhalb von Vue. |
 | Übersetzungen und Links | **45/45** Texte vorhanden, neun eindeutige Schlüssel je Sprache. WhatsApp-Direktchat und Mailadresse exakt. |
 | Chromium 149.0.7827.55, Node 22.14.0 | **55/55** Szenarien, **1332/1332** Assertions; **0** JavaScript-Seitenfehler, **0** externe HTTP-Anfragen |
 | Browserumfang | Isoliert, Standard-Theme, Kategorie-, Artikel- und Checkout-CSS einschließlich bestehendem Main-Stylesheet; DE bei 1440×900, 1024×768, 768×1024, 390×844, 320×568, 280×480 und 568×320; EN/FR/IT/ES je CSS-Variante bei 320×568 |
@@ -105,8 +130,8 @@ und keinen Storage-/Cookie-Zustand für dieses Widget.
 Die Layoutfälle rendern das tatsächliche B2B-Seitenlayout mit ausdrücklich lokalen
 Plenty-/Ceres-Service- und Template-Fixtures. Sie beweisen die Einbindung und ersetzen
 keinen vollständigen Shop-Render. Der vorhandene Twig-Regressionstest prüft weiterhin
-alle bisherigen 38 Fälle unverändert; nur die aktuelle Inventur ist um die neue
-Komponente erweitert. Der historische `--baseline`-Lauf liest die damaligen 168 Dateien
+alle bisherigen 38 Fälle. Die aktuelle Inventur enthält das Kontakt-Widget und
+den Newsletter-Hinweis. Der historische `--baseline`-Lauf liest die damaligen 168 Dateien
 aus Git und verlangt unverändert 168 erfolgreiche Ergebnisse. Engine-Deprecations
 werden separat im Bericht behalten (Twig 2: 24, Twig 3: zwei bestehende Makrohinweise).
 

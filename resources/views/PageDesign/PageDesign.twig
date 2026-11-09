@@ -40,6 +40,21 @@
 {% set wkbkasse = [5484] %}
 {% set currentTemplate = services.template.getCurrentTemplate() %}
 {% set currentRequestUri = request.getRequestUri() %}
+{% set newsletterPaths = {
+    'de': 'content/newsletter',
+    'en': 'en/content/newsletter',
+    'fr': 'fr/content/Bulletin',
+    'it': 'it/content/newsletter',
+    'es': 'es/content/newsletter'
+} %}
+{% set currentPath = currentRequestUri|split('?')|first|split('#')|first|trim('/')|lower %}
+{% set showNewsletter = lang in newsletterPaths|keys
+    and currentPath not in newsletterPaths|map(path => path|lower)
+    and not isShopBuilder
+    and not services.template.isCheckout()
+    and currentTemplate not in ['tpl.basket', 'tpl.confirmation']
+    and 'amazon' not in currentRequestUri
+    and 'expressCheckoutReview' not in currentRequestUri %}
 {% if currentTemplate in vuePages|keys or "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or isShopBuilder or category.id in contentVuePages %}
     {% set isVueView = true %}
 {% endif %}
@@ -384,24 +399,24 @@
 </div>    
             {% if "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or category.id in mainjs  %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-               <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js" defer></script>
+               <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1" defer></script>
             {% elseif category.id in vuejs %}
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/vue-020726.min.js" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/vue-020726.min.js?v={{ buildHash }}-nl1" defer></script>
             {% elseif currentTemplate in vuePages|keys %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1" defer></script>
             {% elseif category.id in nojs %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1" defer></script>
             {% elseif category.id or isSearch %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/cat-020726.min.js" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/cat-020726.min.js?v={{ buildHash }}-nl1" defer></script>
             {% elseif isItem %} 
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/item-020726.min.js" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/item-020726.min.js?v={{ buildHash }}-nl1" defer></script>
             {% else %} 
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1" defer></script>
             {% endif %}
             {{ LayoutContainer.show("Ceres::Script.AfterScriptsLoaded") }} 
             {% if isItem %}
@@ -420,6 +435,12 @@
             <div class="ccklayer"></div> 
              {% include "GuardiansBasicB2B::PageDesign.Components.ContactWidget" %}
              <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/contact-widget.js?v={{ buildHash }}" defer></script>
+            {% if showNewsletter %}
+                {% include "GuardiansBasicB2B::PageDesign.Components.NewsletterPopup" with {
+                    newsletterUrl: 'https://b2b.outlet46.de/' ~ newsletterPaths[lang] ~ '/',
+                    consentRequired: ceresConfig.global.blockCookies|default(false)
+                } %}
+            {% endif %}
 {% endif %}
     </body> 
 </html>
