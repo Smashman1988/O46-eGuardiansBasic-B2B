@@ -51,7 +51,7 @@ const intersects = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y <
                     check(await toggle.isVisible() && !await panel.isVisible(), `${name}: visible launcher, closed panel`);
                     check(await panel.locator('button').count() === 1 && await widget.locator('button').count() === 2, `${name}: only panel has a close button`);
                     check(await links.count() === 2, `${name}: exactly two contact methods`);
-                    check(await links.nth(0).getAttribute('href') === 'https://whatsapp.com/channel/0029VbDashBBPzjbqTzmQb3m', `${name}: exact channel`);
+                    check(await links.nth(0).getAttribute('href') === 'https://wa.me/4917685450807', `${name}: exact WhatsApp chat link`);
                     check(await links.nth(0).getAttribute('target') === '_blank' && await links.nth(0).getAttribute('rel') === 'noopener noreferrer', `${name}: safe new tab`);
                     check(await links.nth(1).getAttribute('href') === 'mailto:b2b@outlet46.de', `${name}: email`);
                     check(!/telegram/i.test(await widget.textContent()), `${name}: no Telegram`);

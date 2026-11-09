@@ -95,7 +95,7 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
     check($keySet === null || $keys === $keySet, 'Widget translation keys differ between languages');
     $keySet = $keys;
     $html = $twig->render($componentName);
-    check(strpos($html, 'https://whatsapp.com/channel/0029VbDashBBPzjbqTzmQb3m') !== false, 'Wrong WhatsApp channel');
+    check(strpos($html, 'href="https://wa.me/4917685450807"') !== false, 'Wrong WhatsApp chat link');
     check(strpos($html, 'mailto:b2b@outlet46.de') !== false, 'Wrong email');
     check(stripos($html, 'telegram') === false, 'Unexpected messenger');
     foreach ($modes as $mode) {

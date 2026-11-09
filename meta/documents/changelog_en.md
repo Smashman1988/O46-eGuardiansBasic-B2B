@@ -10,7 +10,7 @@
 
 - Subtle borders help the white contact label and green chat bubble stand out against the page.
 - Added a persistent B2B contact launcher with Outlet46 styling, a responsive contact panel, local CSS/vanilla JavaScript and inline SVGs. Only the panel can be closed; no persistent dismissal state or additional service.
-- Exactly two contact options: the Outlet46 WhatsApp channel in a new tab with `noopener noreferrer`, and `mailto:b2b@outlet46.de`. No personal WhatsApp conversation is promised.
+- The contact widget offers a direct WhatsApp chat with +49 176 85450807 in a new tab with `noopener noreferrer`, and `mailto:b2b@outlet46.de`.
 - Included once through the existing B2B page layout using dynamic `GuardiansBasicB2B` plugin paths, outside Vue and omitted from Quickviews. Existing configuration is preserved.
 - Added keyboard controls, focus handling, safe-area spacing, bounded panel height and nine dedicated translation keys in DE/EN/FR/IT/ES. Adjusted the existing back-to-top control's spacing on widget pages.
 - Local validation: 169/169 Twig templates and 50/50 layout cases per Twig 2/3 version, existing 38/38 regressions with baseline comparison, and 55 browser scenarios with 1332 assertions. Actual PlentyONE/storefront/device acceptance remains NOT_RUN; details and reproduction steps are in the README.

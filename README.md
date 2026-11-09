@@ -21,10 +21,9 @@ Beschriftungsfläche und einem runden Chat-Symbol in Outlet46-Grün. Er bleibt a
 vollständigen Shopseiten sichtbar. Der Button öffnet ein freundliches Kontaktfenster
 mit genau zwei vollständig anklickbaren Kontaktzeilen:
 
-1. **Outlet46 auf WhatsApp – Unser WhatsApp-Kanal:**
-   [WhatsApp-Kanal](https://whatsapp.com/channel/0029VbDashBBPzjbqTzmQb3m),
-   neuer Tab mit `rel="noopener noreferrer"`. Dies ist ein Kanal; individuelle
-   Beratung oder Antworten über WhatsApp werden nicht versprochen.
+1. **Outlet46 auf WhatsApp – Direktchat öffnen.** Der Link zum Chat mit
+   +49 176 85450807 verwendet einen neuen Tab mit `rel="noopener noreferrer"`.
+   [WhatsApp-Direktchat](https://wa.me/4917685450807)
 2. **Outlet46 B2B – Kontakt per E-Mail:** `mailto:b2b@outlet46.de`, dieselbe
    Adresse wie im vorhandenen B2B-Footer.
 
@@ -95,7 +94,7 @@ und keinen Storage-/Cookie-Zustand für dieses Widget.
 | --- | --- |
 | Twig 2.16.1 / 3.30.0, PHP 8.4.23 | Je **169/169** Templates parsebar; **38/38** bestehende Verhaltenstests und **38/38** Vergleiche zur Twig-2-Baseline erfolgreich |
 | Widget-Einbindung, beide Twig-Versionen | Je **50/50** Layoutfälle: neun vollständige Seitentypen plus Quickview, jeweils DE/EN/FR/IT/ES; Widget/CSS/JS genau einmal bzw. im Quickview nullmal; außerhalb von Vue |
-| Übersetzungen und Links | **45/45** neue Texte vorhanden, neun identische eindeutige Schlüssel je Sprache; WhatsApp-Kanal und Mailadresse exakt; kein Telegram |
+| Übersetzungen und Links | **45/45** Texte vorhanden, neun eindeutige Schlüssel je Sprache. WhatsApp-Direktchat und Mailadresse exakt. |
 | Chromium 149.0.7827.55, Node 22.14.0 | **55/55** Szenarien, **1332/1332** Assertions; **0** JavaScript-Seitenfehler, **0** externe HTTP-Anfragen |
 | Browserumfang | Isoliert, Standard-Theme, Kategorie-, Artikel- und Checkout-CSS einschließlich bestehendem Main-Stylesheet; DE bei 1440×900, 1024×768, 768×1024, 390×844, 320×568, 280×480 und 568×320; EN/FR/IT/ES je CSS-Variante bei 320×568 |
 | Bedienung / Integrität | Öffnen per Klick/Enter/Leertaste; X, Escape, Umschalten, Außenklick, Tab-Verlassen; Fokus, doppelte Initialisierung und erneuter Seitenaufruf erfolgreich; Shop-Außenkontrolle und Modals behalten Priorität; Storage-/Cookie-Zugriffe würden den Test abbrechen |
