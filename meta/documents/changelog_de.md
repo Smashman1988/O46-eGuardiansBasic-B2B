@@ -3,6 +3,7 @@
 ## Unveröffentlicht – Newsletter-Hinweis (2026-11-09)
 
 - Kompakte B2B-Newsletter-Karte mit fünf Sprachfassungen und Anmeldelinks ergänzt. Sie erscheint ab 2.000 px Scrolltiefe und bleibt auf den Newsletter-Seiten ausgeblendet.
+- Eine graugrüne Kontur hebt die Newsletter-Karte besser vom Seiteninhalt ab.
 - Die Karte wartet auf die Antwort des Consent-Managers. Schließen über X merkt die Auswahl sieben Tage in einem eigenen, hostgebundenen B2B-Cookie.
 
 ## Unveröffentlicht – Kategorienavigation (2026-11-09)

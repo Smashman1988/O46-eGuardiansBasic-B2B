@@ -3,6 +3,7 @@
 ## Unreleased – newsletter prompt (2026-11-09)
 
 - Added a compact B2B newsletter card with five localized messages and signup links. It appears after 2,000 px of scrolling and stays hidden on newsletter signup pages.
+- A grey-green border helps the newsletter card stand out against the page.
 - The card waits for a response from the consent manager. Dismissing it with the close button saves that choice for seven days in a dedicated, host-only B2B cookie.
 
 ## Unreleased – category navigation (2026-11-09)

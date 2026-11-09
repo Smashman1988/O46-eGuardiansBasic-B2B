@@ -20,7 +20,8 @@ Bestellablauf wird die Karte ausgelassen.
 - `PageDesign.twig` bindet `NewsletterPopup.twig` außerhalb von Vue ein. Die
   vorhandenen Popup-Handler in `main`, `cat`, `item` und `vue` verwenden
   die B2B-Karte. Styles stehen in `main.css` und der geladenen Min-Datei.
-  Die ausgelieferten Assets verwenden `buildHash` mit dem Zusatz `nl1`.
+  Die ausgelieferten Assets verwenden `buildHash` mit dem Zusatz `nl2` für CSS
+  und `nl1` für JavaScript.
 - Die weiße Karte sitzt rechts unter dem sichtbaren Header und der Vorteilsleiste.
   Sie ist auf dem Desktop 360 px und mobil höchstens 306 px breit. Bei geöffneten
   Shop-Menüs, Filtern, Warenkorb oder Kontaktfenster wird sie ausgeblendet.
