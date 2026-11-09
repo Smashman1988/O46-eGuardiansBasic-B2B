@@ -1,15 +1,22 @@
-{% set currentPage = request.get('page') %}
 {% extends getPartial('page-design') %}
+{% block PrepareSeoContent %}
+    {{ prepareSeoContent(seoPage, category.id) }}
+{% endblock %}
 {% block PartialHead %}
+    {% set contentSeoPage = seoPage is defined ? seoPage : createSeoPage(services.template.getCurrentTemplate()) %}
+    {% set pagination = contentSeoPage.pagination %}
+    {% set currentPage = pagination.currentPage %}
     {% set canonicalUrl = services.url.getCanonicalURL(null, true) %}
+    {% if pagination.valid %}
     {% if currentPage - 1 > 1 %}
         <link rel="prev" href="{{ canonicalUrl ~ queryString({'page': currentPage - 1}) }}" />
     {% elseif currentPage - 1 == 1 %}
         <link rel="prev" href="{{ canonicalUrl }}" />
     {% endif %}
 
-    {% if currentPage + 1 <= pageMax %}
+    {% if currentPage + 1 <= pagination.pageMax %}
         <link rel="next" href="{{ canonicalUrl ~ queryString({'page': currentPage + 1}) }}" />
+    {% endif %}
     {% endif %}
     {% if currentPage == 1 %}
     {% set counter = 0 %}
@@ -28,11 +35,7 @@
     
     {% endif %}
     {% if category is null %}
-        {% if '&' in queryString() %}
-            {% set robotsValue = 'NOINDEX' %}
-        {% else %}
-             {% set robotsValue = 'NOINDEX,FOLLOW' %}
-        {% endif %}
+        {% set robotsValue = 'NOINDEX,FOLLOW' %}
 
       {% embed getPartial('page-metadata') %}
             {% block title      trans("Ceres::Template.itemSearchResults") ~ " " ~ searchString %}
@@ -44,9 +47,12 @@
     {% endif %}
 {% endblock %}
 {% block PageBody %}
+    {% set contentSeoPage = seoPage is defined ? seoPage : createSeoPage(services.template.getCurrentTemplate()) %}
+    {% set currentPage = contentSeoPage.pagination.requestedPage | default(1) %}
     
     {% set categoryByRoute = services.category.get(category.id, lang) %}
-    {% set shopBuilderTemplate = shop_builder_category_template(category.id) %}
+    {# Other configured page-design partials may not expose PrepareSeoContent. #}
+    {% set shopBuilderTemplate = contentSeoPage.shopBuilderHtml is not null ? contentSeoPage.shopBuilderHtml : shop_builder_category_template(category.id) %}
     {% if shopBuilderTemplate | trim is not empty %}
                       {% if categoryByRoute.details[0].description2 is not empty and currentPage < 2 %}
                           <div class="container-max">

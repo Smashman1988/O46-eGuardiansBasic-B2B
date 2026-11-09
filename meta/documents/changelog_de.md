@@ -1,5 +1,14 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – SEO Phase 1 (2026-11-09)
+
+- Robots-Vorgaben einschließlich `NOINDEX`, `NOFOLLOW` und `forceNoIndex` bleiben auf Folgeseiten erhalten. Query-Regeln prüfen tatsächliche Parameternamen statt URL-Teilstrings.
+- Reguläre Kategorien und eindeutig zugeordnete eingebettete Hauptlisten verwenden belegte Seitengrenzen. Ungültige oder nicht belegbare Folgeseiten erhalten `NOINDEX` und einen Basis-Canonical; der HTTP-Status bleibt in Phase 1 unverändert.
+- Content-ShopBuilder wird einmal vor dem Head gerendert und sein HTML im Body wiederverwendet. Dieselbe gefilterte Artikelabfrage liefert Listen- und SEO-Daten ohne zusätzliche Zählabfrage. Quellkategorien überschreiben den Seitenkontext nicht mehr, auch bei einfachen Widgets.
+- Seitennummern und Seitengrößen stammen aus validierten Suchoptionen. Explizite Canonicals bleiben erhalten; Content ohne Liste und Produktseiten erhalten keine künstlichen `page`-Canonicals.
+- Lokal unter Twig 2/3 jeweils 190 SEO-Regressionen, 171 Template-Syntaxprüfungen, 38 bestehende Regressionen und 60 Layoutfälle bestanden. Individuelle ShopBuilder-Aufrufe einschließlich `(60, 24, [727])`, verschiedener Seitengrößen, gefilterter Gesamtzahlen und Content ohne Listenaufruf geprüft. Listen-HTML auf gültigen Seiten gegen die bisherige PHP-Methode verglichen; bestehender Widget-Browsertest mit 55 Szenarien und 1.332 Assertions bestanden. Echte PlentyONE-, Cache- und Shop-Abnahme bleibt NOT_RUN; Schritte und Grenzen stehen in der README.
+- Nur lokale Änderungen auf `develop`, ohne Versionsänderung, Commit, Push, Deployment, Sync oder Cache-Invalidierung.
+
 ## Unveröffentlicht – Newsletter-Hinweis (2026-11-09)
 
 - Kompakte B2B-Newsletter-Karte mit fünf Sprachfassungen und Anmeldelinks ergänzt. Sie erscheint ab 2.000 px Scrolltiefe und bleibt auf den Newsletter-Seiten ausgeblendet.

@@ -20,10 +20,10 @@ use Plenty\Modules\Item\Manufacturer\Contracts\ManufacturerExternalRepositoryCon
 use Plenty\Modules\Plugin\Libs\Contracts\LibraryCallContract;
 use Plenty\Plugin\Http\Request;
 use IO\Services\CategoryService;
-use Ceres\Contexts\CategoryContext;
 use Ceres\Helper\SearchOptions;
 use Plenty\Plugin\Templates\Twig;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\VariationAttributeMap;
+use GuardiansBasicB2B\Helper\SeoPage;
 
 class Base_Extension extends Twig_Extension
 {
@@ -34,6 +34,8 @@ class Base_Extension extends Twig_Extension
     private $factory;
     private $req;
     private $twig;
+    /** Active only inside prepareSeoContent(); restored even if rendering fails. */
+    private $seoPageCapture = null;
     /**
      * BlogTwigExtension constructor.
      * @param TwigFactory $factory
@@ -66,6 +68,8 @@ class Base_Extension extends Twig_Extension
             $this->factory->createSimpleFunction('restGetContent', [$this, 'restGetContent']),
             $this->factory->createSimpleFunction('getItemsFromCat', [$this, 'getItemsFromCat']),
             $this->factory->createSimpleFunction('getItemsFromCatSimple', [$this, 'getItemsFromCatSimple']),
+            $this->factory->createSimpleFunction('createSeoPage', [$this, 'createSeoPage']),
+            $this->factory->createSimpleFunction('prepareSeoContent', [$this, 'prepareSeoContent']),
             $this->factory->createSimpleFunction('sortSizes', [$this, 'sortSizes']),
             $this->factory->createSimpleFunction('getAttributesWithImages', [$this, 'getAttributesWithImages']),
         ];
@@ -305,15 +309,35 @@ class Base_Extension extends Twig_Extension
         return [(float)$priceMin, (float)$priceMax];
     }
 
+    public function createSeoPage($template, $pageMax = null, $currentPage = null, $total = null)
+    {
+        return new SeoPage($this->req->query(), $template, $pageMax, $currentPage, $total);
+    }
+
+    public function prepareSeoContent(SeoPage $page, $categoryId): string
+    {
+        if ($page->shopBuilderHtml !== null) {
+            return '';
+        }
+        $previousCapture = $this->seoPageCapture;
+        $this->seoPageCapture = $page;
+        try {
+            $page->shopBuilderHtml = $this->twig->render(
+                'GuardiansBasicB2B::Category.Content.PreparedShopBuilder',
+                ['seoCategoryId' => $categoryId]
+            );
+        } finally {
+            $this->seoPageCapture = $previousCapture;
+        }
+        return '';
+    }
+
     public function getItemsFromCat($categoryId, $maxItemsPerPage, $ownFacets, $priceFilter = [0,0])
     {
         $categoryService = pluginApp(CategoryService::class);
-        $categoryContext = pluginApp(CategoryContext::class);
         $activeCategory = $categoryService->get($categoryId);
-        $templateData = array(
-            'category' => $activeCategory
-        );
-        $categoryContext->init($templateData);
+        // The source category belongs to the list only. Never re-initialize the
+        // routed page's shared CategoryContext (metadata, assets, notifications).
 
         $filterFacets = $this->req->get( 'facets', '' );
         $facets = $ownFacets ?: [];
@@ -330,7 +354,7 @@ class Base_Extension extends Twig_Extension
         [$priceMin, $priceMax] = $this->resolvePriceRange($priceFilter);
 
         $itemListOptions = [
-            'page'          => $this->req->get('page', 1),
+            'page'          => SeoPage::positiveInteger($this->req->get('page', 1)) ?? 1,
             'itemsPerPage'  => $maxItemsPerPage,
             'sorting'       => $this->req->get( 'sorting', '' ),
             'facets'        => $facets,
@@ -340,6 +364,14 @@ class Base_Extension extends Twig_Extension
         ];
 
         $itemListOptions = SearchOptions::validateItemListOptions($itemListOptions, SearchOptions::SCOPE_CATEGORY);
+
+        $effectivePage = SeoPage::positiveInteger($itemListOptions['page']);
+        $effectiveSize = SeoPage::positiveInteger($itemListOptions['itemsPerPage']);
+        if ($effectivePage === null || $effectiveSize === null) {
+            throw new \UnexpectedValueException('Invalid effective category pagination after SearchOptions validation');
+        }
+        $itemListOptions['page'] = $effectivePage;
+        $itemListOptions['itemsPerPage'] = $effectiveSize;
 
         $searchParams = [
             'facets'   => Facets::getSearchFactory( $itemListOptions ),
@@ -351,18 +383,22 @@ class Base_Extension extends Twig_Extension
         $resultItems = $itemSearchService->getResults($searchParams);
         $total = $resultItems['itemList']['total'];
         $resultItems['itemList'] = $resultItems['itemList']['documents'];
-        $resultItems['currentPage'] = intval($this->req->get('page', 1));
+        $resultItems['currentPage'] = $effectivePage;
         $resultItems['itemCountTotal'] = $total;
-        $resultItems['itemCountPage'] = $maxItemsPerPage;
-        $resultItems['pageMax'] = ceil($total / $maxItemsPerPage);
-        $resultItems['pageLimit'] = ceil($total / $maxItemsPerPage);
+        $resultItems['itemCountPage'] = $effectiveSize;
+        $resultItems['pageMax'] = ceil($total / $effectiveSize);
+        $resultItems['pageLimit'] = $resultItems['pageMax'];
         $resultItems['categoryId'] = $categoryId;
         $resultItems['category'] = $activeCategory;
         $defaultSortingOptions = SearchOptions::get(SearchOptions::SCOPE_CATEGORY);
         $resultItems['searchOptions'] = $defaultSortingOptions;
         $resultItems['itemSorting'] = $this->req->get( 'sorting', '' );
-        $resultItems['query'] = ['items' => $maxItemsPerPage, 'sorting' => "variation.createdAt_desc"];
+        $resultItems['query'] = ['items' => $effectiveSize, 'sorting' => "variation.createdAt_desc"];
         $resultItems['selectedFacets'] = $ownFacets;
+
+        if ($this->seoPageCapture !== null) {
+            $this->seoPageCapture->addList($effectivePage, $resultItems['pageMax'], $total);
+        }
 
         return  $this->twig->render('GuardiansBasicB2B::Category.Item.CategoryItemContent', $resultItems);
     }
@@ -370,10 +406,9 @@ class Base_Extension extends Twig_Extension
     public function getItemsFromCatSimple($categoryId, $maxItemsPerPage, $ownFacets, $priceFilter = [0,0])
     {
         $categoryService = pluginApp(CategoryService::class);
-        $categoryContext = pluginApp(CategoryContext::class);
         $activeCategory = $categoryService->get($categoryId);
-        $templateData = ['category' => $activeCategory];
-        $categoryContext->init($templateData);
+        // Simple widgets may occur in the same early ShopBuilder render. Their
+        // source category must not overwrite the routed page's context either.
 
         // --- NEU: Preisspanne flexibel auflösen (URL > Param > 0/0)
         [$priceMin, $priceMax] = $this->resolvePriceRange($priceFilter);

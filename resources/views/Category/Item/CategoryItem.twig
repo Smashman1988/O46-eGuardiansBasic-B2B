@@ -17,8 +17,9 @@
 } %}
 
 {% block PartialHead %}
+    {% set categorySeoPage = seoPage is defined ? seoPage : createSeoPage(services.template.getCurrentTemplate(), pageMax is defined ? pageMax : null, currentPage is defined ? currentPage : null, itemCountTotal is defined ? itemCountTotal : null) %}
     {% set canonicalUrl = services.url.getCanonicalURL(null, true) %}
-    {% if category.id!=60 %}
+    {% if category.id!=60 and categorySeoPage.pagination.valid %}
     {% if currentPage - 1 > 1 %}
         <link rel="prev" href="{{ canonicalUrl ~ queryString({'page': currentPage - 1}) }}" />
     {% elseif currentPage - 1 == 1 %}
@@ -44,11 +45,7 @@
     {% endif %}
     {% endif %}
     {% if category is null %}
-        {% if '&' in queryString() %}
-            {% set robotsValue = 'NOINDEX,FOLLOW' %}
-        {% else %}
-             {% set robotsValue = 'NOINDEX,FOLLOW' %}
-        {% endif %}
+        {% set robotsValue = 'NOINDEX,FOLLOW' %}
 
       {% embed getPartial('page-metadata') %}
             {% block title      trans("Ceres::Template.itemSearchResults") ~ " " ~ searchString %}

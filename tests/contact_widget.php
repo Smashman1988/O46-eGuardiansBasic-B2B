@@ -8,6 +8,7 @@ set_error_handler(function ($level, $message) use (&$notices) {
     throw new ErrorException($message, 0, $level);
 });
 require $argv[1];
+require __DIR__ . '/../src/Helper/SeoPage.php';
 $root = dirname(__DIR__);
 $output = $argv[2];
 if (!is_dir($output) && !mkdir($output, 0777, true)) { throw new RuntimeException('Cannot create output directory'); }
@@ -67,6 +68,9 @@ foreach (['get_additional_styles', 'get_additional_scripts'] as $name) {
     twigFunction($twig, $name, function () { return []; });
 }
 twigFunction($twig, 'getPartial', function () { return 'fixture-partial'; });
+twigFunction($twig, 'createSeoPage', function ($template, $pageMax = null, $currentPage = null, $total = null) {
+    return new GuardiansBasicB2B\Helper\SeoPage([], $template, $pageMax, $currentPage, $total);
+});
 twigFunction($twig, 'config', function () { return ''; });
 twigFunction($twig, 'plugin_path', function ($plugin) { return '/fixture-plugins/' . $plugin; });
 $twig->addFilter(new Twig\TwigFilter('filterFields', [new ContactCallback(function ($value) { return $value; }), 'invoke']));

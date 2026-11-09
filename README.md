@@ -10,6 +10,240 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## SEO-Korrektur Phase 1 – lokale Vorbereitung (2026-11-09)
+
+**Lokal implementiert und geprüft, PlentyONE-Abnahme NOT_RUN.** Arbeitsstand auf
+`develop`, Ausgangscommit `15d06d2d336717c500e680c5e850c4e3f1b90b09`.
+Keine Versions-, Konfigurations-, Asset-, Tracking- oder B2C-Änderung; kein Commit,
+Push, Merge, Tag, Release, Deploy, Pluginset-Sync oder Cache-Invalidieren.
+
+Die Ursache lag in drei getrennten Stellen: `PageMetadata.twig` ersetzte bestehende
+Robots-Vorgaben auf Folgeseiten pauschal durch `INDEX,FOLLOW`; `Head.twig` übernahm
+`page` ohne belegte Artikelliste und setzte fehlendes `pageMax` auf 1;
+`getItemsFromCat()` berechnete Seitendaten aus Rohwerten statt aus den validierten
+Suchoptionen. Die Content-Liste wurde zudem erst nach dem Head abgefragt.
+
+### Renderreihenfolge und Kategorie-Kontext
+
+`PageDesign.twig` erzeugt ein neues `SeoPage`-Objekt für **diesen Seitenrender**.
+Nach der vorhandenen Widget-/Komponentenregistrierung, aber vor dem HTML-Head,
+ruft der neue Block `PrepareSeoContent` ausschließlich im Content-Template
+`prepareSeoContent()` auf. Der kleine Adapter `PreparedShopBuilder.twig` verwendet
+die vorhandene Funktion `shop_builder_category_template()` genau einmal. Ihr HTML
+wird unverändert im Objekt gehalten und im bisherigen `PageBody` ausgegeben;
+`script2`-Ersetzung, Kategorie-Beschreibungen und HTML-Struktur bleiben am alten Ort.
+Header, Footer und der übrige `PageBody` werden nicht vorgezogen.
+
+Während dieses einen Renderaufrufs meldet `getItemsFromCat()` die ohnehin
+ermittelten Werte `currentPage`, `pageMax` und `itemCountTotal` an das Objekt.
+`itemList.total` stammt weiterhin aus **derselben gefilterten Abfrage** wie die
+Artikel. Pro Liste bleibt es bei einem `getResults()`-Aufruf mit den vorhandenen
+Artikel-/Facetten-Factories, ohne zusätzliche Zählabfrage. Die zeitweise aktive
+Referenz auf das Objekt ist eine Instanzvariable der bestehenden Twig-Extension,
+wird in `finally` zurückgesetzt und speichert weder HTML noch Seitendaten global,
+statisch oder persistent. Ein zweiter Vorbereitungsaufruf verwendet das HTML erneut.
+
+Die Parameter stehen weiterhin individuell **im echten PlentyONE-ShopBuilder**,
+beispielsweise für `/herren/`:
+
+```twig
+{{ getItemsFromCat(60, 24, [727]) | raw }}
+```
+
+Das Theme enthält keine Zuordnung von Content-URLs zu Artikelkategorien, keine
+Analyse von Funktionsquelltext und keine feste Seitengröße 24. Erfasst werden
+ausschließlich die beim tatsächlichen Funktionsaufruf validierten Werte und
+das Resultat seiner eigenen, durch die vorgegebenen Facetten gefilterten Abfrage.
+Ohne diesen Aufruf entstehen keine entsprechenden Paginierungsdaten, auch wenn
+die normale Content-Seite einen ShopBuilder oder ausschließlich einfache Widgets hat.
+
+Die nicht benötigte Initialisierung des gemeinsamen `CategoryContext` mit der
+Artikel-Quellkategorie entfällt. Die Quellkategorie bleibt ausschließlich in den
+Parametern des Listen-Templates; die aufgerufene Content-Kategorie bleibt für
+Robots, Titel, Beschreibung, Canonical, Sprachlinks und Navigation maßgeblich.
+**Einzige notwendige Änderung an `getItemsFromCatSimple()`:** Auch dort entfällt
+diese Kontextinitialisierung, weil einfache Widgets im vorgezogenen ShopBuilder
+vorkommen können. Deren Abfrage, Filter, Seitenauswahl und HTML bleiben gleich.
+
+Andere konfigurierte Seitenlayouts ohne den neuen Vorbereitungsblock verlieren
+keine Inhalte: `CategoryContent.twig` rendert den ShopBuilder dann einmal am
+bisherigen Ort. Ohne frühe Listendaten bleibt die SEO-Behandlung vorsichtig.
+Für die vollständige Abnahme deshalb die bestehenden Overrides `page_design`,
+`head`, `category_content` und für reguläre Kategorien `category_item` prüfen.
+Keine Konfigurationswerte wurden automatisch gesetzt; `all` ist keine Voraussetzung.
+
+### Robots, Seitengrenzen und Canonicals
+
+- `SeoPage.php` bündelt nur die gemeinsame SEO-Auswertung. Fehlendes `page` wird
+  als Seite 1 behandelt. Leere, negative, nullwertige, nicht ganzzahlige oder
+  nichtnumerische Eingaben sowie Array-/Überlaufwerte bleiben als ungültige
+  Rohparameter erkennbar. Eingebettete Listen verwenden eine sichere Seite 1 und
+  anschließend die effektiven Werte aus `SearchOptions::validateItemListOptions()`.
+- Listendarstellung und SEO rechnen mit derselben effektiven Seitengröße.
+  Ungültige Größen verwenden den vorhandenen Ceres-Default. Liefert auch der
+  Validator keine positive ganzzahlige Größe, wird vor der Abfrage ein klarer
+  Fehler ausgelöst; keine Division durch null und kein erfundener Ersatzwert.
+- Eine bekannte Maximalzahl 1, ein bekanntes leeres Ergebnis 0 und eine unbekannte
+  Maximalzahl `null` bleiben verschieden. Reguläre Kategorien verwenden ihre
+  vorhandenen Ceres-Seitendaten. Genau ein `getItemsFromCat()`-Ergebnis im
+  Content-ShopBuilder gilt als eindeutig zuordenbare paginierte Hauptliste.
+  Bei mehreren solchen Listen wird keine willkürlich ausgewählt; reine einfache
+  Widgets zählen nicht als paginierte Hauptliste.
+- Pro Metadatenpfad entsteht ein endgültiges Robots-Tag. Blockvorgaben,
+  Kategorie-Vorgaben, `forceNoIndex`, `NONE`, `ALL` und bestehendes `NOFOLLOW`
+  werden berücksichtigt. Pagination und Parameterregeln können nur einschränken.
+  Das separate Startseiten-Tag verwendet dieselbe Auswertung, damit ein
+  erzwungenes `NOINDEX` dort ebenfalls kein konfiguriertes `NOFOLLOW` verliert.
+- Harte Parameter werden anhand tatsächlicher Query-Schlüssel erkannt:
+  `query`, `currency`, `quickViewItem`, `facets`, `sorting`, einschließlich
+  vorhandener Groß-/Kleinschreibungsvarianten und leerer Werte. `notsorting`,
+  Tracking-Schlüssel und Text wie `sorting=x` in einem anderen Parameterwert
+  lösen diese Sperre nicht aus. Der zuvor ungenutzte Soft-Parameter-Pool entfällt.
+- Bestätigt gültige Listenseiten ab Seite 2 erhalten `?page=N` im Canonical
+  und in passenden Sprachlinks. Seite 1 behält die Basis-URL. Ungültige,
+  leere, mehrdeutige oder nicht belegbare Folgeseiten erhalten `NOINDEX`
+  unter Erhalt strengerer Direktiven und einen Basis-Canonical. Das gilt auch
+  für Content ohne Liste und Produktseiten mit künstlichem `page`-Parameter;
+  eine unbekannte Grenze wird dabei nicht als bestätigte Überschreitung behandelt.
+  Titel-/Beschreibungszusätze und Head-`prev`/`next` setzen belegte gültige Seiten voraus.
+- `getCanonicalURL()`, dessen `ignoreCanonical`-Argument sowie
+  `getLanguageURLs()` bleiben die URL-Quelle. Explizite `canonicalLink`-Werte
+  und `forcedCanonicalUrl` werden einschließlich ihrer Querys respektiert;
+  fehlende URLs erzeugen kein leeres Canonical-Tag. Das vorhandene
+  `getCanonicalQueryString()` wurde geprüft: Es liefert grundsätzlich alle
+  bereinigten Request-Parameter, also auch unerwünschte Filter-/Sortierparameter.
+  Deshalb wird es hier nicht pauschal an die URL angehängt. Die bestehende
+  Beschränkung auf den belegten `page`-Parameter bleibt erhalten.
+- Der lokale Renderlauf deckte außerdem ungeschützte Aufrufe nicht definierter
+  Metadatenblöcke auf: `url` wird nun vor Zugriff geprüft, der ungenutzte
+  `type`-Aufruf entfällt. Die bestehenden Titel-/Beschreibungsblöcke bleiben erhalten.
+
+**HTTP-Status:** Phase 1 verändert den Response-Status nicht. IOs
+`CheckNotFound::after()` ersetzt bei Status 404 gegebenenfalls den Inhalt durch
+einen weiteren Kategorien-/404-Render. Die benötigten Content-Seitendaten entstehen
+hier erst beim Twig-Render. Ein später Statuswechsel könnte somit zusätzliches
+Rendering samt Abfragen und fremden Widgets auslösen. Ohne Änderung der
+Controller-/Middleware-Grenze und echte Laufzeitabnahme wäre dies riskant.
+Die beauftragte sichere Alternative ist `NOINDEX` plus Basis-Canonical; eine
+ungültige Folgeseite kann weiterhin HTTP 200 liefern. Es wurde keine künstliche
+404-Seite, kein globales 404-Flag und kein zweiter Controller-Durchlauf ergänzt.
+
+Geprüfte Primärquellen: Ceres
+[CategoryContext](https://github.com/plentymarkets/plugin-ceres/blob/stable/src/Contexts/CategoryContext.php)
+(`1bb8dd3ea3c2e91c669aacacaeef795791530ae5`),
+[SearchOptions](https://github.com/plentymarkets/plugin-ceres/blob/stable/src/Helper/SearchOptions.php)
+(`e79651afd303b3ed8291a13b7fcd0c43cfc28f04`), IO
+[UrlService](https://github.com/plentymarkets/plugin-io/blob/stable/src/Services/UrlService.php)
+(`069aa1e9dbf875174362bae09d26e807227179cb`) und
+[CheckNotFound](https://github.com/plentymarkets/plugin-io/blob/stable/src/Middlewares/CheckNotFound.php)
+(`9d1a71b11a967ffd265d98540a0b8228e4bd6f0e`). Die SHAs bezeichnen die gelesenen
+Datei-Blobs; die tatsächlich installierten Plugin-Versionen sind nicht verifiziert.
+
+### Lokale Tests und Grenzen
+
+PHP **8.4.23**, Twig **2.16.1** und **3.30.0**, jeweils ohne PlentyONE-Services:
+
+| Prüfung | Ergebnis je Twig-Version |
+| --- | --- |
+| `tests/seo_pagination.php` | **190/190 PASS**, 0 Fehler |
+| Gesamtes Twig-Inventar mit `tests/twig_regression.php` | **171/171 parsebar** |
+| Bestehende Twig-Regressionen samt historischem Baseline-Vergleich | **38/38 PASS** |
+| Kontakt-/Newsletter-Layouttests `tests/contact_widget.php` | **60/60 PASS**, fünf Sprachen |
+
+Zusätzlich: **12/12 PHP-Dateien** unter `src/` und `tests/` mit `php -l` gültig;
+`git diff --check` bestanden. Der bestehende Kontakt-Widget-Browsertest bestand
+mit dem installierten Chrome: **55/55 Szenarien, 1.332 Assertions**, keine
+JavaScript-Fehler und keine externen Requests. Sein erster Start wurde wegen
+einer fehlenden Playwright-Standard-Browserdatei abgebrochen; die Wiederholung
+mit explizitem Chrome-Pfad bestand. Keine Test-Timeouts. Dieser Browsertest
+prüft lokale Widget-Vorschauen, keinen vollständigen ShopBuilder-Shop.
+
+Der SEO-Lauf prüft reguläre Kategorien mit 69, 1, 0 und unbekannter Seitenzahl;
+Content mit genau einer, mehreren und keiner Liste; gültige/letzte/ungültige Seiten;
+leere/nichtnumerische/negative/Array-Seitenparameter; ungültige Größen und
+ungültigen Default; Facetten, Preisbereich und Sortierung; Robots-/Blockvorgaben,
+Startseite, Produkt-Metadatenpfad, Suche, Quickview und 404; explizite/fehlende
+Canonicals, Sprachlinks und wiederholte Seiten-/Filter-/Sprachvarianten.
+Kategorie-Service und gemeinsamer Kategorie-Kontext werden vor/nach dem
+vorgezogenen Render verglichen. Auch Fehlerfälle räumen den Capture auf.
+
+Für Seite 1, 2 und 69 wird die **tatsächliche PHP-Methode aus Ausgangscommit
+`15d06d2`** ausgeführt und mit der neuen verglichen: Listen-HTML byteidentisch,
+Artikelreihenfolge und Abfrageparameter identisch, jeweils ein `getResults()`.
+Auch der einfache Widget-Aufruf bleibt im HTML-/Abfragevergleich identisch.
+Weitere direkte ShopBuilder-Aufrufe prüfen das Beispiel `(60, 24, [727])` sowie
+unterschiedliche Quellkategorien, Facetten und Seitengrößen **7, 12, 24 und 48**.
+Die gefilterten Fixture-Gesamtzahlen unterscheiden sich von der ungefilterten
+Quellzahl; gültige und ungültige Seiten müssen sich nach genau diesem Resultat
+richten. Für Content ganz ohne PHP-Listenaufruf und für ausschließlich einfache
+Widgets wird ausdrücklich `hasList=false` und `pageMax=null` geprüft.
+Das reale `CategoryItemContent`, Filter- und Pagination-Template werden gerendert;
+Artikelkacheln, Suchergebnisse und externe Shop-Dienste sind lokale Fixtures.
+Dies ist kein Beleg für reale Plenty-Daten, Preisberechnung oder vollständige
+Shop-/Browserfunktion. PHP-8.4-/Twig-Deprecations sind separat in den Reports erfasst.
+
+Wiederholung mit vorhandenen lokalen Werkzeugen (Berichte nur unter `.cache/`):
+
+```powershell
+$seoPhp = '.cache/php-runtime/php-8.4.23/php.exe'
+foreach ($seoEngine in 2, 3) {
+    $seoAutoload = ".cache/contact-widget/autoload$seoEngine.php"
+    & $seoPhp -d extension_dir=.cache/php-runtime/php-8.4.23/ext -d extension=mbstring tests/seo_pagination.php $seoAutoload ".cache/seo-phase1-twig$seoEngine.json"
+    & $seoPhp -d extension_dir=.cache/php-runtime/php-8.4.23/ext -d extension=mbstring tests/twig_regression.php $seoAutoload ".cache/seo-phase1-regression$seoEngine.json" --compare=.cache/contact-widget/baseline-twig2.json
+    & $seoPhp -d extension_dir=.cache/php-runtime/php-8.4.23/ext -d extension=mbstring tests/contact_widget.php $seoAutoload ".cache/seo-phase1-contact$seoEngine"
+}
+```
+
+Die Autoloader/Parser sind lokale Testwerkzeuge, keine Plugin-Abhängigkeiten.
+Der neue Test legt seine temporäre Baseline neben dem Report ab und entfernt sie
+nach dem Laden. Es wird kein Cache für SEO-Daten oder HTML hinzugefügt.
+
+### Manuelle B2B-Test-Pluginset-Abnahme – vollständig NOT_RUN
+
+1. Lokalen Diff prüfen und den freigegebenen Stand manuell in ein isoliertes
+   **B2B-Test-Pluginset** übertragen. Bestehende Konfigurationen/Zuordnungen vorher
+   sichern, Overrides gezielt vergleichen und dort manuell bauen/bereitstellen.
+   Keine B2C-Zuordnung, kein gemeinsamer Betrieb beider Themes im selben Pluginset.
+   Kein Produktiv-Deploy, kein Sync und keine Cache-Aktion wurde hier ausgeführt.
+2. Tatsächliche PHP-/Twig-/Ceres-/IO-Versionen, Plugin-Autoloading des neuen
+   Helpers, frühe ShopBuilder-Ausführung und aktive Partial-Zuordnungen prüfen.
+   Mit Request-Profiling pro paginierter Liste **genau einen** bisherigen
+   `getResults()`-Aufruf nachweisen, ohne zusätzliche Zählabfrage. Komponenten,
+   zusätzliche Styles/Scripts und Widget-Registrierung im gebauten Shop prüfen.
+3. `/damen/` und `/herren/` jeweils ohne `page`, mit `page=1`, `2`, letzter realer
+   Seite und `999` prüfen. Eine reguläre mehrseitige Kategorie, eine Kategorie
+   mit genau einer Seite, eine leere Kategorie, eine Content-Seite ohne Liste
+   und eine explizite `NOINDEX,NOFOLLOW`-Kategorie in dieselbe Matrix aufnehmen.
+   Tatsächliche Seitengrenzen aus **gefilterten** Ergebnissen verwenden.
+4. Zusätzlich `page=0`, `-1`, `abc`, leer und eine ungültige Seitengröße prüfen;
+   Suche, Facetten, Preise, Sortierung, Währung, Quickview, Produkt, Startseite
+   und echte 404 testen. Pro gerendertem Pfad genau ein Robots-Tag, keine
+   Lockerung von `NOINDEX`/`NOFOLLOW`, kein leeres oder künstlich paginiertes
+   Canonical und die oben beschriebene HTTP-200-Fallbackbehandlung kontrollieren.
+5. Auf `/damen/` und `/herren/` Kategorieidentität, Meta-Titel/-Beschreibung,
+   Robots, Canonical und Hreflang vor/nach dem ShopBuilder vergleichen; die
+   Quellkategorie darf nur die Liste bestimmen. Gültige Listen mit dem vorherigen
+   Stand auf Artikel, Reihenfolge, Struktur, Filter und Sortierung vergleichen.
+6. DE/EN/FR/IT/ES und kalte/warme Cache-Aufrufe abwechselnd für Seite 1/2/999,
+   gefilterte/ungefilterte Varianten und beide Content-Kategorien prüfen.
+   Falls ShopBuilder bereits gerendertes HTML liefert und dadurch kein
+   `getItemsFromCat()`-Aufruf erfasst wird, greift bewusst der sichere
+   Basis-Canonical-/NOINDEX-Fallback. Die vollständige indexierbare Pagination
+   ist in diesem Cache-Pfad **noch nicht abgenommen**; nicht durch erneute
+   Abfragen oder ungeprüfte Cache-Änderungen umgehen.
+7. Widgets, Magic-Menü/Kategorienavigation, Header/Footer, Kontakt/Newsletter,
+   Login, Warenkorb, Netto-/Brutto-/Währungs- und Preisverhalten sowie den
+   Bestellablauf im echten Test-Shop prüfen. Diese Laufzeittests bleiben offen.
+
+**Geänderte Dateien dieser Phase:** `src/Extensions/Base_Extension.php`,
+`src/Helper/SeoPage.php`, `Category/Content/CategoryContent.twig`,
+`Category/Content/PreparedShopBuilder.twig`, `Category/Item/CategoryItem.twig`,
+`Homepage/Homepage.twig`, `PageDesign/PageDesign.twig`,
+`PageDesign/Partials/Head.twig`, `PageDesign/Partials/PageMetadata.twig`
+(Twig-Pfade relativ zu `resources/views/`), `tests/seo_pagination.php`,
+`tests/twig_regression.php`, `tests/contact_widget.php`, diese README und beide
+bestehenden Changelogs. Produktversion unverändert **1.0.7**.
+
 ## Newsletter-Hinweis für B2B (2026-11-09)
 
 Eine kompakte Karte erscheint nach dem Scrollen ab 2.000 px. Der Link und die

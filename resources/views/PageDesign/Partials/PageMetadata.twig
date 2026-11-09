@@ -4,16 +4,14 @@
 {% endif %}
 
 {# Grundwerte initialisieren #}
-{% set robots = '' %}
 {% set description = '' %}
 {% set keywords = '' %}
 {% set image = '' %}
 {% set title = '' %}
 
 {# Sprachabhängige Seitennummerierung #}
-{% set currentPage = request.get('page') | default(1) %}
-{% set pageMax = pageMax | default(1) %}
-{% set isEmptyPage = pageMax > 1 and currentPage > pageMax %}
+{% set metadataSeoPage = seoPage is defined ? seoPage : createSeoPage(services.template.getCurrentTemplate(), pageMax is defined ? pageMax : null, currentPage is defined ? currentPage : null, itemCountTotal is defined ? itemCountTotal : null) %}
+{% set currentPage = metadataSeoPage.pagination.currentPage %}
 {% set lang = locale | split('_') | first %}
 {% set pageText = {
     'de': 'Seite',
@@ -23,28 +21,9 @@
     'es': 'Página'
 }[lang] | default('Page') %}
 
-{# ROBOTS setzen #}
-{% if block('robots') is defined %}
-    {% set robotsRaw = block('robots') | trim | upper %}
-    {% if robotsRaw == 'ALL' %}
-        {% set robots = 'INDEX,FOLLOW' %}
-    {% else %}
-        {% set robots = block('robots') | trim %}
-    {% endif %}
-{% elseif details is not null %}
-    {% set metaRaw = details.metaRobots | trim | upper %}
-    {% if metaRaw == 'ALL' %}
-        {% set robots = 'INDEX,FOLLOW' %}
-    {% else %}
-        {% set robots = details.metaRobots | replace({'_': ', '}) %}
-    {% endif %}
-{% elseif '&' in queryString() %}
-    {% set robots = 'NOINDEX,FOLLOW' %}
-{% elseif '?' in queryString() %}
-    {% set robots = 'INDEX,FOLLOW' %}
-{% else %}
-    {% set robots = 'INDEX,FOLLOW' %}
-{% endif %}
+{# One final output. Pagination and query rules can only add restrictions. #}
+{% set blockRobots = block('robots') is defined ? block('robots') : '' %}
+<meta name="robots" content="{{ metadataSeoPage.robots(blockRobots, details is not null ? details.metaRobots : '', forceNoIndex is defined and forceNoIndex) }}">
 
 {# Beschreibung und Keywords #}
 {% if block('description') is defined %}
@@ -76,72 +55,13 @@
     {% set title = details.metaTitle | default(details.name) %}
 {% endif %}
 {% set title = title | trim %}
-{% set type  = block('type') | default('article') %}
-{% set url   = block('url') | default(services.url.getCanonicalURL()) | default(webstoreConfig.domainSsl) %}
+{% set metadataUrl = block('url') is defined ? block('url') : '' %}
+{% set url = metadataUrl | default(services.url.getCanonicalURL()) | default(webstoreConfig.domainSsl) %}
 
 {# Bildpfad korrigieren #}
 {% if not (image starts with 'https://' or image starts with 'layout/' or image starts with '/documents/') %}
     {% set image = plugin_path('Ceres') ~ '/' ~ image %}
 {% endif %}
-
-{# === Parameter-Pools === #}
-{% set hardNoindexParams = ['query=', 'currency=', 'quickviewitem=', 'facets=', 'sorting='] %}
-{% set softNoindexParams = [
-    'referrerid=', 'gclid=', 'utm_nooverride=', 'glid=',
-    'browsestartlimit=', 'multishop_id=', 'aoff=',
-    'utm_source=', 'utm_medium=', 'utm_campaign=', 'utm_content=', 'utm_term=', 'utm_id=',
-    'gclsrc=', 'fbclid=', 'at_gd=', 'idealoiD=', 'vmtrack_id=', 'vmst_id=',
-    'inf=', 'mdrv=', 'gad=', 'partner=', 'campaign=', 'srsltd=',
-    'itemsorting=', 'setcurrentcategoryview=', 'wgu=', 'em_src=', 'gad_source=',
-    'wgexpiry=', 'iclid=', 'qscroll=', 'epi=', '_gl=', 'plentyid=', 'bid=', 'adcref=', 'wbraid=', 'gbraid=', 'uselayout='
-] %}
-
-{% set isHardNoindex = false %}
-{% set queryLower = queryString() | lower %}
-{% set urlLower = url | lower %}
-
-{# Prüfe auf harte Ausschlüsse #}
-{% for param in hardNoindexParams %}
-    {% if param in queryLower or param in urlLower %}
-        {% set isHardNoindex = true %}
-    {% endif %}
-{% endfor %}
-
-{# === neue Bedingung: keine Artikel mehr auf der Seite === #}
-{% set isEmptyPage = pageMax > 1 and currentPage > pageMax %}
-
-
-
-{# ---------------- META ROBOTS FINAL ---------------- #}
-{% if isHardNoindex or isEmptyPage %}
-    <meta name="robots" content="NOINDEX,FOLLOW">
-{% else %}
-    {# page > 1 = paginierte Seite → bleibt indexierbar #}
-    {% if category is not null and currentPage is defined and (currentPage > 1 or '-' in currentPage) %}
-        <meta name="robots" content="INDEX,FOLLOW">
-    {% elseif forceNoIndex is defined and forceNoIndex %}
-        <meta name="robots" content="NOINDEX">
-    {% elseif block('robots') is defined %}
-        {% set robotsRaw = block('robots') | trim | upper %}
-        {% if robotsRaw == 'ALL' %}
-            <meta name="robots" content="INDEX,FOLLOW">
-        {% else %}
-            <meta name="robots" content="{{ robotsRaw }}">
-        {% endif %}
-    {% elseif details is not null %}
-        {% set metaRaw = details.metaRobots | trim | upper %}
-        {% if metaRaw == 'ALL' %}
-            <meta name="robots" content="INDEX,FOLLOW">
-        {% else %}
-            <meta name="robots" content="{{ details.metaRobots | replace({'_': ', '}) }}">
-        {% endif %}
-    {% else %}
-        <meta name="robots" content="INDEX,FOLLOW">
-    {% endif %}
-{% endif %}
-
-
-
 
 {# Weitere Meta-Tags #}
 {% if description | trim is not empty %}

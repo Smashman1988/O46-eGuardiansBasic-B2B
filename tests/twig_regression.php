@@ -59,7 +59,7 @@ $functions = ['component','config','csrf_token','getAttributesWithImages','getBa
     'getFacetsFromCat','getFeedbackItemList','getImageAttributeList','getListFeedbackAverages',
     'getPartial','get_additional_scripts','get_additional_styles','get_consent_scripts',
     'get_filtered_tags','get_json_data','get_shop_builder_scripts','plugin_path','queryString',
-    'shop_builder_category_template','ssr_entry','trans'];
+    'shop_builder_category_template','ssr_entry','trans','createSeoPage','prepareSeoContent'];
 $filters = ['addressOptionType','filterFields','filterTabs','formatDateTime','formatMonetary',
     'getObjectValue','int','itemName','itemURL','orderByKey','specialOffer','trimNewlines'];
 $syntaxOnly = function () { throw new RuntimeException('Syntax-only Plenty placeholder was executed'); };
@@ -78,7 +78,7 @@ if ($baseline) {
         if ($file->getExtension() === 'twig') { $files[] = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1)); }
     }
 }
-sort($files); ensure(count($files) === ($baseline ? 168 : 170), 'Unexpected Twig inventory');
+sort($files); ensure(count($files) === ($baseline ? 168 : 171), 'Unexpected Twig inventory');
 foreach ($files as $file) {
     try { $syntax->parse($syntax->tokenize(new Twig\Source(source($file), $file))); $report['syntax'][$file] = 'PASS'; }
     catch (Throwable $e) { $report['syntax'][$file] = $e->getMessage(); }

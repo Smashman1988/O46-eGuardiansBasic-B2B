@@ -9,7 +9,8 @@
 
 {% block PartialHead %}
     <meta name="description" content="Das Mode Online Outlet bietet Fashion, Mode, Marken-Schuhe, Taschen, Kindermode & Beauty günstig für Damen, Herren & Kinder in einer großen Auswahl an.">
-    <meta name="robots" content="{% if forceNoIndex %}NOINDEX{% else %}{{ config("Ceres.meta.robots_home") }}{% endif %}">
+    {% set homepageSeoPage = seoPage is defined ? seoPage : createSeoPage(services.template.getCurrentTemplate()) %}
+    <meta name="robots" content="{{ homepageSeoPage.robots('', config('Ceres.meta.robots_home'), forceNoIndex is defined and forceNoIndex) }}">
     <meta name="keywords" content="Schuhe Outlet,Marken Outlet,Sneaker Outlet,Nike Schuhe,Jeans Outlet,Markenschuhe Outlet,Online Shopping,Outlet,Fashion Günstig,Online Outlet,Lagerverkauf Online,Günstige Mode,Günstige Schuhe,Outlet46,Online Deals,Mode Sparen,Schuhe sparen,Sonnenbrille sparen,Markenbekleidung,Marken Kosmetik,Parfum Outlet,Parfum Sparen,Möbel Outlet,Teppich Outlet,Unterwäsche günstig">
     <meta property="og:title" content="{{ companyName }}"/>
     <meta property="og:type" content="article"/>
