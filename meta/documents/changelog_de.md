@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – PlentyONE-Validierung des SEO-Codes (2026-11-09)
+
+- Die vier gemeldeten PHP-Validierungsstellen korrigiert: `SeoPage` über `pluginApp()` statt direktem `new`, `is_finite()` durch sichere Bereichs-/Ganzzahlprüfung ersetzt und beide dynamischen `$parse()`-Aufrufe in eine benannte private Methode überführt.
+- Auch die Exception bei ungültigen effektiven Seitendaten wird über `pluginApp()` erzeugt. Validierungen, Exception-Typ/-Text, Kategorie-Kontext, einzelne Artikelabfrage und SEO-Verhalten bleiben erhalten.
+- Neue PHP-Funktionen gegen die offizielle Erlaubnisliste geprüft und gezielten Source-Regressionscheck ergänzt. Twig 2/3: jeweils 250/250 Fälle einschließlich 190/190 identischer Vorher-Ergebnisse, 171/171 Syntaxprüfungen, 38/38 bestehende Regressionen und 60/60 Layoutfälle bestanden. Browser: 55 Szenarien/1.332 Assertions bestanden; PHP-Lint 12/12 und Diff-Check bestanden.
+- Der echte PlentyONE-Validator/Build wurde nach dem Fix nicht ausgeführt. Lokale Tests ersetzen diese Prüfung nicht. Änderungen nur lokal auf `develop`, ohne Versionsänderung, Commit, Push, Merge, Deployment oder Sync; B2C unverändert. Details und Abnahmegrenzen in der README.
+
 ## Unveröffentlicht – SEO Phase 1 (2026-11-09)
 
 - Robots-Vorgaben einschließlich `NOINDEX`, `NOFOLLOW` und `forceNoIndex` bleiben auf Folgeseiten erhalten. Query-Regeln prüfen tatsächliche Parameternamen statt URL-Teilstrings.

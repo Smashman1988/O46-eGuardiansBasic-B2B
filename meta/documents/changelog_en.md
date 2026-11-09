@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – PlentyONE validation of SEO code (2026-11-09)
+
+- Corrected all four reported PHP validation locations: create `SeoPage` via `pluginApp()` instead of direct `new`, replace `is_finite()` with bounded integer validation, and replace both dynamic `$parse()` calls with a named private method.
+- Create the invalid-pagination exception via `pluginApp()` too. Preserve validation, exception type/message, routed category context, the single item query and SEO behavior.
+- Checked introduced native functions against the official allowlist and added a targeted source regression guard. Each of Twig 2/3 passed 250/250 cases including 190/190 identical before-fix results, 171/171 syntax checks, 38/38 existing regressions and 60/60 layout cases. Browser: 55 scenarios/1,332 assertions passed; PHP lint 12/12 and diff check passed.
+- The actual PlentyONE validator/build has not been run after this fix; local tests do not replace it. Local develop changes only, with no version change, commit, push, merge, deployment or synchronization; B2C unchanged. See README for evidence and acceptance limits.
+
 ## Unreleased – SEO phase 1 (2026-11-09)
 
 - Preserve existing robots restrictions, including `NOINDEX`, `NOFOLLOW` and forced noindex, on subsequent pages. Query rules now inspect actual parameter names instead of URL substrings.

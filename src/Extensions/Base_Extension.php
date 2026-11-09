@@ -311,7 +311,15 @@ class Base_Extension extends Twig_Extension
 
     public function createSeoPage($template, $pageMax = null, $currentPage = null, $total = null)
     {
-        return new SeoPage($this->req->query(), $template, $pageMax, $currentPage, $total);
+        // SeoPage is not a shared container binding: constructor data belongs
+        // to this render only, including when another page is rendered later.
+        return pluginApp(SeoPage::class, [
+            'query' => $this->req->query(),
+            'template' => $template,
+            'pageMax' => $pageMax,
+            'currentPage' => $currentPage,
+            'total' => $total
+        ]);
     }
 
     public function prepareSeoContent(SeoPage $page, $categoryId): string
@@ -368,7 +376,9 @@ class Base_Extension extends Twig_Extension
         $effectivePage = SeoPage::positiveInteger($itemListOptions['page']);
         $effectiveSize = SeoPage::positiveInteger($itemListOptions['itemsPerPage']);
         if ($effectivePage === null || $effectiveSize === null) {
-            throw new \UnexpectedValueException('Invalid effective category pagination after SearchOptions validation');
+            throw pluginApp(\UnexpectedValueException::class, [
+                'message' => 'Invalid effective category pagination after SearchOptions validation'
+            ]);
         }
         $itemListOptions['page'] = $effectivePage;
         $itemListOptions['itemsPerPage'] = $effectiveSize;

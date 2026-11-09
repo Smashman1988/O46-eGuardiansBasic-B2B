@@ -36,7 +36,8 @@ class SeoPage
             return 0;
         }
         // Ceres supplies pageMax through ceil(), i.e. as an integral float.
-        if (is_float($value) && is_finite($value) && floor($value) === $value && $value < PHP_INT_MAX) {
+        // Bounds reject NaN and both infinities before floor() or an int cast.
+        if (is_float($value) && $value > 0 && $value < PHP_INT_MAX && floor($value) === $value) {
             $value = (int)$value;
         }
         return self::positiveInteger($value);
@@ -86,25 +87,27 @@ class SeoPage
         ];
     }
 
+    private function parseRobotsDirectives($value): array
+    {
+        $tokens = [];
+        foreach (explode(',', strtoupper(trim((string)$value))) as $directive) {
+            // Preserve directive values (e.g. max-snippet or unavailable_after).
+            if (strpos($directive, ':') !== false) {
+                $tokens[] = trim($directive);
+            } else {
+                $tokens = array_merge($tokens, preg_split('/[\s_]+/', trim($directive), -1, PREG_SPLIT_NO_EMPTY));
+            }
+        }
+        if (in_array('NONE', $tokens, true)) {
+            $tokens = array_merge($tokens, ['NOINDEX', 'NOFOLLOW']);
+        }
+        return array_values(array_diff($tokens, ['ALL', 'NONE']));
+    }
+
     public function getRobots($blockRobots, $categoryRobots, $forceNoIndex): string
     {
-        $parse = function ($value) {
-            $tokens = [];
-            foreach (explode(',', strtoupper(trim((string)$value))) as $directive) {
-                // Preserve directive values (e.g. max-snippet or unavailable_after).
-                if (strpos($directive, ':') !== false) {
-                    $tokens[] = trim($directive);
-                } else {
-                    $tokens = array_merge($tokens, preg_split('/[\s_]+/', trim($directive), -1, PREG_SPLIT_NO_EMPTY));
-                }
-            }
-            if (in_array('NONE', $tokens, true)) {
-                $tokens = array_merge($tokens, ['NOINDEX', 'NOFOLLOW']);
-            }
-            return array_values(array_diff($tokens, ['ALL', 'NONE']));
-        };
-        $block = $parse($blockRobots);
-        $category = $parse($categoryRobots);
+        $block = $this->parseRobotsDirectives($blockRobots);
+        $category = $this->parseRobotsDirectives($categoryRobots);
         $restrictions = array_merge($block, $category);
         $robots = array_values(array_unique($restrictions));
         $noindex = $forceNoIndex || in_array('NOINDEX', $restrictions, true) || $this->getPagination()['noindex'];

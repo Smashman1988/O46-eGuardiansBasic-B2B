@@ -23,6 +23,111 @@ Robots-Vorgaben auf Folgeseiten pauschal durch `INDEX,FOLLOW`; `Head.twig` über
 `getItemsFromCat()` berechnete Seitendaten aus Rohwerten statt aus den validierten
 Suchoptionen. Die Content-Liste wurde zudem erst nach dem Head abgefragt.
 
+### PlentyONE-Buildkorrektur (2026-11-09)
+
+Ausgangsstand dieses Folgefixes: `c5387abef15f25e03e1ad183751f2b1407713cf3`
+(`SEO Test 1`), sauberer Branch `develop`. Der Nutzer meldete einen abgebrochenen
+produktiven PlentyONE-Build mit vier PHP-Validierungsfehlern. Die vorherigen
+Standard-PHP-/Twig-Tests deckten diese Pluginrestriktionen nicht ab.
+**Nach dem lokalen Fix wurde kein PlentyONE-Validator/Build ausgeführt.**
+
+| Gemeldete Stelle im Ausgangsstand | Konkrete Korrektur |
+| --- | --- |
+| `Base_Extension.php:314`, `new SeoPage(...)` | `pluginApp(SeoPage::class, [...])` mit expliziten benannten Konstruktorparametern für Query, Template und Seitendaten |
+| `SeoPage.php:39`, `is_finite()` | Positiver Wertebereich unterhalb von `PHP_INT_MAX`, danach Ganzzahligkeitsprüfung mit erlaubtem `floor()` |
+| `SeoPage.php:106`, `$parse($blockRobots)` | Direkter Aufruf der privaten Methode `parseRobotsDirectives()` |
+| `SeoPage.php:107`, `$parse($categoryRobots)` | Derselbe benannte Methodenaufruf; keine dynamischen Funktionsaufrufe mehr |
+
+Der Konstruktor bleibt erhalten; die Factory bekommt sämtliche Daten dieses
+Renders. Für `SeoPage` existiert keine Singleton-/Shared-Bindung im Theme und es
+wird keine ergänzt. Es wird weiterhin kein `CategoryContext` mit einer Quellkategorie
+initialisiert. Die vorhandene Capture-Referenz wird unverändert in `finally`
+zurückgesetzt; HTML-Wiederverwendung und genau eine Artikelabfrage bleiben gleich.
+
+Die Bereichsprüfung verwirft `NaN`, positive/negative Unendlichkeit, negative
+Zahlen, Bruchwerte und Werte außerhalb des Integerbereichs. Bekannte 0, bekannte 1
+und unbekannte Grenzen bleiben verschieden. Die bisherige strikte Prüfung von
+Seitennummern und Seitengrößen mit `preg_match()` und `filter_var()` bleibt erhalten.
+Ein ungültiger effektiver Wert bricht weiterhin **vor** `getResults()` ab;
+die Division bleibt geschützt. Zusätzlich wird auch die bereits eingeführte
+`UnexpectedValueException` über `pluginApp()` erzeugt. Typ und Fehlermeldung
+bleiben gleich; damit enthält dieser Produktionscode auch hier kein `new` mehr.
+Dies ist eine vorsorgliche Ergänzung des Audits, kein fünfter vom Server gemeldeter Fehler.
+
+**Zusätzlicher PHP-Audit:** Der komplette neue Helper und die SEO-Methoden
+`createSeoPage()`, `prepareSeoContent()` und `getItemsFromCat()` wurden geprüft.
+Alle 23 dort verwendeten nativen Funktionen und `UnexpectedValueException` sind in
+der offiziellen Liste [Allowed PHP functionality](https://developers.plentymarkets.com/en-gb/interface/stable7/NativePHPFunctionsAndClasses.html)
+aufgeführt. Die Factory-Signatur ist im offiziellen
+[plugin-interface-Funktionsstub](https://github.com/plentymarkets/plugin-interface/blob/3893fe678aca9b5820aeefde5849b96a9e0d33f9/functions_stub.php)
+dokumentiert; benannte Factory-Parameter zeigt das offizielle
+[Katalog-Beispiel](https://developers.plentymarkets.com/en-gb/developers/main/export-plugins/basic-usage.html).
+`throw pluginApp(...)` wird auch im bestehenden
+[IO OrderItemBuilder](https://github.com/plentymarkets/plugin-io/blob/9b7c6212bccae75a4644da723dfa7e2af176f044/src/Builder/Order/OrderItemBuilder.php)
+verwendet. Stand der Quellenprüfung: 2026-11-09.
+
+Ein gezielter tokenbasierter Source-Check in `tests/seo_pagination.php` prüft diese
+vier Codebereiche gegen das Funktionsinventar und sperrt dort direkte
+Instanziierung, `clone`, dynamische Funktionsaufrufe sowie Include-/Eval-Konstrukte.
+Der Negativtest erkennt im echten Ausgangscode die vier gemeldeten Problemstellen
+und den zusätzlichen direkten Exception-Konstruktor. Dies ist ein begrenzter
+Regressionscheck, **keine Nachbildung oder Ausführung des PlentyONE-Validators**.
+Nicht betroffener Legacy-Code wird damit nicht als neuer Buildfehler bewertet.
+Es wurden keine weiteren nicht belegten nativen Aufrufe in den SEO-Ergänzungen gefunden.
+
+| Nach dem Fix ausgeführte Prüfung | Ergebnis |
+| --- | --- |
+| SEO-/Kompatibilitätsregressionen mit Twig 2.16.1 und 3.30.0, PHP 8.4.23 | jeweils **250/250 PASS**, 0 Fehler |
+| Vergleich mit unmittelbar vor dem Fix erfassten Ergebnissen | jeweils **190/190 identisch** |
+| Twig-Syntax, gesamtes Inventar | jeweils **171/171 PASS** |
+| Bestehende Twig-Regressionen samt historischem Baseline-Vergleich | jeweils **38/38 PASS** |
+| Bestehende Kontakt-/Newsletter-Layoutfälle | jeweils **60/60 PASS**, DE/EN/FR/IT/ES |
+| Bestehender Kontakt-Widget-Browsertest mit installiertem Chrome | **55/55 Szenarien**, **1.332 Assertions**, 0 JS-Fehler, 0 externe Requests |
+| `php -l`, alle PHP-Dateien unter `src/` und `tests/` | **12/12 PASS** |
+| `git diff --check` | **PASS** |
+| Echter PlentyONE-Validator, Plugin-Build und Laufzeit | **NOT_RUN nach dem Fix** |
+
+Die 60 zusätzlichen Fälle enthalten Zahlen-Sonderwerte, Überläufe, ungültige
+effektive Seitengrößen/-nummern, unveränderten Exception-Typ/-Text, Abbruch vor
+einer Abfrage, getrennte Factory-Objekte, die Source-Prüfung und den Vorhervergleich.
+Die bisherigen Fälle sichern weiterhin Kategorie-Kontext, Robots, Canonicals,
+gefilterte Gesamtzahlen, individuelle ShopBuilder-Argumente und HTML-/Abfrageparität.
+Factory- und Shop-Dienste bleiben lokale Fixtures; die tatsächliche
+Container-/Build-Ausführung in PlentyONE ist damit nicht nachgewiesen.
+Bekannte PHP-8.4-/Twig-Deprecations sind separat in den Reports erfasst.
+Bei diesen Testläufen gab es keine Test- oder Timeout-Abbrüche.
+
+Ein separat ausführbarer PlentyONE-PHP-Validator steht für diesen lokalen Testlauf
+nicht zur Verfügung. Das installierte PlentyDevTool wurde nicht gestartet; ein
+Pluginset-Build, Sync oder Deployment wurde nicht ausgelöst. Vor einer Freigabe
+muss der Nutzer die serverseitige Validierung und die unten beschriebene
+B2B-Test-Pluginset-Abnahme wiederholen. Der gemeldete fehlgeschlagene Build wird
+durch lokale Syntax-/Funktionsprüfungen nicht nachträglich als bestanden gewertet.
+
+Berichte: `.cache/seo-buildfix-before{2,3}.json`,
+`.cache/seo-buildfix-after{2,3}.json`, `.cache/seo-buildfix-regression{2,3}.json`,
+`.cache/seo-buildfix-contact{2,3}/render-report.json` und
+`.cache/seo-buildfix-contact-browser.json`. Den Ergebnisvergleich mit erhaltenen
+Vorher-Reports beispielsweise so wiederholen:
+
+```powershell
+$seoPhp = '.cache/php-runtime/php-8.4.23/php.exe'
+foreach ($seoEngine in 2, 3) {
+    & $seoPhp -d extension_dir=.cache/php-runtime/php-8.4.23/ext -d extension=mbstring tests/seo_pagination.php ".cache/contact-widget/autoload$seoEngine.php" ".cache/seo-buildfix-after$seoEngine.json" "--compare=.cache/seo-buildfix-before$seoEngine.json"
+}
+```
+
+Ohne optionales `--compare` laufen 249 Fälle; der 250. Fall ist der Vergleich mit
+den 190 Ergebnissen des Vorher-Reports. Der Vergleich setzt diese unveränderten
+lokalen Reports voraus und erstellt sie nicht aus bereits korrigiertem Code neu.
+
+**Dateien dieses Buildfixes:** `src/Extensions/Base_Extension.php`,
+`src/Helper/SeoPage.php`, `tests/seo_pagination.php`, `README.md`,
+`meta/documents/changelog_de.md`, `meta/documents/changelog_en.md`.
+Keine Twig-/Asset-/Konfigurationsänderung; Produktversion weiterhin 1.0.7.
+Alles lokal, uncommittet und unstaged auf `develop`; kein Commit/Push/Merge,
+kein Deployment/Sync, keine Cache-Aktion und keine B2C-Änderung durch diesen Fix.
+
 ### Renderreihenfolge und Kategorie-Kontext
 
 `PageDesign.twig` erzeugt ein neues `SeoPage`-Objekt für **diesen Seitenrender**.
@@ -139,9 +244,11 @@ Geprüfte Primärquellen: Ceres
 (`9d1a71b11a967ffd265d98540a0b8228e4bd6f0e`). Die SHAs bezeichnen die gelesenen
 Datei-Blobs; die tatsächlich installierten Plugin-Versionen sind nicht verifiziert.
 
-### Lokale Tests und Grenzen
+### Lokale Tests und Grenzen des ursprünglichen Phase-1-Stands
 
-PHP **8.4.23**, Twig **2.16.1** und **3.30.0**, jeweils ohne PlentyONE-Services:
+Die folgende Tabelle dokumentiert den ursprünglichen 190-Fälle-Lauf vor dem
+Buildfix. Die aktuellen Ergebnisse stehen oben. PHP **8.4.23**, Twig **2.16.1**
+und **3.30.0**, jeweils ohne PlentyONE-Services:
 
 | Prüfung | Ergebnis je Twig-Version |
 | --- | --- |

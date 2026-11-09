@@ -1,5 +1,5 @@
 <?php
-// php tests/seo_pagination.php <external-twig-autoload.php> <report.json>
+// php tests/seo_pagination.php <external-twig-autoload.php> <report.json> [--compare=<before-fix.json>]
 // Actual theme PHP/Twig; Plenty dependencies below are explicit local fixtures.
 namespace Plenty\Plugin\Templates\Extensions { class Twig_Extension {} }
 namespace Plenty\Plugin\Templates\Factories {
@@ -92,8 +92,9 @@ namespace {
     use GuardiansBasicB2B\Extensions\Base_Extension;
     use Ceres\Helper\SearchOptions;
     const SEO_BASELINE = '15d06d2d336717c500e680c5e850c4e3f1b90b09';
+    const BUILD_FIX_BASELINE = 'c5387abef15f25e03e1ad183751f2b1407713cf3';
 
-    if (count($argv) !== 3) { throw new RuntimeException('Expected external Twig autoloader and JSON report path'); }
+    if (count($argv) < 3 || count($argv) > 4) { throw new RuntimeException('Expected external Twig autoloader, JSON report path and optional --compare'); }
     require $argv[1];
     require __DIR__ . '/../src/Helper/SeoPage.php';
     require __DIR__ . '/../src/Extensions/Base_Extension.php';
@@ -104,7 +105,21 @@ namespace {
         throw new ErrorException($message, 0, $level);
     });
     function check($ok, $message) { if (!$ok) { throw new RuntimeException($message); } }
-    function pluginApp($class) { global $services; check(isset($services[$class]), 'Unexpected service: ' . $class); return $services[$class]; }
+    $factoryCalls = [];
+    function pluginApp($class, array $parameters = []) {
+        global $services, $factoryCalls;
+        if ($class === SeoPage::class) {
+            $factoryCalls[] = ['class'=>$class,'parameters'=>$parameters];
+            // Explicit transient-container fixture, not the real Plenty container.
+            return new SeoPage($parameters['query'], $parameters['template'], $parameters['pageMax'], $parameters['currentPage'], $parameters['total']);
+        }
+        if ($class === UnexpectedValueException::class) {
+            $factoryCalls[] = ['class'=>$class,'parameters'=>$parameters];
+            return new UnexpectedValueException($parameters['message']);
+        }
+        check(isset($services[$class]), 'Unexpected service: ' . $class);
+        return $services[$class];
+    }
     class Callback {
         private $callback;
         public function __construct($callback) { $this->callback = $callback; }
@@ -137,15 +152,42 @@ namespace {
     }
     class EmptyService { public function __call($name, $args) { return null; } }
     function readView($name) { global $root; return file_get_contents($root . '/resources/views/' . $name . '.twig'); }
-    function gitSource($file) {
+    function gitSource($file, $reference = SEO_BASELINE) {
         global $root;
-        $process = proc_open(['git','show',SEO_BASELINE . ':' . $file], [1=>['pipe','w'],2=>['pipe','w']], $pipes, $root);
+        $process = proc_open(['git','show',$reference . ':' . $file], [1=>['pipe','w'],2=>['pipe','w']], $pipes, $root);
         $source = stream_get_contents($pipes[1]); $error = stream_get_contents($pipes[2]);
         fclose($pipes[1]); fclose($pipes[2]);
         check(proc_close($process) === 0, $error);
         return $source;
     }
     function compactHtml($html) { return preg_replace('/>\s+</', '><', trim($html)); }
+    // Targeted source guard, NOT the PlentyONE compiler/validator. Native names
+    // checked against the official NativePHPFunctionsAndClasses list, 2026-11-09.
+    function checkPluginSource($source): array {
+        $allowed = ['array_diff','array_key_exists','array_keys','array_merge','array_unique','array_values',
+            'ceil','count','explode','filter_var','floor','implode','in_array','intval','is_float','is_int',
+            'is_string','preg_match','preg_split','strpos','strtolower','strtoupper','trim','pluginapp'];
+        $tokens = array_values(array_filter(token_get_all($source), function ($token) {
+            return !is_array($token) || !in_array($token[0],[T_OPEN_TAG,T_WHITESPACE,T_COMMENT,T_DOC_COMMENT],true);
+        }));
+        $issues = []; $functions = [];
+        foreach ($tokens as $index=>$token) {
+            if (!is_array($token)) { continue; }
+            if (in_array($token[0],[T_NEW,T_CLONE,T_EVAL,T_INCLUDE,T_INCLUDE_ONCE,T_REQUIRE,T_REQUIRE_ONCE],true)) {
+                $issues[] = ['kind'=>'restricted-construct','name'=>trim($token[1])];
+            }
+            if ($token[0] === T_VARIABLE && ($tokens[$index+1] ?? null) === '(') {
+                $issues[] = ['kind'=>'dynamic-function','name'=>$token[1]];
+            }
+            if (!in_array($token[0],[T_STRING,T_NAME_FULLY_QUALIFIED,T_NAME_QUALIFIED],true) || ($tokens[$index+1] ?? null) !== '(') { continue; }
+            $previous = $tokens[$index-1] ?? null;
+            if (is_array($previous) && in_array($previous[0],[T_FUNCTION,T_OBJECT_OPERATOR,T_NULLSAFE_OBJECT_OPERATOR,T_DOUBLE_COLON,T_NEW],true)) { continue; }
+            $name = strtolower(ltrim($token[1],'\\')); $functions[] = $name;
+            if (!in_array($name,$allowed,true)) { $issues[] = ['kind'=>'unlisted-function','name'=>$name]; }
+        }
+        $functions = array_values(array_unique($functions)); sort($functions);
+        return ['issues'=>$issues,'functions'=>$functions];
+    }
     function meta($html, $name) {
         preg_match_all('~<meta name="' . $name . '" content="([^"]*)"~', $html, $matches);
         check(count($matches[1]) === 1, 'Expected exactly one ' . $name . ' tag');
@@ -567,10 +609,97 @@ namespace {
         $search->total = 1654; check($seen[0] === $seen[5],'Repeated variant changed');
         return $seen;
     });
+    foreach (['zero-int'=>[0,0],'zero-float'=>[0.0,0],'zero-string'=>['0',0],
+        'one-float'=>[1.0,1],'ceil-float'=>[69.0,69],'fraction'=>[1.5,null],
+        'negative'=>[-1.0,null],'nan'=>[NAN,null],'positive-infinity'=>[INF,null],
+        'negative-infinity'=>[-INF,null],'huge-float'=>[1.0e100,null],
+        'rounded-int-limit'=>[(float)PHP_INT_MAX,null],'array'=>[[],null],
+        'numeric-text'=>['69',69],'invalid-text'=>['abc',null],'missing'=>[null,null]] as $name=>[$value,$expected]) {
+        test('compatibility/numeric-bound/' . $name,function () use ($value,$expected) {
+            $page = new SeoPage(['page'=>'2'],'tpl.category.item',$value,2,null);
+            $pagination = $page->getPagination();
+            check($pagination['pageMax'] === $expected,'Numeric bound accepted/converted incorrectly');
+            check($pagination['outOfRange'] === ($expected !== null && $expected < 2),'Invalid number treated as a known page bound');
+            return $pagination;
+        });
+        test('compatibility/numeric-total/' . $name,function () use ($value,$expected) {
+            $page = new SeoPage(['page'=>'2'],'tpl.category.item',69,2,$value);
+            check($page->getPagination()['empty'] === ($expected === 0),'Invalid total became an empty result');
+        });
+    }
+    foreach (['nan'=>NAN,'positive-infinity'=>INF,'negative-infinity'=>-INF,'fraction'=>1.5,'zero'=>0,'negative'=>-1,'invalid-text'=>'abc','overflow-text'=>(string)PHP_INT_MAX . '0'] as $name=>$value) {
+        test('compatibility/raw-page/' . $name,function () use ($value) {
+            $page = new SeoPage(['page'=>$value],'tpl.category.item',69,1,1654);
+            $pagination = $page->getPagination();
+            check($pagination['invalidInput'] && !$pagination['valid'] && $pagination['noindex'],'Invalid raw page lost its restrictions');
+        });
+        foreach (['size','page'] as $option) {
+            test('compatibility/effective-' . $option . '/' . $name,function () use ($value,$option,$request,$extension,$search,$context,&$factoryCalls) {
+                $request->params = ['page'=>'2']; $search->calls = []; $factoryCalls = []; $before = serialize($context);
+                if ($option === 'size') { SearchOptions::$defaultSize = $value; }
+                else { SearchOptions::$overridePage = $value; }
+                try {
+                    $extension->getItemsFromCat(200,$option === 'size' ? 0 : 24,[]);
+                    throw new RuntimeException('Expected invalid effective pagination rejection');
+                } catch (UnexpectedValueException $error) {
+                    check($error->getMessage() === 'Invalid effective category pagination after SearchOptions validation','Exception/message changed');
+                    check(count($search->calls) === 0 && serialize($context) === $before,'Invalid option queried or changed route context');
+                    check(count($factoryCalls) === 1 && $factoryCalls[0]['class'] === UnexpectedValueException::class,'Exception did not use pluginApp');
+                } finally { SearchOptions::$defaultSize = 24; SearchOptions::$overridePage = null; }
+            });
+        }
+    }
+    test('compatibility/transient-page-factory',function () use ($request,$extension,&$factoryCalls) {
+        $request->params = ['page'=>'2','facets'=>'727']; $factoryCalls = [];
+        $first = $extension->createSeoPage('tpl.category.content',69,2,1654);
+        $first->addList(2,69,1654); $first->shopBuilderHtml = 'first-render';
+        $second = $extension->createSeoPage('tpl.category.content',69,2,1654);
+        check($first !== $second && $second->shopBuilderHtml === null && !$second->getPagination()['hasList'],'Render state was shared');
+        check(count($factoryCalls) === 2 && $factoryCalls[0]['parameters'] === ['query'=>$request->params,'template'=>'tpl.category.content','pageMax'=>69,'currentPage'=>2,'total'=>1654],'Constructor data not passed through the container');
+        $request->params = ['page'=>'999']; $third = $extension->createSeoPage('tpl.category.item',69,999,1654);
+        check($third->getPagination()['outOfRange'] && $first->getPagination()['valid'],'Request data leaked between factory instances');
+    });
+    test('compatibility/production-source',function () use ($root) {
+        $fragments = ['SeoPage'=>file_get_contents($root . '/src/Helper/SeoPage.php')];
+        $lines = file($root . '/src/Extensions/Base_Extension.php');
+        foreach (['createSeoPage','prepareSeoContent','getItemsFromCat'] as $name) {
+            $method = new ReflectionMethod(Base_Extension::class,$name);
+            $fragments[$name] = "<?php\n" . implode('',array_slice($lines,$method->getStartLine()-1,$method->getEndLine()-$method->getStartLine()+1));
+        }
+        $audits = [];
+        foreach ($fragments as $name=>$fragment) {
+            $audits[$name] = checkPluginSource($fragment);
+            check(!$audits[$name]['issues'],'Restricted construct/function in ' . $name . ': ' . json_encode($audits[$name]['issues']));
+        }
+        return $audits;
+    });
+    test('compatibility/source-guard-detects-original-errors',function () {
+        $helper = checkPluginSource(gitSource('src/Helper/SeoPage.php',BUILD_FIX_BASELINE));
+        $extension = checkPluginSource(gitSource('src/Extensions/Base_Extension.php',BUILD_FIX_BASELINE));
+        check(count(array_filter($helper['issues'],function ($issue) { return $issue['name'] === 'is_finite'; })) === 1,'Guard missed forbidden native function');
+        check(count(array_filter($helper['issues'],function ($issue) { return $issue['kind'] === 'dynamic-function'; })) === 2,'Guard missed both parse calls');
+        check(count(array_filter($extension['issues'],function ($issue) { return $issue['name'] === 'new'; })) === 2,'Guard missed direct helper/exception creation');
+        // The narrow native-function inventory is scoped to the SEO additions;
+        // do not label unrelated legacy functions as Plenty build findings.
+        return ['helper'=>$helper['issues'],'extension'=>array_values(array_filter($extension['issues'],function ($issue) { return $issue['kind'] === 'restricted-construct'; }))];
+    });
+    $report['comparison'] = 'NOT_RUN';
+    if (isset($argv[3])) {
+        test('compatibility/before-fix-comparison',function () use (&$report,$argv) {
+            check(strpos($argv[3],'--compare=') === 0,'Expected --compare=<before-fix.json>');
+            $reference = json_decode(file_get_contents(substr($argv[3],10)),true,512,JSON_THROW_ON_ERROR);
+            check($reference['twig'] === $report['twig'] && $reference['casePass'] === 190 && !$reference['failures'],'Incomplete or wrong before-fix reference');
+            foreach ($reference['cases'] as $name=>$expected) {
+                check(isset($report['cases'][$name]) && $report['cases'][$name] === $expected,'Existing SEO behavior changed: ' . $name);
+            }
+            $report['comparison'] = '190/190 PASS';
+            return $report['comparison'];
+        });
+    }
     $report['casePass'] = count($report['cases']);
     $report['caseFail'] = count($report['failures']);
     $report['deprecations'] = array_keys($deprecations);
     file_put_contents($argv[2],json_encode($report,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) . "\n");
-    echo json_encode(['twig'=>$report['twig'],'pass'=>$report['casePass'],'fail'=>$report['caseFail'],'failures'=>$report['failures']],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) . "\n";
+    echo json_encode(['twig'=>$report['twig'],'pass'=>$report['casePass'],'fail'=>$report['caseFail'],'comparison'=>$report['comparison'],'failures'=>$report['failures']],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) . "\n";
     exit($report['caseFail'] ? 1 : 0);
 }
