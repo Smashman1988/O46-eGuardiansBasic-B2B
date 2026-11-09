@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – JavaScript page numbering and tail-page investigation (2026-11-09)
+
+- Category JavaScript now consumes existing `SeoPage` data instead of trusting URL page numbers. Invalid, empty, ambiguous or unproven follow-up pages receive no artificial title/description suffix. Valid numbering, including Infinite Scroll and History, remains supported; robots and canonical are untouched.
+- `PageMetadata.twig` only exposes existing pagination state as HTML metadata. No change to PHP queries, item counting or server-side SEO decisions, and no additional query. Ordinary content and simple widgets gain no artificial pagination.
+- Investigated men's/women's tail pages in shared sessions, new HTTP sessions and reverse order: 36/36 HTTP 200, stable IDs, no duplicates within or across the last three nonempty pages of each list. The count discrepancy persists; no specific aggregation/cache cause has been proven. See README for evidence, proposed investigation and acceptance limits.
+- Reran regressions: each Twig 2/3 passed 261/261 SEO cases, 171/171 syntax checks, 38/38 existing regressions and 60/60 layout cases; all previous 250 results remain identical. JavaScript: 111/111 VM cases and 22/22 local Chrome cases; existing widget browser suite 55/55 with 1,332 assertions. PHP lint 12/12 passed. No PlentyONE build/live acceptance of the local fix, deployment or cache invalidation; B2C unchanged.
+
 ## Unreleased – PlentyONE validation of SEO code (2026-11-09)
 
 - Corrected all four reported PHP validation locations: create `SeoPage` via `pluginApp()` instead of direct `new`, replace `is_finite()` with bounded integer validation, and replace both dynamic `$parse()` calls with a named private method.

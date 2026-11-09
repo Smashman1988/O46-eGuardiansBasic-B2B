@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – JavaScript-Seitennummerierung und Randseitenanalyse (2026-11-09)
+
+- Kategorie-JavaScript verwendet die vorhandenen `SeoPage`-Daten statt ungeprüfter URL-Seitennummern. Ungültige, leere, mehrdeutige und unbelegte Folgeseiten erhalten keine künstlichen Titel-/Beschreibungszusätze. Gültige Nummerierung einschließlich Infinite Scroll und History bleibt erhalten; Robots und Canonical werden nicht verändert.
+- `PageMetadata.twig` stellt nur den bestehenden Paginierungszustand als HTML-Metadatum bereit. Keine Änderung an PHP-Abfrage, Artikelzählung oder serverseitiger SEO-Entscheidung und keine zusätzliche Abfrage. Content ohne Hauptliste und einfache Widgets bleiben ohne künstliche Pagination.
+- Herren-/Damen-Randseiten in bestehender Sitzung, mit neuen HTTP-Sitzungen und in umgekehrter Reihenfolge untersucht: 36/36 HTTP 200, identische IDs, keine Wiederholungen innerhalb oder zwischen den jeweils letzten drei nicht leeren Seiten. Die Zählabweichung bleibt bestehen; eine konkrete Aggregations-/Cache-Ursache ist nicht nachgewiesen. Details, Korrekturvorschlag und Abnahmegrenzen in der README.
+- Erneute Regressionen: je Twig 2/3 261/261 SEO-Fälle, 171/171 Syntaxprüfungen, 38/38 bestehende Regressionen und 60/60 Layoutfälle; alle vorherigen 250 Ergebnisse identisch. JavaScript: 111/111 VM-Fälle und 22/22 lokale Chrome-Fälle; bestehender Widget-Browserlauf 55/55 mit 1.332 Assertions. PHP-Lint 12/12 bestanden. Keine PlentyONE-Build-/Live-Abnahme des lokalen Fixes, kein Deployment oder Cache-Invalidieren, B2C unverändert.
+
 ## Unveröffentlicht – PlentyONE-Validierung des SEO-Codes (2026-11-09)
 
 - Die vier gemeldeten PHP-Validierungsstellen korrigiert: `SeoPage` über `pluginApp()` statt direktem `new`, `is_finite()` durch sichere Bereichs-/Ganzzahlprüfung ersetzt und beide dynamischen `$parse()`-Aufrufe in eine benannte private Methode überführt.

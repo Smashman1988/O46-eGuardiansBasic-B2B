@@ -1956,15 +1956,54 @@ initBFCacheBypass();
     const currentLang = document.documentElement.lang?.substring(0, 2) || 'de';
     const pageText = pageTextByLang[currentLang] || 'Page';
 
-    const updateMeta = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const page = parseInt(urlParams.get('page') || '1');
+    const initialUrl = new URL(window.location.href);
+    let pagination;
+    try {
+        pagination = JSON.parse(document.querySelector('meta[name="o46-pagination"]')?.getAttribute('content') || 'null');
+    } catch {
+        // Without server confirmation, preserve the server-rendered metadata.
+    }
+    if (!pagination || typeof pagination !== 'object') return;
+    if (pagination.valid === true && (!Number.isSafeInteger(pagination.pageMax)
+        || !Number.isSafeInteger(pagination.currentPage))) return;
 
-        const baseTitle = document.title.replace(/ – .*$/, '');
-        const baseDescription = document.querySelector('meta[name="description"]')?.getAttribute('content')?.replace(/ – .*$/, '');
+    const positiveInteger = value => typeof value === 'string' && /^[1-9][0-9]*$/.test(value)
+        && Number.isSafeInteger(Number(value)) ? Number(value) : null;
+    const requestedPage = url => {
+        const values = url.searchParams.getAll('page');
+        return values.length === 0 ? 1 : (values.length === 1 ? positiveInteger(values[0]) : null);
+    };
+    const listVariant = url => {
+        const params = new URLSearchParams(url.search);
+        // Infinite Scroll removes quickViewItem from its history URL.
+        params.delete('page');
+        params.delete('quickViewItem');
+        params.sort();
+        return url.origin + url.pathname + '?' + params.toString();
+    };
+    const initialVariant = listVariant(initialUrl);
+    const initialPage = requestedPage(initialUrl);
+    // Only remove an actual server-generated suffix, keeping editorial en dashes.
+    const serverSuffix = / – (?:Seite|Page|Pagina|Página) [1-9][0-9]*$/;
+    const stripServerSuffix = value => pagination.valid === true && pagination.currentPage > 1
+        ? value?.replace(serverSuffix, '') : value;
+    const baseTitle = stripServerSuffix(document.title);
+    const baseDescription = stripServerSuffix(document.querySelector('meta[name="description"]')?.getAttribute('content'));
+
+    const updateMeta = () => {
+        const url = new URL(window.location.href);
+        // A different route/filter needs its own server render and bounds.
+        if (listVariant(url) !== initialVariant) return;
+        const requested = requestedPage(url);
+        const confirmed = pagination.hasList === true && pagination.ambiguous === false
+            && pagination.empty === false && Number.isSafeInteger(pagination.pageMax)
+            && pagination.pageMax > 0 && requested !== null && requested <= pagination.pageMax
+            && (requested !== initialPage || pagination.valid === true);
+        const page = confirmed ? requested : 1;
 
         const newTitle = page > 1 ? `${baseTitle} – ${pageText} ${page}` : baseTitle;
-        const newDescription = page > 1 ? `${baseDescription} – ${pageText} ${page}` : baseDescription;
+        const newDescription = baseDescription === undefined ? undefined
+            : (page > 1 ? `${baseDescription} – ${pageText} ${page}` : baseDescription);
 
         document.title = newTitle;
 
@@ -1978,9 +2017,9 @@ initBFCacheBypass();
         };
 
         updateMetaTag('meta[property="og:title"]', newTitle);
-        updateMetaTag('meta[property="og:description"]', newDescription);
+        if (newDescription !== undefined) updateMetaTag('meta[property="og:description"]', newDescription);
         updateMetaTag('meta[name="twitter:title"]', newTitle);
-        updateMetaTag('meta[name="twitter:description"]', newDescription);
+        if (newDescription !== undefined) updateMetaTag('meta[name="twitter:description"]', newDescription);
     };
 
     // Infinite Scroll oder History API → pushState, replaceState, popstate

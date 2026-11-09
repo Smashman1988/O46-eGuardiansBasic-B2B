@@ -609,6 +609,40 @@ namespace {
         $search->total = 1654; check($seen[0] === $seen[5],'Repeated variant changed');
         return $seen;
     });
+    foreach ([['single','1'],['single','2'],['single','999'],['single','abc'],
+        ['none','2'],['simple-only','2'],['multiple','2']] as [$mode,$number]) {
+        test('client-pagination/content-' . $mode . '-' . $number,function () use ($mode,$number,$twig,$request,$base,&$builderMode,$search,&$builderCalls) {
+            $request->params = ['page'=>$number]; $builderMode = $mode; $search->calls = []; $builderCalls = 0;
+            try {
+                $html = $twig->render('content',$base);
+                $state = json_decode(meta($html,'o46-pagination'),true);
+                $valid = $mode === 'single' && in_array($number,['1','2'],true);
+                check(is_array($state) && $state['valid'] === $valid,'Client state disagrees with server decision');
+                check($state['pageMax'] === ($mode === 'single' ? 69 : null),'Client invented/changed the bound');
+                check($state['ambiguous'] === ($mode === 'multiple'),'Client lost ambiguity');
+                check($state['hasList'] === in_array($mode,['single','multiple'],true),'Client promoted content/simple widget to main list');
+                check($builderCalls === 1 && count($search->calls) === ['single'=>1,'none'=>0,'simple-only'=>1,'multiple'=>2][$mode],'Exporting client state ran another query/builder');
+                preg_match('~<title>(.*?)</title>~s',$html,$title);
+                return ['pagination'=>$state,'title'=>html_entity_decode($title[1],ENT_QUOTES,'UTF-8'),
+                    'description'=>meta($html,'description'),'robots'=>meta($html,'robots'),'canonical'=>canonical($html)];
+            } finally { $builderMode = 'single'; }
+        });
+    }
+    foreach ([['known',69,2,1654,true],['unknown',null,2,1654,false],
+        ['empty',0,2,0,false],['effective-mismatch',69,1,1654,false]] as [$name,$max,$effective,$total,$valid]) {
+        test('client-pagination/regular-' . $name,function () use ($name,$max,$effective,$total,$valid,$twig,$request,$base,$templateService) {
+            $request->params = ['page'=>'2']; $templateService->template = 'tpl.category.item';
+            try {
+                $html = $twig->render('regular-head',array_replace($base,['pageMax'=>$max,'currentPage'=>$effective,'itemCountTotal'=>$total]));
+                $state = json_decode(meta($html,'o46-pagination'),true);
+                check($state === (new SeoPage(['page'=>'2'],'tpl.category.item',$max,$effective,$total))->getPagination(),'Export changed existing pagination');
+                check($state['valid'] === $valid,'Client regular validity differs');
+                preg_match('~<title>(.*?)</title>~s',$html,$title);
+                return ['pagination'=>$state,'title'=>html_entity_decode($title[1],ENT_QUOTES,'UTF-8'),
+                    'description'=>meta($html,'description'),'robots'=>meta($html,'robots'),'canonical'=>canonical($html)];
+            } finally { $templateService->template = 'tpl.category.content'; }
+        });
+    }
     foreach (['zero-int'=>[0,0],'zero-float'=>[0.0,0],'zero-string'=>['0',0],
         'one-float'=>[1.0,1],'ceil-float'=>[69.0,69],'fraction'=>[1.5,null],
         'negative'=>[-1.0,null],'nan'=>[NAN,null],'positive-infinity'=>[INF,null],

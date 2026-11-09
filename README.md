@@ -12,10 +12,12 @@ B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernom
 
 ## SEO-Korrektur Phase 1 – lokale Vorbereitung (2026-11-09)
 
-**Lokal implementiert und geprüft, PlentyONE-Abnahme NOT_RUN.** Arbeitsstand auf
+**Lokal geprüft; Live-Teilprüfung im Test-Pluginset erfolgt, vollständige Freigabe offen.** Arbeitsstand auf
 `develop`, Ausgangscommit `15d06d2d336717c500e680c5e850c4e3f1b90b09`.
-Keine Versions-, Konfigurations-, Asset-, Tracking- oder B2C-Änderung; kein Commit,
-Push, Merge, Tag, Release, Deploy, Pluginset-Sync oder Cache-Invalidieren.
+Im ursprünglichen Phase-1-/PHP-Buildfix keine Versions-, Konfigurations-, Asset-,
+Tracking- oder B2C-Änderung. Die später ausdrücklich beauftragte lokale
+JavaScript-Korrektur steht unten separat. Kein eigener Commit, Push, Merge, Tag,
+Release, Deploy, Pluginset-Sync oder Cache-Invalidieren.
 
 Die Ursache lag in drei getrennten Stellen: `PageMetadata.twig` ersetzte bestehende
 Robots-Vorgaben auf Folgeseiten pauschal durch `INDEX,FOLLOW`; `Head.twig` übernahm
@@ -23,13 +25,439 @@ Robots-Vorgaben auf Folgeseiten pauschal durch `INDEX,FOLLOW`; `Head.twig` über
 `getItemsFromCat()` berechnete Seitendaten aus Rohwerten statt aus den validierten
 Suchoptionen. Die Content-Liste wurde zudem erst nach dem Head abgefragt.
 
+### Test-Pluginset: Live-Teilprüfung (2026-11-09)
+
+Der Nutzer hat den Stand anschließend bereitgestellt und den Preview-Link
+übergeben. Geprüft wurde **Pluginset 426**, sichtbar als
+**„Outlet46de - B2B - v13.2- 120min“**, mit Ressourcen unter `guardiansbasicb2b`
+und BuildHash `77714dd7359997fffcf0666df167f9254f4a8ea3`.
+Lokaler Referenzstand: `e8a0f20` (`seo v2`); der Server-Commit und die
+PlentyONE-Buildlogs wurden nicht unabhängig eingesehen.
+
+**Ergebnis: PARTIAL – keine vollständige SEO-Abnahme.**
+111 protokollierte lesende HTTP-Prüffälle: **108 × HTTP 200**, **3 × echte HTTP 404**,
+keine Transportfehler und keine PHP-Fehlermarker in den Antworten.
+Alle 111 Antworten enthielten `x-plenty-shop-stage: preview`, genau ein Robots-Tag
+und genau einen nicht leeren Canonical. Kein Canonical enthielt den Preview-Token.
+Ergänzend wurden Seiten im Browser vor/nach JavaScript geprüft.
+
+Nach der Nutzerrückmeldung zum nicht verfügbaren expliziten Robots-Testfall wurden
+43 fehlende Live-Fälle ergänzt. Alle 111 Antworten haben genau die fünf erwarteten
+Hreflang-Sprachen DE/EN/FR/IT/ES und keine Preview-Parameter in den Sprachlinks.
+Die Auswertung umfasst **336 Einzelprüfungen: 326 PASS, 10 FAIL**. Die zehn
+fehlgeschlagenen Prüfungen erfassen die unten erläuterten vier Befundgruppen,
+teilweise über Wiederholungen bzw. mehrere Seiten. Sie werden ausdrücklich nicht
+durch sichere Fallbacks oder spätere erfolgreiche Wiederholungen grün gewertet.
+Die Gesamtmatrix bleibt `PARTIAL`/`NOT_GRANTED`.
+
+| Fall | Bestätigtes Verhalten |
+| --- | --- |
+| `/herren/`, `/damen/`, Seite 1/2/999 | Basis-Canonical auf Seite 1; `?page=2` auf gültiger Seite 2; Seite 999 `NOINDEX,FOLLOW` mit Basis-Canonical und ohne Artikel |
+| Damen `page=0`, `-1`, `abc`, leer | HTTP 200 mit `NOINDEX,FOLLOW`, Basis-Canonical und sicherer erster Artikelseite |
+| Reguläre Kategorie `/herren-bekleidung/jeans-hosen/` | 139 Treffer, 6 Seiten; Seite 2 korrekt, Seite 6 mit 19 Artikeln, Seite 7/999 leer und `NOINDEX`; `page=abc` sicher behandelt |
+| Einseitige Kategorie `/accessoires-guenstig/herrenuhren/` | 14 Artikel; Seite 2/999 leer, `NOINDEX`, Basis-Canonical |
+| Content ohne Liste `/content/newsletter/` | Normale Seite und `page=1` funktionieren; `page=2/999` ohne künstlichen Seiten-Canonical, `NOINDEX` |
+| Damen mit zusätzlicher Facette 3118 (OneSize) | Gesamtzahl sinkt von 1.271 auf 507; vorgegebene Quellfacette 726 und Request-Facette 3118 sind beide ausgewählt; gültige Seite 2 behält `?page=2`, Robots bleibt wegen Filter `NOINDEX` |
+| Bekannte leere Liste über Preisbereich | 0 Treffer/0 Artikel, `NOINDEX`, Basis-Canonical auf Seite 1 und 2 |
+| Parameterregeln | `notsorting=x` bleibt `INDEX,FOLLOW`; echte Sortierung, Suche, Currency und Quickview erhalten `NOINDEX` |
+| Produkt 2351365 | Produktseite funktioniert; künstliches `page=2` erhält Basis-Canonical und `NOINDEX` |
+| Wiederholte Varianten | Damen ohne `page` und mit `page=1` haben dieselben Artikel-IDs; Wiederholungen nach Filter-/Sprachaufrufen reproduzieren Damen Seite 1 und Herren Seite 2 |
+| DE/EN/FR/IT/ES | Sprachbezogene Metadaten und Listen vorhanden; Seite 2 in gestarteter Preview-Sitzung korrekt. Abweichende Erstabrufe siehe unten |
+
+Zusätzlich abgeschlossen:
+
+- Startseite mit `page=1/2/999`: Basis-Canonical, keine künstlichen Titelzusätze;
+  Folgeseiten `NOINDEX`. Im Browser nach vollständigem Laden bestätigt.
+- Herren und reguläre Artikelkategorie zusätzlich mit `page=1/0/-1/abc/leer`:
+  gültige erste Seite bzw. `NOINDEX`-Fallback, kein PHP-Fehler.
+- Reguläre Kategorie mit `items=12&page=2`: zwölf Artikel und zwölf Seiten bei
+  139 Treffern. `items=0/abc` fallen auf 24 Artikel und sechs Seiten zurück.
+  Die eingebettete Damen-Liste behält dagegen bei `items=12&page=2` ihre im
+  ShopBuilder-Aufruf gesetzten 24 Artikel; der Request überschreibt diesen Wert nicht.
+- Gefilterte Damen-Liste: Seite 22 liefert die letzten drei von 507 Treffern;
+  Seite 23 ist leer. Beide bleiben wegen `facets` `NOINDEX`; nur die belegte
+  Seite 22 erhält einen Seiten-Canonical.
+- Bekannte leere reguläre Kategorie über Preisfilter: Seite 1/2 mit 0 Treffern,
+  0 Artikeln, `NOINDEX` und Basis-Canonical. Kein Fehler bei der Seitenberechnung.
+- Newsletter zusätzlich mit `page=0/-1/abc/leer`; EN/FR/IT/ES jeweils normale URL
+  und `page=999`: Content bleibt erhalten, kein erfundener Seiten-Canonical.
+  Newsletter `page=999` bleibt auch nach JavaScript ohne Titel-/Beschreibungszusatz.
+- Produkt zusätzlich mit `page=1/999`: Basis-Canonical, künstliche Folgeseite
+  `NOINDEX`; Titel und Beschreibung bleiben auch nach JavaScript korrekt.
+- Leere `sorting`-/`query`-/`facets`-Werte und kleingeschriebenes `quickviewitem`
+  lösen die bestehende harte Sperre aus. `sorting=x&currency=USD` als **Wert eines
+  anderen Parameters** sowie `utm_source=sorting=x` lösen keine Teilstring-Sperre aus.
+- Reguläre Kategorie `page=999` im Browser nach vollständigem Laden: Robots und
+  Canonical korrekt, der unten beschriebene JavaScript-Titel-/Beschreibungseffekt
+  tritt auch dort auf. Der bekannte Befund ist damit zusätzlich bestätigt.
+
+**Offene Befunde:**
+
+1. **Die gemeldete Gesamtzahl begründet noch keine zuverlässige letzte Seite.**
+   Damen meldet durchgehend 1.271 Treffer und verlinkt maximal Seite 53 bei 24
+   Artikeln pro Seite. Seite 53 enthält noch 24 Artikel; **Seite 54 liefert fünf
+   weitere Artikel**, bekommt aber `NOINDEX` und den Basis-Canonical. Dies wurde
+   mehrfach über HTTP und im Browser bestätigt; Seite 55 ist leer. Betroffene
+   Artikel-IDs: `212496`, `212494`, `212492`, `212470`, `211575`.
+   Die lokale Berechnung folgt dem erhaltenen `itemList.total`; die Abweichung
+   liegt zwischen gemeldeter Gesamtzahl und tatsächlich paginiertem Ergebnis.
+   Ob Aggregations-/Gruppierungssemantik, Zählgenauigkeit oder ein anderer
+   Laufzeiteffekt die Ursache ist, ist **nicht nachgewiesen**. Die native
+   `CategoryItems`-Implementierung ist im öffentlichen Plugin-Interface nur als
+   abstrakte Schnittstelle verfügbar. Kleinster nächster Schritt: die **bestehende
+   einzelne gefilterte Abfrage** mit ihren effektiven Optionen, Total und Dokumenten
+   serverseitig profilieren und die Total-Semantik klären, bevor die Seitengrenze
+   als verbindlich für SEO freigegeben wird.
+2. **Vorhandenes Kategorie-JavaScript überschreibt korrigierte Metadaten.**
+   Das Server-HTML von Damen Seite 999/54 hat keinen unberechtigten Seitenzusatz.
+   Nach JavaScript stehen Titel und Beschreibung wieder auf „Seite 999“/„Seite 54“.
+   Die Ursache ist in `resources/js/cat.js:1960` ff. sichtbar: `updateMeta()` liest
+   `page` direkt aus der URL und berücksichtigt keine bestätigte Seitengrenze.
+   Robots und Canonical bleiben dabei korrekt unverändert. JavaScript-Bundles
+   waren aus Phase 1 ausdrücklich ausgenommen und wurden in diesem Live-Prüflauf
+   nicht geändert. Der später vom Nutzer beauftragte lokale Fix steht unten.
+3. **Der reale konfigurierte 404-Metadatenpfad unterscheidet sich vom lokalen
+   `tpl.page-not-found`-Fixture.** Eine nicht existierende URL liefert korrekt
+   HTTP 404, rendert aber die Ausverkauft-Kategorie samt Artikelliste und
+   `INDEX,FOLLOW`. Mit `page=2` erscheint zusätzlich ein Ausverkauft-Seiten-Canonical.
+   Der HTTP-Fehlerstatus funktioniert; die erwartete restriktive Robots-Behandlung
+   dieses Kategorien-404-Pfads ist noch offen. Dafür ist der tatsächliche
+   IO-/Kategorie-Renderkontext beim 404-Rerender zu prüfen. Ein weiterer 404-Aufruf
+   mit `page=999` erhielt zwar `NOINDEX`, aber durch die Listengrenze; dies ersetzt
+   nicht die fehlende statusabhängige Sperre auf der normalen bzw. zweiten 404-Seite.
+   Kategorie-Einstellungen werden dafür nicht eigenständig geändert.
+4. **Drei fremdsprachige Erstabrufe wichen ab.** EN/IT/ES Seite 2 lieferten zunächst
+   trotz 24 Artikeln `NOINDEX` mit Basis-Canonical. Je drei weitere Aufrufe nach
+   Preview-Einstieg sowie mit frischer Sitzung lieferten die erwarteten
+   `INDEX,FOLLOW`-/`?page=2`-Werte; EN wurde zusätzlich im Browser bestätigt.
+   Die erste Abweichung ist dokumentiert, aber ihre Ursache noch ungeklärt.
+   Ein Fragmentcache-/Initialisierungseffekt ist eine Hypothese, kein Befund.
+
+**NOT_TESTED (Live):** Erhalt einer ausdrücklich konfigurierten `NOINDEX`- bzw.
+`NOINDEX,NOFOLLOW`-Kategorie auf Seite 2. Der Nutzer kennt aktuell keine solche
+B2B-Kategorie. Es wird keine Kategorie und keine SEO-Einstellung für diesen Test
+angelegt oder verändert. Dieser Live-Fall wird ausdrücklich **nicht als bestanden**
+gewertet. Die vorhandenen lokalen Regressionen sichern weiterhin, dass Pagination
+eine explizite `NOINDEX`- oder `NOFOLLOW`-Vorgabe niemals aufhebt.
+
+Nach dieser Nutzervorgabe erneut ausgeführt: `tests/seo_pagination.php` unter
+Twig **2.16.1** und **3.30.0**, jeweils **250/250 PASS**, inklusive jeweils
+**24 Robots-bezogener Fälle** und **190/190 identischer Vorher-Ergebnisse**.
+Die Robots-Fälle enthalten explizites `NOINDEX`, `NOFOLLOW`, Kombinationen,
+`forceNoIndex` und Block-/Kategorie-Prioritäten auf gültiger Seite 2.
+Dies bleibt ein **lokaler Nachweis**, kein Ersatz für den als `NOT_TESTED`
+gekennzeichneten Kategorie-Live-Test. PHP-/Twig-Deprecations sind separat erfasst.
+
+| Nicht über den vorhandenen Preview-Link ausführbarer Nachweis | Status / Grund |
+| --- | --- |
+| Konfigurierte restriktive Robots-Kategorie | **NOT_TESTED**, ausdrückliche Nutzerentscheidung mangels bekannter Kategorie; keine SEO-Konfiguration verändern |
+| Exakte serverseitige `getResults()`-Anzahl und vollständiger Kontextzustand vor/nach ShopBuilder | **NOT_TESTED live**; benötigt Serverprofil/Instrumentation. Lokale gezählte Regressionen und Kontextvergleiche bestehen |
+| Vollständiges reales Listen-HTML vor/nach Deployment | **NOT_TESTED live**; kein identischer, hashgebundener Vorher-Snapshot verfügbar. Lokaler Vergleich gegen die tatsächliche vorherige PHP-Methode besteht |
+| Echte Produktions-Cache-Lebenszyklen | **NOT_TESTED**; Vorschau sendet `no-store, private`; keine Cache-Invalidierung oder -Konfigurationsänderung auslösen |
+| Explizite/erzwungene Canonicals, unbekannte/mehrdeutige Listen | **Lokal bestanden, live NOT_TESTED**, soweit kein vorhandener passender Testfall bekannt ist. Keine Kategorien/ShopBuilder-Inhalte dafür verändern. Unterschiedliche effektive ShopBuilder-Seitengrößen sind inzwischen mit 12 und 24 live geprüft, siehe Ergänzung unten |
+
+Damit sind die über die vorhandenen Seiten zugänglichen SEO-Fälle geprüft und
+die nicht ausführbaren Nachweise ausdrücklich getrennt dokumentiert. Die Abnahme
+ist wegen der Befunde nicht bestanden. Login, Warenkorb, Preise und Checkout sind
+darüber hinaus eigenständige Shop-Abnahmen und werden durch diese SEO-Prüfung
+nicht als bestanden ausgegeben.
+
+**Weiter offen:** tatsächliche Anzahl der
+`getResults()`-Aufrufe im Serverprofil, Vergleich gegen vollständiges vorheriges
+Plenty-Listen-HTML sowie Login/Warenkorb/Preis-/Checkout-Abnahme. Die Preview-Antworten
+verlangen `must-revalidate, no-store, private`; Wiederholungen in dieser Vorschau
+belegen daher keine Produktionsabnahme kalter/warmer ShopBooster-Caches.
+
+Rohantworten und tokenbereinigte Messwerte liegen ausschließlich ignoriert unter
+`.cache/seo-preview-20261109/`: `core-results.json` (24), `extra-results.json` (32),
+`session-results.json` (8), `fresh-results.json` (4), `completion-results.json` (43),
+`summary.json`, `acceptance-matrix.json`, `browser-observations.json`,
+`browser-completion.json` sowie `local-seo2.json`/`local-seo3.json`.
+Raw-HTML kann Preview-Parameter enthalten und bleibt
+außerhalb versionierter Dokumentation. Der initiale Browseraufruf meldete einen
+Navigations-Timeout; zwei Dialog-Locatorversuche scheiterten an inzwischen nicht
+vorhandenen Zielen. Die geladene Vorschau wurde danach geprüft. Der erste
+sandboxierte HTTP-Anlauf scheiterte an DNS; der freigegebene lesende Abruf gelang.
+Diese Werkzeuganläufe werden nicht als bestandene Prüffälle gezählt.
+
+**Änderungen dieses Prüflaufs:** nur diese README und ignorierte lokale Prüfartefakte.
+Keine Änderung am Produktivcode, an Shop-Konfigurationen, JavaScript, Caches oder B2C;
+kein eigener Deploy, Sync, Commit oder Push. Der Nutzer hat das Test-Pluginset
+bereitgestellt. Die Abnahme bleibt wegen der genannten Befunde offen.
+
+### Ergänzung: vier Content-Artikellisten (2026-11-09)
+
+Zusätzlich zur obigen 111-Fälle-Matrix wurden `/alle-artikel/`, `/herren/`,
+`/alles-unter-x-euro/` und `/damen/` gemeinsam geprüft. **42 weitere HTTP-Prüffälle,
+42 × HTTP 200**, keine Transport-/PHP-Fehlermarker, jeweils Preview-Pluginset 426
+und genau ein nicht leeres Robots-/Canonical-/Titel-/Beschreibungsfeld.
+Die separate Auswertung umfasst **247 Einzelprüfungen: 244 PASS, 3 FAIL**.
+Die drei FAILs betreffen die Gesamtzahl-/Randseitenkonsistenz bei Herren und Damen;
+sie werden unten konkret genannt. Die acht ergänzenden Browserfälle und deren
+JavaScript-Befunde werden separat bewertet und sind nicht in diesen 247 enthalten.
+Das Gesamtergebnis bleibt **PARTIAL**, keine SEO-Freigabe.
+
+Der Nutzer bestätigt die fachliche Auswahl: Herren ist eine Facettenauswahl auf
+**Marken, Kategorie 60**, Alle Artikel verwendet diese Kategorie ohne zusätzlichen
+fachlichen Filter, Alles unter X Euro verwendet Preisfilter. Im gespeicherten
+HTML ist bei allen vier Listen Kategorie 60 als Filterkontext sichtbar. Die
+effektiven Listen unterscheiden sich wie folgt; dies sind **Messwerte dieses
+Prüflaufs, keine URL-/Kategoriezuordnungen im Produktivcode**:
+
+| Content-Seite | Auswahl auf Kategorie 60 | Gemeldete Treffer | Effektive Artikel/Seite | Gemeldete letzte Seite | Randseite / erste leere Seite |
+| --- | --- | ---: | ---: | ---: | --- |
+| `/alle-artikel/` | keine ausgewählte Facette | 2.387 | **12** | 199 | Seite 199: 11 Artikel; Seite 200 leer |
+| `/herren/` | Facette **727** | 1.336 | **24** | 56 | Seite 56: **24 statt rechnerisch 16** Artikel; Seite 57 leer |
+| `/alles-unter-x-euro/` | Preisfilter; keine ausgewählte Facette | 2.366 | **12** | 198 | Seite 198: 2 Artikel; Seite 199 leer |
+| `/damen/` | Facette **726** | 1.271 | **24** | 53 | Seite 53: **24 statt rechnerisch 23**; Seite **54 noch 5 Artikel**, Seite 55 leer |
+
+Für jede Seite wurden normale URL, `page=1`, Seite 2, gemeldete letzte Seite,
+die beiden Folgeseiten und Seite 999 untersucht. Seite 1 ohne Seitenzusatz mit
+Basis-Canonical; gültige Seite 2 und gemeldete letzte Seite mit eigenem
+Seiten-Canonical und `INDEX,FOLLOW`. Seiten oberhalb der gemeldeten Grenze
+erhalten serverseitig `NOINDEX,FOLLOW`, Basis-Canonical und keinen Seitenzusatz.
+Bei Damen ist diese Grenze nachweislich zu niedrig: die nicht leere Seite 54
+wird weiterhin ausgeschlossen. Bei Herren stimmt die empirisch untersuchte
+Grenze 56/57, aber Total und Restmenge sind inkonsistent. Eine korrigierte
+Gesamtzahl lässt sich daraus ohne vollständigen Abfrage-/Gruppierungsnachweis
+nicht ableiten. Die oben geforderte serverseitige Profilierung bleibt erforderlich;
+keine zusätzliche Artikel- oder Zählabfrage als Umgehung einbauen.
+
+**Abfragepfad und Parameter:** Im lokalen Code erzeugt ausschließlich
+`getItemsFromCat()` das hier beobachtete `CategoryItemContent` mit paginierter
+Liste. Es verwendet `CategoryItems::getSearchFactory()` und
+`Facets::getSearchFactory()` mit denselben validierten Optionen und genau einen
+`ItemSearchService::getResults()`-Aufruf; Total und Seitengröße dieses Ergebnisses
+werden in den aktiven `SeoPage`-Render übernommen. `getItemsFromCatSimple()`
+rendert nur `CategoryGridOnly` und registriert keine paginierte Hauptliste.
+Der Herren-Aufruf `getItemsFromCat(60, 24, [727])` wurde vom Nutzer ausdrücklich
+bestätigt und passt zu den Live-Messwerten. Die vollständigen gespeicherten
+ShopBuilder-Ausdrücke der anderen Seiten und die numerischen Standardpreisgrenzen
+stehen weder im Checkout noch im öffentlichen HTML. Ihre literalen Argumente sind
+deshalb **nicht unabhängig verifiziert**; sie werden nicht aus URL-Namen erraten.
+Auch die tatsächliche Live-Aufrufzahl erfordert weiterhin Serverprofilierung.
+
+**Filter und Trennung der Seiten:**
+
+- Nach umgekehrter Aufrufreihenfolge und einer normalen Newsletter-Content-Seite
+  reproduzieren alle vier Listen exakt ihre Artikel-IDs/Reihenfolge, Trefferzahl,
+  Facetten, Titel, Beschreibung, Robots und Canonical auf Basis-URL und Seite 2.
+- Gleicher Request-Preisbereich `priceMin=0&priceMax=5` auf Alle Artikel und Alles
+  unter X Euro liefert jeweils 1.551 Treffer, zwölf Artikel pro Seite, 130 Seiten
+  und dieselben Artikel-IDs. Beide behalten ihre **eigenen** Metadaten und Basis-URLs.
+  Diese Request-Preisgrenzen überschreiben gemäß bestehendem Resolver die
+  Funktions-Standardwerte; sie belegen nicht deren unbekannte numerische Grenzen.
+- Herren mit zusätzlicher Facette 3118 behält **727 und 3118**; Total sinkt auf
+  432 bei 24 Artikeln pro Seite und 18 Seiten. Robots bleibt wegen `facets`
+  `NOINDEX,FOLLOW`, die Metadaten bleiben die der Herren-Content-Seite.
+- Nach diesen Filtern liefert Alle Artikel wieder 2.387 Treffer ohne ausgewählte
+  Facette und exakt seine ursprüngliche erste Liste. Auf **Seite 199** unterscheiden
+  sich die beiden 12er-Listen korrekt: Alle Artikel hat elf Artikel und einen
+  Seiten-Canonical mit `INDEX,FOLLOW`; Alles unter X Euro ist leer, `NOINDEX` und
+  besitzt den Basis-Canonical. Die SEO-Grenzen werden nicht zwischen ihnen geteilt.
+- `/content/newsletter/?page=2` und nach den Filtern `?page=999` liefern weiterhin
+  normalen Content ohne Artikelliste, Total oder Pagination, mit eigenen Metadaten,
+  Basis-Canonical und `NOINDEX,FOLLOW`. Keine künstliche Hauptliste entsteht.
+
+**Browser:** Acht Navigationen nach vollständigem Laden ohne Navigations-Timeout:
+alle vier Seiten mit Seite 2, zusätzlich Alle Artikel/Preisfilter/Herren mit 999
+und Damen mit 54. Auf Seite 2 passen die vier Listen und ihre eigenen Metadaten.
+Der bekannte `cat.js`-Befund tritt auf **allen vier** ungültigen Varianten auf:
+Titel und Beschreibung erhalten wieder den unerlaubten Seitenzusatz, obwohl das
+Server-HTML ihn weglässt. Robots und Canonical bleiben wie serverseitig ausgegeben.
+Zusätzlich beobachtet: gültige deutsche Seiten verwenden im Server-HTML den
+Zusatz **„Page N“**, nach JavaScript **„Seite N“**. `PageMetadata.twig` leitet die
+Sprache aus `locale` ab und hat den Fallback `Page`; `cat.js` verwendet dagegen
+die HTML-Sprache. Der tatsächliche serverseitige `locale`-Wert ist nicht sichtbar;
+eine vollständige Prüfung der Seitensuffix-Lokalisierung bleibt damit offen.
+Diese Beobachtungen sind keine bestandene Titel-/Beschreibungsabnahme.
+
+**Cache und verbleibende Grenzen:** Alle 42 Antworten melden Preview und
+`must-revalidate, no-store, private` sowie `Miss from cloudfront`. Die wiederholten
+Varianten zeigen keinen beobachteten Datentransfer zwischen diesen vier Seiten,
+beweisen aber keinen kalten/warmen Produktions-ShopBooster-Lebenszyklus
+(**NOT_TESTED**). Keine Cache- oder ShopBuilder-Konfiguration wurde verändert.
+Der Live-Test einer ausdrücklich restriktiven Robots-Kategorie bleibt gemäß
+Nutzervorgabe **NOT_TESTED**. Die vorhandenen lokalen 250/250-Regressionen je
+Twig-Version einschließlich der 24 Robots-Fälle gelten unverändert; Produktivcode
+und Tests wurden in dieser Ergänzung nicht geändert und nicht erneut ausgeführt.
+Ein lokaler PlentyONE-Validator/Build wurde weiterhin **nicht ausgeführt**.
+
+Zusätzliche ignorierte Artefakte: `content-pages-initial-results.json` (8),
+`content-pages-bounds-results.json` (20), `content-pages-repeat-results.json` (9),
+`content-pages-query-results.json` (5), `content-pages-review.json`,
+`content-browser-observations.json` sowie die verwendeten Prüfskripte und Rohantworten
+unter `.cache/seo-preview-20261109/`. Die vier Preview-Einstiege sind separat
+gespeichert und werden nicht als zusätzliche Prüffälle gezählt. Ein lokaler
+Ausgabeversuch scheiterte an der Windows-Zeichencodierung; mit UTF-8 gelang die
+Auswertung. Dies war kein fehlgeschlagener Shop-Aufruf. `git diff --check` bestanden.
+**Geänderte versionierte Datei: nur README.md**, lokal auf `develop`, unstaged.
+Kein eigener Commit, Push, Merge, Versionsschritt, Deploy oder Sync; B2C unverändert.
+
+### Folgeauftrag: Randseitenanalyse und lokaler JavaScript-Fix (2026-11-09)
+
+Der Nutzer hat anschließend die Untersuchung von Herren/Damen sowie die Korrektur
+des vorhandenen Metadaten-JavaScripts beauftragt. **Der JavaScript-Fix ist lokal
+getestet, nicht bereitgestellt. Die genaue Ursache der Artikelzählabweichung ist
+weiterhin nicht vollständig nachgewiesen.** Es wurde keine Artikelzählung oder
+serverseitige SEO-Paginierungsentscheidung geändert; sämtliche PHP-Dateien unter
+`src/` sind gegenüber `HEAD` unverändert. Die folgenden Live-Beobachtungen stammen
+weiter aus dem bereits vorhandenen Test-Pluginset, nicht aus dem lokalen JS-Fix.
+
+**Erneute Abfrage-/ID-Prüfung:** 36 protokollierte HTML-GETs, **36 × HTTP 200**,
+keine Transportfehler/PHP-Fehlermarker, alle mit Preview-Pluginset 426. Drei Serien:
+gemeinsame Preview-Sitzung, **neue CookieJar/HTTP-Sitzung für jeden einzelnen GET**,
+und Wiederholung in umgekehrter Seitenreihenfolge. Pro Serie wurden aktuelle
+Basis-URL und Herren 54–58 beziehungsweise Damen 51–55 abgerufen. Die zwei
+zusätzlichen Preview-Einstiege wurden separat gespeichert und nicht mitgezählt.
+
+| Vergleichsfenster | Artikel je Seite | Verschiedene Artikel-IDs | Wiederholungen innerhalb / zwischen Seiten | Ergebnis aller drei Serien |
+| --- | --- | ---: | --- | --- |
+| Herren 54 / 55 / 56 | 24 / 24 / 24 | **72 von 72** | **0 / 0** | IDs, Reihenfolge und Total 1.336 identisch; 57/58 leer |
+| Damen 51 / 52 / 53, gemeldete letzte drei | 24 / 24 / 24 | **72 von 72** | **0 / 0** | IDs, Reihenfolge und Total 1.271 identisch |
+| Damen 52 / 53 / 54, letzte drei nicht leere | 24 / 24 / 5 | **53 von 53** | **0 / 0** | IDs, Reihenfolge und Total 1.271 identisch; 55 leer |
+
+Verglichen wurden die tatsächlichen `data-eg-item`-Werte pro Artikelkarte; im
+Template stammen diese aus `item.data.variation.itemId`, also **Artikel-IDs**.
+Die paarweisen Schnittmengen der genannten Seiten sind jeweils leer. Die fünf
+Damen-IDs auf Seite 54 bleiben `212496`, `212494`, `212492`, `212470`, `211575`.
+Es wurden nur die genannten Randseiten auf Dubletten geprüft. Daraus folgt weder
+ein vollständiger Dublettenausschluss über alle früheren Seiten noch eine
+belegte korrigierte Gesamtzahl von 1.344 oder 1.277.
+
+**Tatsächlicher vorhandener Abfragepfad:** `getItemsFromCat()` bildet die
+Quellfacetten und Request-Facetten, löst Preise auf und validiert die Optionen
+über Ceres `SearchOptions`. Dieselben Optionen gehen an `CategoryItems` und
+`Facets`; ein `ItemSearchService::getResults()` liefert `itemList.total` und
+`itemList.documents`. Total wird unverändert als `itemCountTotal` verwendet,
+die Dokumente werden einmal durch die Artikelschleife gerendert. Die bestehende
+Berechnung `ceil(total / effectiveSize)` und der SEO-Helper sind unverändert.
+Herren: Kategorie 60, Quellfacette 727, 24 Artikel; Damen: sichtbarer Filterkontext
+60/726, effektiv ebenfalls 24 Artikel. Der vollständige gespeicherte Damen-Aufruf
+und die serverseitig aufgelösten Suchoptionen sind weiterhin nicht als Trace verfügbar.
+
+Als unabhängige Diagnose wurden zusätzlich **zwei bestehende lesende
+`/rest/io/facet/`-Aufrufe** mit Kategorie 60, Facette 727 beziehungsweise 726 und
+Preisbereich 0/0 ausgeführt. Die lokal registrierte Resource verwendet denselben
+`CategoryItems`-Suchtyp, setzt aber **Seite 1 und Größe 50**; sie ist deshalb kein
+identischer Mitschnitt der 24er-ShopBuilder-Abfrage. Beide HTTP-200-JSON-Antworten
+enthalten bereits ohne Twig-/JavaScript-Ausgabe **Total 1.336 beziehungsweise
+1.271**, jeweils 50 Dokumente und keine `inactiveVariationIds`. Das belegt, dass
+diese Total-Werte nicht erst vom Metadaten-JavaScript erzeugt werden. Der
+Preview-Einstieg erfolgte vorher in derselben Sitzung; die JSON-Antwort selbst
+enthält keinen unabhängig prüfbaren Pluginset-/Stage-Marker.
+
+**Nachgewiesen und noch offen:** Die Abweichung ist reproduzierbar und lässt sich
+in diesen Randfenstern nicht mit wiederholten Artikelkarten erklären. Sie tritt
+auch bei neuen Client-Sitzungen auf; unterschiedliche Seitenreihenfolge ändert
+sie nicht. Ein einmaliger alter Browserzustand ist dafür keine ausreichende
+Erklärung. **Ob Total/Grouping unterschiedliche Einheiten verwenden, eine
+Aggregation ungenau zählt, frühere Seiten Überschneidungen haben oder ein interner
+Cache beteiligt ist, bleibt offen.** Keine dieser Möglichkeiten wird als
+nachgewiesene Backend-Ursache ausgegeben. Die
+[offizielle Suchschnittstelle](https://developers.plentymarkets.com/en-gb/interface/stable7/Webshop.html)
+dokumentiert Optionen und Gruppierung; der eingesehene
+[ItemSearchService-Stub](https://raw.githubusercontent.com/plentymarkets/plugin-interface/master/Modules/Webshop/ItemSearch/Services/ItemSearchService.php)
+enthält nur abstrakte Methoden, keine ausführbare Total-/Cache-Implementierung.
+Mehrere weitere öffentliche Source-Abrufe scheiterten am Web-Werkzeug mit
+`Cache miss`; daraus wurde keine Implementierung abgeleitet.
+
+**Cache-Grenze:** Alle 36 HTML-Antworten verlangen `must-revalidate, no-store,
+private` und melden `Miss from cloudfront`; die beiden REST-Antworten ebenso.
+Es wurden keine Cache-Header zum Umgehen der Caches gesetzt, keine Zufallsparameter
+angehängt, keine Konfiguration geändert und kein Cache invalidiert. **Frische
+Client-Abfragen sind nachgewiesen; frische native Suchausführung und kalter/warmer
+ShopBooster-/Suchcache sind ohne Servertrace nicht nachgewiesen (`NOT_TESTED`).**
+
+Kleinster sinnvoller nächster Schritt ist ein lesender Trace der **ohnehin
+vorhandenen einzelnen ShopBuilder-Suche** im PlentyONE-System. Er muss effektive
+Kategorie/Facetten/Preise, Seite/Größe, vollständige Sortierung, Gruppierung,
+Total-Aggregation sowie `total`, Dokumentanzahl und Artikel-/Varianten-IDs vor Twig
+zeigen. Dazu vorhandenen Cache-Schlüssel, Hit/Miss und Herkunft der Antwort prüfen.
+Es ist keine zweite Such-/Zählabfrage im Seitenaufruf erforderlich. **Korrektur
+erst danach:** Falls Total eine Schätzung oder eine andere Gruppeneinheit ist,
+innerhalb der bestehenden Suche eine nachweislich exakte, gleich gefilterte
+Gruppenzahl verwenden; bei nachgewiesen falschem Cache-Schlüssel dessen bestehende
+Bildung korrigieren. Keine pauschalen Aufschläge, keine aus URL-Namen abgeleiteten
+Sonderfälle und keine zusätzliche Zähl-Engine. Aktuell wurde davon nichts umgesetzt.
+
+**JavaScript-Root-Cause und Umsetzung:** `cat.js` verwendete `parseInt(page)` ohne
+Bestätigung der Liste/Seitengrenze und entfernte zusätzlich beliebigen Text nach
+einem Gedankenstrich. Der vorhandene `SeoPage.pagination`-Zustand wird nun in
+`PageMetadata.twig` einmal als `o46-pagination`-Metadatum ausgegeben. Dies exportiert
+nur das bestehende Ergebnis und ändert keine serverseitige SEO-Entscheidung oder
+Abfragezahl. `cat.js` nutzt diesen Zustand für strikt positive, sicher darstellbare
+Seitennummern und dieselbe bekannte Grenze. Ungültige/mehrdeutige/leere/unbelegte
+Listen erhalten keine neuen Titel-/Beschreibungszusätze. Ohne lesbaren Zustand
+bleiben die Server-Metadaten erhalten. Gültige Nummerierung und Sprachlabels bleiben
+bei Direktaufruf, `pushState`, `replaceState`, `popstate` und Infinite Scroll erhalten.
+Ein anderer Pfad oder andere Filter erhalten nicht die Grenzen der alten Liste.
+Nur bekannte abschließende Seitensuffixe werden entfernt; redaktionelle
+Gedankenstriche bleiben erhalten. Fehlende Beschreibungen werden nicht erfunden.
+Robots und Canonical werden vom JavaScript nicht verändert. Damen 54 bleibt wegen
+der unveränderten serverseitigen Grenze weiterhin ausgeschlossen; der JS-Fix löst
+ausdrücklich nicht die Zähl-/Grenzenabweichung.
+
+**Erneut ausgeführte Regressionen nach der Korrektur:**
+
+| Prüfung | Exaktes Ergebnis |
+| --- | --- |
+| SEO/PHP-Kompatibilität, Twig 2.16.1 / 3.30.0 | jeweils **261/261 PASS**, 0 Fehler; 11 neue Fälle zum exportierten Zustand und unveränderter Abfragezahl |
+| Vergleich mit vorherigen 250 Ergebnissen | jeweils **250/250 identisch**; historische 190er-Vorherprüfung zusätzlich **190/190 PASS** |
+| Vollständiges Twig-Inventar / bestehende Regressionen | jeweils **171/171 Syntax PASS**, **38/38 PASS** samt historischem Vergleich |
+| Kontakt-/Newsletter-Layouts | jeweils **60/60 PASS**, fünf Sprachen |
+| Neues Metadaten-JavaScript mit DOM-/History-Fixtures und echten PHP-Ergebnissen beider Twig-Versionen | **111/111 PASS** |
+| Dasselbe JavaScript mit den 22 PHP-Fixtures in lokalem Chrome, inkl. History-Wechseln | **22/22 PASS**, 0 Seitenfehler; alle HTTP-Anfragen lokal erfüllt/abgebrochen |
+| Bestehender Kontakt-Widget-Browserlauf | **55/55 Szenarien**, **1.332 Assertions**, 0 Seitenfehler, 0 externe Requests |
+| PHP-Lint, alle Dateien in `src/` und `tests/` | **12/12 PASS** |
+| Node-Syntax: `cat.js`, neuer Metadaten-Test und bestehender Widget-Test; `git diff --check` | **PASS** |
+| PlentyONE-Validator/Build, Deployment und Live-Abnahme des lokalen JS-Fixes | **NOT_RUN** |
+
+Die erstmalige Erweiterung verwendete versehentlich den Fixture-Modus `simple`
+(Hauptliste plus Widget) statt `simple-only`: 260 PASS/1 FAIL. Nach Korrektur des
+Testinputs bestehen alle 261 Fälle. Zwei zusätzliche `--compare`-Anläufe mit einer
+250er-Referenz wurden vom unveränderten Testtreiber korrekt abgelehnt, weil diese
+Option ausdrücklich eine 190er-Vorherreferenz verlangt; der zusätzliche
+250er-Vergleich erfolgte separat und vollständig. Der erste Chrome-Fixture-Lauf
+hatte 18 PASS/4 FAIL wegen fehlender UTF-8-Angabe im lokalen Test-HTML; die korrigierte
+Fixture verwendet wie der Shop UTF-8 und besteht 22/22. Produktionsvalidierungen
+wurden dafür nicht gelockert. Keine Test-/Browser-Timeouts oder abgebrochenen Suiten
+in diesem Folgeauftrag. PHP-/Twig-Deprecations sind separat in den JSON-Berichten
+erfasst und werden nicht als PlentyONE-Freigabe gewertet.
+
+Reproduktion mit vorhandenen lokalen Runtimes: bestehende PHP-Befehle unten
+verwenden, mit Ausgaben unter `.cache/seo-preview-20261109/js-fix-*`. Für den
+zusätzlichen Node-/Chrome-Test:
+
+```powershell
+$env:O46_PLAYWRIGHT_MODULE = 'C:\Users\mschw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright'
+$env:O46_BROWSER_EXECUTABLE = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+node tests/seo_metadata.cjs .cache/seo-preview-20261109/js-fix-metadata.json .cache/seo-preview-20261109/js-fix-seo2.json .cache/seo-preview-20261109/js-fix-seo3.json --browser
+```
+
+Die lokale Ermittlung ist unter `.cache/seo-preview-20261109/` abgelegt:
+`tail-shared-results.json`, `tail-fresh-results.json`, `tail-repeat-results.json`
+(je 12), `tail-review.json` mit vollständigen IDs/Schnittmengen,
+`query-probe-summary.json` und rohe JSON-/HTML-Antworten. Testberichte:
+`js-fix-seo2/3.json`, `js-fix-250-comparison.json`, `js-fix-twig2/3.json`,
+`js-fix-contact2/3/`, `js-fix-metadata.json`, `js-fix-widget-browser.json` und
+`js-fix-php-lint.json`. Rohantworten/Preview-Token bleiben ignoriert.
+
+**Geänderte Dateien dieses Folgeauftrags:** `resources/js/cat.js`,
+`resources/views/PageDesign/Partials/PageMetadata.twig`, `tests/seo_pagination.php`,
+neu `tests/seo_metadata.cjs`, diese README und beide vorhandenen Changelogs.
+Alles lokal, uncommittet und unstaged auf `develop`. Kein Commit, Push, Merge,
+Versionsschritt, Deploy, Sync, Cache-Invalidieren oder B2C-Eingriff. Der explizite
+restriktive Kategorie-Live-Test bleibt gemäß Nutzervorgabe **NOT_TESTED**.
+
 ### PlentyONE-Buildkorrektur (2026-11-09)
 
 Ausgangsstand dieses Folgefixes: `c5387abef15f25e03e1ad183751f2b1407713cf3`
 (`SEO Test 1`), sauberer Branch `develop`. Der Nutzer meldete einen abgebrochenen
 produktiven PlentyONE-Build mit vier PHP-Validierungsfehlern. Die vorherigen
 Standard-PHP-/Twig-Tests deckten diese Pluginrestriktionen nicht ab.
-**Nach dem lokalen Fix wurde kein PlentyONE-Validator/Build ausgeführt.**
+**Während dieses lokalen Fixlaufs wurde kein PlentyONE-Validator/Build ausgeführt.**
+Die anschließende Nutzer-Bereitstellung und Live-Teilprüfung sind oben separat dokumentiert.
 
 | Gemeldete Stelle im Ausgangsstand | Konkrete Korrektur |
 | --- | --- |
@@ -305,7 +733,11 @@ Die Autoloader/Parser sind lokale Testwerkzeuge, keine Plugin-Abhängigkeiten.
 Der neue Test legt seine temporäre Baseline neben dem Report ab und entfernt sie
 nach dem Laden. Es wird kein Cache für SEO-Daten oder HTML hinzugefügt.
 
-### Manuelle B2B-Test-Pluginset-Abnahme – vollständig NOT_RUN
+### Manuelle B2B-Test-Pluginset-Abnahme – teilweise geprüft, weitere Schritte offen
+
+Die oben protokollierte Live-Teilprüfung deckt inzwischen Teile der folgenden
+Matrix ab. Profiling, Cache-/Konfigurationsfälle und vollständige Shopfunktionen
+bleiben offen; die Matrix ist nicht insgesamt als bestanden freigegeben.
 
 1. Lokalen Diff prüfen und den freigegebenen Stand manuell in ein isoliertes
    **B2B-Test-Pluginset** übertragen. Bestehende Konfigurationen/Zuordnungen vorher

@@ -24,6 +24,8 @@
 {# One final output. Pagination and query rules can only add restrictions. #}
 {% set blockRobots = block('robots') is defined ? block('robots') : '' %}
 <meta name="robots" content="{{ metadataSeoPage.robots(blockRobots, details is not null ? details.metaRobots : '', forceNoIndex is defined and forceNoIndex) }}">
+{# Expose the existing decision to category JS; do not infer bounds from URL/DOM links. #}
+<meta name="o46-pagination" content="{{ metadataSeoPage.pagination | json_encode }}">
 
 {# Beschreibung und Keywords #}
 {% if block('description') is defined %}
