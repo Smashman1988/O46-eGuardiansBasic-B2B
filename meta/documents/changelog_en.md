@@ -8,6 +8,7 @@
 
 ## Unreleased – contact widget (2026-11-03)
 
+- Subtle borders help the white contact label and green chat bubble stand out against the page.
 - Added a persistent B2B contact launcher with Outlet46 styling, a responsive contact panel, local CSS/vanilla JavaScript and inline SVGs. Only the panel can be closed; no persistent dismissal state or additional service.
 - Exactly two contact options: the Outlet46 WhatsApp channel in a new tab with `noopener noreferrer`, and `mailto:b2b@outlet46.de`. No personal WhatsApp conversation is promised.
 - Included once through the existing B2B page layout using dynamic `GuardiansBasicB2B` plugin paths, outside Vue and omitted from Quickviews. Existing configuration is preserved.

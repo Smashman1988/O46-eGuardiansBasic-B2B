@@ -39,7 +39,7 @@
 .o46-b2b-contact-label {
     min-width: 0;
     padding: 12px 16px;
-    border: 1px solid #e3e7dc;
+    border: 1px solid #aab39e;
     border-radius: 12px;
     background: #fff;
     box-shadow: 0 4px 18px rgb(25 35 12 / 12%);
@@ -52,6 +52,7 @@
     place-items: center;
     width: var(--o46-b2b-contact-size);
     height: var(--o46-b2b-contact-size);
+    border: 1px solid #547d00;
     border-radius: 50%;
     background: #76ae00;
     color: #17230b;
