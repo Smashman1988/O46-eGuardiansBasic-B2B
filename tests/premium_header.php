@@ -6,14 +6,6 @@ require $argv[1];
 $root = dirname(__DIR__);
 $output = $argv[2];
 $baseline = in_array('--baseline', $argv, true);
-$baselineRef = '8eeb24f7732c2cb5558b2dbf148eb85182708f0d';
-foreach ($argv as $argument) {
-    if (strpos($argument, '--baseline=') === 0) {
-        $baseline = true;
-        $baselineRef = substr($argument, strlen('--baseline='));
-        if (!preg_match('/^[a-f0-9]{7,40}$/', $baselineRef)) { throw new RuntimeException('Expected a Git commit ID'); }
-    }
-}
 $notices = [];
 set_error_handler(function ($level, $message) use (&$notices) {
     if (in_array($level, [E_DEPRECATED, E_USER_DEPRECATED], true)) { $notices[$message] = true; return true; }
@@ -21,9 +13,9 @@ set_error_handler(function ($level, $message) use (&$notices) {
 });
 if (!is_dir($output)) { mkdir($output, 0777, true); }
 function headerSource($file) {
-    global $root, $baseline, $baselineRef;
+    global $root, $baseline;
     if (!$baseline) { return file_get_contents($root . '/' . $file); }
-    $process = proc_open(['git', 'show', $baselineRef . ':' . $file], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
+    $process = proc_open(['git', 'show', '8eeb24f7732c2cb5558b2dbf148eb85182708f0d:' . $file], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
     $text = stream_get_contents($pipes[1]); $error = stream_get_contents($pipes[2]);
     fclose($pipes[1]); fclose($pipes[2]);
     if (proc_close($process)) { throw new RuntimeException($error); }

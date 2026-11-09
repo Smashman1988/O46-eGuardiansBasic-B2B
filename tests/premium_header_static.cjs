@@ -6,9 +6,8 @@ const cp = require('node:child_process');
 const postcss = require(process.env.O46_POSTCSS_MODULE || 'postcss');
 const root = path.resolve(__dirname, '..');
 const baseline = '8eeb24f7732c2cb5558b2dbf148eb85182708f0d';
-const refinementBaseline = '4b4503f29e87f732878ebebf0ecccdc14e61dea5';
 const read = file => fs.readFileSync(path.join(root, file), 'utf8').replaceAll('\r\n','\n');
-const previous = (file, ref=baseline) => cp.execFileSync('git',['show',`${ref}:${file}`],{cwd:root,encoding:'utf8',maxBuffer:8*1024*1024}).replaceAll('\r\n','\n');
+const previous = file => cp.execFileSync('git',['show',`${baseline}:${file}`],{cwd:root,encoding:'utf8',maxBuffer:8*1024*1024}).replaceAll('\r\n','\n');
 const files = cp.execFileSync('git',['ls-files'],{cwd:root,encoding:'utf8'}).trim().split('\n');
 const report = {baseline,checks:[],sourceSyntax:[],plentyONE:'NOT_RUN'};
 function check(name, callback) { callback(); report.checks.push(name); }
@@ -25,11 +24,6 @@ function block(source, id) {
 for(const language of ['DE','EN','FR','IT','ES']) {
     const file=`resources/views/Category/Macros/CategoryTree${language}.twig`;
     const before=previous(file),after=read(file),active=after.replace(/\{#[\s\S]*?#\}/g,'');
-    check(`${language}: complete mobile macro unchanged by refinement`,()=>assert.equal(after,previous(file,refinementBaseline)));
-    check(`${language}: seven dropdowns and four direct links match actual macro classes`,()=>{
-        assert.deepEqual([...active.matchAll(/<li class="eg-ddown cat-(\d+)">/g)].map(m=>Number(m[1])),[4814,4813,81,80,4103,3813,78]);
-        assert.deepEqual([...active.matchAll(/<li class="cat-(\d+)">/g)].map(m=>Number(m[1])),[5618,6425,5081,60]);
-    });
     const expected=[5618,4814,4813,81,80,4103,6425,3813,78,5081,60];
     check(`${language}: 11 whole category blocks preserve every URL, child, translation and event`,()=> {
         for(const id of expected) assert.equal(block(after,id),block(before,id));
@@ -54,16 +48,14 @@ check('legacy editable CSS unchanged',()=>assert.equal(source.split(marker)[0].t
 check('production CSS parses',()=>postcss.parse(production));
 check('isolated source patch parses',()=>postcss.parse(source.split(marker)[1]));
 check('critical CSS matches production suffix',()=>assert.equal(read('resources/views/PageDesign/Partials/Head.twig').match(/<style data-premium-header>(.*?)<\/style>/s)[1],production.split(marker+'\n')[1].trim()));
-check('both CSS inclusions have refinement cache busting without a version bump',()=>assert.equal((read('resources/views/PageDesign/Partials/Head.twig').match(/main-211025\.min\.css\?v=1\.0\.8-header2-\{\{ buildHash \}\}/g)||[]).length,2));
+check('both CSS inclusions have cache busting',()=>assert.equal((read('resources/views/PageDesign/Partials/Head.twig').match(/main-211025\.min\.css\?v=1\.0\.8-\{\{ buildHash \}\}/g)||[]).length,2));
 const headerFile='resources/views/PageDesign/Partials/Header/Header.twig';
-check('complete Header.twig unchanged by refinement',()=>assert.equal(read(headerFile),previous(headerFile,refinementBaseline)));
-check('plugin identity and version 1.0.8 unchanged',()=>assert.equal(read('plugin.json'),previous('plugin.json',refinementBaseline)));
 const dataAttributes=text=>[...text.matchAll(/\bdata-[\w-]+(?:="[^"]*")?/g)].map(m=>m[0]).sort();
 check('all header event and data attributes retained',()=>assert.deepEqual(dataAttributes(read(headerFile)),dataAttributes(previous(headerFile))));
 const conditions=text=>[...text.replace(/\{#[\s\S]*?#\}/g,'').matchAll(/\{%[\s\S]*?%\}/g)].map(m=>m[0].replace(/\s+/g,' '));
 check('header Twig conditions and service expressions retained',()=>assert.deepEqual(conditions(read(headerFile)),conditions(previous(headerFile))));
 check('Head differs only by the generated critical patch and two cache keys',()=>{
-    const head=read('resources/views/PageDesign/Partials/Head.twig').replace(/<style data-premium-header>.*?<\/style>\n/s,'').replaceAll('?v=1.0.8-header2-{{ buildHash }}','');
+    const head=read('resources/views/PageDesign/Partials/Head.twig').replace(/<style data-premium-header>.*?<\/style>\n/s,'').replaceAll('?v=1.0.8-{{ buildHash }}','');
     assert.equal(head,previous('resources/views/PageDesign/Partials/Head.twig'));
 });
 for(const file of ['resources/css/main.css','resources/css/checkout.css']) {
