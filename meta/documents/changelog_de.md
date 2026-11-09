@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – Kategorienavigation (2026-11-09)
+
+- Home & Living ersetzt „Letzte Größe“ in der B2B-Kategorienavigation für DE, EN, FR, IT und ES. Die vorhandenen sprachspezifischen Unterkategorien sind wieder verfügbar.
+
 ## Unveröffentlicht – Kontakt-Widget (2026-11-03)
 
 - Dauerhaft verfügbarer B2B-Kontaktbutton mit Outlet46-Gestaltung, responsivem Kontaktfenster, lokalem CSS/Vanilla-JavaScript und Inline-SVGs ergänzt. Nur das Fenster ist schließbar; kein dauerhafter Ausblendstatus oder zusätzlicher Dienst.
