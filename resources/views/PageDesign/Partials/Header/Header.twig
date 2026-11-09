@@ -22,18 +22,21 @@
 {% set currencyParam = currencycheck != "EUR" ? '?currency=' ~ currencycheck : '' %}
 
 
-<header class="main-header stickyhead premium-header" id="page-header">
+{#{% cacheblock use "header.topbar." ~ lang ~ "." ~ currencycheck %}#}
+<div class="container nopadding">
+        <div class="col-12 text-right lang-switcher nopadding">
+           <span class="f-size16"><a href="{{ googlereviewlink }}">{{ trans("GuardiansBasicB2B::Template.trustpilotinfo") }} <img fetchpriority="low" src="{{ plugin_path('GuardiansBasicB2B') }}/images/g-Logo.svg" alt="Outlet46.de" class="margin-right-10" style="vertical-align: middle;max-height: 25px;max-width: 80px;"></a></span>
+            <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5638" data-eg-title="Currency">{{ services.checkout.getCurrencyData()['symbol'] }}</button>
+            <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5640" data-eg-title="{{ trans('GuardiansBasicB2B::Template.langchange') }}" aria-label="{{ trans('GuardiansBasicB2B::Template.langchange') }}"><img fetchpriority="low" src="{{ plugin_path('Ceres') }}/images/flags/4x3/{{ flags[lang]|default('de') }}.svg" class="flag-icon" alt="flag-{{ flags[lang]|default('de') }}"></button>
+        </div>
+</div>
+{#{% endcacheblock %}#}
+<header class="main-header stickyhead" id="page-header">
     <div class="eg-backdrop eg-backdrop-basket-prev transition" data-eg-handler="closeBackdrop" data-eg-event="click touchend"></div>
     <div class="header-wrap">
         <div class="container">
-            <div class="row align-items-center premium-header-row">
-                <div class="col-12 text-right lang-switcher nopadding premium-header-utilities">
-                    <span class="f-size16"><a href="{{ googlereviewlink }}">{{ trans("GuardiansBasicB2B::Template.trustpilotinfo") }} <img fetchpriority="low" src="{{ plugin_path('GuardiansBasicB2B') }}/images/g-Logo.svg" alt="Outlet46.de" class="margin-right-10" style="vertical-align: middle;max-height: 25px;max-width: 80px;"></a></span>
-                    <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5638" data-eg-title="Currency">{{ services.checkout.getCurrencyData()['symbol'] }}</button>
-                    <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5640" data-eg-title="{{ trans('GuardiansBasicB2B::Template.langchange') }}" aria-label="{{ trans('GuardiansBasicB2B::Template.langchange') }}"><img fetchpriority="low" src="{{ plugin_path('Ceres') }}/images/flags/4x3/{{ flags[lang]|default('de') }}.svg" class="flag-icon" alt="flag-{{ flags[lang]|default('de') }}"></button>
-                </div>
-
-                <div class="col-5 col-sm-5 col-lg-3 col-xlg-3 col-xxlg-3 no-pad-right premium-header-logo">
+            <div class="row align-items-center">
+                <div class="col-5 col-sm-5 col-lg-3 col-xlg-3 col-xxlg-3 no-pad-right">
                     <a href="{{ langSlug }}/{{ currencyParam }}" title="Outlet46.de" class="company-logo"> 
                         <img fetchpriority="low" src="{{ plugin_path('GuardiansBasicB2B') }}/images/b2b-outlet46-logo.png" alt="B2B.Outlet46.de" class="o-logo"/>
                     </a>
@@ -54,8 +57,8 @@
                     </div>
                 {% endif %}                    
                 </div> 
-                <div class="col-7 col-sm-7 col-md-7 col-lg-4 premium-header-actions">
-                    <div class="d-flex justify-content-between justify-content-lg-end premium-header-controls">
+                <div class="col-7 col-sm-7 col-md-7 col-lg-4">
+                    <div class="d-flex justify-content-between justify-content-lg-end">
                         <button data-eg-event="click" data-eg-handler="tgClass" data-eg-param="html,menu-open" class="d-lg-none btn-mobile-nav text-black" aria-label="Menü öffnen">
                             <span class="icon-menu1 fs35"></span>
                             <span class="mobile-btn-txt">{{ trans("GuardiansBasicB2B::Template.menu") }}</span>
@@ -70,6 +73,7 @@
                         <a href="{{ services.category.getURLById(5483) }}" title="Zur Merkliste" class="btn-mobile-nav wishlist-link noWishListItems text-black">
                             <span class="icon-heart1 fs35"></span> 
                             <span class="mobile-btn-txt ml-1">{{ trans("GuardiansBasicB2B::Template.bookmarks") }}</span>
+                            </span>
                         </a>
                         <button data-eg-event="click" data-eg-handler="modalContent" data-eg-href="{{ loginPreviewUrl }}" data-eg-title="{{ loginTitles[lang]|default('Login') }}" class="btn-unstyled btn-login-open btn-mobile-nav text-black" aria-label="Mein Konto öffnen">
                             <span class="icon-user fs35"></span> 
@@ -88,7 +92,6 @@
 						   <span class="header-quant-info2"></span>
 						   {% endif %}
                            <span class="icon-online-shopping-cart fs35 icon-head-menu"></span>
-                           <span class="premium-basket-label mobile-btn-txt">{{ trans("GuardiansBasicB2B::Template.basket") }}</span>
 							
                             </a>
                         </div>
@@ -101,7 +104,6 @@
 						   <span data-eg-basket-quantity class="header-quant-info2">0</span>
 						   {% endif %}
                            <span class="icon-online-shopping-cart fs35 icon-head-menu"></span>
-                           <span class="premium-basket-label mobile-btn-txt">{{ trans("GuardiansBasicB2B::Template.basket") }}</span>
 				<span class="mobile-btn-txt d-sm-block d-lg-inline-block d-xxl-inline-block header-sum-info"> <span data-basket-sum="" class="d-sm-inline-block padding-l-10" v-basket-item-sum="$store.state.basket.data.itemSum">0,00</span><span data-currency-symbol>{{ services.checkout.getCurrencyData.symbol }}</span></span>
                            </a>
 
@@ -116,7 +118,7 @@
         </div>
     </div>
 </header>
-            <header class="main-header headpadding premium-navigation" id="page-header2">
+            <header class="main-header headpadding" id="page-header2">
     {% if isVueView %}     
         <div class="cat-subcats chechout-title-wrap header2-info">
             <div class="container">
@@ -170,7 +172,7 @@
     {% endif %}
 </header>
 {#{% cacheblock use "trustbar." ~ lang ~ "." ~ currencycheck %}#}
-    <div class="top-top-bar premium-trustbar">
+    <div class="top-top-bar">
     <div class="container"><noscript><div class="col-12 px-0 tcenter font-red">{{ trans("GuardiansBasicB2B::Template.javanoactive") }}</div></noscript>
         <div class="row text-center d-md-flex vertrauen">
              <div class="col-md-3 col-lg-3 d-md-block px-0">

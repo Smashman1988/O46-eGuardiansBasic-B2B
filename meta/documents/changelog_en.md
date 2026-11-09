@@ -1,14 +1,5 @@
 # Release Notes for eGuardiansBasic B2B
 
-## v1.0.8 (2026-11-04) – prepared locally
-
-- Premium Compact header retaining the B2B logo, with a wider search field, horizontal customer controls and integrated reviews/language/currency controls. Compacted the benefits bar while preserving its content.
-- One shared category structure with two black desktop rows (28 + 1 + 28 = 57 px), all eleven categories in the agreed order, red Limited Deals and white Home & Living. Desktop dropdowns sit below both rows and support hover and keyboard focus through CSS.
-- Activated the existing Home & Living blocks (cat-4103) in DE/EN/FR/IT/ES, retaining B2B URLs, currency parameters and eight children per language. Preserved Magic menu styling and handlers; the shared top-level category order also applies on mobile.
-- Isolated additions to main.css and the production main-211025.min.css, preserving the entire previous production content. Matching critical CSS, cache busting and a guarded header-only build. No changes to production JavaScript, the contact widget or configuration.
-- Local validation: 175/175 layout cases, 50/50 control cases, 169/169 Twig templates and 38/38 regressions per Twig version; contact widget 55/55 browser cases. Measurements, screenshots, pre-existing source CSS parser issues and limitations are recorded in the README.
-- Actual PlentyONE/Ceres acceptance remains NOT_RUN. Local uncommitted changes on develop only; no commits, pushes, merges, tags, releases, deployments or synchronizations.
-
 ## Unreleased – contact widget (2026-11-03)
 
 - Added a persistent B2B contact launcher with Outlet46 styling, a responsive contact panel, local CSS/vanilla JavaScript and inline SVGs. Only the panel can be closed; no persistent dismissal state or additional service.
