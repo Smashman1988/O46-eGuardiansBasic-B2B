@@ -2,10 +2,6 @@
 
 ## v1.0.8 (2026-11-04) – prepared locally
 
-### Restore the full-width white header
-
-- Removed the white desktop header's 1600 px cap; logo and customer controls span the available width with 24 px outer insets. Compact search, height, navigation and mobile layout retained. Only the existing header CSS rule and its minified/critical copies changed; header4 cache key. Version unchanged, no deployment; local evidence in README.
-
 ### Visual polish, still 1.0.8
 
 - Explicit full-width desktop navigation with 12 px outer insets; seven equal slots from 1400 px and four direct links across the second row. Font breakpoint accommodates long translations; order, 57 px height and mobile Magic menu retained.

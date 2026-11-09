@@ -13041,7 +13041,7 @@ span.cookie-bar__header-title.h2 {
 }
 @media (min-width: 992px) {
     .premium-header .header-wrap > .container {
-        max-width: none;
+        max-width: 1600px;
         padding: 0 24px;
     }
     .premium-header .premium-header-row {
