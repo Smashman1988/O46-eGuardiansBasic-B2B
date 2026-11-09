@@ -1,5 +1,11 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – SEO JavaScript delivery asset (2026-11-09)
+
+- Transferred the corrected metadata block from `cat.js` into the actually referenced `cat-020726.min.js` using the existing Terser 5.44.0 installation. Every byte outside that block remains unchanged. No active historical JavaScript build process exists in the current checkout.
+- Only the category bundle receives `?v={{ buildHash }}-nl1-seo1`. Existing bundle selection, `defer` and all other asset URLs are preserved. Metadata regressions can now target the minified asset explicitly; Twig/layout tests verify its inclusion and exact cache version.
+- Local checks: minified asset 111/111 metadata cases and 22/22 Chrome cases; each Twig 2/3 passed 264/264 SEO cases, 171/171 syntax checks, 38/38 regressions and 60/60 layout cases. All previous 261 SEO results remain identical. Existing preview still serves the old file; no deployment, cache invalidation or B2C change. See README for evidence and build limits.
+
 ## Unreleased – JavaScript page numbering and tail-page investigation (2026-11-09)
 
 - Category JavaScript now consumes existing `SeoPage` data instead of trusting URL page numbers. Invalid, empty, ambiguous or unproven follow-up pages receive no artificial title/description suffix. Valid numbering, including Infinite Scroll and History, remains supported; robots and canonical are untouched.

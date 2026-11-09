@@ -151,8 +151,11 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
         check(substr_count($rendered, 'id="o46-b2b-contact-widget"') === $expected, 'Wrong widget count: ' . $page);
         check(substr_count($rendered, 'id="o46-b2b-newsletter"') === $expectedNewsletter, 'Wrong newsletter count: ' . $page);
         check(substr_count($rendered, 'href="https://b2b.outlet46.de' . $newsletterPaths[$language] . '"') === $expectedNewsletter, 'Wrong newsletter URL: ' . $page);
-        preg_match_all('~/js/(main|cat|item|vue)-020726\.min\.js\?v=local-review-nl1"~', $rendered, $bundles);
+        preg_match_all('~/js/(main|cat|item|vue)-020726\.min\.js\?v=([^"]+)"~', $rendered, $bundles);
         check(count($bundles[1]) === $expected, 'Wrong newsletter bundle count: ' . $page);
+        foreach ($bundles[1] as $index=>$bundle) {
+            check($bundles[2][$index] === 'local-review-nl1' . ($bundle === 'cat' ? '-seo1' : ''),'Wrong bundle cache version: ' . $page);
+        }
         if (isset($newsletterBundles[$page])) { check($bundles[1][0] === $newsletterBundles[$page], 'Wrong bundle: ' . $page); }
         foreach (['css/contact-widget.css', 'js/contact-widget.js'] as $resource) {
             check(substr_count($rendered, '/fixture-plugins/GuardiansBasicB2B/' . $resource . '?v=local-review') === $expected, 'Wrong dynamic asset inclusion: ' . $page);

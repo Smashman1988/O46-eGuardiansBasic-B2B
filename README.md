@@ -450,6 +450,108 @@ Alles lokal, uncommittet und unstaged auf `develop`. Kein Commit, Push, Merge,
 Versionsschritt, Deploy, Sync, Cache-Invalidieren oder B2C-Eingriff. Der explizite
 restriktive Kategorie-Live-Test bleibt gemäß Nutzervorgabe **NOT_TESTED**.
 
+### Auslieferungsprüfung des JavaScript-Fixes (2026-11-09)
+
+Ausgang dieses Folgeauftrags: sauberer `develop` bei `bd4c6ac` (`seo v2 fix1`).
+**Root Cause:** Der vorherige lokale Fix betraf `resources/js/cat.js`, die
+Seiten binden jedoch die separate **`resources/js/cat-020726.min.js`** ein.
+Diese enthielt weiterhin die ungeprüfte Seitennummerierung. Der vorherige
+quellbasierte JavaScript-Test prüfte die tatsächlich eingebundene Datei nicht.
+
+Die aktuelle Preview wurde erneut lesend geprüft: **sechs Seiten, sechs HTTP 200**.
+`/alle-artikel/`, `/herren/`, `/damen/`, `/alles-unter-x-euro/` und die reguläre
+Kategorie `/herren-bekleidung/jeans-hosen/` laden jeweils genau einmal die
+Kategorie-Min-Datei mit `defer`; `/content/newsletter/` lädt weiterhin `main`.
+Die Einbindung erfolgt in `PageDesign.twig` nach den bestehenden
+`mainjs`-/`vuejs`-/`nojs`-/Template-Prioritäten. Content-Seiten werden daher nicht
+pauschal einer bestimmten JS-Datei zugeordnet. Weder `cat.js` noch die ignorierten
+Artefakte unter `build/js/` sind dort eingebunden.
+
+Die referenzierte S3-Datei des Test-Pluginsets 426 wurde separat gelesen:
+**HTTP 200, 265.584 Bytes**, SHA-256
+`10fe2a8a4286199004a147333a3f6c15da93678402dc3fd28f7b732473fa04a5`.
+Sie ist exakt gleich der lokalen bisherigen Min-Datei und enthält noch keinen
+`o46-pagination`-Zugriff. Auch die sechs Live-HTML-Antworten enthalten dieses
+Zustands-Metadatum noch nicht. Der beobachtete Preview-BuildHash ist weiterhin
+`77714dd7359997fffcf0666df167f9254f4a8ea3`; dies ist **keine Live-Abnahme des lokalen
+Fixes**. Die Asset-Antwort setzt `Cache-Control: max-age=604800` (sieben Tage).
+
+**Minifizierung:** Im aktuellen versionierten Checkout existieren weder
+`package.json`/Lockdatei noch JS-Buildskript oder dokumentierte historische
+Minifizierer-Optionen. Vorhandene ältere `.cache/`-/`build/`-Artefakte gehören zu
+einem nicht aktiven Common-Migrationsversuch und werden nicht als Buildprozess
+verwendet. Ein solcher vorhandener Projekt-Build konnte deshalb **nicht**
+ausgeführt werden. Es wurde die bereits installierte **Terser-Version 5.44.0**
+verwendet, ohne Paketinstallation oder neue Build-Infrastruktur.
+
+Um andere JS-Funktionen sicher zu erhalten, wurde ausschließlich der korrigierte
+Metadaten-IIFE aus der Quelle mit Acorn eindeutig ermittelt, mit
+`compress:false`, `mangle:true`, `format:{comments:false}` minifiziert und anstelle
+des alten IIFE eingesetzt. Kein manuelles Nachbauen der Logik in der Min-Datei.
+Der Bytevergleich bestätigt: **Präfix und Suffix außerhalb dieses Funktionsblocks
+sind vollständig unverändert**. Zweimalige Minifizierung und erneute Erzeugung
+gegen die Ausgangsdatei ergeben identische Bytes. Die lokale Min-Datei hat nun
+**266.619 Bytes**, SHA-256
+`87a2445a2516f2bb6f2b1de6a22e7bba5e13b5973bc6d6ca394e80c0d01fe019`.
+Dies ist eine begrenzte Aktualisierung des bestehenden Artefakts, keine behauptete
+vollständige Rekonstruktion des unbekannten historischen Bundle-Builds.
+
+**Cache-Versionierung:** Nur die vorhandene Kategorie-Einbindung wurde auf
+`cat-020726.min.js?v={{ buildHash }}-nl1-seo1` gesetzt. Der BuildHash und bisherige
+`nl1`-Zusatz bleiben erhalten; `seo1` ergibt beim späteren Bereitstellen eine neue
+Browser-Cache-URL. Keine Versionsänderung in `plugin.json`, keine Änderung der
+anderen Bundle-URLs und keine Cache-Invalidierung. Source-Fix, vorhandener
+`o46-pagination`-Export und aktualisiertes Artefakt müssen gemeinsam im späteren
+Pluginstand enthalten sein; hier wurde nichts bereitgestellt.
+
+`tests/seo_metadata.cjs` unterstützt nun `--asset=<Datei>`, parst die gesamte
+angegebene Datei und führt den daraus ermittelten Metadatenblock aus. Die Tests
+prüfen somit ausdrücklich den Inhalt der eingebundenen Min-Datei. Der lokale
+Chrome-Lauf verwendet diesen Block mit den tatsächlich gerenderten PHP-Zuständen
+beider Twig-Versionen; die übrige Ceres-/Shop-Laufzeit wird damit nicht als
+vollständig abgenommen ausgegeben.
+
+| Prüfung nach Aktualisierung | Ergebnis |
+| --- | --- |
+| Korrigierte Min-Datei, DOM-/History-Fälle | **111/111 PASS** |
+| Korrigierte Min-Datei, lokale Chrome-/PHP-Fixtures | **22/22 PASS**, 0 Seitenfehler |
+| Lesbare Quelle, gleiche Metadatenfälle | **111/111 PASS** |
+| Heruntergeladene alte Live-Datei, erwarteter Negativtest | **18 PASS / 93 FAIL**, Exit 1; erkennt die fehlende Korrektur |
+| SEO inkl. drei neuer Twig-Einbindungs-/Cachefälle, Twig 2.16.1 und 3.30.0 | jeweils **264/264 PASS**; historische **190/190 PASS**, alle vorherigen **261/261 identisch** |
+| Gesamtes Twig-Inventar / bestehende Regressionen | jeweils **171/171 Syntax PASS**, **38/38 PASS** samt historischem Vergleich |
+| Kontakt-/Newsletter-Layouts mit exakten Bundle-Cache-Schlüsseln | jeweils **60/60 PASS**, fünf Sprachen |
+| Bestehender Kontakt-Widget-Browserlauf mit neu erzeugten Layout-Fixtures | **55/55 Szenarien**, **1.332 Assertions**, 0 Seitenfehler, 0 externe Requests |
+| PHP-Lint / Node-Syntax der Min-Datei und des Metadaten-Tests / Diff-Check | **12/12 PASS** / **PASS** / **PASS** |
+| Prüfung im neu bereitgestellten PlentyONE-Pluginset | **NOT_RUN**, kein Deployment beauftragt |
+
+Die Layouttests stoppten zunächst unter beiden Twig-Versionen mit
+`Wrong newsletter bundle count: category.item`, weil ihr exakter Matcher noch
+`-nl1` für alle Bundles erwartete. Die Erwartung wurde auf **genau** `-nl1-seo1`
+für `cat` und unverändert `-nl1` für die übrigen Bundles aktualisiert; Anzahl,
+Bundle-Auswahl und Cache-Version werden weiterhin strikt geprüft. Der erste
+Asset-Leseversuch stoppte an der erlaubten Shop-Domain, da die Datei tatsächlich
+vom S3-Pfad eingebunden wird. Anschließend wurde genau dieser beobachtete statische
+Pfad zugelassen und geladen; keine Shop-Abfragen mussten wiederholt werden.
+Kein Test-/Browser-Timeout in diesem Auslieferungscheck.
+
+Reproduktion des Tests gegen die tatsächlich einzubindende Datei mit den bereits
+oben genannten lokalen Runtimes und Chrome-Umgebungsvariablen:
+
+```powershell
+node tests/seo_metadata.cjs .cache/seo-preview-20261109/min-asset-metadata.json .cache/seo-preview-20261109/min-asset-seo2.json .cache/seo-preview-20261109/min-asset-seo3.json --browser --asset=resources/js/cat-020726.min.js
+```
+
+Lokale Prüf-/Generierungsartefakte bleiben ignoriert unter
+`.cache/seo-preview-20261109/`: `cat_asset.cjs` (mit `--write` erzeugen, ohne Flag
+gegen Ausgangscommit prüfen), `cat-asset-build.json`, `asset-delivery-live.json`,
+`asset-live-cat-0.js`, `live-old-asset-negative.json` und die `min-asset-*`-Berichte.
+**Geänderte versionierte Dateien:** Kategorie-Min-Datei, `PageDesign.twig`,
+`tests/seo_metadata.cjs`, `tests/seo_pagination.php`, `tests/contact_widget.php`,
+diese README und beide vorhandenen Changelogs. `cat.js`, andere JS-Bundles,
+PHP-Produktivcode und serverseitige SEO-Paginierung bleiben unverändert.
+Alles lokal, uncommittet und unstaged auf `develop`; kein eigener Commit, Push,
+Merge, Versionsschritt, Deployment, Sync, Cache-Invalidieren oder B2C-Eingriff.
+
 ### PlentyONE-Buildkorrektur (2026-11-09)
 
 Ausgangsstand dieses Folgefixes: `c5387abef15f25e03e1ad183751f2b1407713cf3`

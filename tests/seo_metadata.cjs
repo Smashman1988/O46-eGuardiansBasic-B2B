@@ -1,16 +1,41 @@
-// node tests/seo_metadata.cjs <report.json> [<seo-php-report.json> ...] [--browser]
+// node tests/seo_metadata.cjs <report.json> [<seo-php-report.json> ...] [--browser] [--asset=<js-file>]
 // Executes the actual category metadata IIFE with a minimal DOM/history fixture.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const source = fs.readFileSync(path.join(__dirname, '../resources/js/cat.js'), 'utf8');
-const start = source.indexOf('// title and metadaten pages update');
-assert.ok(start >= 0, 'Metadata section must exist');
-const end = source.indexOf('\n})();', start);
-assert.ok(end > start, 'Metadata IIFE must end');
-const script = source.slice(start, end + '\n})();'.length);
+const assetOption = process.argv.find(arg => arg.startsWith('--asset='));
+const asset = assetOption ? path.resolve(assetOption.slice('--asset='.length)) : path.join(__dirname, '../resources/js/cat.js');
+const source = fs.readFileSync(asset, 'utf8');
+let script;
+if (assetOption) {
+    // Parse the complete shipped asset, then execute its actual metadata IIFE.
+    const acorn = require('acorn');
+    const matches = [];
+    function walk(node) {
+        if (!node || typeof node !== 'object') return;
+        if (node.type === 'CallExpression' && ['FunctionExpression','ArrowFunctionExpression'].includes(node.callee.type)) {
+            const text = source.slice(node.callee.start, node.callee.end);
+            if (text.includes('twitter:description') && text.includes('popstate') && text.includes('document.title')) matches.push(node);
+        }
+        for (const value of Object.values(node)) {
+            if (Array.isArray(value)) value.forEach(walk);
+            else if (value && typeof value === 'object') walk(value);
+        }
+    }
+    walk(acorn.parse(source, { ecmaVersion: 'latest' }));
+    assert.equal(matches.length, 1, 'Expected exactly one metadata IIFE in shipped asset');
+    script = '(' + source.slice(matches[0].start, matches[0].end) + ');';
+} else {
+    const start = source.indexOf('// title and metadaten pages update');
+    assert.ok(start >= 0, 'Metadata section must exist');
+    const end = source.indexOf('\n})();', start);
+    assert.ok(end > start, 'Metadata IIFE must end');
+    script = source.slice(start, end + '\n})();'.length);
+}
 const report = { cases: [], failures: [], browserCases: [], runtime: 'Node VM with DOM/history fixture; optional local Chrome; no live deployment' };
+report.asset = asset;
+report.assetSha256 = require('node:crypto').createHash('sha256').update(source).digest('hex');
 const browserFixtures = [];
 const baseUrl = 'https://b2b.example.test/content/';
 const title = 'Mode – Sale';
@@ -137,7 +162,7 @@ test('initial-invalid-page-can-return-to-confirmed-page', () => {
     f.back('?page=999');
     metadata(f, title, description);
 });
-for (const reportFile of process.argv.slice(3).filter(arg => arg !== '--browser')) {
+for (const reportFile of process.argv.slice(3).filter(arg => !arg.startsWith('--'))) {
     const php = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
     for (const [name, value] of Object.entries(php.cases).filter(([name]) => name.startsWith('client-pagination/'))) {
         browserFixtures.push({ name: 'browser-' + php.twig + '/' + name, value });

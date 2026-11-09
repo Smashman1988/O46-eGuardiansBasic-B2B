@@ -609,6 +609,26 @@ namespace {
         $search->total = 1654; check($seen[0] === $seen[5],'Repeated variant changed');
         return $seen;
     });
+    foreach ([['content','content',100,'cat'],['regular','regular-head',100,'cat'],
+        ['editorial-main','content',31,'main']] as [$name,$view,$categoryId,$asset]) {
+        test('asset-inclusion/' . $name,function () use ($name,$view,$categoryId,$asset,$twig,$request,$base,$templateService,&$builderMode) {
+            $request->params = ['page'=>'2'];
+            $builderMode = $name === 'editorial-main' ? 'none' : 'single';
+            $templateService->template = $name === 'regular' ? 'tpl.category.item' : 'tpl.category.content';
+            $category = $base['category']; $category['id'] = $categoryId;
+            try {
+                $html = $twig->render($view,array_replace($base,['category'=>$category,'pageMax'=>69,'currentPage'=>2,'itemCountTotal'=>1654]));
+                preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
+                check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
+                $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
+                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo1' : '');
+                check($url === $expected,'Wrong shipped asset or cache version');
+                check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
+                check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');
+                return ['script'=>$url];
+            } finally { $builderMode = 'single'; $templateService->template = 'tpl.category.content'; }
+        });
+    }
     foreach ([['single','1'],['single','2'],['single','999'],['single','abc'],
         ['none','2'],['simple-only','2'],['multiple','2']] as [$mode,$number]) {
         test('client-pagination/content-' . $mode . '-' . $number,function () use ($mode,$number,$twig,$request,$base,&$builderMode,$search,&$builderCalls) {

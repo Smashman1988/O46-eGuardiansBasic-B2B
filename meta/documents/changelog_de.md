@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – Auslieferungsdatei des SEO-JavaScripts (2026-11-09)
+
+- Den korrigierten Metadatenblock aus `cat.js` in die tatsächlich eingebundene `cat-020726.min.js` übernommen. Vorhandenen Terser 5.44.0 verwendet; der gesamte Bundle-Inhalt außerhalb dieses Blocks bleibt bytegleich. Ein aktiver historischer JS-Buildprozess ist im aktuellen Checkout nicht vorhanden.
+- Nur der Kategorie-Bundle erhält die Cache-URL `?v={{ buildHash }}-nl1-seo1`. Bestehende Auswahl der Seiten-Bundles, `defer` und alle anderen Asset-URLs bleiben erhalten. Die Metadatenregression kann jetzt ausdrücklich gegen die minifizierte Datei laufen; Twig-/Layouttests prüfen deren Einbindung und exakte Cache-Version.
+- Lokal: Min-Datei 111/111 Metadatenfälle und 22/22 Chrome-Fälle; je Twig 2/3 264/264 SEO-Fälle, 171/171 Syntax, 38/38 Regressionen und 60/60 Layoutfälle bestanden. Alle vorherigen 261 SEO-Ergebnisse identisch. Der vorhandene Preview liefert weiterhin die alte Datei; keine Bereitstellung, Cache-Invalidierung oder B2C-Änderung durchgeführt. Details und Build-Grenzen in der README.
+
 ## Unveröffentlicht – JavaScript-Seitennummerierung und Randseitenanalyse (2026-11-09)
 
 - Kategorie-JavaScript verwendet die vorhandenen `SeoPage`-Daten statt ungeprüfter URL-Seitennummern. Ungültige, leere, mehrdeutige und unbelegte Folgeseiten erhalten keine künstlichen Titel-/Beschreibungszusätze. Gültige Nummerierung einschließlich Infinite Scroll und History bleibt erhalten; Robots und Canonical werden nicht verändert.
