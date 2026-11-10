@@ -1,5 +1,10 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – Theme-Boot nach Suchintegration
+
+- Der Vorschlagsdienst wird über die bestehende GET-Route und `pluginApp` geladen. Die globale native Service-Bindung hatte in Pluginset 426 mit `class IO\Services\ItemSearchAutocompleteService not found` den Start des Themes abgebrochen und das Ceres-Standardlayout ausgelöst.
+- Ein Bootstrap-Regressionstest prüft die Theme- und Routenregistrierung. Die Suchtests führen den korrigierten API-Einstieg in DE, EN, FR, IT und ES aus. Die native Abnahme des lokalen Fixes in 426 steht aus.
+
 ## Unveröffentlicht – Italienische und spanische Shopsuche
 
 - Für IT und ES verwendet die Textsuche den englischen Index. Ergebnislisten und Facetten teilen sich Textfilter und Preisgrenzen. Produkt-URLs, Darstellung und Kundenpreise folgen weiterhin dem lokalen Shopkontext.

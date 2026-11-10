@@ -15,8 +15,6 @@ use Plenty\Plugin\ConfigRepository;
 use GuardiansBasicB2B\Extensions\Base_Extension;
 use GuardiansBasicB2B\Contexts\EnglishTextSearchContext;
 use GuardiansBasicB2B\Services\EnglishTextSearch;
-use GuardiansBasicB2B\Services\SearchAutocompleteService;
-use IO\Services\ItemSearchAutocompleteService;
 use Plenty\Modules\Webshop\Consent\Contracts\ConsentRepositoryContract;
 
 /**
@@ -29,7 +27,6 @@ class GuardiansBasicServiceProvider extends ServiceProvider
 
     public function register()
     {
-        $this->getApplication()->bind(ItemSearchAutocompleteService::class, SearchAutocompleteService::class);
         $this->getApplication()->register(\GuardiansBasicB2B\Providers\GuardiansBasicRouteServiceProvider::class);
         $this->getApplication()->register(\GuardiansBasicB2B\Providers\GuardiansBasicRouteServiceProvider::class);
         $consentRepository = pluginApp(ConsentRepositoryContract::class);

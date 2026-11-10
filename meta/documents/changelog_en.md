@@ -1,5 +1,10 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – theme bootstrap after search integration
+
+- Autocomplete resolves its service through the existing GET route and `pluginApp`. The global native service binding failed in plugin set 426 with `class IO\Services\ItemSearchAutocompleteService not found`, aborting theme startup and causing the standard Ceres layout to render.
+- A bootstrap regression covers theme and route registration. Search tests exercise the corrected API entry point in DE, EN, FR, IT and ES. Native acceptance of the local fix in 426 is pending.
+
 ## Unreleased – Italian and Spanish storefront search
 
 - Italian and Spanish text searches use the English index. Product lists and facets share the text filter and price range. Product URLs, display data and customer prices use the current storefront context.

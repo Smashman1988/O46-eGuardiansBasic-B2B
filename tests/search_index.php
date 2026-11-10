@@ -15,9 +15,8 @@ namespace SearchTest {
         public function setPage($page, $size) { $this->options['page']=$page; $this->options['itemsPerPage']=$size; return $this; }
     }
     class Application {
-        public $bindings = [];
         public function register($class) {}
-        public function bind($source,$target) { $this->bindings[$source]=$target; }
+        public function bind($source,$target) { throw new \RuntimeException('Plugin classes must be resolved through pluginApp'); }
     }
     class Url {
         public function __construct(private string $lang, private int $id) {}
@@ -125,8 +124,7 @@ namespace {
     $assertions=0; $objects=[];
     function pluginApp($class) {
         global $objects;
-        if ($class===ItemSearchAutocompleteService::class) {
-            $class=pluginApp(\SearchTest\Application::class)->bindings[$class];
+        if ($class===ItemSearchAutocompleteService::class || $class===\GuardiansBasicB2B\Services\SearchAutocompleteService::class) {
             return new $class(pluginApp(Shop\UrlBuilderRepositoryContract::class),pluginApp(Shop\LocalizationRepositoryContract::class),pluginApp(Shop\WebstoreConfigurationRepositoryContract::class));
         }
         return $objects[$class] ??= new $class();
@@ -139,14 +137,14 @@ namespace {
     require $argv[2].'/src/Services/ItemSearchAutocompleteService.php';
     require $argv[2].'/src/Api/Resources/ItemSearchAutocompleteResource.php';
     $src=dirname(__DIR__).'/src/';
-    foreach (['Services/EnglishTextSearch','Services/SearchAutocompleteService','Contexts/EnglishTextSearchContext','Providers/GuardiansBasicServiceProvider','Resources/FacetResource'] as $name) require $src.$name.'.php';
+    foreach (['Services/EnglishTextSearch','Services/SearchAutocompleteService','Contexts/EnglishTextSearchContext','Providers/GuardiansBasicServiceProvider','Resources/FacetResource','Resources/SearchAutocompleteResource'] as $name) require $src.$name.'.php';
     $provider=new \GuardiansBasicB2B\Providers\GuardiansBasicServiceProvider();
     $provider->register();
     $events=pluginApp(\Plenty\Plugin\Events\Dispatcher::class);
     $provider->boot(new \Plenty\Plugin\Templates\Twig(),$events,new \Plenty\Plugin\ConfigRepository());
     $req=pluginApp(Request::class);
     $facetRoute=new \GuardiansBasicB2B\Resources\FacetResource($req,new \IO\Api\ApiResponse());
-    $suggestRoute=new \IO\Api\Resources\ItemSearchAutocompleteResource($req,new \IO\Api\ApiResponse());
+    $suggestRoute=new \GuardiansBasicB2B\Resources\SearchAutocompleteResource($req,new \IO\Api\ApiResponse());
     $engine=pluginApp(ItemSearchService::class);
     $locale=pluginApp(Shop\LocalizationRepositoryContract::class);
     $langs=['de','en','fr','it','es'];
