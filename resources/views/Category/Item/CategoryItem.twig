@@ -3,6 +3,7 @@
 {% set lang = services.localizationRepository.getLanguage() %}
 {% set currencycheck = services.checkout.getCurrencyData.name %}
 {% set catDetails = category.details[0] %}
+{% set rendersItemGrid = category.id != 60 %}
 {% set isShoeCategory = category.id in [44, 52] or category.parentCategoryId in [44, 52] %}
 {% set translations = {
     tSustainability: trans("GuardiansBasicB2B::Template.sustainability"),
@@ -16,10 +17,14 @@
     morethen18: trans("GuardiansBasicB2B::Template.morethen18")
 } %}
 
+{% block PrepareSeoContent %}
+    {% if not rendersItemGrid %}{% do seoPage.disableCategoryPagination() %}{% endif %}
+{% endblock %}
+
 {% block PartialHead %}
     {% set categorySeoPage = seoPage is defined ? seoPage : createSeoPage(services.template.getCurrentTemplate(), pageMax is defined ? pageMax : null, currentPage is defined ? currentPage : null, itemCountTotal is defined ? itemCountTotal : null) %}
     {% set canonicalUrl = services.url.getCanonicalURL(null, true) %}
-    {% if category.id!=60 and categorySeoPage.pagination.valid %}
+    {% if rendersItemGrid and categorySeoPage.pagination.valid %}
     {% if currentPage - 1 > 1 %}
         <link rel="prev" href="{{ canonicalUrl ~ queryString({'page': currentPage - 1}) }}" />
     {% elseif currentPage - 1 == 1 %}
@@ -32,7 +37,7 @@
     {% endif %}
     {% if currentPage == 1 %}
     {% set counter = 0 %}
-    {% if category.id!=60 %}
+    {% if rendersItemGrid %}
     {% for item in itemList[:2] %}
         <link rel="preload" href="{{ item.data.images.all[0].urlPreview }}.avif" as="image">
         {% set vendorlogo = item.data.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'}) %}
@@ -78,7 +83,7 @@
 </script>
 {% endif %}
 
-	{% if category.id!=60 %}
+	{% if rendersItemGrid %}
 <section class="categoriegrid page-content container">
     {% if isQuickView %}
     {% if catDetails.description2 and currentPage < 2 %}

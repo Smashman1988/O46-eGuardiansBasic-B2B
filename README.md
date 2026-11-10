@@ -10,7 +10,70 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
-## SEO-Abnahme im B2B-Test-Pluginset 426 (2026-11-10)
+## Quickview und Marken A–Z: lokaler Fix auf develop (2026-11-10)
+
+**FIXED_LOCALLY** für diese beiden Befunde. In Pluginset 426 wurde der bisherige Stand gelesen; die folgenden Browserprüfungen des Fixes ersetzen das Kategorie-JavaScript nur für den jeweiligen lokalen Browser. Es gab kein Deployment. Die übrigen Befunde der nachstehenden Theme-Abnahme sind unverändert.
+
+- **Quickview:** `bindEvents` bindet die Bedienelemente neu, wenn Quickview den Modalinhalt ersetzt. Dabei wurde zuvor pro Aufruf ein weiterer anonymer `mouseup`-Handler an `document` gehängt. Nach fünf Öffnungen im unveränderten 426 liefen sechs identische Handler für einen Außenklick. Die Registrierung steht jetzt einmal neben dem delegierten Quickview-Öffner; andere Listener werden nicht entfernt. In den vier aktiven Min-Dateien ist nur dieser bereits vorhandene Aufruf verschoben. Die Twig-Einbindung hängt `-qv1` an die bisherigen Cache-Schlüssel an. Kein Speicherleck nachgewiesen.
+- **Marken A–Z:** Die Artikelkategorie rendert für das Verzeichnis `CategoryItemBrands.twig`: übersetzte Unterkategorien, alphabetisch gruppiert, ohne Artikelgitter und ohne eigenen Pager. Bisher meldete der übergeordnete Seitentyp trotzdem die Seitenzahl der Artikelkategorie. Dieselbe Entscheidung, die das Verzeichnis im Body auswählt, schaltet nun vor dem Head die native Kategorie-Paginierung für diesen Renderdurchlauf ab. Artikelabfragen, ShopBuilder-Listen, Zählung und explizite Robots-Vorgaben bleiben unverändert.
+
+| Sprache | Tatsächlicher Markenpfad aus hreflang | Unterschiedliche Markenlinks pro Abruf |
+|---|---|---:|
+| DE | `/marken-online-outlet/` | 303 |
+| EN | `/en/branded-online-outlet/` | 303 |
+| FR | `/fr/marques/` | 186 |
+| IT | `/it/marca/` | 186 |
+| ES | `/es/marcas/` | 186 |
+
+Im bisherigen 426-Stand lieferten Basis, `page=1/2/99/abc/0` pro Sprache HTTP 200 und dieselben Markenlinks. **FAIL (vor Fix):** Alle zehn Abrufe von Seite 2/99 waren indexierbar und hatten einen eigenen Canonical und einen Seitenzusatz. **PASS (lokales Server-HTML):** Basis und Seite 1 behalten Robots; Folge- und ungültige Seiten erhalten mindestens `NOINDEX`. Canonical, Titel und Beschreibung entsprechen der Basis. 180 Markenfälle je Twig-Version prüfen den tatsächlichen Verzeichnis- und Head-Render, einschließlich vier Robots-Konfigurationen, leerem Wert und Array-Parameter.
+
+**Regressionsbelege:**
+
+- [30/30 lokale Wiederholungen mit den echten 426-Metadaten](.cache/qv-brands/brand-replay.json): Die gerenderten Titel und Beschreibungen waren für alle sechs URLs je Sprache identisch zur jeweiligen Basis. Die [unveränderten HTTP-Antworten](.cache/qv-brands/brands-426.json) sind getrennt protokolliert.
+- Twig 2.16.1 und 3.30.0: jeweils 548 SEO-Fälle, davon 190 im Vergleich mit der Referenz; 171/171 Templates syntaktisch geprüft, 38/38 Twig-Vergleichsfälle, 60/60 Widget-Layoutfälle. Widget im Browser: 55 Szenarien, 1.332 Assertions. SEO-JavaScript: Quelle und aktive Min-Datei jeweils 118 Fälle plus 22 Chrome-Fälle.
+- `node tests/quickview_dropdown.cjs`: je 20 Öffnungen mit allen vier Quellen und vier aktiven Min-Dateien, einschließlich nicht betroffener Dokument-Handler, Innen-/Außenklick und Facetten. Für die Chrome-Tests gelten dieselben optionalen Umgebungsvariablen wie bei `tests/seo_metadata.cjs`: `O46_PLAYWRIGHT_MODULE` und `O46_BROWSER_EXECUTABLE`.
+- Vorschau-HTML und echte Produktdaten mit lokalem Kategorie-Bundle: DE/EN/FR/IT/ES, je 1440 und 390 px. Nach 1, 5, 10 und 20 Quickviews jeweils genau eine Registrierung und eine Ausführung pro Außenklick. Geprüft wurden derselbe und verschiedene Artikel, zwei Größen/Varianten, Schließen, Dropdowns, Filterwechsel, Nachladen (24 → 48 Artikel) und Sortierung einschließlich Zurück/Vorwärts. In sechs ersten Durchläufen lief der Sortierklick nach der Filternavigation in einen Timeout. Nach Warten auf die tatsächliche Eventbindung bestanden alle sechs kompletten Wiederholungen. [Quickview-Messungen](.cache/qv-brands/quickview-results.json), [Sortierung und Historie](.cache/qv-brands/sorting.json). Auf [5/5 Produktdetailseiten](.cache/qv-brands/details.json) bestand zusätzlich die Variantenauswahl mit dem lokalen Artikel-Bundle.
+- Unveränderte Vorschau 426: [26/26 frische Vergleichsabrufe](.cache/qv-brands/reg-426.json), darunter Herren, Damen, Alle Artikel, Alles unter X Euro, eine reguläre Kategorie und Produktdetailseiten in fünf Sprachen. Herren 56 hatte 13 Artikel und eigenen Canonical; Herren 57 war leer. Damen 53 hatte 22 Artikel; 54 und 55 waren diesmal leer. Gefüllte Folgeseiten behielten `INDEX,FOLLOW`, leere Folgeseiten `NOINDEX,FOLLOW` und den Basis-Canonical.
+
+**NOT_TESTED:** PlentyONE-Build und unveränderte HTTP-/Browser-Auslieferung der beiden Korrekturen. Nach Bereitstellung in 426: neue Sitzung öffnen, Cache-Schlüssel und Inhalt des geladenen Min-Bundles ohne Browserersetzung prüfen, Quickviews wiederholen und die sechs Marken-URLs je Sprache im rohen Server-HTML kalt/warm vergleichen. Ohne reale Kategorie mit expliziter Robots-Sperre ist deren Live-Abnahme offen; die lokale Prüfung ersetzt sie nicht.
+
+## Fünfsprachige Theme-Abnahme in Pluginset 426 (2026-11-10)
+
+**Produktionsbereit: NEIN.** Die erweiterte Prüfung des gesamten Themes offenbart Fehler außerhalb der zuvor geprüften SEO-Randseiten:
+
+- Der deutsche Menülink „Alles unter 25 Euro!“ liefert HTTP 404. Die fremdsprachigen Menüs enthalten diesen Eintrag nicht.
+- Die verlinkten Warenkörbe EN, FR, IT und ES liefern HTTP 200, aber im Server-HTML weder die Warenkorbliste noch das Summen-Widget. Nach dem erfolgreichen Hinzufügen eines Testartikels blieb die Liste dort auch im Browser aus. Der deutsche Warenkorb bestand Hinzufügen, Erhöhen von 1 auf 2 mit anschließendem Neuladen und Entfernen. Keine Bestellung ausgelöst.
+- Die englische Startseite zeigt Ceres-Demoinhalte. In FR, IT und ES bleibt der Hauptbereich der Startseite leer; Header und Footer allein bilden keine vollständige Startseite. Die Markensuche nach „adidas“ und „nike“ liefert in IT und ES keine Treffer, in DE, EN und FR hingegen Treffer.
+- Marken A–Z zeigt pro Sprache auf der Basis-URL, Seite 2 und Seite 99 dieselbe Liste von Markenlinks. Die Parameterseiten liefern einen eigenen Canonical und sind indexierbar, obwohl kein paginiertes Produktgitter vorhanden ist.
+
+Die Navigation wurde pro Sprach-Header ermittelt: DE 131 unterschiedliche URLs, EN/FR/IT/ES jeweils 130. Die Transaktions- und SEO-Befunde stammen aus der ausdrücklich verifizierten Vorschau. Die lokalen Ergebnisdateien enthalten [Bericht](.cache/theme426/Abnahme.html), [URL-Matrix](.cache/theme426/URL-Matrix.html) und [Menüinventar](.cache/theme426/Header.html). Das bereitgestellte Kategorie-Bundle war identisch mit dem lokalen `cat-020726.min.js` mit Kennung `-nl1-seo2`. Nur Abnahmedokumentation, keine Änderung am Shop.
+
+Der [technische Bericht](.cache/theme426/technik/Technikbericht.html) enthält 180 wiederholte Browsermessungen in fünf Sprachen und priorisiert die einzelnen Befunde. Alle acht beobachteten Theme-JS-/CSS-Dateien, einschließlich des Warenkorbbundles, stimmen byteweise mit dem lokalen Stand überein. Beim Öffnen der Quickview registriert das ausgelieferte Kategorie-Bundle jedes Mal denselben globalen Dropdown-Handler erneut. Das ist reproduziert; ein dauerhaftes Speicherleck ist nicht nachgewiesen.
+
+Die eigenen SEO-Metadaten der Listenenden blieben beim Bestandswechsel korrekt. Beispiel Herren: Seite 56 war zuerst leer und `NOINDEX,FOLLOW`; in zwei späteren frischen Sitzungen enthielt sie bei 1.314 gemeldeten Treffern jeweils einen Artikel, `INDEX,FOLLOW`, ihren eigenen Canonical und „Seite 56“. Damen 53 lieferte bei 1.266 gemeldeten Treffern 23 statt rechnerisch 18 Artikel. Diese Differenzen sind innerhalb derselben Serverantwort belegt. Ohne Suchtrace ist ihre interne Ursache weiterhin offen.
+
+## Früherer Gegencheck der SEO-Randseiten in Pluginset 426 (2026-11-10)
+
+**PASS für den damaligen Prüfumfang** (SEO-Randseiten und ausgewählte Funktionen). Für die Gesamtfreigabe gilt die fünfsprachige Theme-Abnahme oben. PlentyONE zeigte für Pluginset 426 „Erfolgreich bereitgestellt“, das aktive Theme `eGuardiansBasic B2B`, Branch `refs/heads/develop` und Version 1.0.7. Das in Content- und Kategorieseiten eingebundene `cat-020726.min.js` hatte die Kennung `95dd009be2a11c7bbaf2bf5d2d08ae5f7e69226e-nl1-seo2`. Alle 266.977 Bytes entsprachen der Datei auf `develop` bei `ac79e60` (SHA-256 `f915663f5a777b14f441867a970440f62ebccdcf9ea236189614e13ddde44aae`). Der Backend-Dialog zeigte keinen Git-Commit-Hash an. Die serverseitigen Änderungen waren am korrigierten Listenende und an der wirksamen Sortierauswahl nachweisbar.
+
+| Direktaufruf | Artikel beim ersten / wiederholten / frischen Abruf | Robots | Canonical und Seitenzusatz im Server-HTML |
+| --- | ---: | --- | --- |
+| Herren 55 | 24 / 24 / 24 | INDEX,FOLLOW | `/herren/?page=55`, „Seite 55“, mit sichtbarem Weiter-Link zu 56 |
+| Herren 56 | 3 / 1 / 1 | INDEX,FOLLOW | `/herren/?page=56`, „Seite 56“ |
+| Herren 57 | 0 / 0 / 0 | NOINDEX,FOLLOW | `/herren/`, ohne Seitenzusatz |
+| Damen 53 | 23 / 23 / 23 | INDEX,FOLLOW | `/damen/?page=53`, „Seite 53“ |
+| Damen 54 | 0 / 0 / 0 | NOINDEX,FOLLOW | `/damen/`, ohne Seitenzusatz |
+| Damen 55 | 0 / 0 / 0 | NOINDEX,FOLLOW | `/damen/`, ohne Seitenzusatz |
+
+- **PASS, Server-HTML.** 49 bestätigte Preview-Antworten (48 HTTP 200, eine erwartete HTTP 404), 584/584 Prüfungen. Der alte Vorschau-Link lieferte für zwei Einstiegsversuche eine als `production` markierte Antwort. Beide wurden verworfen. Für die HTTP-Matrix wurde im Backend die B2B-Vorschau von 426 neu geöffnet und jede Antwort anhand von Stage und ausgewähltem Pluginset geprüft. Die Matrix enthält reguläre Jeans/Hosen, alle vier Content-Listen, Newsletter ohne Liste, leere Damendüfte sowie echte Filter- und Sortiersperren. Damendüfte blieb auf Basis-URL und bei `page=1` indexierbar. Gültige Seiten 2 und ungültige Seiten 999 erhielten die erwarteten Canonicals und Robots-Vorgaben. Titel und Beschreibung der Damen-Seite 2 stimmten in DE/EN/FR/IT/ES im HTML und nach JavaScript.
+- **PASS, Shopfunktionen.** Der sichtbare Link 55 → 56 öffnete Herren 56 mit eigenem Canonical. Infinite Scroll 55 → 56 lud 24 + 3 unterschiedliche Herren-Artikel, bei Damen 52 → 53 waren es 24 + 23 unterschiedliche Artikel. URL, Titel und Beschreibung wechselten auf die erreichte Seite. „Neuheiten“, „Niedrigster Preis“ und „Höchster Preis“ entsprachen der aktiven Sortierung auf Damen-Seite 1 und 2 und blieben bei Zurück/Vorwärts erhalten. Beide Preisrichtungen wurden an den 24 angezeigten Preisen je Seite geprüft. Bei zeitgleichen Preiswerten können sich die Artikel zwischen Abrufen ändern. Die blaue Farbfacette ergab mobil bei 390 × 844 Pixeln 93 Treffer mit eigenen und vorgegebenen Facetten. Die Quickview zeigte Größen, Bestand und Preise bei Stückzahl 0 und ließ sich schließen. Zwei temporäre Zeitüberschreitungen bei der Browsersteuerung wurden durch Ablesen des tatsächlich geladenen Zielzustands aufgeklärt.
+- **PASS, Regressionen.** Das aus 426 heruntergeladene Bundle bestand 118/118 Metadatenfälle und 22/22 Chrome-Fälle. Die ergänzenden lokalen PHP-Regressionen bestanden unter Twig 2.16.1 und 3.30.0 mit jeweils 368/368 Fällen und 190/190 Vergleichen, einschließlich expliziter Robots-Vorgaben und der einmaligen Abfrage pro Listenaufruf.
+- **Cache und Laufzeit.** Die sechs Randseiten wurden erst aufsteigend, danach in umgekehrter Reihenfolge und schließlich mit einer neuen Sitzung abgerufen. Robots, Canonical, Titel, Beschreibung und Weiter-Links blieben stabil. Die HTTP-Zeit im Median lag bei 1,18 / 1,16 / 1,17 s. Für 30 mit der vorherigen Messung vergleichbare URLs lagen die Mediane bei 1,34 s zuvor und 1,30 s jetzt. Die 48 HTTP-200-Antworten meldeten `Miss from cloudfront` und `no-store, private`. Der interne ShopBooster-Zustand (kalt/warm) und Backend-Abfragezahlen sind ohne Server-Trace **NOT_TESTED**.
+- **Verbleibende Einschränkungen.** Beim reinen Scrollen bleibt der DOM-Canonical auf der Einstiegsseite der zusammengefügten Liste (Herren 55 bzw. Damen 52). Der direkte Aufruf der Folge-URL und die Navigation per Seitenlink liefern den eigenen Canonical. Für diese Freigabe wird dieses Verhalten als begrenzte Client-Abweichung gewertet. Die bekannte Ausverkauft-Metadatenübernahme bei echtem HTTP 404 ist **ACCEPTED LIMITATION**. Dass ein zusätzlicher Weiter-Link bei zwischenzeitlich geändertem Bestand auf eine leere Seite führen kann, bleibt ebenfalls akzeptiert. Die interne Ursache der schwankenden Trefferzahl ist offen. Eine ausdrücklich auf `NOINDEX`/`NOFOLLOW` konfigurierte Kategorie war live **NOT_TESTED**.
+
+Nur der Abnahmebericht wurde im Repository aktualisiert. Der Gegencheck hat keine Bereitstellung, Synchronisierung oder Cache-Invalidierung ausgelöst.
+
+## Frühere SEO-Abnahme vor Bereitstellung des Randseiten-Fixes (2026-11-10)
 
 **Freigabe für Produktion: FAIL.** Die bereitgestellte Preview schließt eine mit Artikeln gefüllte Herren-Seite von der Indexierung aus. Die lokale Korrektur auf `develop` ist für einen erneuten Test in 426 vorbereitet. Referenz vor der Korrektur ist `72a0eed`. In der Preview wurden Stage `preview`, Pluginset `426`, Asset-Kennung `dc92fec7feea1e22ec018794e81b13525eb561bc` und das Kategorie-Bundle mit `-nl1-seo1` überprüft.
 

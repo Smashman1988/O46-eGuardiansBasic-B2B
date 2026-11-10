@@ -1,5 +1,10 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – item Quickview and A–Z brand directory
+
+- Opening item Quickviews repeatedly now leaves one global dropdown handler per document. The four page bundles use the additional cache key `-qv1`.
+- The unpaginated brand directory keeps its configured robots directives on the base URL and `?page=1`. Other page numbers and invalid values get `NOINDEX`, the base canonical and no page suffix. An explicit `NOFOLLOW` is preserved.
+
 ## Unreleased – populated pages beyond the reported end of embedded item lists (2026-11-10)
 
 - A requested page containing items keeps its own pagination metadata and configured robots directives even when the search reports fewer pages. Empty follow-up pages retain their indexing restrictions. Both decisions use the existing search result.

@@ -48,12 +48,17 @@ class SeoPage
         $this->lists[] = ['currentPage' => $currentPage, 'pageMax' => $pageMax, 'total' => $total, 'documentCount' => $documentCount];
     }
 
+    public function disableCategoryPagination()
+    {
+        $this->categoryPagination = null;
+    }
+
     public function getPagination(): array
     {
         $hasPage = array_key_exists('page', $this->query);
         $requestedPage = $hasPage ? self::positiveInteger($this->query['page']) : 1;
         $invalidInput = $hasPage && $requestedPage === null;
-        $hasList = $this->template === 'tpl.category.item';
+        $hasList = $this->template === 'tpl.category.item' && $this->categoryPagination !== null;
         $pagination = $hasList ? $this->categoryPagination : [];
         $ambiguous = false;
         if ($this->template === 'tpl.category.content') {

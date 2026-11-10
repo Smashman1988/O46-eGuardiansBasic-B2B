@@ -1,5 +1,10 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – Quickview und Marken A–Z
+
+- Wiederholtes Öffnen von Artikel-Quickviews registriert den globalen Dropdown-Handler nur einmal pro Dokument. Die vier Seiten-Bundles verwenden den zusätzlichen Cache-Schlüssel `-qv1`.
+- Auf der unpaginierten Markenübersicht behalten Basis-URL und `?page=1` ihre Robots-Vorgaben. Weitere und ungültige Seitenwerte erhalten `NOINDEX`, den Canonical der Basis-URL und keinen Seitenzusatz. Ein konfiguriertes `NOFOLLOW` bleibt erhalten.
+
 ## Unveröffentlicht – gefüllte Randseiten eingebetteter Artikellisten (2026-11-10)
 
 - Enthält die aufgerufene Folgeseite trotz überschrittener gemeldeter Seitengrenze Artikel, bleiben ihre eigenen SEO-Metadaten und die konfigurierten Robots-Vorgaben erhalten. Leere Folgeseiten bleiben gesperrt. Die Entscheidung verwendet das vorhandene Suchergebnis.

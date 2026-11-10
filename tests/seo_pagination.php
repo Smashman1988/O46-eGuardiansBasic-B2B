@@ -251,6 +251,7 @@ namespace {
         'not-found'=>readView('StaticPages/PageNotFound'),
         'regular'=>'{% extends "layout" %}{% block PartialHead %}{% embed "metadata" %}{% endembed %}{% endblock %}',
         'actual-regular'=>readView('Category/Item/CategoryItem'),
+        'GuardiansBasicB2B::Category.Item.CategoryItemBrands'=>readView('Category/Item/CategoryItemBrands'),
         'regular-head'=>'{% extends "actual-regular" %}{% block PageBody %}{% endblock %}',
         'alternate-layout'=>'<!DOCTYPE html><html><head>{% include "head" %}{% block PartialHead %}{% endblock %}</head><body>{% block PageBody %}{% endblock %}</body></html>',
         'block-robots'=>'{% extends "layout" %}{% block PartialHead %}{% embed "metadata" %}{% block robots %}{{ fixtureRobots }}{% endblock %}{% endembed %}{% endblock %}',
@@ -768,6 +769,43 @@ namespace {
             check($page->getRobots('','INDEX,FOLLOW',false) === 'NOINDEX,FOLLOW','Native-category exception changed embedded-list policy');
         });
     }
+    // The native route supplies plausible grid bounds even though the rendered
+    // directory is identical on every page. These are observed hreflang paths.
+    $brandPaths = ['de'=>'/marken-online-outlet/','en'=>'/en/branded-online-outlet/',
+        'fr'=>'/fr/marques/','it'=>'/it/marca/','es'=>'/es/marcas/'];
+    foreach ($brandPaths as $lang=>$path) {
+        foreach ([null,'1','2','99','0','abc','-1','',[]] as $number) {
+            foreach (['INDEX,FOLLOW','NOINDEX,FOLLOW','INDEX,NOFOLLOW','NOINDEX,NOFOLLOW'] as $directive) {
+                test('brands/' . $lang . '/' . json_encode($number) . '/' . $directive,function () use ($twig,$base,$request,$search,$templateService,$urls,$lang,$path,$number,$directive) {
+                    $oldBase = $urls->base; $oldTemplate = $templateService->template;
+                    try {
+                        $urls->base = 'https://example.test' . $path; $templateService->template = 'tpl.category.item';
+                        $request->params = $number === null ? [] : ['page'=>$number];
+                        $ctx = localizedContext($base,$lang);
+                        $ctx['category']['id'] = 60; $ctx['category']['details'][0]['metaRobots'] = $directive;
+                        $ctx['category']['details'][0]['metaTitle'] = $title = 'Brands ' . $lang;
+                        $ctx['category']['details'][0]['metaDescription'] = $description = 'Directory ' . $lang;
+                        $ctx['categories'] = [['id'=>60,'details'=>[['lang'=>$lang,'nameUrl'=>basename($path)]],
+                            'children'=>[['details'=>[['name'=>'Alpha','nameUrl'=>'alpha']]],
+                                         ['details'=>[['name'=>'Beta','nameUrl'=>'beta']]]]]];
+                        $ctx['pageMax'] = 100; $ctx['itemCountTotal'] = 2400;
+                        $ctx['currentPage'] = in_array($number,['2','99'],true) ? (int)$number : 1;
+                        $calls = count($search->calls);
+                        $html = $twig->render('actual-regular',$ctx);
+                        $state = json_decode(meta($html,'o46-pagination'),true);
+                        check(!$state['hasList'] && $state['pageMax'] === null && $state['currentPage'] === 1,'Directory inherited grid bounds');
+                        $first = $number === null || $number === '1';
+                        $expectedRobots = $first ? $directive : 'NOINDEX,' . explode(',',$directive)[1];
+                        check(meta($html,'robots') === $expectedRobots && canonical($html) === $urls->base,'Incorrect directory robots or canonical');
+                        check(strpos($html,'<title>' . $title . '</title>') !== false && meta($html,'description') === $description,'Directory metadata gained a suffix');
+                        check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Directory exposes a pager');
+                        check(strpos($html,'brandTiles') !== false && strpos($html,'/alpha') !== false && strpos($html,'/beta') !== false,'Actual brand list missing');
+                        check(count($search->calls) === $calls,'Directory issued an embedded item query');
+                    } finally { $urls->base = $oldBase; $templateService->template = $oldTemplate; }
+                });
+            }
+        }
+    }
     foreach ([['content','content',100,'cat'],['regular','regular-head',100,'cat'],
         ['editorial-main','content',31,'main']] as [$name,$view,$categoryId,$asset]) {
         test('asset-inclusion/' . $name,function () use ($name,$view,$categoryId,$asset,$twig,$request,$base,$templateService,&$builderMode) {
@@ -780,7 +818,7 @@ namespace {
                 preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
                 check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
                 $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
-                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '');
+                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '') . '-qv1';
                 check($url === $expected,'Wrong shipped asset or cache version');
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
                 check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');
