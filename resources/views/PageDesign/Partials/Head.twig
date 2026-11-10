@@ -49,6 +49,31 @@
 {% endif %}
  
 {% if isQuickView %}
+{% if rendersItemGrid is defined or isItem or (currentTemplate == 'tpl.category.content' and pagination.hasList) %}
+{# Reserve the final desktop logo height on article pages before main CSS loads. #}
+<style>
+@media (min-width: 992px) { .company-logo img { height: 46px; } }
+@media (min-width: 1400px) { .company-logo img { height: 64px; } }
+</style>
+{% endif %}
+{% if rendersItemGrid is defined and not rendersItemGrid %}
+{# Geometry from the main stylesheet for the desktop brand directory's first paint. #}
+<style>
+@media (min-width: 992px) {
+    /* Match the width of the A–Z links while Open Sans loads. */
+    @font-face { font-family: "Brand alphabet fallback"; src: local("Arial"), local("Liberation Sans"); size-adjust: 93.54%; }
+    .brands-box { display: inline-block; margin-right: 30px; font-family: "Open Sans", "Brand alphabet fallback", sans-serif; font-size: 30px; letter-spacing: 1px; }
+    .firstletter { text-align: center; font-size: 30px; }
+    .brandTiles .xy-150, .brandTiles img { height: 150px; }
+    .brandTiles .border { border: 1px solid #dee2e6 !important; }
+    .brandTiles .align-self-center { align-self: center; }
+    .brandTiles .flex-grow-1 { flex-grow: 1; }
+}
+@media (min-width: 1200px) {
+    .brandTiles .col-xl-3 { flex: 0 0 25%; max-width: 25%; }
+}
+</style>
+{% endif %}
 {% if isVueView %}
 <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/checkout-120525.min.css" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/checkout-120525.min.css"></noscript>

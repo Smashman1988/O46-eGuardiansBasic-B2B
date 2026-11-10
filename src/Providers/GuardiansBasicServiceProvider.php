@@ -13,6 +13,10 @@ use IO\Helper\TemplateContainer;
 use IO\Extensions\Functions\Partial;
 use Plenty\Plugin\ConfigRepository;
 use GuardiansBasicB2B\Extensions\Base_Extension;
+use GuardiansBasicB2B\Contexts\EnglishTextSearchContext;
+use GuardiansBasicB2B\Services\EnglishTextSearch;
+use GuardiansBasicB2B\Services\SearchAutocompleteService;
+use IO\Services\ItemSearchAutocompleteService;
 use Plenty\Modules\Webshop\Consent\Contracts\ConsentRepositoryContract;
 
 /**
@@ -25,6 +29,7 @@ class GuardiansBasicServiceProvider extends ServiceProvider
 
     public function register()
     {
+        $this->getApplication()->bind(ItemSearchAutocompleteService::class, SearchAutocompleteService::class);
         $this->getApplication()->register(\GuardiansBasicB2B\Providers\GuardiansBasicRouteServiceProvider::class);
         $this->getApplication()->register(\GuardiansBasicB2B\Providers\GuardiansBasicRouteServiceProvider::class);
         $consentRepository = pluginApp(ConsentRepositoryContract::class);
@@ -61,6 +66,13 @@ class GuardiansBasicServiceProvider extends ServiceProvider
     public function boot(Twig $twig, Dispatcher $dispatcher, ConfigRepository $config)
     {
         $twig->addExtension(Base_Extension::class);
+        $dispatcher->listen('IO.ctx.search', function (TemplateContainer $container)
+        {
+            if (EnglishTextSearch::applies()) {
+                $container->setContext(EnglishTextSearchContext::class);
+                return false;
+            }
+        }, self::PRIORITY);
         $enabledOverrides = explode(", ", $config->get("GuardiansBasicB2B.templates.override"));
         // Override partials
         $dispatcher->listen('IO.init.templates', function (Partial $partial) use ($enabledOverrides)

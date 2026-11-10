@@ -1,4 +1,4 @@
-{% set variationAttributes = getAttributesWithImages(itemId) %}
+{% set variationAttributes = cardAttributeMap ?? getAttributesWithImages(itemId) %}
 {% set transLabels = transLabels ?? {
     availsizedeal: trans("GuardiansBasicB2B::Template.availsizedeal"),
     availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize"),

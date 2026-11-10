@@ -2,6 +2,9 @@
 
 namespace GuardiansBasicB2B\Resources;
 
+use Ceres\Helper\SearchOptions;
+use GuardiansBasicB2B\Services\EnglishTextSearch;
+use Plenty\Modules\Webshop\Contracts\WebstoreConfigurationRepositoryContract;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\CategoryItems;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\Facets;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\SearchItems;
@@ -42,8 +45,11 @@ class FacetResource extends ApiResource
     {
         $categoryId   = (int)$this->request->get('categoryId', 0);
         $searchString = $this->request->get('query', '');
+        if (is_numeric($searchString)) {
+            $searchString = (string)$searchString;
+        }
 
-        if($categoryId > 0 || strlen($searchString))
+        if($categoryId > 0 || (is_string($searchString) && strlen($searchString)))
         {
             $itemListOptions = [
                 'page'         => 1,
@@ -64,6 +70,17 @@ class FacetResource extends ApiResource
             }
             $itemListOptions['page'] = 1;
             $itemListOptions['itemsPerPage'] = 50;
+
+            if ($categoryId <= 0 && EnglishTextSearch::applies()) {
+                $config = pluginApp(WebstoreConfigurationRepositoryContract::class)->getWebstoreConfiguration();
+                $itemListOptions['searchOperator'] = $config->itemSearchOperator;
+                $options = SearchOptions::validateItemListOptions($itemListOptions, SearchOptions::SCOPE_SEARCH);
+                $response = pluginApp(EnglishTextSearch::class)->getPage($options);
+                return $this->response->create([
+                    'facets' => $response['facets'],
+                    'itemList' => $response['itemList']
+                ], ResponseCode::OK);
+            }
             
             $searchParams = [
                 'facets'   => Facets::getSearchFactory( $itemListOptions ),

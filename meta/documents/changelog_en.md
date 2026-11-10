@@ -1,5 +1,15 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Italian and Spanish storefront search
+
+- Italian and Spanish text searches use the English index. Product lists and facets share the text filter and price range. Product URLs, display data and customer prices use the current storefront context.
+- Autocomplete requests products and English text completions in one batch. IO formats the localized links. Live acceptance in test plugin set 426 is pending.
+
+## Unreleased – brand directory layout and sizes on product cards
+
+- The desktop brand directory reserves space for its alphabet and tiles before the first paint. First-row brand logos load directly. Product lists and product pages also reserve the final desktop header logo height.
+- Category, search and embedded product lists batch their existing size lookups for each render. Cards retain the available sizes across variations and their display order.
+
 ## Unreleased – search suggestions and numeric search filters
 
 - Autocomplete now displays numeric labels such as `9885396` and preserves leading zeros in text labels. It skips empty or missing labels and highlights the literal search term.

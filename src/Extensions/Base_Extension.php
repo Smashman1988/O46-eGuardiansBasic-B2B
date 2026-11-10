@@ -72,17 +72,40 @@ class Base_Extension extends Twig_Extension
             $this->factory->createSimpleFunction('prepareSeoContent', [$this, 'prepareSeoContent']),
             $this->factory->createSimpleFunction('sortSizes', [$this, 'sortSizes']),
             $this->factory->createSimpleFunction('getAttributesWithImages', [$this, 'getAttributesWithImages']),
+            $this->factory->createSimpleFunction('getCardAttributeMaps', [$this, 'getCardAttributeMaps']),
         ];
     }
 
     public function getAttributesWithImages($itemId){
-        $options = array(
-            "itemId" => $itemId,
-            "afterKey" => null
-        );
-        $searchfactory = VariationAttributeMap::getSearchFactory( $options );
-        $result = pluginApp(ItemSearchService::class)->getResult($searchfactory);
-        return $result;
+        return pluginApp(ItemSearchService::class)->getResult($this->cardAttributeFactory($itemId));
+    }
+
+    private function cardAttributeFactory($itemId)
+    {
+        return VariationAttributeMap::getSearchFactory(['itemId' => $itemId, 'afterKey' => null]);
+    }
+
+    public function getCardAttributeMaps(array $itemIds): array
+    {
+        $mapsByItem = [];
+        // Attribute maps can include documents and images. Keep only the attributes
+        // after each group, even when a ShopBuilder list has a large page size.
+        foreach (array_chunk(array_unique(array_filter($itemIds)), 24) as $ids) {
+            $factories = [];
+            foreach ($ids as $id) {
+                $factories['item' . $id] = $this->cardAttributeFactory($id);
+            }
+            $results = pluginApp(ItemSearchService::class)->getResults($factories);
+            foreach ($ids as $id) {
+                $key = 'item' . $id;
+                if (!isset($results[$key])) {
+                    throw pluginApp(\UnexpectedValueException::class, ['message' => 'Missing card attribute result for ' . $id]);
+                }
+                $mapsByItem[$id] = ['attributes' => $results[$key]['attributes'] ?? []];
+            }
+            unset($results);
+        }
+        return $mapsByItem;
     }
 
     public function getImageAttributeList($itemId,$attributeNameMap)

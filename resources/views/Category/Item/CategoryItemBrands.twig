@@ -31,20 +31,27 @@
 
                         {% set counter = counter + 1 %}
                         {% if megaMenuLevels == 1 %}
+                            {% set renderedBrands = 0 %}
                             {% for child in category.children %}
                                  {% if firstSign != child.details[0].name|first|upper %}
                                     {% set firstSign = child.details[0].name|first|upper %}
                                     <div class="col-12"><hr><p class="firstletter"><a name="{{ firstSign  }}">{{ firstSign }}</a></p><hr></div>
                                 {% endif %}
                                 {% if child.details | length > 0 %}
+                                {% set renderedBrands = renderedBrands + 1 %}
             <div class="mb-3 col-12 col-sm-6 col-lg-4 col-xl-3">
                 <a href="{{ currentScopeUrl }}/{{ child.details[0].nameUrl }}{{ urls.trailingSlashSuffix }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" title="{{ child.details[0].metaTitle }}" class="d-flex bg-light border rounded">
                     <picture class="xy-150 rounded">
                         {% if child.details[0].image2Path is not empty %}
+                            {% if renderedBrands <= 4 %}
+                            <img src="/documents/{{ child.details[0].image2Path }}" alt="{{ child.details[0].name }}" title="{{ child.details[0].name }}" class="position-relative rounded">
+                            {% else %}
                             <img src="" alt="{{ child.details[0].name }}" title="{{ child.details[0].name }}" data-src="/documents/{{ child.details[0].image2Path }}" class="lozad position-relative rounded">
                              <noscript>
                             <img src="/documents/{{ child.details[0].image2Path }}" alt="{{ child.details[0].name }}" title="{{ child.details[0].name }}">
-                             </noscript></picture> 
+                             </noscript>
+                            {% endif %}
+                            </picture>
                         {% else %}
                          <img src="{{ plugin_path('GuardiansBasicB2B') }}/images/no-logo-platzhalter.png" alt="{{ child.details[0].name }}" class="position-relative rounded"></picture>
                          {% endif %}

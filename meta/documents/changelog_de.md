@@ -1,5 +1,15 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – Italienische und spanische Shopsuche
+
+- Für IT und ES verwendet die Textsuche den englischen Index. Ergebnislisten und Facetten teilen sich Textfilter und Preisgrenzen. Produkt-URLs, Darstellung und Kundenpreise folgen weiterhin dem lokalen Shopkontext.
+- Die Vorschlagssuche fordert Produkte und englische Textvervollständigungen gemeinsam an. Der vorhandene IO-Formatter liefert die lokalisierten Links. Die Live-Abnahme im Test-Pluginset 426 steht aus.
+
+## Unveröffentlicht – Markenlayout und Größen auf Artikelkarten
+
+- Die Desktop-Markenübersicht baut Alphabet und Kacheln mit den endgültigen Layoutmaßen auf. Logos der ersten Markenreihe laden direkt. Die Desktop-Höhe des Headerlogos steht auch auf Artikellisten und Produktdetailseiten beim ersten Zeichnen fest.
+- Kategorie-, Such- und eingebettete Artikellisten bündeln die bestehenden Größenabfragen je Renderaufruf. Größenreihenfolge und Größen von Geschwistervarianten bleiben erhalten.
+
 ## Unveröffentlicht – Suchvorschläge und numerische Suchfilter
 
 - Die Vorschlagsliste zeigt numerische API-Labels wie `9885396` an. Führende Nullen in Textlabels bleiben erhalten. Leere oder fehlende Labels werden übersprungen. Die Hervorhebung behandelt Suchbegriff und Beschriftung als Text.

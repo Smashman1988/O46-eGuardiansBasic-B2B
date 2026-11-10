@@ -175,7 +175,7 @@ namespace {
     // Targeted source guard, NOT the PlentyONE compiler/validator. Native names
     // checked against the official NativePHPFunctionsAndClasses list, 2026-11-09.
     function checkPluginSource($source): array {
-        $allowed = ['array_diff','array_key_exists','array_keys','array_merge','array_unique','array_values',
+        $allowed = ['array_chunk','array_diff','array_filter','array_key_exists','array_keys','array_merge','array_unique','array_values',
             'ceil','count','explode','filter_var','floor','implode','in_array','intval','is_array','is_float','is_int',
             'is_string','preg_match','preg_split','strpos','strtolower','strtoupper','trim','pluginapp'];
         $tokens = array_values(array_filter(token_get_all($source), function ($token) {
@@ -267,7 +267,7 @@ namespace {
     $twig = new Twig\Environment($loader, ['cache'=>false, 'autoescape'=>'html']);
     $renderer->environment = $twig;
     function addFunction($twig, $name, $callback) { $twig->addFunction(new Twig\TwigFunction($name, [new Callback($callback),'invoke'])); }
-    foreach (['createSeoPage','prepareSeoContent','getItemsFromCat','getItemsFromCatSimple'] as $name) { addFunction($twig, $name, [$extension,$name]); }
+    foreach (['createSeoPage','prepareSeoContent','getItemsFromCat','getItemsFromCatSimple','getCardAttributeMaps'] as $name) { addFunction($twig, $name, [$extension,$name]); }
     foreach (['get_consent_scripts','get_filtered_tags','get_json_data','get_shop_builder_scripts','component','ssr_entry','csrf_token'] as $name) { addFunction($twig,$name,function () { return ''; }); }
     foreach (['get_additional_styles','get_additional_scripts'] as $name) { addFunction($twig,$name,function () { return []; }); }
     addFunction($twig,'getPartial',function ($name) { return ['page-design'=>'layout','head'=>'head','page-metadata'=>'metadata'][$name] ?? 'empty'; });
@@ -800,12 +800,33 @@ namespace {
                         check(strpos($html,'<title>' . $title . '</title>') !== false && meta($html,'description') === $description,'Directory metadata gained a suffix');
                         check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Directory exposes a pager');
                         check(strpos($html,'brandTiles') !== false && strpos($html,'/alpha') !== false && strpos($html,'/beta') !== false,'Actual brand list missing');
+                        check(strpos($html,'.brandTiles .col-xl-3 {') !== false,'Directory critical grid CSS missing');
+                        check(strpos($html,'main-211025.min.css?v=fixture-nl2" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
                         check(count($search->calls) === $calls,'Directory issued an embedded item query');
                     } finally { $urls->base = $oldBase; $templateService->template = $oldTemplate; }
                 });
             }
         }
     }
+    test('assets/brand-first-row',function () use ($twig,$base) {
+        $children = [['details'=>[]]];
+        foreach (range(1,5) as $i) {
+            $children[] = ['details'=>[['name'=>'Brand '.$i,'nameUrl'=>'brand-'.$i,'image2Path'=>'brands/'.$i.'.png']]];
+        }
+        $html = $twig->render('GuardiansBasicB2B::Category.Item.CategoryItemBrands',array_replace($base,[
+            'categories'=>[['id'=>60,'details'=>[['lang'=>'de','nameUrl'=>'marken']],'children'=>$children]]
+        ]));
+        preg_match_all('~<picture class="xy-150 rounded">(.*?)</picture>~s',$html,$tiles);
+        check(count($tiles[1]) === 5,'Missing translated brands');
+        foreach ($tiles[1] as $i=>$tile) {
+            $url = '/documents/brands/' . ($i+1) . '.png';
+            if ($i < 4) {
+                check(strpos($tile,'<img src="'.$url.'"') !== false && strpos($tile,'data-src=') === false && substr_count($tile,'<img ') === 1,'First row requires JS or duplicates the image');
+            } else {
+                check(strpos($tile,'data-src="'.$url.'"') !== false && strpos($tile,'<noscript>') !== false,'Remaining brand logos lost lazy loading or fallback');
+            }
+        }
+    });
     foreach ([['content','content',100,'cat'],['regular','regular-head',100,'cat'],
         ['editorial-main','content',31,'main']] as [$name,$view,$categoryId,$asset]) {
         test('asset-inclusion/' . $name,function () use ($name,$view,$categoryId,$asset,$twig,$request,$base,$templateService,&$builderMode) {
@@ -822,6 +843,9 @@ namespace {
                 check($url === $expected,'Wrong shipped asset or cache version');
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
                 check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');
+                check(strpos($html,'.brandTiles .col-xl-3 {') === false,'Brand critical CSS leaked into an item list or editorial page');
+                $hasDesktopLogoSize = strpos($html,'@media (min-width: 1400px) { .company-logo img { height: 64px; } }') !== false;
+                check($hasDesktopLogoSize === ($name !== 'editorial-main'),'Desktop logo sizing on wrong page type');
                 return ['script'=>$url];
             } finally { $builderMode = 'single'; $templateService->template = 'tpl.category.content'; }
         });
@@ -913,7 +937,7 @@ namespace {
     test('compatibility/production-source',function () use ($root) {
         $fragments = ['SeoPage'=>file_get_contents($root . '/src/Helper/SeoPage.php')];
         $lines = file($root . '/src/Extensions/Base_Extension.php');
-        foreach (['createSeoPage','prepareSeoContent','getItemsFromCat'] as $name) {
+        foreach (['createSeoPage','prepareSeoContent','getItemsFromCat','cardAttributeFactory','getCardAttributeMaps'] as $name) {
             $method = new ReflectionMethod(Base_Extension::class,$name);
             $fragments[$name] = "<?php\n" . implode('',array_slice($lines,$method->getStartLine()-1,$method->getEndLine()-$method->getStartLine()+1));
         }

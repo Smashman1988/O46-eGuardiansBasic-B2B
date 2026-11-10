@@ -89,7 +89,7 @@ async function scenario(browser, asset, code, l, width, full) {
             if(fail||(!q.trim()&&!category))return route.fulfill({status:400,json:{data:null}});
             const saved=recorded(q);
             const count=saved?.facet && saved.facet.id===(pars.facets||'') ? saved.facet.total :
-                (q===empty?0:(q==='adidas'||q==='nike'||q==='shoes')&&(l==='it'||l==='es')?0:1);
+                (q===empty?0:1);
             counts[q]=count;
             return route.fulfill({json:{data:{facets:[{values:[{id:376,count}]}],itemList:{total:count}}}});
         }
@@ -175,12 +175,11 @@ async function scenario(browser, asset, code, l, width, full) {
             seen.push('separate form action');
 
             // Replay the available shop labels, including their original JSON types and product URLs.
-            for (const query of [sku,term,'adidas','nike','shoes','[a]+']) {
-                const unavailable = query !== term && query !== '[a]+' && (l === 'it' || l === 'es');
+            for (const query of [sku,term,'0002','adidas','nike','shoes','[a]+']) {
                 const label = query === sku ? Number(query) : query;
                 searchResponse = recorded(query)?.ac ?? {
-                    item: unavailable ? [] : [{label:'Produkt '+query.toUpperCase(),url:product}],
-                    suggestion: unavailable ? [] : [{label}]
+                    item: [{label:'Produkt '+query.toUpperCase(),url:product}],
+                    suggestion: [{label}]
                 };
                 await begin();
                 await suggestions(query);

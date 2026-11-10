@@ -165,7 +165,7 @@
                        
                 <div class="category-product-list row" data-eg-handler="initCatItemEvents" data-eg-event="load">
                 {# 🟢 Macro für die beiden Varianten erstellen #} 
-                {% macro categoryItem(item, variant, currencycheck, isShoeCategory, translations, transLabels) %}
+                {% macro categoryItem(item, variant, currencycheck, isShoeCategory, translations, transLabels, cardAttributeMap) %}
                     <article class="post col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">
                         {% if variant == 1 %}
                             {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2" with {
@@ -188,12 +188,12 @@
                 {% endmacro %}
  
 
-                {# 🟢 Nutzung des Macros in der Schleife #}
+                {% set attributeMapsByItem = getCardAttributeMaps(itemList|default([])|map(item => item.data.variation.itemId)) %}
                 {% for item in itemList %}
                     {% if loop.index <= 2 and currentPage == 1 %}
-                        {{ _self.categoryItem(item, 1, currencycheck, isShoeCategory, translations, transLabels) }}
+                        {{ _self.categoryItem(item, 1, currencycheck, isShoeCategory, translations, transLabels, attributeMapsByItem[item.data.variation.itemId] ?? null) }}
                     {% else %}
-                        {{ _self.categoryItem(item, 2, currencycheck, isShoeCategory, translations, transLabels) }}
+                        {{ _self.categoryItem(item, 2, currencycheck, isShoeCategory, translations, transLabels, attributeMapsByItem[item.data.variation.itemId] ?? null) }}
                     {% endif %}
                 {% endfor %}
 
