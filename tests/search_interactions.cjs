@@ -11,6 +11,8 @@ const langs = ['de','en','fr','it','es'];
 const origin = 'https://search-fixture.invalid';
 const prefix = l => l === 'de' ? '' : '/' + l;
 const term = '2351296', labels = ['Alpha & Beta + 50%', 'Caffè #2'], empty = 'zzqnohits426xyz';
+const sku = '9885396';
+const quotedLabel = '9885396 "><img src=x onerror="window.badLabel=1"> & Zubehör';
 const escape = s => String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
 const captured = process.env.O46_SEARCH_CAPTURE ? JSON.parse(fs.readFileSync(process.env.O46_SEARCH_CAPTURE)) : null;
 const results = [];
@@ -62,6 +64,7 @@ async function scenario(browser, asset, code, l, width, full) {
     page.setDefaultTimeout(5000);page.on('pageerror',e=>errors.push(e.message));
     const root=prefix(l), action=root+'/search/', start=root+'/fixture/', product=root+'/product/a-2351296/';
     let value=term,category='',fail=false;const counts={};
+    let searchResponse;
     const recorded=q=>captured?.find(v=>v.l===l&&v.q===q);
     await context.route('**/*',async route=>{
         const u=new URL(route.request().url());
@@ -69,6 +72,14 @@ async function scenario(browser, asset, code, l, width, full) {
         if(u.pathname==='/jquery.js'||u.pathname==='/handlers.js')return route.fulfill({contentType:'text/javascript',body:u.pathname==='/jquery.js'?jquery:code});
         if(u.pathname==='/rest/io/item/search/autocomplete/') {
             const q=u.searchParams.get('query');api.push(['ac',q]);
+            if(searchResponse) return route.fulfill({json:{data:searchResponse}});
+            if(q===sku) {
+                const suggestion=[9885396,null,undefined,'','009885396',quotedLabel,0,'Artikel 9885396','sechster Treffer'];
+                return route.fulfill({json:{data:{
+                    suggestion:suggestion.map(label=>({label})),
+                    item:[null,'',undefined,9885396,quotedLabel].map(label=>({label,url:product+'?v=9',image:'/image.png'}))
+                }}});
+            }
             const no=q===empty;
             return route.fulfill({json:{data:{item:no?[]:labels.map((label,i)=>({label,url:product+'?v='+i})),suggestion:no?[]:[{label:labels[0]}]}}});
         }
@@ -93,10 +104,31 @@ async function scenario(browser, asset, code, l, width, full) {
     }
     async function suggestions(q) {
         const n=api.length;await Promise.all([page.waitForResponse(r=>r.url().includes('/autocomplete/')),input.fill(q)]);
-        await page.waitForFunction(()=>document.querySelector('.row-search-wrap')&&!document.querySelector('.search-loading'));
+        await page.waitForFunction(()=>document.querySelector('.row-search-wrap')&&!document.querySelector('.search-loading'))
+            .catch(error=>{assert.deepEqual(errors,[]);throw error;});
         assert.deepEqual(api.slice(n),[['ac',q]],'one autocomplete call');
     }
     try {
+        await begin();
+        await suggestions(sku);
+        const textLinks = page.locator('.list-autocomplete-suggestion a');
+        const productLinks = page.locator('.list-autocomplete a');
+        assert.deepEqual(await textLinks.allTextContents(),[sku,'009885396',quotedLabel,'0','Artikel 9885396']);
+        assert.deepEqual(await productLinks.allTextContents(),[sku,quotedLabel]);
+        assert.deepEqual(await textLinks.locator('strong').allTextContents(),[sku,sku,sku,sku]);
+        assert.deepEqual(await productLinks.locator('strong').allTextContents(),[sku,sku]);
+        assert.equal(await textLinks.nth(2).getAttribute('title'),quotedLabel);
+        assert.equal(await productLinks.nth(1).locator('img').getAttribute('alt'),quotedLabel);
+        assert.equal(await page.locator('.row-search-wrap [onerror], .list-autocomplete-suggestion img').count(),0);
+        const pick = link => mobile ? link.tap() : link.click();
+        await nav(()=>pick(textLinks.nth(1)),action,{query:'009885396'});
+        await begin();await suggestions(sku);
+        await input.press('ArrowDown');
+        assert.equal(await input.inputValue(),sku);
+        await nav(()=>input.press('Enter'),action,{query:sku});
+        await begin();await suggestions(sku);
+        await nav(()=>pick(productLinks.nth(1)),product,{v:'9'});
+        seen.push('numeric, empty and HTML labels');
         await begin();await suggestions(term);await input.press('ArrowDown');assert.equal(await input.inputValue(),labels[0]);
         await input.press('ArrowDown');assert.equal(await input.inputValue(),labels[1]);
         await input.press('ArrowUp');assert.equal(await input.inputValue(),labels[0]);
@@ -141,6 +173,47 @@ async function scenario(browser, asset, code, l, width, full) {
             const secondLink=page.locator('.searchbox-404 .list-autocomplete-suggestion a').first();
             await nav(()=>mobile?secondLink.tap():secondLink.click(),secondRoute,{query:labels[0]});
             seen.push('separate form action');
+
+            // Replay the available shop labels, including their original JSON types and product URLs.
+            for (const query of [sku,term,'adidas','nike','shoes','[a]+']) {
+                const unavailable = query !== term && query !== '[a]+' && (l === 'it' || l === 'es');
+                const label = query === sku ? Number(query) : query;
+                searchResponse = recorded(query)?.ac ?? {
+                    item: unavailable ? [] : [{label:'Produkt '+query.toUpperCase(),url:product}],
+                    suggestion: unavailable ? [] : [{label}]
+                };
+                await begin();
+                await suggestions(query);
+                for (const [selector,entries] of [
+                    ['.list-autocomplete a',searchResponse.item],
+                    ['.list-autocomplete-suggestion a',searchResponse.suggestion.slice(0,5)]
+                ]) {
+                    const links = page.locator(selector);
+                    assert.deepEqual(await links.allTextContents(),entries.map(entry=>String(entry.label)));
+                    for (const [index,entry] of entries.entries()) {
+                        const name = String(entry.label);
+                        const pos = name.toLowerCase().indexOf(query.toLowerCase());
+                        assert.deepEqual(await links.nth(index).locator('strong').allTextContents(),
+                            pos < 0 ? [] : [name.slice(pos,pos+query.length)]);
+                        const url = new URL(await links.nth(index).getAttribute('href'),origin);
+                        if (selector === '.list-autocomplete a') {
+                            assert.equal(url.href,new URL(entry.url,origin).href);
+                        } else {
+                            assert.equal(url.pathname,action);
+                            assert.equal(url.searchParams.get('query'),name);
+                        }
+                    }
+                }
+            }
+            // Only rows with usable labels should open the suggestions box.
+            searchResponse = {item:[],suggestion:[{label:'009885396'}]};
+            await begin();await suggestions(sku);
+            assert.equal(await page.locator('[data-eg-search].search-active-results').count(),1);
+            searchResponse = {item:[{label:null,url:product}],suggestion:[{}, {label:''}]};
+            await suggestions(term);
+            assert.equal(await page.locator('.row-search-wrap li, [data-eg-search].search-active-results').count(),0);
+            searchResponse = undefined;
+            seen.push('search terms and literal highlighting');
         }
         if(asset.startsWith('cat')) {
             const cases=full?[2351296,9885396,'adidas','nike','shoes',empty,'0000123','0','  text  ','',null]:[2351296];

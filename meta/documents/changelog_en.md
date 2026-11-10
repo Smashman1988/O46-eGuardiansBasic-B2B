@@ -2,6 +2,7 @@
 
 ## Unreleased – search suggestions and numeric search filters
 
+- Autocomplete now displays numeric labels such as `9885396` and preserves leading zeros in text labels. It skips empty or missing labels and highlights the literal search term.
 - Pressing Enter after choosing a suggestion with the arrow keys uses the current shop language’s search form, just like the search button. Text suggestions use the same destination; product suggestions keep their product links.
 - Applying filters preserves numeric queries, including leading zeros. The filter button uses the destination from a successful facet response and stays disabled when the request fails.
 

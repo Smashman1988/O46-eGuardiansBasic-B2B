@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht – Suchvorschläge und numerische Suchfilter
 
+- Die Vorschlagsliste zeigt numerische API-Labels wie `9885396` an. Führende Nullen in Textlabels bleiben erhalten. Leere oder fehlende Labels werden übersprungen. Die Hervorhebung behandelt Suchbegriff und Beschriftung als Text.
 - Enter nach Pfeilauswahl verwendet wie der Suchbutton das Formularziel der aktuellen Shopsprache. Textvorschläge nutzen dasselbe Ziel; angeklickte Produktvorschläge behalten ihren Produktlink.
 - Numerische Suchbegriffe und führende Nullen bleiben beim Filtern erhalten. Der Filterbutton übernimmt das Ziel der erfolgreichen Facettenantwort; bei fehlgeschlagener Anfrage bleibt er ohne Ziel gesperrt.
 

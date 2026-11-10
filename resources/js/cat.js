@@ -828,29 +828,31 @@ this.facetFilter = debounce(function (_this) {
                 $right.append('<p class="h3" style="margin-top: 0.2rem;margin-bottom: 0.2rem;">' + messageServiceTranslations["searchexample"] + '</p>');
                 const $ulSuggestion = $("<ul/>").addClass('list-autocomplete-suggestion list-no-style');
 
-                let maxItems = 0;
-                $(response.data.suggestion).each(function (key, val) {
-                    if (maxItems < 5) {
-                        const originalItemName = val.label;
-                        let outputItem = `<a href="${$input[0].form.action}?query=${encodeURIComponent(originalItemName)}" title="${originalItemName}">`;
-                        outputItem = eGuardians.helper.autoCompleteReg($input, originalItemName, outputItem, val);
-                        outputItem += "</a>";
-                        const $li = $("<li/>").append(outputItem);
-                        $ulSuggestion.append($li);
-                    }
-                    maxItems++;
+                let suggestionCount = 0;
+                $(response.data.suggestion).each(function (key, suggestion) {
+                    if (suggestionCount === 5) return false;
+                    const label = String(suggestion?.label ?? '');
+                    if (!label) return;
+
+                    const $link = $('<a>').attr({
+                        href: $input[0].form.action + '?query=' + encodeURIComponent(label),
+                        title: label
+                    });
+                    $link.append(eGuardians.helper.autoCompleteReg($input, label));
+                    $ulSuggestion.append($('<li>').append($link));
+                    suggestionCount++;
                 });
                 $right.append($ulSuggestion);
 
                 const $ulItem = $("<ul/>").addClass('list-autocomplete list-no-style');
-                $(response.data.item).each(function (key, val) {
-                    const originalItemName = val.label;
-                    let outputItem = `<a href="${val.url}" title="${originalItemName}">`;
-                    outputItem += `<span><img src="${val.image || ''}" alt="${originalItemName}" /></span>`;
-                    outputItem = eGuardians.helper.autoCompleteReg($input, originalItemName, outputItem, val);
-                    outputItem += "</a>";
-                    const $li = $("<li/>").append(outputItem);
-                    $ulItem.append($li);
+                $(response.data.item).each(function (key, item) {
+                    const label = String(item?.label ?? '');
+                    if (!label) return;
+
+                    const $link = $('<a>').attr({ href: item.url, title: label });
+                    const $image = $('<img>').attr({ src: item.image || '', alt: label });
+                    $link.append($('<span>').append($image), eGuardians.helper.autoCompleteReg($input, label));
+                    $ulItem.append($('<li>').append($link));
                 });
                 $left.append($ulItem);
 
@@ -859,9 +861,7 @@ this.facetFilter = debounce(function (_this) {
                     console.log("APPEND READY");
                 });
 
-                if (response.data.item.length > 0) {
-                    $('[data-eg-search]').addClass('search-active-results');
-                }
+                $('[data-eg-search]').toggleClass('search-active-results', suggestionCount > 0 || $ulItem.children().length > 0);
                 $('[data-eg-search]').removeClass('search-loading');
             }
 
@@ -1618,22 +1618,21 @@ this.addItem = function(variationId, quantity, callback) {
             $(btnElem).removeClass('btn-load');
             $(btnElem).removeAttr('disabled','disabled');
         }
-        this.autoCompleteReg = function(_this, originalItemName, outputItem, val){
-            $liComplete = $("<li/>");
-            var autoCompleteName = "";
+        this.autoCompleteReg = function ($input, label) {
+            const $span = $('<span>');
+            const query = $input.val();
+            if (!query) return $span.text(label);
 
-            var regex = new RegExp( $(_this).val(), 'gi' );
+            const literal = query.replace(/[$.*+?^{}()|[\]\\]/g, '\\$&');
+            const match = new RegExp(literal, 'i').exec(label);
+            if (!match) return $span.text(label);
 
-            if(new RegExp(regex).test(originalItemName)){    
-                var res = val.label.match(regex);
-                autoCompleteName = val.label.replace(res[0],"<strong>"+res[0]+"</strong>");
-                outputItem+= '<span>'+autoCompleteName+'</span>';
-            }else{
-                outputItem+= '<span>'+originalItemName+'</span>';
-                //autoCompleteName = "<span>" + val.data.texts.name1 + "</span>"
-            }
-            return outputItem; 
-        }    
+            return $span.append(
+                document.createTextNode(label.slice(0, match.index)),
+                $('<strong>').text(match[0]),
+                document.createTextNode(label.slice(match.index + match[0].length))
+            );
+        };
     }
 })(eGuardians);
  // return eGuardians = new eGuardians();
