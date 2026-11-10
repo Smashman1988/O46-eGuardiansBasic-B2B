@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – gefüllte Randseiten eingebetteter Artikellisten (2026-11-10)
+
+- Enthält die aufgerufene Folgeseite trotz überschrittener gemeldeter Seitengrenze Artikel, bleiben ihre eigenen SEO-Metadaten und die konfigurierten Robots-Vorgaben erhalten. Leere Folgeseiten bleiben gesperrt. Die Entscheidung verwendet das vorhandene Suchergebnis.
+- Eine volle Randseite, die der gemeldeten Trefferzahl widerspricht, bietet einen weiteren Navigationslink an. Infinite Scroll berücksichtigt eine tatsächlich nachgeladene Randseite in Titel und Beschreibung. Das eingebundene Kategorie-Bundle verwendet den neuen Cache-Schlüssel `-nl1-seo2`.
+- Eingebettete Listen zeigen nach einem Sortierwechsel die wirksame Sortierung an. Die Preview-Befunde und lokalen Regressionsergebnisse stehen im SEO-Abnahmebericht der README.
+
 ## Unveröffentlicht – lokalisierte SEO-Seitenzusätze (2026-11-09)
 
 - Titel und Meta-Description gültiger Folgeseiten beziehen den Sprachzusatz bereits im Server-HTML aus der aktiven Shop-Sprache. Regionale Sprachcodes und ein leeres Twig-`locale` sind abgedeckt.

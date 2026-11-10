@@ -1,5 +1,11 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – populated pages beyond the reported end of embedded item lists (2026-11-10)
+
+- A requested page containing items keeps its own pagination metadata and configured robots directives even when the search reports fewer pages. Empty follow-up pages retain their indexing restrictions. Both decisions use the existing search result.
+- A full page whose contents exceed the reported total offers one more navigation link. Infinite Scroll updates the title and description for an additional page confirmed by the appended response. The category bundle uses the new cache key `-nl1-seo2`.
+- Embedded lists show the effective sort order after a sorting change. The SEO acceptance report in the README records preview observations and local regression results.
+
 ## Unreleased – localized SEO page suffixes (2026-11-09)
 
 - Titles and meta descriptions on valid subsequent pages use the active shop language in the server-rendered HTML. Regional language codes and an empty Twig `locale` are covered.

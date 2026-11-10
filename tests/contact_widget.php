@@ -154,7 +154,7 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
         preg_match_all('~/js/(main|cat|item|vue)-020726\.min\.js\?v=([^"]+)"~', $rendered, $bundles);
         check(count($bundles[1]) === $expected, 'Wrong newsletter bundle count: ' . $page);
         foreach ($bundles[1] as $index=>$bundle) {
-            check($bundles[2][$index] === 'local-review-nl1' . ($bundle === 'cat' ? '-seo1' : ''),'Wrong bundle cache version: ' . $page);
+            check($bundles[2][$index] === 'local-review-nl1' . ($bundle === 'cat' ? '-seo2' : ''),'Wrong bundle cache version: ' . $page);
         }
         if (isset($newsletterBundles[$page])) { check($bundles[1][0] === $newsletterBundles[$page], 'Wrong bundle: ' . $page); }
         foreach (['css/contact-widget.css', 'js/contact-widget.js'] as $resource) {

@@ -72,14 +72,17 @@ namespace Plenty\Modules\Webshop\ItemSearch\Services {
     class ItemSearchService {
         public $calls = [];
         public $total = 1654;
+        public $documentTotal = null;
+        public $omitDocuments = false;
         public $totalResolver = null;
         public function getResults($factories) {
             $this->calls[] = $factories;
             $options = $factories['itemList'];
             $total = $this->totalResolver ? ($this->totalResolver)($options) : $this->total;
+            if ($this->omitDocuments) { return ['facets'=>[], 'itemList'=>['total'=>$total]]; }
             $first = ((int)$options['page'] - 1) * (int)$options['itemsPerPage'];
             $items = [];
-            for ($id = $first + 1; $id <= min($total, $first + (int)$options['itemsPerPage']); $id++) {
+            for ($id = $first + 1; $id <= min($this->documentTotal ?? $total, $first + (int)$options['itemsPerPage']); $id++) {
                 $items[] = ['data' => ['variation' => ['id' => $id], 'images' => ['all' => []],
                     'item' => ['manufacturer' => ['logo' => '']]]];
             }
@@ -173,7 +176,7 @@ namespace {
     // checked against the official NativePHPFunctionsAndClasses list, 2026-11-09.
     function checkPluginSource($source): array {
         $allowed = ['array_diff','array_key_exists','array_keys','array_merge','array_unique','array_values',
-            'ceil','count','explode','filter_var','floor','implode','in_array','intval','is_float','is_int',
+            'ceil','count','explode','filter_var','floor','implode','in_array','intval','is_array','is_float','is_int',
             'is_string','preg_match','preg_split','strpos','strtolower','strtoupper','trim','pluginapp'];
         $tokens = array_values(array_filter(token_get_all($source), function ($token) {
             return !is_array($token) || !in_array($token[0],[T_OPEN_TAG,T_WHITESPACE,T_COMMENT,T_DOC_COMMENT],true);
@@ -420,6 +423,70 @@ namespace {
             finally { $search->total = 1654; }
         });
     }
+    // The search total and the documents available by offset can disagree in Plenty.
+    // Check the actual ShopBuilder/Twig path including the link consumed by Infinite Scroll.
+    foreach ([
+        [1315,1323,55,24,55,56,true], [1315,1323,56,3,56,56,true], [1315,1323,57,0,55,55,false],
+        [1314,1322,56,2,56,56,true],
+        [1271,1277,54,5,54,54,true], [1271,1277,999,0,53,53,false], [1654,1658,70,2,70,70,true],
+        [72,25,3,0,3,3,false], [48,48,2,24,2,2,true], [47,47,2,23,2,2,true],
+        [0,25,1,24,1,2,true], [0,25,2,1,2,2,true], [0,0,2,0,0,0,false],
+        [24,97,4,24,4,5,true], [24,97,5,1,5,5,true],
+    ] as [$total,$available,$number,$docs,$seoMax,$navMax,$valid]) {
+        test("documents/$total/$available/$number",function () use ($total,$available,$number,$docs,$seoMax,$navMax,$valid,$search,$renderer,$request,$twig,$base,&$builderCalls,&$builderMode) {
+            $search->total = $total; $search->documentTotal = $available;
+            $request->params = ['page'=>(string)$number]; $builderMode = 'single'; $search->calls = []; $builderCalls = 0;
+            $ctx = $base; $ctx['category']['details'][0]['metaRobots'] = 'INDEX,FOLLOW';
+            try {
+                $html = $twig->render('content',$ctx);
+                $state = json_decode(meta($html,'o46-pagination'),true);
+                $suffix = $valid && $number > 1 ? ' – Seite ' . $number : '';
+                check(count($renderer->params['itemList']) === $docs && substr_count($html,'<article ') === $docs,'Wrong number of rendered documents');
+                check($renderer->params['itemCountTotal'] === $total && (int)$renderer->params['pageMax'] === $navMax,'Total or navigation bound changed unexpectedly');
+                check($state['valid'] === $valid && $state['pageMax'] === $seoMax,'SEO bound conflicts with the page evidence');
+                check(meta($html,'robots') === ($valid ? 'INDEX,FOLLOW' : 'NOINDEX,FOLLOW'),'Incorrect indexing decision');
+                check(canonical($html) === 'https://example.test/damen/' . ($suffix ? '?page=' . $number : ''),'Incorrect canonical');
+                check(strpos($html,'<title>Route title' . $suffix . '</title>') !== false && meta($html,'description') === 'Route description' . $suffix,'Incorrect page suffix');
+                check((strpos($html,'class="pagination__next"') !== false) === ($number < $navMax),'Incorrect Infinite Scroll next link');
+                check($builderCalls === 1 && count($search->calls) === 1,'Extra render or query to discover a page');
+                return $state;
+            } finally { $search->total = 1654; $search->documentTotal = null; }
+        });
+    }
+    foreach (['NOINDEX,FOLLOW','NOFOLLOW','force','facets','quickView','wrong-effective','invalid','ambiguous','simple-only'] as $mode) {
+        test('documents/restriction-' . $mode,function () use ($mode,$search,$request,$twig,$base,&$builderMode) {
+            $search->total = 47; $search->documentTotal = 75;
+            $request->params = ['page'=>$mode === 'invalid' ? 'abc' : '3'];
+            if ($mode === 'facets') { $request->params['facets'] = '7'; }
+            if ($mode === 'quickView') { $request->params['quickViewItem'] = 'true'; }
+            if ($mode === 'wrong-effective') { SearchOptions::$overridePage = 2; }
+            $builderMode = ['ambiguous'=>'multiple','simple-only'=>'simple-only'][$mode] ?? 'single';
+            $ctx = $base; $ctx['forceNoIndex'] = $mode === 'force';
+            $ctx['category']['details'][0]['metaRobots'] = in_array($mode,['NOINDEX,FOLLOW','NOFOLLOW'],true) ? $mode : 'ALL';
+            try {
+                $html = $twig->render('content',$ctx);
+                $valid = !in_array($mode,['wrong-effective','invalid','ambiguous','simple-only'],true);
+                check(json_decode(meta($html,'o46-pagination'),true)['valid'] === $valid,'Unproven page accepted');
+                check(meta($html,'robots') === ($mode === 'NOFOLLOW' ? 'INDEX,NOFOLLOW' : 'NOINDEX,FOLLOW'),'Restrictions lost on observed page');
+                check(canonical($html) === 'https://example.test/damen/' . ($valid ? '?page=3' : ''),'Wrong canonical with restrictions');
+            } finally { $search->total = 1654; $search->documentTotal = null; SearchOptions::$overridePage = null; $builderMode = 'single'; }
+        });
+    }
+    test('documents/missing-collection-keeps-reported-bound',function () use ($request,$twig,$base,$search) {
+        $request->params = ['page'=>'2']; $search->omitDocuments = true;
+        try {
+            $ctx = $base; $ctx['category']['details'][0]['metaRobots'] = 'ALL';
+            $html = $twig->render('content',$ctx);
+            check(meta($html,'robots') === 'INDEX,FOLLOW' && canonical($html) === 'https://example.test/damen/?page=2','Missing evidence treated as a confirmed empty page');
+        } finally { $search->omitDocuments = false; }
+    });
+    test('list/sort-label-follows-validated-query',function () use ($request,$twig,$base,$search) {
+        $request->params = ['sorting'=>'texts.name1_asc']; $search->calls = [];
+        $html = $twig->render('content',$base);
+        check($search->calls[0]['itemList']['sorting'] === 'texts.name1_asc','Search sort changed');
+        check(strpos($html,'<span class="sort-val">Name</span>') !== false,'Dropdown displays wrong active sort');
+        check(strpos($html,'data-eg-sortval="variation.createdAt_desc"') !== false,'Default sort cannot be selected again');
+    });
     foreach (['1','2','69'] as $page) {
         test('html/baseline-page-' . $page,function () use ($page,$extension,$baselineExtension,$request,$context,$search) {
             $request->params = ['page'=>$page];
@@ -713,7 +780,7 @@ namespace {
                 preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
                 check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
                 $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
-                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo1' : '');
+                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '');
                 check($url === $expected,'Wrong shipped asset or cache version');
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
                 check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');

@@ -62,10 +62,14 @@ function fixture({ url = baseUrl + '?page=2', pagination = state(), language = '
     const events = {};
     const history = {};
     for (const method of ['pushState', 'replaceState']) history[method] = (data, text, next) => { if (next != null) current = new URL(next, current); };
-    const window = { location: { get href() { return current.href; } }, addEventListener: (name, callback) => { events[name] = callback; } };
+    const on = (name, callback) => { events[name] = callback; };
+    const window = { location: { get href() { return current.href; } }, addEventListener: on, jQuery: () => ({ on }) };
     vm.runInNewContext(script, { document, window, history, URL, URLSearchParams, setTimeout: callback => callback() }, { timeout: 1000 });
     return { document, tags, get(selector) { return tags.get(selector)?.value; },
         go(next, method = 'pushState') { history[method](null, '', next); },
+        append(next, content, items) {
+            events['append.infiniteScroll']?.({}, { querySelector: () => ({ content }) }, next, items);
+        },
         back(next) { current = new URL(next, current); events.popstate?.(); } };
 }
 function test(name, run) {
@@ -162,10 +166,29 @@ test('initial-invalid-page-can-return-to-confirmed-page', () => {
     f.back('?page=999');
     metadata(f, title, description);
 });
+for (const [name, url, server, items, accepted] of [
+    ['matching', '?page=54&quickViewItem=true', { valid:true, currentPage:54 }, [{}], true],
+    ['empty', '?page=54', { valid:true, currentPage:54 }, [], false],
+    ['unconfirmed', '?page=54', { valid:false, currentPage:54 }, [{}], false],
+    ['clamped', '?page=54', { valid:true, currentPage:1 }, [{}], false],
+    ['filter', '?page=54&facets=7', { valid:true, currentPage:54 }, [{}], false],
+    ['route', '/other/?page=54', { valid:true, currentPage:54 }, [{}], false],
+    ['invalid-json', '?page=54', undefined, [{}], false],
+]) test('append/' + name, () => {
+    const f = fixture({});
+    f.go('?page=54');
+    f.append(url, JSON.stringify(server), items);
+    const suffix = accepted ? ' – Seite 54' : '';
+    metadata(f, title + suffix, description + suffix);
+    f.go('?page=55');
+    metadata(f, title, description);
+    f.back('?page=54');
+    metadata(f, title + suffix, description + suffix);
+});
 for (const reportFile of process.argv.slice(3).filter(arg => !arg.startsWith('--'))) {
     const php = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
     for (const [name, value] of Object.entries(php.cases).filter(([name]) => name.startsWith('client-pagination/'))) {
-        browserFixtures.push({ name: 'browser-' + php.twig + '/' + name, value });
+        browserFixtures.push({ name: 'browser-' + php.twig + '/' + name, value, tail: php.cases['documents/1654/1658/70'] });
         test('php-' + php.twig + '/' + name, () => {
             const page = name.endsWith('-abc') ? 'abc' : (name.endsWith('-999') ? '999' : (name.endsWith('-1') ? '1' : '2'));
             const f = fixture({ url: baseUrl + '?page=' + page, pagination: value.pagination,
@@ -184,7 +207,7 @@ async function browserTests() {
     const browser = await chromium.launch({ headless: true, ...(process.env.O46_BROWSER_EXECUTABLE ? { executablePath: process.env.O46_BROWSER_EXECUTABLE } : {}) });
     const escaped = value => String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
     try {
-        for (const { name, value } of browserFixtures) {
+        for (const { name, value, tail } of browserFixtures) {
             const context = await browser.newContext();
             try {
                 const page = await context.newPage();
@@ -195,10 +218,11 @@ async function browserTests() {
                     + `<meta name="robots" content="${escaped(value.robots)}"><link rel="canonical" href="${escaped(value.canonical)}">`;
                 // Every request is fulfilled locally or rejected; never contact a shop.
                 await page.route('**/*', route => route.request().url().startsWith(baseUrl)
-                    ? route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html lang="de"><head><meta charset="utf-8">' + head + '</head><body></body></html>' })
+                    ? route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html lang="de"><head><meta charset="utf-8">' + head + '</head><body><div class="category-product-list"></div></body></html>' })
                     : route.abort());
                 const number = name.endsWith('-abc') ? 'abc' : (name.endsWith('-999') ? '999' : (name.endsWith('-1') ? '1' : '2'));
                 await page.goto(baseUrl + '?page=' + number);
+                if (name.endsWith('content-single-2')) await page.addScriptTag({ path: path.join(__dirname,'../resources/js/jquery-3.7.1.min.js') });
                 await page.addScriptTag({ content: script });
                 const actual = await page.evaluate(() => ({ title: document.title,
                     description: document.querySelector('meta[name="description"]').content,
@@ -212,6 +236,22 @@ async function browserTests() {
                         await page.evaluate(number => history.pushState(null, '', '?page=' + number), next);
                         await page.waitForFunction(expected => document.title === expected, strip(value.title) + suffix);
                         assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), strip(value.description) + suffix);
+                    }
+                    if (tail) {
+                        // Begin with a bound of 69 in this fixture and append a separately
+                        // confirmed page beyond it, using the actual jQuery event signature.
+                        await page.evaluate(state => {
+                            const payload = document.implementation.createHTMLDocument();
+                            const meta = payload.createElement('meta');
+                            meta.name = 'o46-pagination';
+                            meta.content = JSON.stringify(state);
+                            payload.head.append(meta);
+                            const path = '?page=' + state.currentPage;
+                            window.jQuery('.category-product-list').trigger('append.infiniteScroll', [payload,path+'&quickViewItem=true',[document.createElement('article')]]);
+                            history.pushState(null,'',path);
+                        }, tail);
+                        await page.waitForFunction(expected => document.title === expected, strip(value.title) + ' – Seite 70', {timeout:3000});
+                        assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), strip(value.description) + ' – Seite 70');
                     }
                 }
                 assert.deepEqual(pageErrors, []);

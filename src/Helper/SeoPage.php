@@ -43,9 +43,9 @@ class SeoPage
         return self::positiveInteger($value);
     }
 
-    public function addList($currentPage, $pageMax, $total)
+    public function addList($currentPage, $pageMax, $total, $documentCount = null)
     {
-        $this->lists[] = ['currentPage' => $currentPage, 'pageMax' => $pageMax, 'total' => $total];
+        $this->lists[] = ['currentPage' => $currentPage, 'pageMax' => $pageMax, 'total' => $total, 'documentCount' => $documentCount];
     }
 
     public function getPagination(): array
@@ -67,9 +67,11 @@ class SeoPage
         $effectivePage = self::positiveInteger($pagination['currentPage'] ?? null);
         $outOfRange = $hasList && $pageMax !== null && $requestedPage !== null
             && $requestedPage > 1 && $requestedPage > $pageMax;
-        $empty = $hasList && ($total === 0 || $pageMax === 0);
+        $documentCount = $pagination['documentCount'] ?? null;
+        $empty = $hasList && ($documentCount ?? 0) === 0 && ($total === 0 || $pageMax === 0);
         $valid = $hasList && !$ambiguous && !$invalidInput && !$empty && $pageMax !== null
-            && $requestedPage <= $pageMax && $effectivePage === $requestedPage;
+            && $requestedPage <= $pageMax && $effectivePage === $requestedPage
+            && ($requestedPage === 1 || $documentCount !== 0);
         // An empty category is still a real landing page. Keep its first page
         // eligible for the configured robots directives; empty price searches
         // and unproven follow-up pages retain their existing restrictions.

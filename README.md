@@ -10,6 +10,61 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## SEO-Abnahme im B2B-Test-Pluginset 426 (2026-11-10)
+
+**Freigabe für Produktion: FAIL.** Die bereitgestellte Preview schließt eine mit Artikeln gefüllte Herren-Seite von der Indexierung aus. Die lokale Korrektur auf `develop` ist für einen erneuten Test in 426 vorbereitet. Referenz vor der Korrektur ist `72a0eed`. In der Preview wurden Stage `preview`, Pluginset `426`, Asset-Kennung `dc92fec7feea1e22ec018794e81b13525eb561bc` und das Kategorie-Bundle mit `-nl1-seo1` überprüft.
+
+### A. Nachgewiesenes Verhalten
+
+- **PASS** für die funktionierenden Fälle der HTTP-Matrix. 95 HTML-Antworten, davon 93 mit HTTP 200 und zwei erwartete HTTP 404. Keine HTTP 500 oder PHP-Fehlermarker. 982 von 995 Einzelprüfungen bestanden. Die 13 Abweichungen betreffen die Navigation auf Herren-Seite 55 sowie die Metadaten von Seite 56 in zwei Sitzungen.
+- Alle vier Content-Listen wurden auf Basis-URL, Seite 1, 2, gemeldeter letzter Seite, den zwei Folgeseiten, 999, 0, −1, `abc` und leerem `page` geprüft. Die Werte in der Tabelle stammen jeweils aus der ersten Messserie und können sich mit dem Sortiment ändern.
+
+| Content-Liste | Gemeldete Treffer / Seitengröße | Letzte gemeldete Seite | Artikel dort, rechnerisch / ausgegeben | Tatsächlich ausgegeben auf der Folgeseite |
+| --- | ---: | ---: | ---: | ---: |
+| Alle Artikel | 2.357 / 12 | 197 | 5 / 7 | 0 |
+| Herren | 1.315 / 24 | 55 | 19 / 24 | **3** |
+| Damen | 1.263 / 24 | 53 | 15 / 20 | 0 |
+| Alles unter X Euro | 2.334 / 12 | 195 | 6 / 9 | 0 |
+
+- Ein zusätzlicher ID-Vergleich mit zehn HTTP-200-Abrufen bestätigte das Listenende. Herren-Seiten 53/54/55/56 lieferten 24/24/24/2 Artikel, insgesamt 74 unterschiedliche IDs. Damen-Seiten 51/52/53/54 lieferten 24/24/20/0 Artikel, insgesamt 68 unterschiedliche IDs. In beiden Fenstern gab es weder innerhalb einer Seite noch zwischen den Seiten Wiederholungen.
+- Die gerenderten Filterkontexte verweisen auf Quellkategorie 60. Herren verwendet Facette 727, Damen 726. Eine zusätzliche Herren-Facette ergab 426 Treffer und der explizite Damen-Preisbereich 0–5 ergab 901. Der hinterlegte Standardpreisbereich der Preis-Landingpage ist im HTML nicht ablesbar. Titel, Beschreibung und Canonical verwenden die jeweilige Content-Seite.
+- **PASS** für Jeans/Hosen (132 Treffer, 12 Artikel auf Seite 6, Seite 7 leer), Herrenuhren (12 Treffer, Seite 2 leer) und Damendüfte (0 Treffer). Damendüfte behält auf Basis-URL und `page=1` sein `INDEX,FOLLOW`; `page=2`, `999` und `abc` ergeben `NOINDEX,FOLLOW` mit Basis-Canonical. Der Newsletter ohne Liste bekommt auf künstlichen Folgeseiten keine Seitennummer. Die geprüfte Artikeldetailseite lieferte HTTP 200 und ihren eigenen Canonical.
+- **PASS** für DE/EN/FR/IT/ES auf gültiger Damen- und Jeans-Seite 2 im Server-HTML. Auf Damen-Seite 2 blieben Titel und Beschreibung auch im Browser korrekt. Desktop-Seitenwechsel sowie Zurück/Vorwärts stellten URL und Artikelliste wieder her. Infinite Scroll lud 144 unterschiedliche Artikel bis Seite 6 mit passendem Titel und passender Beschreibung. Im mobilen Browser (390 × 844) funktionierten Farbfacette, Ergebnisübernahme und das Öffnen und Schließen der Quickview mit Varianten. Auf der letzten Seite meldete die Scroll-Bibliothek erwartungsgemäß den fehlenden Weiter-Link und deaktivierte das Nachladen.
+
+### B. Reproduzierte Fehler im Test-Pluginset
+
+- **FAIL** auf `/herren/?page=56`. Die Suche lieferte die Artikel-IDs `212272`, `212255` und `206824`. In einer neuen Sitzung blieben bei 1.314 gemeldeten Treffern zwei dieser Artikel. Beide Antworten lieferten `NOINDEX,FOLLOW`, Basis-Canonical, ungeblätterte Sprachlinks und keinen Seitenzusatz. Seite 55 bot keinen Weiter-Link an, Seite 57 und 999 waren leer. Die Theme-Ursache ist belegt: Bisher entschied allein die aus `itemList.total` berechnete Grenze über die Gültigkeit.
+- **FAIL** für die Anzeige der gewählten Sortierung. „Niedrigster Preis“ änderte URL und Artikelreihenfolge korrekt, die Auswahlliste zeigte wieder „Neuheiten“. Das Theme übergab der Ansicht einen festen Sortierschlüssel.
+
+### C. Lokale Korrekturen und Regressionen
+
+- `getItemsFromCat()` verwendet die Dokumente derselben bereits ausgeführten Suchabfrage. Eine belegte angeforderte Seite erhält ihren eigenen Canonical und ihre Sprachzusätze. Eine nachweislich leere Folgeseite bleibt gesperrt, auch bei zu hoher gemeldeter Gesamtzahl. Eine volle Seite, die der Trefferzahl bereits widerspricht, bietet einen weiteren Navigationslink an. Das Ziel entscheidet beim Aufruf anhand seiner eigenen Artikel. Gesamtzahl, Suchoptionen und Facetten werden wie bisher aus der Liste übernommen. Die Sortierauswahl zeigt den validierten Sortierschlüssel.
+- Das Kategorie-JavaScript erkennt zusätzlich eine Seite jenseits der anfänglichen Grenze, wenn Infinite Scroll auf derselben URL-/Filtervariante Artikel angehängt und die zugehörige Serverantwort genau diese Seite bestätigt hat. Twig bindet die neu erzeugte `cat-020726.min.js` mit `-nl1-seo2` ein. Der Bundle-Inhalt außerhalb der Metadatenfunktion blieb bytegleich.
+- SHA-256 des aus 426 abgerufenen Bundles: `87a2445a2516f2bb6f2b1de6a22e7bba5e13b5973bc6d6ca394e80c0d01fe019`. Lokal zum Gegencheck: `f915663f5a777b14f441867a970440f62ebccdcf9ea236189614e13ddde44aae`.
+
+| Lokale Prüfung | Ergebnis |
+| --- | --- |
+| SEO/PHP mit Twig 2.16.1 und 3.30.0 | **PASS**, je 368/368, darunter 31 Fälle für leere Kategorien. Je 190/190 Vergleiche mit bisherigem Verhalten. 26 bzw. 2 Deprecation-Hinweise |
+| Twig-Syntax, Template-Regressionen und Kontakt-/Newsletter-Layouts | **PASS**, je Engine 171/171, 38/38 und 60/60. 24 bzw. 2 Twig-Deprecation-Hinweise |
+| JavaScript-Quelle und neu erzeugtes Bundle | **PASS**, jeweils 118/118. Zusätzlich 22/22 lokale Chrome-Fälle am Bundle |
+| Browser-Regression des Widgets | **PASS**, 55/55 mit 1.332 Assertions |
+| PHP-Lint, JavaScript-Syntax und reproduzierbare Minifizierung | **PASS**, 12 PHP-Dateien, 3 JS-Dateien und bytegleicher erneuter Bundle-Bau |
+| Tatsächlich ausgeliefertes Bundle aus 426 | Bisherige Tests **PASS**, 111/111 plus 22/22 Chrome. In der erweiterten Testsuite **117/118**: Die belegte nachgeladene Randseite erhält beim alten Bundle keinen Seitenzusatz |
+
+Geänderte Dateien auf `develop`:
+
+- Suchergebnis und SEO-Entscheidung in `src/Extensions/Base_Extension.php` und `src/Helper/SeoPage.php`.
+- Browser-Metadaten und Asset-Einbindung in `resources/js/cat.js`, `resources/js/cat-020726.min.js` und `resources/views/PageDesign/PageDesign.twig`.
+- Regressionen in `tests/seo_pagination.php`, `tests/seo_metadata.cjs` und `tests/contact_widget.php`.
+- Dokumentation in `README.md`, `meta/documents/changelog_de.md` und `meta/documents/changelog_en.md`.
+
+### D–G. Grenzen, akzeptierte Einschränkungen, Risiko und Freigabe
+
+- **NOT_TESTED** im laufenden PlentyONE-System: interne Ursache der abweichenden Trefferzahl, Anzahl der Backend-Anfragen per Server-Trace, konkrete ShopBooster-Hits mit kaltem/warmem Cache und ausdrücklich restriktiv konfigurierte Kategorie. Die lokalen Regressionen prüfen ein ShopBuilder-Rendering, eine Artikelsuche je Funktionsaufruf sowie den Vorrang von `NOINDEX`, `NOFOLLOW` und `forceNoIndex`.
+- Auf sechs wiederholten Seiten stimmten Metadaten, Paginierungszustand und Facetten überein. Fünf zeigten dieselben Artikel-IDs, bei Herren änderte sich auch die Trefferzahl. Für 67 identische URLs lag der Median der HTTP-Laufzeiten bei 1,74 s gegenüber 1,89 s im vorigen Preview-Test. Über die aktuelle Matrix lagen das 95. Perzentil bei 2,77 s und das Maximum bei 6,59 s. Es gab in diesen Messungen keinen Hinweis auf eine erhebliche Verlangsamung. Die Header belegen keinen internen ShopBooster-Treffer.
+- **ACCEPTED LIMITATION** für beide echten HTTP-404-Antworten mit Ausverkauft-Metadaten. Ebenfalls akzeptiert ist ein einzelner zusätzlicher Navigationslink am widersprüchlichen Listenende, dessen Ziel leer sein kann. Die Ursache der Abweichung im Suchbackend bleibt offen.
+- **FAIL** für die Produktivfreigabe des aktuell getesteten Stands. **NOT_TESTED** sind PlentyONE-Validierung, Build und Preview-Verhalten der neuen lokalen Korrektur. Vor einer Freigabe in 426 die dann tatsächlich gefüllte und die erste leere Randseite, Navigation/Scroll, Sortieranzeige und das neue Bundle gemeinsam gegenprüfen. Es erfolgte kein Commit, Push, Merge, Sync, Deployment, Cache-Eingriff oder Versionssprung.
+
 ## SEO-Korrektur Phase 1 – lokale Vorbereitung (2026-11-09)
 
 **Lokal geprüft; Live-Teilprüfung im Test-Pluginset erfolgt, vollständige Freigabe offen.** Arbeitsstand auf

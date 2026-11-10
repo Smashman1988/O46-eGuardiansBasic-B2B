@@ -1983,6 +1983,7 @@ initBFCacheBypass();
     };
     const initialVariant = listVariant(initialUrl);
     const initialPage = requestedPage(initialUrl);
+    const appendedPages = new Set();
     // Only remove an actual server-generated suffix, keeping editorial en dashes.
     const serverSuffix = / – (?:Seite|Page|Pagina|Página) [1-9][0-9]*$/;
     const stripServerSuffix = value => pagination.valid === true && pagination.currentPage > 1
@@ -1997,7 +1998,7 @@ initBFCacheBypass();
         const requested = requestedPage(url);
         const confirmed = pagination.hasList === true && pagination.ambiguous === false
             && pagination.empty === false && Number.isSafeInteger(pagination.pageMax)
-            && pagination.pageMax > 0 && requested !== null && requested <= pagination.pageMax
+            && pagination.pageMax > 0 && requested !== null && (requested <= pagination.pageMax || appendedPages.has(requested))
             && (requested !== initialPage || pagination.valid === true);
         const page = confirmed ? requested : 1;
 
@@ -2042,6 +2043,21 @@ initBFCacheBypass();
         window.addEventListener('popstate', triggerUpdate);
     };
 
+    // A later response can prove a page beyond the initial total. Only remember
+    // that exact page after its own list was actually appended on this route.
+    window.jQuery?.('.category-product-list').on('append.infiniteScroll', (_event, response, path, items) => {
+        if (!items?.length) return;
+        const url = new URL(path, initialUrl);
+        const page = requestedPage(url);
+        if (page === null || page <= pagination.pageMax || listVariant(url) !== initialVariant) return;
+        try {
+            const state = JSON.parse(response.querySelector('meta[name="o46-pagination"]')?.content || 'null');
+            if (state?.valid === true && state.currentPage === page) {
+                appendedPages.add(page);
+                updateMeta();
+            }
+        } catch { /* An unconfirmed response supplies no new pagination evidence. */ }
+    });
     observeNavigation();
     updateMeta(); // falls die Seite mit ?page=2 direkt geladen wird
 })();

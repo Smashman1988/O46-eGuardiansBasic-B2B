@@ -392,22 +392,31 @@ class Base_Extension extends Twig_Extension
 
         $resultItems = $itemSearchService->getResults($searchParams);
         $total = $resultItems['itemList']['total'];
-        $resultItems['itemList'] = $resultItems['itemList']['documents'];
+        $resultItems['itemList'] = $resultItems['itemList']['documents'] ?? null;
+        $documentCount = is_array($resultItems['itemList']) ? count($resultItems['itemList']) : null;
+        $reportedPages = $total / $effectiveSize;
+        $pageMax = ceil($reportedPages);
+        if ($documentCount > 0 && $effectivePage > $pageMax) {
+            $pageMax = $effectivePage;
+        }
         $resultItems['currentPage'] = $effectivePage;
         $resultItems['itemCountTotal'] = $total;
         $resultItems['itemCountPage'] = $effectiveSize;
-        $resultItems['pageMax'] = ceil($total / $effectiveSize);
+        // A full page that already exceeds the total can offer one more navigation
+        // link. Its destination makes its own SEO decision from its own documents.
+        $resultItems['pageMax'] = $documentCount === $effectiveSize && $effectivePage > $reportedPages
+            ? $pageMax + 1 : $pageMax;
         $resultItems['pageLimit'] = $resultItems['pageMax'];
         $resultItems['categoryId'] = $categoryId;
         $resultItems['category'] = $activeCategory;
         $defaultSortingOptions = SearchOptions::get(SearchOptions::SCOPE_CATEGORY);
         $resultItems['searchOptions'] = $defaultSortingOptions;
         $resultItems['itemSorting'] = $this->req->get( 'sorting', '' );
-        $resultItems['query'] = ['items' => $effectiveSize, 'sorting' => "variation.createdAt_desc"];
+        $resultItems['query'] = ['items' => $effectiveSize, 'sorting' => $itemListOptions['sorting']];
         $resultItems['selectedFacets'] = $ownFacets;
 
         if ($this->seoPageCapture !== null) {
-            $this->seoPageCapture->addList($effectivePage, $resultItems['pageMax'], $total);
+            $this->seoPageCapture->addList($effectivePage, $pageMax, $total, $documentCount);
         }
 
         return  $this->twig->render('GuardiansBasicB2B::Category.Item.CategoryItemContent', $resultItems);
