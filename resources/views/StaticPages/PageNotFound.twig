@@ -19,7 +19,7 @@
                             <h1 class="display-3 head404">{# trans("Ceres::Template.pageNotFoundOops") #} Error 404</h1>
                             <p class="lead under-404">{# trans("Ceres::Template.pageNotFoundPage") #} Du stehst leider im Abseits. Nutze unsere Suche und bring dich wieder ins Spiel</p>
                             <div class="searchbox-404 mb-4">
-                                <form action="/search" method="get">
+                                <form action="{{ urls.search }}" method="get">
                                     <input type="text" class="form-control input-ff-search" placeholder="Suche" data-eg-event="load" data-eg-handler="initLiveSearch" data-eg-livesearch="" name="query" autocomplete="off">
                                     <button class="btn-set-search"><span class="icon-search"></span></button>
                                 </form>

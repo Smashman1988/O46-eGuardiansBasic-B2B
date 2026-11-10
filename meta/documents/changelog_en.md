@@ -1,5 +1,10 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – search suggestions and numeric search filters
+
+- Pressing Enter after choosing a suggestion with the arrow keys uses the current shop language’s search form, just like the search button. Text suggestions use the same destination; product suggestions keep their product links.
+- Applying filters preserves numeric queries, including leading zeros. The filter button uses the destination from a successful facet response and stays disabled when the request fails.
+
 ## Unreleased – item Quickview and A–Z brand directory
 
 - Opening item Quickviews repeatedly now leaves one global dropdown handler per document. The four page bundles use the additional cache key `-qv1`.

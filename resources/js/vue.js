@@ -510,7 +510,7 @@ this.addItemToBasket = function (_this) {
                 $(response.data.suggestion).each(function (key, val) {
                     if (maxItems < 5) {
                         const originalItemName = val.label;
-                        let outputItem = `<a href="/${activeLang}/search/?query=${encodeURIComponent(originalItemName)}" title="${originalItemName}">`;
+                        let outputItem = `<a href="${$input[0].form.action}?query=${encodeURIComponent(originalItemName)}" title="${originalItemName}">`;
                         outputItem = eGuardians.helper.autoCompleteReg($input, originalItemName, outputItem, val);
                         outputItem += "</a>";
                         const $li = $("<li/>").append(outputItem);
@@ -533,7 +533,7 @@ this.addItemToBasket = function (_this) {
                 $left.append($ulItem);
 
                 $row.append($left).append($right);
-                $('[data-eg-search] .search-wrap').append($row).ready(function () {
+                $input.closest('[data-eg-search], .searchbox-404').find('.search-wrap, [data-eg-search]').first().append($row).ready(function () {
                     console.log("APPEND READY");
                 });
 
@@ -544,45 +544,19 @@ this.addItemToBasket = function (_this) {
             }
 
             // Jetzt debounce aktivieren
-            $(document).on('input', '[data-eg-livesearch]', debounce(handleLiveSearchInput, 400));
+            $(_this).on('input', debounce(handleLiveSearchInput, 400));
             
-                $('[data-eg-livesearch]').keydown(function(e){ 
-                    var x;
-                    if($('.searchbox-404').length>0){
-                        x = $('.searchbox-404 .list-autocomplete')[0];
-                    }else{
-                        x = $('.list-autocomplete')[0];
+                $(_this).keydown(function(e){
+                    var x = $(this).closest('[data-eg-search], .searchbox-404').find('.list-autocomplete li').get();
+                    if (e.keyCode == 40 || e.keyCode == 38) {
+                        if (!x.length) return;
+                        currentFocus += e.keyCode == 40 ? 1 : -1;
+                        addAutocompleteItemActive(x);
+                        $(this).val($(x[currentFocus]).find('a').attr('title'));
+                    } else if (e.keyCode == 13 && !$(x).is('.autocomplete-active') && $.trim(this.value).length <= 2) {
+                        e.preventDefault();
                     }
-
-                    if (x) x = x.getElementsByTagName("li");
-                    if (e.keyCode == 40) {
-                      /*If the arrow DOWN key is pressed,
-                      increase the currentFocus variable:*/
-                      currentFocus++;
-                      /*and and make the current item more visible:*/
-
-                      addAutocompleteItemActive(x);
-                      $('[data-eg-livesearch]').val($('.autocomplete-active').find('a').attr('title'));
-                    } else if (e.keyCode == 38) { //up
-                      /*If the arrow UP key is pressed,
-                      decrease the currentFocus variable:*/
-                      currentFocus--;
-                      /*and and make the current item more visible:*/
-                      addAutocompleteItemActive(x);
-                      $('[data-eg-livesearch]').val($('.autocomplete-active').find('a').attr('title'));
-                    } else if (e.keyCode == 13) {
-
-                      /*If the ENTER key is pressed, prevent the form from being submitted,*/
-                      e.preventDefault();
-                      if (currentFocus > -1) {
-                        /*and simulate a click on the "active" item:*/
-                        if (x) document.location.href = "/search/?query="+$('[data-eg-livesearch]').val(); //$('[data-eg-livesearch]').val($('.autocomplete-active').find('a').attr('title'));
-                      }else{
-                        if($.trim($('[data-eg-livesearch]').val()).length>2 || $.trim($('.searchbox-404 [data-eg-livesearch]').val()).length>2){
-                            $('.btn-set-search').trigger('click')
-                        }
-                      }
-                    }
+                    // Otherwise Enter submits this input's localized GET form, just like its button.
                 });
                 var addAutocompleteItemActive = function(x){
                         /*a function to classify an item as "active":*/

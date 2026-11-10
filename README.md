@@ -10,6 +10,16 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Suchvorschläge und numerische Suchfilter (develop, 2026-11-10)
+
+**FIXED_LOCALLY.** Nach einer Pfeilauswahl setzte der Enter-Handler die Adresse auf `/search/?query=…`. Jetzt sendet der Browser das Formular des aktiven Suchfelds ab, wie beim Suchbutton. Textvorschläge verwenden dieselbe Formularaktion; Produktlinks kommen weiterhin aus der Suchantwort. Auch das zweite Suchfeld im 404-Template verwendet die vorhandene PlentyONE-Route `urls.search`.
+
+Bei der Facettierung wandelte jQuery `data-eg-searchstring="2351296"` in eine Zahl um. Die Facettenantwort war gültig, aber `.trim()` brach vor dem Setzen der Zieladresse ab. Das Kategorie-Bundle liest das HTML-Attribut jetzt als Text. Führende Nullen bleiben erhalten; fehlt das Attribut, wird ein leerer Text verwendet. Ohne Zieladresse nach einem fehlgeschlagenen Request bleibt der Button gesperrt. Suchindex, Facettenabfrage, Produktzählung und SEO-Regeln wurden nicht geändert.
+
+- **Browser:** `node tests/search_interactions.cjs` prüft die Suchhandler aller vier JS-Quellen und aller vier aktiven Min-Dateien in DE/EN/FR/IT/ES bei 1440 und 390 px. Der vollständige Such- und Facettenablauf läuft mit dem minifizierten Kategorie-Bundle, einschließlich Maus, Touch, Historie, zwei Suchformularen, leeren Antworten und Filter-Reset. Benötigt Acorn, Playwright und Chromium; dieselben Browser-Umgebungsvariablen wie beim Quickview-Test. Optional: `O46_SEARCH_CAPTURE` für aufgezeichnete Trefferzahlen und ein Ausgabepfad als erstes Argument.
+- **Nachweise:** [Suchtests](.cache/search-fix/browser.json), [Browserläufe mit vollständigem Bundle und aufgezeichneten Shopseiten](.cache/search-fix/replay-results.json), [unveränderte Such- und API-Antworten aus 426](.cache/search-fix/live-baseline.json). Der gefilterte Artikel `2351296` war in allen fünf Sprachen sowohl in der Facettenantwort als auch auf der Zielseite genau einmal vorhanden. Im lokalen Browservergleich wurden außerdem Sortierung, Kategorie-Seite 2 mit Canonical/Titel, Infinite Scroll, Quickview und Produktdetail geprüft.
+- **NOT_TESTED:** PlentyONE-Build und Live-Auslieferung des neuen Suffixes `-search1`. Die geprüften 426-Seiten enthielten noch `-qv1`. Die lokale Mobilprüfung verwendet Touch-Emulation in Chrome. Der separate englische Suchindex-Fallback für IT/ES bleibt offen.
+
 ## Quickview und Marken A–Z: lokaler Fix auf develop (2026-11-10)
 
 **FIXED_LOCALLY** für diese beiden Befunde. In Pluginset 426 wurde der bisherige Stand gelesen; die folgenden Browserprüfungen des Fixes ersetzen das Kategorie-JavaScript nur für den jeweiligen lokalen Browser. Es gab kein Deployment. Die übrigen Befunde der nachstehenden Theme-Abnahme sind unverändert.
