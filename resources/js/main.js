@@ -1791,6 +1791,50 @@ $(document).ready(function () {
     new ResizeObserver(updateMatrixStickyOffset).observe(matrixStickyHeader);
   }
 
+  // One shared observer fits headings to their actual cells, without row listeners.
+  function fitMatrixHeadingLabels(head) {
+    if (!head || !head.isConnected || !head.getBoundingClientRect().width) return;
+    var choices = [];
+    var cells = head.querySelectorAll("[data-eg-col]");
+    for (var i = 0; i < cells.length; i++) {
+      var cell = cells[i];
+      if (!cell.clientWidth) continue;
+      var full = cell.querySelector(".eg-label-full");
+      if (!full) continue;
+      var style = window.getComputedStyle(cell);
+      var available = cell.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      // Resolved CSS widths share clientWidth's coordinate space, including CSS zoom.
+      var fullWidth = parseFloat(window.getComputedStyle(full).width);
+      choices.push({ cell: cell, short: fullWidth > available + 0.25 });
+    }
+    choices.forEach(function (choice) {
+      choice.cell.classList.toggle("eg-use-short-label", choice.short);
+    });
+    head.setAttribute("data-eg-labels-ready", "");
+  }
+  function refreshMatrixHeadingLabels() {
+    document.querySelectorAll(".eg-size-matrix-head").forEach(fitMatrixHeadingLabels);
+  }
+  var matrixHeadingObserver = window.ResizeObserver ? new ResizeObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.target.isConnected) matrixHeadingObserver.unobserve(entry.target);
+      else fitMatrixHeadingLabels(entry.target);
+    });
+  }) : null;
+  function initMatrixHeadingLabels(matrix) {
+    var head = matrix.querySelector(".eg-size-matrix-head");
+    if (!head) return;
+    if (matrixHeadingObserver) matrixHeadingObserver.observe(head);
+    fitMatrixHeadingLabels(head);
+  }
+  function releaseMatrixHeadingLabels(root) {
+    if (!matrixHeadingObserver || !root || root.nodeType !== 1 || root.isConnected) return;
+    if (root.matches(".eg-size-matrix-head")) matrixHeadingObserver.unobserve(root);
+    root.querySelectorAll(".eg-size-matrix-head").forEach(function (head) { matrixHeadingObserver.unobserve(head); });
+  }
+  if (!matrixHeadingObserver) window.addEventListener("resize", refreshMatrixHeadingLabels, { passive: true });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshMatrixHeadingLabels);
+
   // === CURRENCY / LOCALE ===
   function detectLocale() {
     var l = (document.documentElement.getAttribute("lang") || "").trim();
@@ -4010,6 +4054,7 @@ $(document).ready(function () {
 
   // === INIT ===
   function initMatrix(matrix, variations) {
+    if (matrix) initMatrixHeadingLabels(matrix);
     if (!matrix || matrix.getAttribute("data-eg-matrix-initialized") === "1") return;
 
     matrix.setAttribute("data-eg-matrix-initialized", "1");
@@ -4525,6 +4570,7 @@ $(document).ready(function () {
   var mo = new MutationObserver(function (mutations) {
     for (var i = 0; i < mutations.length; i++) {
       var m = mutations[i];
+      if (m.removedNodes) m.removedNodes.forEach(releaseMatrixHeadingLabels);
 
       if (!m.addedNodes || !m.addedNodes.length) continue;
 

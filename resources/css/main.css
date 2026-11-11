@@ -12801,10 +12801,11 @@ span.cookie-bar__header-title.h2 {
   min-width: 0;
 }
 .eg-size-matrix {
+  --eg-matrix-line: #b8b8b8;
   --eg-columns: minmax(3rem,1fr) minmax(4.5rem,1.3fr) minmax(8rem,1.8fr) minmax(4.5rem,1.3fr) 3.5rem;
   --eg-areas: "stock price ean sub qty";
   background: #fff;
-  border: 1px solid #d6d6d6;
+  border: 1px solid var(--eg-matrix-line);
   border-radius: 6px;
   min-width: 0;
 }
@@ -12850,10 +12851,10 @@ span.cookie-bar__header-title.h2 {
   overflow-wrap: anywhere;
   text-align: center;
   line-height: 1.25;
-  border-right: 1px solid rgba(0,0,0,.07);
+  border-right: 1px solid var(--eg-matrix-line);
   font-variant-numeric: tabular-nums;
 }
-.eg-size-matrix-head [data-eg-col] { padding-block: 9px; border-color: rgba(255,255,255,.2); }
+.eg-size-matrix-head [data-eg-col] { position: relative; padding-block: 9px; overflow: hidden; }
 .eg-size-matrix [data-eg-col="size"] { grid-area: size; font-weight: 700; }
 .eg-size-matrix [data-eg-col="color"] { grid-area: color; }
 .eg-size-matrix [data-eg-col="stock"] { grid-area: stock; }
@@ -12861,16 +12862,22 @@ span.cookie-bar__header-title.h2 {
 .eg-size-matrix [data-eg-col="ean"] { grid-area: ean; gap: 4px; font-size: .75rem; }
 .eg-size-matrix [data-eg-col="sub"] { grid-area: sub; }
 .eg-size-matrix [data-eg-col="qty"] { grid-area: qty; border-right: 0; }
-.eg-size-matrix .eg-row { border-bottom: 1px solid #dedede; font-size: .8125rem; }
+.eg-size-matrix .eg-row { border-bottom: 1px solid var(--eg-matrix-line); font-size: .8125rem; }
 .eg-size-matrix .eg-row:nth-child(even) { background: #f3f4f3; }
 .eg-size-matrix .eg-row:hover { background: #edf1e8; }
-.eg-size-matrix .eg-row.eg-active { box-shadow: inset 3px 0 #6b9f01; }
+.eg-size-matrix .eg-row.eg-active { background: #e6f1d9; box-shadow: inset 3px 0 #6b9f01; }
 /* Reserve one minimum input row until the existing JS inserts the variants. */
 .eg-size-matrix-body:empty { min-height: 47px; }
 .eg-size-matrix .eg-row-details { display: contents; }
 .eg-size-matrix [data-eg-ean] { user-select: text; -webkit-user-select: text; overflow-wrap: anywhere; }
 .eg-size-matrix .eg-label-short,
 .eg-size-matrix .eg-copy-ean { display: none; }
+/* Measure the translated full label against its real cell, even in fallback. */
+.eg-size-matrix-head .eg-label-full { flex: 0 0 auto; width: max-content; white-space: nowrap; }
+.eg-size-matrix-head:not([data-eg-labels-ready]) .eg-label-full,
+.eg-size-matrix-head .eg-use-short-label .eg-label-full { position: absolute; visibility: hidden; pointer-events: none; }
+.eg-size-matrix-head:not([data-eg-labels-ready]) .eg-label-short,
+.eg-size-matrix-head .eg-use-short-label .eg-label-short { display: inline; }
 .eg-size-matrix .eg-copy-ean {
   align-items: center;
   justify-content: center;
@@ -12949,10 +12956,8 @@ span.cookie-bar__header-title.h2 {
   .eg-size-matrix[data-eg-mode="color"] { --eg-columns: 3rem minmax(2.5rem,.8fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "color stock price qty" "details details details details"; }
   .eg-size-matrix[data-eg-mode="size_color"] { --eg-columns: minmax(2.5rem,1fr) 3rem minmax(2.5rem,.8fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "size color stock price qty" "details details details details details"; }
   .eg-size-matrix .eg-size-matrix-head [data-eg-col="ean"],
-  .eg-size-matrix .eg-size-matrix-head [data-eg-col="sub"],
-  .eg-size-matrix .eg-label-full { display: none; }
-  .eg-size-matrix .eg-label-short { display: inline; }
-  .eg-size-matrix .eg-row-details { grid-area: details; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 8px; padding: 0 5px; border-top: 1px solid rgba(0,0,0,.05); }
+  .eg-size-matrix .eg-size-matrix-head [data-eg-col="sub"] { display: none; }
+  .eg-size-matrix .eg-row-details { grid-area: details; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 8px; padding: 0 5px; border-top: 1px solid var(--eg-matrix-line); }
   .eg-size-matrix .eg-row-details [data-eg-col] { border: 0; padding: 0; min-height: 28px; font-size: .75rem; }
   .eg-size-matrix .eg-row-details [data-eg-col="ean"] { flex: 1 1 auto; justify-content: flex-start; }
   .eg-size-matrix .eg-row-details [data-eg-col="sub"] { gap: 4px; margin-left: auto; }

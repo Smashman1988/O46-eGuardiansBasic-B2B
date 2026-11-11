@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – focused variation matrix follow-up
+
+- Clearer, consistent grey cell, row and EAN/subtotal boundaries without taller rows; alternating row backgrounds retained.
+- Full translated column names whenever they fit the actual cell. Existing abbreviations are used only when necessary; PDP and quickview share the measurement.
+- A wrapper bounds the existing sticky heading to the header and variation body, before the totals/basket footer. No scroll handlers.
+- The active variation retains its green side bar and gains a subtle light green background (`#e6f1d9`), with no checkmark or additional selection icon.
+- Synchronized source and active minified assets, critical PDP CSS and the `matrix2` cache suffix. No additional API requests or changes to price, stock or ordering logic. README and the report document local tests and pending native acceptance. The confirmed contact-widget obstruction is documented separately; the widget is unchanged.
+
 ## Unreleased – responsive variation matrix
 
 - Product pages and quickviews retain their shared variation matrix. Wide containers show the complete table; narrower containers use a compact table with a visible EAN/subtotal row, and only very narrow containers switch to compact cards.

@@ -801,7 +801,7 @@ namespace {
                         check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Directory exposes a pager');
                         check(strpos($html,'brandTiles') !== false && strpos($html,'/alpha') !== false && strpos($html,'/beta') !== false,'Actual brand list missing');
                         check(strpos($html,'.brandTiles .col-xl-3 {') !== false,'Directory critical grid CSS missing');
-                        check(strpos($html,'main-211025.min.css?v=fixture-nl2-matrix1" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
+                        check(strpos($html,'main-211025.min.css?v=fixture-nl2-matrix2" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
                         check(count($search->calls) === $calls,'Directory issued an embedded item query');
                     } finally { $urls->base = $oldBase; $templateService->template = $oldTemplate; }
                 });
@@ -839,7 +839,7 @@ namespace {
                 preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
                 check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
                 $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
-                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery1-matrix1';
+                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery1-matrix2';
                 check($url === $expected,'Wrong shipped asset or cache version');
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
                 check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');

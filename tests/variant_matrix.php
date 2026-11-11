@@ -32,6 +32,8 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
             'sizeAttr' => ['attributeId' => 1, 'values' => $sizes], 'colorAttr' => ['attributeId' => 2, 'values' => $colors],
             'itemData' => ['variation' => ['id' => 1001]]]);
         if (substr_count($html, 'data-eg-matrix-add') !== 1 || substr_count($html, 'data-eg-total-sum') !== 1 ||
+            substr_count($html, 'class="eg-size-matrix-table"') !== 1 ||
+            !preg_match('/class="eg-size-matrix-body"><\/div>\s*<\/div>\s*<div class="eg-size-matrix-footer"/', $html) ||
             substr_count($html, 'data-eg-col="ean"') !== 1 || str_contains($html, 'style="display:flex')) {
             throw new RuntimeException('Unexpected shared matrix markup: ' . $lang . '/' . $mode);
         }

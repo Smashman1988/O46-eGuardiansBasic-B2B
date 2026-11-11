@@ -439,6 +439,7 @@
          data-eg-color-values="{{ hasColor ? (colorAttr.values | json_encode | e('html_attr')) : '[]' }}"
          data-eg-base-variation-id="{{ itemData.variation.id }}">
 
+      <div class="eg-size-matrix-table">
       <div class="eg-size-matrix-head">
         {% set matrixColumns = {
           'size': 'sizematrix', 'color': 'colormatrix', 'stock': 'stockmatrix',
@@ -446,7 +447,7 @@
         } %}
         {% for column, label in matrixColumns %}
           {% if (column != 'size' or hasSize) and (column != 'color' or hasColor) %}
-            <div data-eg-col="{{ column }}" data-eg-label="{{ trans('GuardiansBasicB2B::Template.' ~ label) | e('html_attr') }}">
+            <div data-eg-col="{{ column }}" data-eg-label="{{ trans('GuardiansBasicB2B::Template.' ~ label) | e('html_attr') }}" title="{{ trans('GuardiansBasicB2B::Template.' ~ label) | e('html_attr') }}">
               <span class="eg-label-full">{{ trans('GuardiansBasicB2B::Template.' ~ label) }}</span>
               <span class="eg-label-short">{{ trans('GuardiansBasicB2B::Template.' ~ label ~ 'Short') }}</span>
             </div>
@@ -456,6 +457,7 @@
 
       {# Body bleibt leer -> JS baut IMMER korrekt (keine Doppel-Render / keine kaputten Zeilen) #}
       <div class="eg-size-matrix-body"></div>
+      </div>
 
       <div class="eg-size-matrix-footer">
         <div class="eg-matrix-totals">

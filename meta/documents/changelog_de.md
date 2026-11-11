@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – gezielter Variantenmatrix-Nachtrag
+
+- Deutlichere, einheitliche graue Zell-, Zeilen- und EAN-/Summengrenzen ohne höhere Zeilen; Zebra-Streifen bleiben erhalten.
+- Vollständige übersetzte Spaltennamen, sofern sie in die tatsächliche Zelle passen. Vorhandene Kurzformen nur bei Platzmangel; PDP und Quickview verwenden dieselbe Messung.
+- Ein gemeinsamer Wrapper begrenzt den vorhandenen Sticky-Tabellenkopf auf Kopf und Variantenkörper, vor dem Summen-/Warenkorb-Fußbereich. Keine Scrollhandler.
+- Aktive Variante mit vorhandenem grünem Seitenbalken und dezenter hellgrüner Fläche (`#e6f1d9`), ohne Häkchen oder zusätzliches Auswahlsymbol.
+- Quellen, aktive Min-Dateien, kritisches PDP-CSS und Cache-Zusatz `matrix2` synchronisiert. Keine neuen API-Abfragen oder Änderungen an Preis-, Bestands- und Bestelllogik. Lokale Tests und noch offene native Abnahme sind in README/Prüfbericht dokumentiert. Der bestätigte Kontaktwidget-Konflikt ist separat dokumentiert; Widget unverändert.
+
 ## Unveröffentlicht – responsive Variantenmatrix
 
 - Produktdetailseite und Quickview verwenden weiterhin dieselbe Variantenmatrix. Breite Container zeigen die vollständige Tabelle; schmalere Container eine kompakte Tabelle mit sichtbarer EAN-/Summenzeile und nur sehr schmale Container kompakte Karten.
