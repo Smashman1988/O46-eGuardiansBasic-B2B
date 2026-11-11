@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – final fixes after gallery2-matrix2 acceptance
+
+- Temporarily hide the closed contact widget below 992 px only when its actual footprint overlaps a matrix or basket item. Keep open contact panels and desktop behavior intact; observe dynamic quickviews without another scroll handler.
+- Fix the cause of the 70 px PDP jump: in the stacked layout, thumbnails scroll within the height established by the main image instead of determining the gallery height. No new fixed height or image aspect ratio change.
+- Execute item tracking once on full PDPs only. AJAX quickviews no longer register window load handlers that can never execute. Tracking data and previously executed events remain intact; growing PlentyONE preview listeners are documented as an external limitation.
+- Synchronize active minified/critical CSS (`nl3-matrix3-logo1-gallery3`) and version widget assets with `contact2`. Gallery/matrix JavaScript and its minified files remain unchanged. No additional service requests or business logic changes.
+- Local regressions passed, including 100 quickview cycles, 200 rapid desktop switches and portrait/landscape changes. Native post-change acceptance in plugin set 426 is pending. README/report distinguish the already accepted gallery2 baseline from these local changes. No deployment performed.
+
 ## Unreleased – mobile image tap in the variation matrix
 
 - On mobile, tapping a matrix image or magnifier opens the existing MagicZoomPlus expanded view for that variation. Quantities and the active variation are retained. Desktop clicks continue to update only the gallery on the left.

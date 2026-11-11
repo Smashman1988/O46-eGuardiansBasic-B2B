@@ -46,6 +46,12 @@
     font-weight: 700;
 }
 
+/* Keep an open contact panel usable; only its closed launcher yields to controls. */
+.o46-b2b-contact-widget.o46-b2b-contact-obstructed {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .o46-b2b-contact-bubble {
     display: grid;
     flex: 0 0 var(--o46-b2b-contact-size);

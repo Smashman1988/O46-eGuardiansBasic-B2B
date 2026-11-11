@@ -169,8 +169,8 @@
         <div class="d-lg-block clearfix">
             {% if isQuickView %}
             <div class="col-12 col-xl-6 pull-lg-left stickyarticle z-index1">
-                <div class="row">                   
-                    <div class="col-md-2 col-lg-2 col-xl-2 d-none d-md-block">
+                <div class="row eg-item-gallery">
+                    <div class="col-md-2 col-lg-2 col-xl-2 d-none d-md-block eg-gallery-thumbnails">
                         {% if itemData.images.all | length>1 %}
                          {% set stepIndex = 0 %}
                         <div class="single-prev-images d-none d-md-block">
@@ -600,12 +600,21 @@
     </div> </div> </div>
     {% endif %} 
 </article>
-    <script>
+{% if isQuickView %}
+{# PageDesign's isQuickView flag is true for a full page, false for the AJAX fragment. #}
+<script>
 window.dataLayer = window.dataLayer || [];
-
-window.addEventListener("load", function() {
-  dataLayer.push({ 'itemid': '{{ itemData.item.id }}' });
-});
+(function () {
+    function trackItem() {
+        window.dataLayer.push({ 'itemid': '{{ itemData.item.id }}' });
+    }
+    if (document.readyState === 'complete') {
+        trackItem();
+    } else {
+        window.addEventListener('load', trackItem, { once: true });
+    }
+}());
 </script>
+{% endif %}
 
 {% endblock %}

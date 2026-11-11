@@ -12979,6 +12979,16 @@ span.cookie-bar__header-title.h2 {
   .eg-size-matrix .eg-row > [data-eg-col="qty"] { flex-direction: column; gap: 3px; }
   .eg-size-matrix .eg-row > [data-eg-col="qty"]::before { content: attr(data-eg-label); font-size: .6875rem; }
 }
+/* In the stacked PDP layout only the existing main image determines height.
+   A long thumbnail rail scrolls inside that height instead of pushing the matrix
+   down and then collapsing when a variant has fewer images. No new fixed height. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .eg-item-gallery > .eg-gallery-thumbnails > .single-prev-images {
+    position: absolute;
+    inset: 0 15px;
+    max-height: 100% !important;
+  }
+}
 /* End B2B responsive matrix */
 
 .single-prev-images{

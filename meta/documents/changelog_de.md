@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – letzte Korrekturen nach der gallery2-matrix2-Abnahme
+
+- Geschlossenes Kontaktwidget unter 992 px nur bei tatsächlicher Überschneidung mit Matrix-/Warenkorbartikelbereichen vorübergehend ausblenden. Offene Kontaktfenster und Desktop bleiben erhalten; dynamische Quickviews werden ohne neuen Scrollhandler berücksichtigt.
+- Ursache des 70-px-PDP-Sprungs behoben: Die Miniaturleiste bestimmt im gestapelten Layout nicht mehr die Galeriehöhe, sondern scrollt innerhalb der vom Hauptbild bestimmten Höhe. Keine neue feste Höhe oder Änderung am Bildformat.
+- Artikel-Tracking nur auf vollständigen PDPs einmal ausführen. AJAX-Quickviews registrieren keine nie ausführbaren `window.load`-Handler mehr. Trackingdaten und bislang tatsächlich ausgeführte Ereignisse bleiben erhalten; Wachstum der PlentyONE-Vorschau-Handler bleibt als externe Einschränkung dokumentiert.
+- Aktives Min-/Critical-CSS synchronisiert (`nl3-matrix3-logo1-gallery3`); Widget-Assets mit `contact2`. Galerie-/Matrix-JavaScript einschließlich Min-Dateien unverändert. Keine zusätzlichen Serviceabfragen oder Änderungen an Geschäftslogik.
+- Lokale Regressionen einschließlich 100 Quickview-Zyklen, 200 schnellen Desktop-Wechseln und Hoch-/Querformatwechseln bestanden. Nachher-Abnahme des neuen Codes in Pluginset 426 steht aus. README/Prüfbericht trennen den bereits nativ abgenommenen gallery2-Ausgangsstand von diesen lokalen Änderungen. Keine Bereitstellung ausgeführt.
+
 ## Unveröffentlicht – mobiler Bild-Tap in der Variantenmatrix
 
 - Mobil öffnet ein Tipp auf Matrixbild oder Lupe die vorhandene MagicZoomPlus-Großansicht mit den Bildern der angetippten Variante. Mengen und aktive Variante bleiben erhalten. Desktop-Klicks wechseln weiterhin nur die Galerie links.
