@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – responsive variation matrix
+
+- Product pages and quickviews retain their shared variation matrix. Wide containers show the complete table; narrower containers use a compact table with a visible EAN/subtotal row, and only very narrow containers switch to compact cards.
+- Column headings stay visible while scrolling below the shop or modal header. Quickviews use available width and height more efficiently, with a scrolling content area and an accessible close button.
+- Mobile EAN copying in DE/EN/FR/IT/ES preserves the exact variation mapping, leading zeros and missing values from the existing batch. No additional variation/EAN requests or changes to quantity, price, totals, basket and gallery logic.
+- The same matrix CSS source also supplies the PDP's existing critical-style path. This prevents unformatted headings before the asynchronous main stylesheet loads; a small reserved space limits the initial footer movement when rows are inserted.
+- Updated affected CSS/JS minified assets and cache suffixes (`matrix1`), preserving unrelated bundle contents. Local functional, layout and regression checks and separate before/after measurements are documented in README and the test report. Native acceptance awaits a separate deployment to test plugin set 426.
+
 ## Unreleased – preview images in IT/ES autocomplete
 
 - The English-index adapter selects autocomplete mode before constructing the native `SearchItems` factory. It no longer replaces the result fields of a regular item search afterwards; the matching IO image pipeline continues to use `urlPreview`.

@@ -439,31 +439,30 @@
          data-eg-color-values="{{ hasColor ? (colorAttr.values | json_encode | e('html_attr')) : '[]' }}"
          data-eg-base-variation-id="{{ itemData.variation.id }}">
 
-      <div class="eg-size-matrix-head" style="display:flex; font-weight:700; padding:10px; background:#6b9f01; color:#fff;">
-        {% if mode == 'size_color' %}
-          <div style="flex:1; text-align:center;" data-eg-col="size">{{ trans("GuardiansBasicB2B::Template.sizematrix") }}</div>
-          <div style="flex:1; text-align:center;" data-eg-col="color">{{ trans("GuardiansBasicB2B::Template.colormatrix") }}</div>
-        {% elseif mode == 'size' %}
-          <div style="flex:1; text-align:center;" data-eg-col="size">{{ trans("GuardiansBasicB2B::Template.sizematrix") }}</div>
-        {% elseif mode == 'color' %}
-          <div style="flex:1; text-align:center;" data-eg-col="color">{{ trans("GuardiansBasicB2B::Template.colormatrix") }}</div>
-        {% endif %}
-
-        <div style="flex:1; text-align:center;" data-eg-col="stock">{{ trans("GuardiansBasicB2B::Template.stockmatrix") }}</div>
-        <div style="flex:1; text-align:center;" data-eg-col="price">{{ trans("GuardiansBasicB2B::Template.epricematrix") }}</div>
-        <div style="flex:1; text-align:center;" data-eg-col="ean">{{ trans("GuardiansBasicB2B::Template.eanmatrix") }}</div>
-        <div style="flex:1; text-align:center;" data-eg-col="sub">{{ trans("GuardiansBasicB2B::Template.submatrix") }}</div>
-        <div style="flex:1; text-align:center;" data-eg-col="qty">{{ trans("GuardiansBasicB2B::Template.qtymatrix") }}</div>
+      <div class="eg-size-matrix-head">
+        {% set matrixColumns = {
+          'size': 'sizematrix', 'color': 'colormatrix', 'stock': 'stockmatrix',
+          'price': 'epricematrix', 'ean': 'eanmatrix', 'sub': 'submatrix', 'qty': 'qtymatrix'
+        } %}
+        {% for column, label in matrixColumns %}
+          {% if (column != 'size' or hasSize) and (column != 'color' or hasColor) %}
+            <div data-eg-col="{{ column }}" data-eg-label="{{ trans('GuardiansBasicB2B::Template.' ~ label) | e('html_attr') }}">
+              <span class="eg-label-full">{{ trans('GuardiansBasicB2B::Template.' ~ label) }}</span>
+              <span class="eg-label-short">{{ trans('GuardiansBasicB2B::Template.' ~ label ~ 'Short') }}</span>
+            </div>
+          {% endif %}
+        {% endfor %}
       </div>
 
       {# Body bleibt leer -> JS baut IMMER korrekt (keine Doppel-Render / keine kaputten Zeilen) #}
       <div class="eg-size-matrix-body"></div>
 
-      <div class="eg-size-matrix-footer" style="padding:12px 10px;">
-        <div class="row" style="margin-bottom:10px;">
-          <div class="col-6 tcenter">{{ trans("GuardiansBasicB2B::Template.gesamtstmatrix") }} <span data-eg-total-qty>0</span></div>
-          <div class="col-6 tcenter">{{ trans("GuardiansBasicB2B::Template.submatrix") }} <span data-eg-total-sum>0,00 €</span></div>
+      <div class="eg-size-matrix-footer">
+        <div class="eg-matrix-totals">
+          <div>{{ trans("GuardiansBasicB2B::Template.gesamtstmatrix") }} <span data-eg-total-qty>0</span></div>
+          <div>{{ trans("GuardiansBasicB2B::Template.submatrix") }} <span data-eg-total-sum>0,00 €</span></div>
         </div>
+        <span class="sr-only" role="status" aria-live="polite" data-eg-copy-status></span>
 
         <button type="button"
                 class="btn btn-primary d-flex align-items-center justify-content-center btn-big product-list add-to-basket-lg-container item-actions"

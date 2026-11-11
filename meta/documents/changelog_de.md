@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – responsive Variantenmatrix
+
+- Produktdetailseite und Quickview verwenden weiterhin dieselbe Variantenmatrix. Breite Container zeigen die vollständige Tabelle; schmalere Container eine kompakte Tabelle mit sichtbarer EAN-/Summenzeile und nur sehr schmale Container kompakte Karten.
+- Spaltenüberschriften bleiben beim Scrollen unter dem Shop- bzw. Modal-Kopf sichtbar. Die Quickview nutzt die verfügbare Breite und Höhe besser, mit eigenem Inhalts-Scrollbereich und erreichbarem Schließen-Button.
+- Mobile EAN-Kopierfunktion in DE/EN/FR/IT/ES; genaue Zuordnung aus dem vorhandenen Varianten-Batch, führende Nullen und fehlende Werte bleiben erhalten. Keine zusätzlichen Varianten-/EAN-Abfragen oder Änderungen an Mengen, Preisen, Summen, Warenkorb- und Galerielogik.
+- Die Matrixregeln stehen aus derselben CSS-Quelle auch im kritischen PDP-CSS bereit. Das verhindert den unformatierten Tabellenkopf vor dem asynchronen Hauptstylesheet; eine kleine Platzreserve begrenzt den Sprung des noch leeren Summenbereichs beim Zeilenaufbau.
+- Betroffene CSS-/JS-Min-Dateien und Cache-Kennungen (`matrix1`) aktualisiert; unbeteiligte Bundle-Inhalte erhalten. Lokale Funktions-, Layout- und Regressionstests sowie getrennte Vorher-/Nachher-Messungen sind in README und Prüfbericht dokumentiert. Native Abnahme nach separater Bereitstellung in Test-Pluginset 426 steht aus.
+
 ## Unveröffentlicht – Vorschaubilder in IT/ES-Suchvorschlägen
 
 - Der EN-Suchadapter wählt den Autocomplete-Modus vor dem Aufbau der nativen `SearchItems`-Factory. Das nachträgliche Ersetzen der ResultFields einer normalen Artikelsuche entfällt; die passende IO-Bildverarbeitung liefert weiterhin `urlPreview`.

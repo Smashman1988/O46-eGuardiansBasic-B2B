@@ -12795,162 +12795,191 @@ span.cookie-bar__header-title.h2 {
 }
 
 
-/* B2B Größen Matrix (Bestand - EAN etc) */
-@media (max-width: 575.98px) {
+/* B2B matrix: one row and one set of order fields at every container width. */
+[data-item-variation-select].attribute-box {
+  container: eg-matrix / inline-size;
+  min-width: 0;
+}
+.eg-size-matrix {
+  --eg-columns: minmax(3rem,1fr) minmax(4.5rem,1.3fr) minmax(8rem,1.8fr) minmax(4.5rem,1.3fr) 3.5rem;
+  --eg-areas: "stock price ean sub qty";
+  background: #fff;
+  border: 1px solid #d6d6d6;
+  border-radius: 6px;
+  min-width: 0;
+}
+.eg-size-matrix[data-eg-mode="size"] {
+  --eg-columns: minmax(3rem,1fr) minmax(3rem,.8fr) minmax(4.5rem,1.2fr) minmax(8rem,1.8fr) minmax(4.5rem,1.2fr) 3.5rem;
+  --eg-areas: "size stock price ean sub qty";
+}
+.eg-size-matrix[data-eg-mode="color"] {
+  --eg-columns: 3.5rem minmax(3rem,.8fr) minmax(4.5rem,1.2fr) minmax(8rem,1.8fr) minmax(4.5rem,1.2fr) 3.5rem;
+  --eg-areas: "color stock price ean sub qty";
+}
+.eg-size-matrix[data-eg-mode="size_color"] {
+  --eg-columns: minmax(3rem,1fr) 3.5rem minmax(3rem,.8fr) minmax(4.5rem,1.2fr) minmax(8rem,1.8fr) minmax(4.5rem,1.2fr) 3.5rem;
+  --eg-areas: "size color stock price ean sub qty";
+}
+.eg-size-matrix .eg-size-matrix-head,
+.eg-size-matrix .eg-row {
+  display: grid;
+  grid-template-columns: var(--eg-columns);
+  grid-template-areas: var(--eg-areas);
+  align-items: stretch;
+  padding: 0;
+  width: 100%;
+  min-width: 0;
+}
+.eg-size-matrix .eg-size-matrix-head {
+  position: sticky;
+  top: var(--eg-matrix-sticky-top, 0px);
+  z-index: 3;
+  color: #fff;
+  background: #6b9f01;
+  border-radius: 5px 5px 0 0;
+  font-weight: 700;
+  font-size: .8125rem;
+  line-height: 1.25;
+}
+.eg-size-matrix [data-eg-col] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 5px 4px;
+  overflow-wrap: anywhere;
+  text-align: center;
+  line-height: 1.25;
+  border-right: 1px solid rgba(0,0,0,.07);
+  font-variant-numeric: tabular-nums;
+}
+.eg-size-matrix-head [data-eg-col] { padding-block: 9px; border-color: rgba(255,255,255,.2); }
+.eg-size-matrix [data-eg-col="size"] { grid-area: size; font-weight: 700; }
+.eg-size-matrix [data-eg-col="color"] { grid-area: color; }
+.eg-size-matrix [data-eg-col="stock"] { grid-area: stock; }
+.eg-size-matrix [data-eg-col="price"] { grid-area: price; }
+.eg-size-matrix [data-eg-col="ean"] { grid-area: ean; gap: 4px; font-size: .75rem; }
+.eg-size-matrix [data-eg-col="sub"] { grid-area: sub; }
+.eg-size-matrix [data-eg-col="qty"] { grid-area: qty; border-right: 0; }
+.eg-size-matrix .eg-row { border-bottom: 1px solid #dedede; font-size: .8125rem; }
+.eg-size-matrix .eg-row:nth-child(even) { background: #f3f4f3; }
+.eg-size-matrix .eg-row:hover { background: #edf1e8; }
+.eg-size-matrix .eg-row.eg-active { box-shadow: inset 3px 0 #6b9f01; }
+/* Reserve one minimum input row until the existing JS inserts the variants. */
+.eg-size-matrix-body:empty { min-height: 47px; }
+.eg-size-matrix .eg-row-details { display: contents; }
+.eg-size-matrix [data-eg-ean] { user-select: text; -webkit-user-select: text; overflow-wrap: anywhere; }
+.eg-size-matrix .eg-label-short,
+.eg-size-matrix .eg-copy-ean { display: none; }
+.eg-size-matrix .eg-copy-ean {
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  min-height: 28px;
+  padding: 3px;
+  border: 1px solid #c4d3b2;
+  border-radius: 4px;
+  background: #fff;
+  color: #355900;
+  cursor: pointer;
+}
+.eg-size-matrix .eg-copy-ean:disabled { visibility: hidden; }
+.eg-size-matrix .eg-copy-ean svg { width: 16px; height: 16px; pointer-events: none; }
+.eg-size-matrix input[data-eg-qty] {
+  box-sizing: border-box;
+  width: 44px;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 3px 1px;
+  border: 1px solid #b9b9b9;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+  font-size: 16px; /* Avoid iOS focus zoom. */
+  line-height: 1.2;
+  font-weight: 600;
+  text-align: center;
+}
+.eg-size-matrix input[data-eg-qty]:focus,
+.eg-size-matrix button:focus-visible,
+.eg-size-matrix [data-eg-color-preview]:focus-visible {
+  outline: 2px solid #477700;
+  outline-offset: 1px;
+}
+.eg-size-matrix .eg-color-link {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  cursor: pointer;
+}
+.eg-size-matrix .eg-color-link img {
+  width: 44px;
+  height: 36px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1px;
+}
+.eg-size-matrix .eg-color-link > span { position: absolute; right: 0; bottom: 0; background: #fff; border-radius: 2px; }
+.eg-size-matrix .eg-color-link > span svg { width: 12px; height: 12px; }
+.eg-size-matrix .eg-size-matrix-footer { padding: 10px 8px; background: #fff; border-radius: 0 0 5px 5px; }
+.eg-size-matrix .eg-matrix-totals { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; font-size: .875rem; }
+.eg-size-matrix [data-eg-matrix-add] { width: 100%; min-height: 44px; white-space: normal; }
+/* Scope modal sizing and scrolling to the existing product quickview. */
+.modal.modal-cross { top: 0; --eg-matrix-sticky-top: 0px; }
+.modal-open .modal.modal-cross { overflow: hidden; }
+.modal-cross .modal-dialog { width: calc(100% - 16px); max-width: 760px; height: auto; margin: 8px auto; }
+.modal-cross .modal-content { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
+.modal-cross .modal-header { align-items: center; flex-shrink: 0; padding: 6px 10px; }
+.modal-cross .modal-header .close { flex: 0 0 40px; width: 40px; height: 40px; margin: 0 0 0 auto; padding: 0; }
+.modal-cross .modal-title { min-width: 0; overflow-wrap: anywhere; }
+.modal-cross .modal-body { min-height: 0; padding: 10px; overflow-y: auto; overscroll-behavior-y: contain; }
+.modal-cross article.single > .container { width: 100%; max-width: none; padding: 0; }
+.modal-cross article.single .item-title { font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere; }
+.modal-cross [data-item-variation] { margin-inline: 0; }
+.modal-cross [data-item-variation] > .padding-10-0 { padding: 0; }
+/* Mobile table: original EAN and subtotal nodes form one shallow details row. */
+@container eg-matrix (max-width: 35.99rem) {
+  .eg-size-matrix { --eg-columns: minmax(3rem,1fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "stock price qty" "details details details"; }
+  .eg-size-matrix[data-eg-mode="size"] { --eg-columns: minmax(2.5rem,1fr) minmax(2.5rem,.8fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "size stock price qty" "details details details details"; }
+  .eg-size-matrix[data-eg-mode="color"] { --eg-columns: 3rem minmax(2.5rem,.8fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "color stock price qty" "details details details details"; }
+  .eg-size-matrix[data-eg-mode="size_color"] { --eg-columns: minmax(2.5rem,1fr) 3rem minmax(2.5rem,.8fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "size color stock price qty" "details details details details details"; }
   .eg-size-matrix .eg-size-matrix-head [data-eg-col="ean"],
   .eg-size-matrix .eg-size-matrix-head [data-eg-col="sub"],
-  .eg-size-matrix .eg-row [data-eg-col="ean"],
-  .eg-size-matrix .eg-row [data-eg-col="sub"] {
-    display: none !important;
-  }
+  .eg-size-matrix .eg-label-full { display: none; }
+  .eg-size-matrix .eg-label-short { display: inline; }
+  .eg-size-matrix .eg-row-details { grid-area: details; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 8px; padding: 0 5px; border-top: 1px solid rgba(0,0,0,.05); }
+  .eg-size-matrix .eg-row-details [data-eg-col] { border: 0; padding: 0; min-height: 28px; font-size: .75rem; }
+  .eg-size-matrix .eg-row-details [data-eg-col="ean"] { flex: 1 1 auto; justify-content: flex-start; }
+  .eg-size-matrix .eg-row-details [data-eg-col="sub"] { gap: 4px; margin-left: auto; }
+  .eg-size-matrix .eg-row-details [data-eg-col]::before { content: attr(data-eg-label) ":"; font-weight: 400; }
+  .eg-size-matrix .eg-copy-ean { display: inline-flex; }
+  .eg-size-matrix [data-eg-col] { padding: 3px 2px; }
+  .eg-size-matrix-head [data-eg-col] { padding-block: 7px; }
+  .eg-size-matrix .eg-color-link img { width: 38px; height: 32px; }
 }
+/* Only genuinely narrow containers switch to compact labelled cards. */
+@container eg-matrix (max-width: 20.49rem) {
+  .eg-size-matrix { --eg-columns: minmax(0,1fr) minmax(0,1.25fr) 3.25rem; --eg-areas: "stock price qty" "details details details"; }
+  .eg-size-matrix[data-eg-mode="size"] { --eg-areas: "size size qty" "stock price qty" "details details details"; }
+  .eg-size-matrix[data-eg-mode="color"] { --eg-areas: "color color qty" "stock price qty" "details details details"; }
+  .eg-size-matrix[data-eg-mode="size_color"] { --eg-areas: "size color qty" "stock price qty" "details details details"; }
+  .eg-size-matrix[data-eg-mode] { --eg-columns: minmax(0,1fr) minmax(0,1.25fr) 3.25rem; }
+  .eg-size-matrix .eg-size-matrix-head { display: none; }
+  .eg-size-matrix .eg-row { padding-top: 3px; }
+  .eg-size-matrix .eg-row > [data-eg-col="stock"],
+  .eg-size-matrix .eg-row > [data-eg-col="price"] { gap: 3px; flex-wrap: wrap; padding-block: 4px; font-size: .75rem; }
+  .eg-size-matrix .eg-row > [data-eg-col="stock"]::before,
+  .eg-size-matrix .eg-row > [data-eg-col="price"]::before { content: attr(data-eg-label) ":"; font-size: .6875rem; }
+  .eg-size-matrix .eg-row > [data-eg-col="qty"] { flex-direction: column; gap: 3px; }
+  .eg-size-matrix .eg-row > [data-eg-col="qty"]::before { content: attr(data-eg-label); font-size: .6875rem; }
+}
+/* End B2B responsive matrix */
 
-/* EG Size Matrix – Table Look (final) */
-.eg-size-matrix{
-  background:#fff;
-  border:1px solid #d6d6d6;
-  border-radius:6px;
-  overflow:hidden;
-}
-
-/* Header */
-.eg-size-matrix .eg-size-matrix-head{
-  padding:0 !important;
-  border-bottom:1px solid rgba(0,0,0,.18);
-}
-
-.eg-size-matrix .eg-size-matrix-head > div{
-  padding:12px 10px !important;
-  font-size:14px;
-  line-height:1.2;
-  border-right:1px solid rgba(255,255,255,.22);
-  color:#fff;
-}
-.eg-size-matrix .eg-size-matrix-head > div:last-child{
-  border-right:none;
-}
-
-/* Rows */
-.eg-size-matrix .eg-row{
-  display:flex;
-  align-items:center;
-  padding:0 !important;
-  border-bottom:1px solid #e1e1e1 !important;
-  background:#fff;
-}
-
-/* Zebra */
-.eg-size-matrix .eg-size-matrix-body .eg-row:nth-child(odd){
-  background:#fff !important;
-}
-.eg-size-matrix .eg-size-matrix-body .eg-row:nth-child(even){
-  background:#f1f1f1 !important;
-}
-
-/* Hover neutral */
-.eg-size-matrix .eg-size-matrix-body .eg-row:hover{
-  background:#eaeaea !important;
-}
-
-/* Active neutral */
-.eg-size-matrix .eg-row.eg-active{
-  background: inherit !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Cells */
-.eg-size-matrix .eg-row [data-eg-col]{
-  flex:1 1 0%;
-  text-align:center;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:2px 0px;
-  border-right:1px solid #ededed;
-}
-.eg-size-matrix .eg-row [data-eg-col]:last-child{
-  border-right:none;
-}
-
-/* Qty column */
-.eg-size-matrix .eg-row [data-eg-col="qty"]{
-  flex:0 0 100px;
-  width:100px;
-  min-width:100px;
-  text-align:center;
-}
-
-/* Numeric alignment */
-.eg-size-matrix [data-eg-col="stock"],
-.eg-size-matrix [data-eg-col="price"],
-.eg-size-matrix [data-eg-col="sub"]{
-  justify-content:flex-end;
-  text-align:right;
-  font-variant-numeric:tabular-nums;
-}
-
-/* EAN untouched: kein color setzen */
-.eg-size-matrix [data-eg-col="ean"]{
-  font-size:12px;
-}
-
-/* Size bold */
-.eg-size-matrix [data-eg-col="size"]{
-  font-weight:700;
-}
-
-/* Qty input */
-.eg-size-matrix input[data-eg-qty]{
-  width:50px !important;
-  height:38px;
-  border-radius:8px;
-  border:1px solid rgba(0,0,0,.22) !important;
-  background:#fff !important;
-  color:#111 !important;
-  font-weight:700;
-  text-align:center;
-  padding:0 !important;
-}
-.eg-size-matrix input[data-eg-qty]:focus{
-  outline:none !important;
-  border-color:#6b9f01 !important;
-  box-shadow:0 0 0 3px rgba(107,159,1,.18);
-}
-
-/* Footer */
-.eg-size-matrix .eg-size-matrix-footer{
-  border-top:1px solid rgba(0,0,0,.18);
-  background:#fff;
-}
-
-/* Color-Link */
-.eg-color-link{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  user-select:none;
-}
-.eg-color-link:hover{ opacity:.85; }
-.eg-color-link:active{ opacity:.75; }
-
-/* Color thumbnail */
-.eg-size-matrix .eg-color-link img{
-  max-width:90px;
-  max-height:60px;
-  object-fit:contain;
-  vertical-align:middle;
-  background:#fff;
-  border:1px solid rgba(0,0,0,.18);
-  border-radius:8px;
-  padding:4px;
-}
-/* iOS Safari: verhindert Auto-Zoom beim Fokus */
-[data-eg-size-matrix] input[data-eg-qty]{
-  font-size:16px !important;
-  line-height:1.2;
-}
 .single-prev-images{
   max-height: 520px !important; /* <-- X hier ändern */
   overflow-y: auto !important;
