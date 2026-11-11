@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – variation groups, header logo and newsletter channel
+
+- Mobile variations, including the EAN/subtotal row, receive a stronger full-width lower boundary in `#969696` without additional height. Active shading, side bar, desktop columns and narrow cards remain; no new selection symbols.
+- The existing header logo scales at its original 1114:226 ratio within the available column. Conflicting fixed heights are removed; matching main/critical CSS and image dimensions reserve its size before download completion.
+- The existing newsletter popup offers email and the official WhatsApp channel with the requested copy in five languages. Localized newsletter routes, scroll trigger, consent, cookie duration and dismissal are retained. WhatsApp opens only after a click in a new tab with `noopener noreferrer`.
+- Synchronized active CSS and critical rules with the `nl3-matrix3-logo1` CSS suffix. No additional JavaScript, tracking or API requests; JS files and business logic unchanged. README and the report document local tests and pending native acceptance. No deployment performed.
+
 ## Unreleased – focused variation matrix follow-up
 
 - Clearer, consistent grey cell, row and EAN/subtotal boundaries without taller rows; alternating row backgrounds retained.

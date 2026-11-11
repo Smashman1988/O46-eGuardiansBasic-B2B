@@ -106,7 +106,7 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
     check($keySet === null || $keys === $keySet, 'Widget translation keys differ between languages');
     $keySet = $keys;
     preg_match_all('/^(o46B2bNewsletter\w+)\s*=\s*(.+)$/mu', file_get_contents($root . '/resources/lang/' . $language . '/Template.properties'), $matches, PREG_SET_ORDER);
-    check(count($matches) === 4, 'Expected four newsletter keys per language');
+    check(count($matches) === 5, 'Expected five newsletter keys per language');
     foreach ($matches as $match) {
         check(!isset($translations[$match[1]]), 'Duplicate newsletter key');
         $translations[$match[1]] = trim($match[2]);
@@ -154,7 +154,7 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
         preg_match_all('~/js/(main|cat|item|vue)-020726\.min\.js\?v=([^"]+)"~', $rendered, $bundles);
         check(count($bundles[1]) === $expected, 'Wrong newsletter bundle count: ' . $page);
         foreach ($bundles[1] as $index=>$bundle) {
-            check($bundles[2][$index] === 'local-review-nl1' . ($bundle === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery1','Wrong bundle cache version: ' . $page);
+            check($bundles[2][$index] === 'local-review-nl1' . ($bundle === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery1-matrix2','Wrong bundle cache version: ' . $page);
         }
         if (isset($newsletterBundles[$page])) { check($bundles[1][0] === $newsletterBundles[$page], 'Wrong bundle: ' . $page); }
         foreach (['css/contact-widget.css', 'js/contact-widget.js'] as $resource) {
@@ -172,6 +172,13 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
             if (isset($newsletterBundles[$page])) {
                 $newsletter = $xpath->query('//*[@id="o46-b2b-newsletter"]')->item(0);
                 check($newsletter->hasAttribute('hidden') && $newsletter->getAttribute('data-consent-required') === '1', 'Newsletter must wait for scroll and consent response');
+                $links = $xpath->query('.//a', $newsletter);
+                check($links->length === 2, 'Newsletter must offer exactly two choices');
+                $whatsapp = $links->item(1);
+                check($whatsapp->getAttribute('href') === 'https://whatsapp.com/channel/0029VbDashBBPzjbqTzmQb3m', 'Wrong WhatsApp channel');
+                check($whatsapp->getAttribute('target') === '_blank' && $whatsapp->getAttribute('rel') === 'noopener noreferrer', 'WhatsApp tab isolation missing');
+                check($xpath->query('.//script', $newsletter)->length === 0, 'Unexpected newsletter script');
+
                 file_put_contents($output . '/newsletter-' . $language . '-' . $newsletterBundles[$page] . '.html', $dom->saveHTML($newsletter));
             }
         }

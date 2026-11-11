@@ -801,7 +801,7 @@ namespace {
                         check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Directory exposes a pager');
                         check(strpos($html,'brandTiles') !== false && strpos($html,'/alpha') !== false && strpos($html,'/beta') !== false,'Actual brand list missing');
                         check(strpos($html,'.brandTiles .col-xl-3 {') !== false,'Directory critical grid CSS missing');
-                        check(strpos($html,'main-211025.min.css?v=fixture-nl2-matrix2" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
+                        check(strpos($html,'main-211025.min.css?v=fixture-nl3-matrix3-logo1" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
                         check(count($search->calls) === $calls,'Directory issued an embedded item query');
                     } finally { $urls->base = $oldBase; $templateService->template = $oldTemplate; }
                 });
@@ -844,8 +844,9 @@ namespace {
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
                 check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');
                 check(strpos($html,'.brandTiles .col-xl-3 {') === false,'Brand critical CSS leaked into an item list or editorial page');
-                $hasDesktopLogoSize = strpos($html,'@media (min-width: 1400px) { .company-logo img { height: 64px; } }') !== false;
-                check($hasDesktopLogoSize === ($name !== 'editorial-main'),'Desktop logo sizing on wrong page type');
+                $hasLogoGeometry = strpos($html,'<style data-eg-logo-critical>') !== false && strpos($html,'object-fit:contain') !== false && strpos($html,'aspect-ratio:1114 / 226') !== false && strpos($html,'.company-logo img{--o46-logo-max-height:64px') !== false;
+                check($hasLogoGeometry,'Proportional logo geometry missing before async CSS');
+                check(!preg_match('/\\.company-logo img\\s*\\{\\s*height:\\s*[0-9]+px/', $html),'Legacy fixed logo height remains in critical CSS');
                 return ['script'=>$url];
             } finally { $builderMode = 'single'; $templateService->template = 'tpl.category.content'; }
         });

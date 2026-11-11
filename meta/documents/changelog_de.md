@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – Variantengruppen, Header-Logo und Newsletter-Kanal
+
+- Mobile Varianten einschließlich EAN-/Summenzeile erhalten eine durchgehende stärkere Unterkante in `#969696`, ohne zusätzliche Höhe. Aktive Zeile, Seitenbalken, Desktop-Tabelle und schmale Karten bleiben erhalten; keine neuen Auswahlsymbole.
+- Das unveränderte Header-Logo skaliert im Verhältnis 1114:226 in die verfügbare Spaltenbreite. Konkurrierende feste Bildhöhen entfallen; identische Haupt-/Critical-CSS-Regeln und Bildabmessungen reservieren die Größe vor dem Bilddownload.
+- Das bestehende Newsletter-Popup bietet E-Mail und den offiziellen WhatsApp-Kanal mit den vorgegebenen Texten in fünf Sprachen. Newsletter-Routen, Scroll-Auslösung, Consent, Cookie-Laufzeit und Schließen bleiben erhalten. WhatsApp öffnet nach Klick in einem neuen Tab mit `noopener noreferrer`.
+- Aktives CSS und kritische Regeln synchronisiert, CSS-Kennung `nl3-matrix3-logo1`. Kein zusätzliches JavaScript, Tracking oder API-Aufruf; JS-Dateien und Geschäftslogik unverändert. Lokale Tests und native Abnahmegrenzen in README/Prüfbericht. Keine Bereitstellung ausgeführt.
+
 ## Unveröffentlicht – gezielter Variantenmatrix-Nachtrag
 
 - Deutlichere, einheitliche graue Zell-, Zeilen- und EAN-/Summengrenzen ohne höhere Zeilen; Zebra-Streifen bleiben erhalten.
