@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – EAN display without copy buttons
+
+- Remove EAN copy buttons, icon, clipboard/fallback logic, copy feedback, hidden status output, dedicated CSS and JS translations from PDP and quickview. Preserve shared variation-image handlers and other consumers.
+- Preserve exact per-variation EAN values, leading zeros, selectable text and manual copying. No ordering logic changes or additional API calls. Desktop retains seven columns; the mobile EAN/subtotal row has no empty button space or additional height.
+- Synchronize all four active minified JS bundles and minified/critical CSS. New suffixes: `gallery2-matrix3` (JS), `nl3-matrix4-logo1-gallery3` (CSS). Remove obsolete copy-function tests/mocks from the shared matrix suite and retain/extend plain-text EAN checks.
+- Native baseline check confirms preview set 426 and five loaded assets matching `718ad95`. The removal is tested locally only, including 100 quickview cycles, 200 rapid desktop color switches, 20 gallery swipes and 100 post-change layouts in five languages. README/report document the complete targeted test matrix and external preview/native acceptance limits. No deployment performed.
+
 ## Unreleased – final fixes after gallery2-matrix2 acceptance
 
 - Temporarily hide the closed contact widget below 992 px only when its actual footprint overlaps a matrix or basket item. Keep open contact panels and desktop behavior intact; observe dynamic quickviews without another scroll handler.

@@ -2291,9 +2291,6 @@ initBFCacheBypass();
   // === I18N ===
   var EG_I18N = {
     de: {
-      ean_copy: "EAN kopieren",
-      ean_copied: "EAN kopiert",
-      ean_select: "EAN markieren und kopieren",
       add_start: "Wird hinzugefügt...Bitte warten",
       add_verify: "Prüfe Warenkorb...Bitte warten",
       add_fix: "Ergänze fehlende Mengen...Bitte warten",
@@ -2307,9 +2304,6 @@ initBFCacheBypass();
       info_nothing_addable: "Nichts hinzugefügt – die gewünschte Menge ist bereits im Warenkorb oder aktuell nicht verfügbar."
     },
     en: {
-      ean_copy: "Copy EAN",
-      ean_copied: "EAN copied",
-      ean_select: "Select and copy EAN",
       add_start: "Adding...Please wait",
       add_verify: "Checking basket...Please wait",
       add_fix: "Adding missing quantities...Please wait",
@@ -2323,9 +2317,6 @@ initBFCacheBypass();
       info_nothing_addable: "Nothing added – the requested quantity is already in the basket or currently unavailable."
     },
     fr: {
-      ean_copy: "Copier l’EAN",
-      ean_copied: "EAN copié",
-      ean_select: "Sélectionner et copier l’EAN",
       add_start: "Ajout en cours...Veuillez patienter",
       add_verify: "Vérification du panier...Veuillez patienter",
       add_fix: "Ajout des quantités manquantes...Veuillez patienter",
@@ -2339,9 +2330,6 @@ initBFCacheBypass();
       info_nothing_addable: "Rien n’a été ajouté – la quantité demandée est déjà dans le panier ou indisponible."
     },
     it: {
-      ean_copy: "Copia EAN",
-      ean_copied: "EAN copiato",
-      ean_select: "Seleziona e copia EAN",
       add_start: "Aggiunta in corso...attendere",
       add_verify: "Controllo carrello...attendere",
       add_fix: "Aggiunta quantità mancanti...attendere",
@@ -2355,9 +2343,6 @@ initBFCacheBypass();
       info_nothing_addable: "Niente aggiunto – la quantità richiesta è già nel carrello o non disponibile."
     },
     es: {
-      ean_copy: "Copiar EAN",
-      ean_copied: "EAN copiado",
-      ean_select: "Selecciona y copia el EAN",
       add_start: "Añadiendo...Espere",
       add_verify: "Comprobando carrito...Espere",
       add_fix: "Añadiendo cantidades pendientes...Espere",
@@ -4286,40 +4271,6 @@ initBFCacheBypass();
     return span;
   }
 
-  function copyMatrixEan(matrix, button) {
-    var row = button.closest(".eg-row");
-    var value = row && row.querySelector("[data-eg-ean]");
-    if (!value || button.disabled) return;
-    var text = value.textContent;
-    var status = matrix.querySelector("[data-eg-copy-status]");
-    function feedback(ok) {
-      if (status) status.textContent = t(ok ? "ean_copied" : "ean_select") + ": " + text;
-    }
-    function fallback() {
-      var input = document.createElement("textarea");
-      input.value = text;
-      input.readOnly = true;
-      input.style.cssText = "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0";
-      matrix.appendChild(input);
-      var copied = false;
-      try { input.focus(); input.select(); copied = document.execCommand("copy"); } catch (e) {}
-      input.remove();
-      button.focus({ preventScroll: true });
-      if (!copied) {
-        var range = document.createRange();
-        range.selectNodeContents(value);
-        var selection = window.getSelection();
-        if (selection) { selection.removeAllRanges(); selection.addRange(range); }
-      }
-      feedback(copied);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { feedback(true); }, fallback);
-    } else {
-      fallback();
-    }
-  }
-
   function createRow(matrix, mode, labelA, labelB, colorImgUrl) {
     var row = document.createElement("div");
     row.className = "col-12 eg-row";
@@ -4372,15 +4323,6 @@ initBFCacheBypass();
     eanValue.setAttribute("data-eg-ean", "");
     eanValue.textContent = "–";
     eanCell.appendChild(eanValue);
-    var copy = document.createElement("button");
-    copy.type = "button";
-    copy.className = "eg-copy-ean";
-    copy.setAttribute("data-eg-copy-ean", "");
-    copy.setAttribute("aria-label", t("ean_copy"));
-    copy.title = t("ean_copy");
-    copy.disabled = true;
-    copy.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="7" width="10" height="11" rx="1.5"/><path d="M13 5V2H2v12h3"/></svg>';
-    eanCell.appendChild(copy);
     details.appendChild(eanCell);
     var subCell = cell(formatEuro(0), "sub");
     subCell.setAttribute("data-eg-subtotal", "");
@@ -4574,8 +4516,6 @@ initBFCacheBypass();
             if (eanEl2) {
               var ean = v2.ean == null ? "" : String(v2.ean).trim();
               eanEl2.textContent = ean || "–";
-              var copyButton = row.querySelector("[data-eg-copy-ean]");
-              if (copyButton) copyButton.disabled = !ean;
             }
 
             var maxO = null;
@@ -4632,13 +4572,6 @@ initBFCacheBypass();
     });
 
     matrix.addEventListener("click", function (e) {
-      var copy = e.target && e.target.closest ? e.target.closest("[data-eg-copy-ean]") : null;
-      if (copy && matrix.contains(copy)) {
-        e.preventDefault();
-        e.stopPropagation();
-        copyMatrixEan(matrix, copy);
-        return;
-      }
       var link = e.target && e.target.closest ? e.target.closest("[data-eg-color-preview]") : null;
       if (!link || !matrix.contains(link)) return;
 
