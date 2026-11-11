@@ -4,7 +4,6 @@ namespace GuardiansBasicB2B\Services;
 
 use IO\Services\ItemSearchAutocompleteService;
 use Plenty\Modules\Webshop\Contracts\LocalizationRepositoryContract;
-use Plenty\Modules\Webshop\ItemSearch\Helpers\ResultFieldTemplate;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\Facets;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\SearchItems;
 use Plenty\Modules\Webshop\ItemSearch\Services\ItemSearchService;
@@ -69,8 +68,11 @@ class EnglishTextSearch
 
     public function getAutocomplete(array $options, array $types): array
     {
-        $items = $this->applyText($this->storefrontItems($options), $options);
-        $items->withResultFields(ResultFieldTemplate::load(ResultFieldTemplate::TEMPLATE_AUTOCOMPLETE_ITEM_LIST));
+        // Select IO's autocomplete image pipeline before the preset is assembled.
+        // Replacing list result fields afterwards leaves incompatible image mutators active.
+        $itemOptions = $options;
+        $itemOptions['autocomplete'] = true;
+        $items = $this->applyText($this->storefrontItems($itemOptions), $options)->withDefaultImage();
         if (in_array('category', $types)) {
             $items->withCategories();
         }

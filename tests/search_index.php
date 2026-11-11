@@ -4,13 +4,14 @@
 // are recording doubles: data below verifies the wiring, not the platform's index.
 namespace SearchTest {
     class Factory {
-        public $text, $completion, $correction, $prices, $fields, $categories=false;
+        public $text, $completion, $correction, $prices, $fields, $categories=false, $defaultImage=false;
         public function __construct(public string $preset, public array $options) {}
         public function hasSearchString($q, $lang, $operator) { $this->text = [$q,$lang,$operator]; return $this; }
         public function withSuggestions($q, $lang) { $this->completion = [$q,$lang]; return $this; }
         public function withDidYouMeanSuggestions($q) { $this->correction = $q; return $this; }
         public function withResultFields($fields) { $this->fields=$fields; return $this; }
         public function withCategories() { $this->categories=true; return $this; }
+        public function withDefaultImage() { $this->defaultImage=true; return $this; }
         public function hasPriceInRange($min, $max) { $this->prices = [$min,$max]; return $this; }
         public function setPage($page, $size) { $this->options['page']=$page; $this->options['itemsPerPage']=$size; return $this; }
     }
@@ -52,10 +53,6 @@ namespace IO\Helper {
     interface ContextInterface {}
     class TemplateContainer { public $context=\Ceres\Contexts\ItemSearchContext::class; public function setContext($class){$this->context=$class;} }
 }
-namespace IO\Extensions\Filters { class ItemImagesFilter {
-    public function getFirstItemImageUrl($images,$size){return '';}
-    public function getFirstItemImageAlt($images,$size){return '';}
-} }
 namespace IO\Services {
     class TemplateConfigService { public function getInteger($key){return 0;} }
     class CategoryService {}
@@ -89,7 +86,10 @@ namespace Plenty\Modules\Webshop\ItemSearch\Helpers {
     class ResultFieldTemplate {
         const TEMPLATE_LIST_ITEM=1,TEMPLATE_SINGLE_ITEM=2,TEMPLATE_BASKET_ITEM=3,TEMPLATE_AUTOCOMPLETE_ITEM_LIST=4,TEMPLATE_CATEGORY_TREE=5,TEMPLATE_VARIATION_ATTRIBUTE_MAP=6;
         public function setTemplates($templates) {}
-        public static function load($template) { return ['fixtureTemplate'=>$template]; }
+        public static function load($template) {
+            if ($template !== self::TEMPLATE_AUTOCOMPLETE_ITEM_LIST) throw new \RuntimeException('Unexpected result field template');
+            return json_decode(file_get_contents(dirname(__DIR__).'/resources/views/ResultFields/AutoCompleteListItem.fields.json'),true,512,JSON_THROW_ON_ERROR);
+        }
     }
 }
 namespace Plenty\Modules\ContentCache\CacheBlocks\Contracts { class CacheTagRepositoryContract {
@@ -97,7 +97,14 @@ namespace Plenty\Modules\ContentCache\CacheBlocks\Contracts { class CacheTagRepo
 } }
 namespace Plenty\Modules\Webshop\ItemSearch\SearchPresets {
     class Preset { public static function getSearchFactory($o){return new \SearchTest\Factory(static::class,$o);} }
-    class SearchItems extends Preset {}
+    class SearchItems extends Preset {
+        public static function getSearchFactory($o) {
+            $factory=parent::getSearchFactory($o);
+            // Record IO's autocomplete preset contract, without simulating its native image mutators.
+            if (($o['autocomplete'] ?? false) === true) $factory->withResultFields(\Plenty\Modules\Webshop\ItemSearch\Helpers\ResultFieldTemplate::load(4));
+            return $factory;
+        }
+    }
     class SearchSuggestions extends Preset {}
     class Facets extends Preset {}
     class CategoryItems extends Preset {}
@@ -134,6 +141,8 @@ namespace {
     require $argv[1].'/src/Helper/ExternalSearch.php';
     require $argv[1].'/src/Contexts/ItemListContext.php';
     require $argv[1].'/src/Contexts/ItemSearchContext.php';
+    require $argv[2].'/src/Extensions/AbstractFilter.php';
+    require $argv[2].'/src/Extensions/Filters/ItemImagesFilter.php';
     require $argv[2].'/src/Services/ItemSearchAutocompleteService.php';
     require $argv[2].'/src/Api/Resources/ItemSearchAutocompleteResource.php';
     $src=dirname(__DIR__).'/src/';
@@ -159,7 +168,8 @@ namespace {
             $opts=['query'=>$q,'facets'=>'376,727','page'=>2,'itemsPerPage'=>24,'sorting'=>'sorting.price.avg_asc','priceMin'=>3.50,'priceMax'=>9];
             $req->data=$opts;
             $none=$q==='zzqnohits426xyz';
-            $doc=['data'=>['item'=>['id'=>2351296],'variation'=>['id'=>9],'texts'=>['name1'=>$lang.' shirt'],'defaultCategories'=>[],'images'=>[],'prices'=>['price'=>7.31]]];
+            $image=['urlPreview'=>'https://images.example/2351296/preview.jpg','url'=>'https://images.example/2351296/original.jpg','position'=>1,'names'=>['alternate'=>$lang.' preview','name'=>'shirt']];
+            $doc=['data'=>['item'=>['id'=>2351296],'variation'=>['id'=>9],'texts'=>['name1'=>$lang.' shirt'],'defaultCategories'=>[],'images'=>['all'=>[$image],'variation'=>[]],'prices'=>['price'=>7.31]]];
             $docs=$none?[]:[$doc];
             $reply=['itemList'=>['documents'=>$docs,'total'=>$none?0:25,'suggestions'=>['didYouMean'=>[]]],'facets'=>['brands'=>3,'category'=>2]];
             $engine->calls=[]; $engine->next=[$reply,$reply];
@@ -188,7 +198,9 @@ namespace {
             check(count($engine->calls)===1 && $locale->lang===$lang,'autocomplete batch and locale');
             $call=$engine->calls[0];
             if ($english) {
-                check($call['items']->text===[$q,'en','or'] && $call['items']->categories && $call['items']->fields===['fixtureTemplate'=>4],'product autocomplete');
+                check(($call['items']->options['autocomplete'] ?? false) === true,'autocomplete preset selected before factory construction');
+                check($call['items']->defaultImage,'existing native placeholder extension retained');
+                check($call['items']->text===[$q,'en','or'] && $call['items']->categories && $call['items']->fields===\Plenty\Modules\Webshop\ItemSearch\Helpers\ResultFieldTemplate::load(4),'product autocomplete');
                 check($call['suggestions']->preset===Presets\SearchItems::class && $call['suggestions']->completion===[$q,'en'] && $call['suggestions']->options['itemsPerPage']===0,'protected prefix aggregation');
             } else {
                 check($call['suggestions']->preset===Presets\SearchSuggestions::class && $call['items']->options['query']===$q,'native autocomplete');
@@ -198,9 +210,39 @@ namespace {
             } else {
                 check((string)$ac['suggestion'][0]['label']===$q,'zeroes or numeric label preserved');
                 check($ac['item'][0]['url']===($lang==='de'?'':'/'.$lang).'/product/a-2351296/' && $ac['item'][0]['label']===$lang.' shirt','real IO localized transformation');
+                check($ac['item'][0]['image']===$image['urlPreview'] && $ac['item'][0]['imageAlt']===$image['names']['alternate'],'real IO preview image and alt retained');
             }
         }
     }
+    // The real IO formatter selects the lowest-position variation image, falls back
+    // to item images, and forwards the native placeholder for a genuinely empty item.
+    foreach ($langs as $lang) {
+        $locale->lang=$lang;
+        $preview=fn($id,$position)=>['urlPreview'=>"https://images.example/$id/preview.jpg",'url'=>"https://images.example/$id/original.jpg",'position'=>$position,'names'=>['alternate'=>"$lang image $id",'name'=>"image $id"]];
+        $placeholder=$preview('placeholder',0);
+        $images=[
+            ['all'=>[$preview('item-later',3),$preview('item-first',1)],'variation'=>[]],
+            ['all'=>[$preview('wrong-item',0)],'variation'=>[$preview('variant-later',9),$preview('variant-first',2)]],
+            ['all'=>[$placeholder],'variation'=>[]]
+        ];
+        $expected=['item-first','variant-first','placeholder'];
+        $documents=[];
+        foreach ($images as $n=>$imageSet) {
+            $record=$doc; $record['data']['item']['id']=100+$n; $record['data']['variation']['id']=200+$n;
+            $record['data']['images']=$imageSet; $record['data']['texts']['name1']="$lang product $n";
+            $documents[]=$record;
+        }
+        $req->data=['query'=>'nike','types'=>['item']];
+        $engine->calls=[];$engine->next=[['items'=>['documents'=>$documents,'categories.all'=>[]],'suggestions'=>['searchSuggestions'=>[]]]];
+        $formatted=$suggestRoute->index()->body;
+        check(count($engine->calls)===1 && array_keys($engine->calls[0])===['items'],'no additional image search');
+        foreach ($formatted['item'] as $n=>$item) {
+            check($item['image']===$preview($expected[$n],0)['urlPreview'],'preview selection, not original');
+            check($item['imageAlt']==="$lang image {$expected[$n]}",'selected image alt');
+            check($item['url']===($lang==='de'?'':'/'.$lang).'/product/a-'.(100+$n).'/' && $item['label']==="$lang product $n",'image remains associated with localized item');
+        }
+    }
+    $locale->lang='es';
     $opts=['query'=>'shoess','facets'=>'376,727','priceMin'=>4,'priceMax'=>9,'searchOperator'=>'and'];
     $miss=['itemList'=>['total'=>0,'documents'=>[],'suggestions'=>['didYouMean'=>[['text'=>'shoess','suggestions'=>[['text'=>'shoes','score'=>1]]]]]],'facets'=>[]];
     $engine->calls=[]; $engine->next=[$miss,$reply];

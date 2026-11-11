@@ -1,5 +1,11 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – preview images in IT/ES autocomplete
+
+- The English-index adapter selects autocomplete mode before constructing the native `SearchItems` factory. It no longer replaces the result fields of a regular item search afterwards; the matching IO image pipeline continues to use `urlPreview`.
+- The existing default-image extension is retained. No additional image queries or changes to DE/EN/FR, shared image templates or frontend bundles.
+- Regressions now use the actual IO image filter and cover preview/product association, variation priority and placeholders. Fixed locally; native acceptance in plugin set 426 remains pending. See README.
+
 ## Unreleased – IT/ES autocomplete route and gallery changes
 
 - Italian and Spanish autocomplete call the existing English-index adapter through the unique GET path `guardiansbasicb2b/item/search/autocomplete`. The IO route is no longer overridden; DE/EN/FR keep using IO. No global service binding, extra search request or storefront language change.

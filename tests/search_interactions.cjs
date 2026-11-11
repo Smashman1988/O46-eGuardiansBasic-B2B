@@ -70,8 +70,14 @@ async function scenario(browser, asset, code, l, width, full) {
     const recorded=q=>captured?.find(v=>v.l===l&&v.q===q);
     await context.route('**/*',async route=>{
         const u=new URL(route.request().url());
+        if(u.origin==='https://images.example') {
+            assert.equal(route.request().resourceType(),'image');
+            assert.match(u.pathname,/^\/2351296\/preview\.jpg$/);
+            return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="green"/></svg>'});
+        }
         assert.equal(u.origin,origin);
         if(u.pathname==='/jquery.js'||u.pathname==='/handlers.js')return route.fulfill({contentType:'text/javascript',body:u.pathname==='/jquery.js'?jquery:code});
+        if(u.pathname.startsWith('/preview/'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="green"/></svg>'});
         if(u.pathname.includes('/item/search/autocomplete/')) {
             assert.equal(u.pathname, autocomplete, 'one language-specific endpoint');
             const q=u.searchParams.get('query');api.push(['ac',q]);
@@ -154,6 +160,16 @@ async function scenario(browser, asset, code, l, width, full) {
                 }
                 seen.push(how);
             }
+            // Image payloads render without a second API request or changing their product link.
+            for (const query of ['nike','adidas','shoes',sku]) {
+                searchResponse={item:[0,1,2].map(i=>({label:l+' '+query+' '+i,url:product+'?v='+i,image:'/preview/'+(i===2?'placeholder':query+'-'+i)+'.svg'})),suggestion:[{label:query}]};
+                await begin();await suggestions(query);
+                await page.waitForFunction(()=>[...document.querySelectorAll('.list-autocomplete img')].every(i=>i.complete&&i.naturalWidth>0));
+                const cards=await productLinks.evaluateAll(as=>as.map(a=>({label:a.textContent,url:a.getAttribute('href'),image:a.querySelector('img').getAttribute('src')})));
+                assert.deepEqual(cards,searchResponse.item,'each preview stays with its localized product');
+                await nav(()=>pick(productLinks.nth(1)),product,{v:'1'});
+            }
+            searchResponse=undefined;seen.push('preview images and native placeholder: four queries');
             // A second form (e.g. on a 404) can have a different configured action.
             // Only its own input may react; no /search/ or language prefix may be inferred.
             const secondRoute=root+'/configured-route/';

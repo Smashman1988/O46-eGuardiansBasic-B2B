@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – Vorschaubilder in IT/ES-Suchvorschlägen
+
+- Der EN-Suchadapter wählt den Autocomplete-Modus vor dem Aufbau der nativen `SearchItems`-Factory. Das nachträgliche Ersetzen der ResultFields einer normalen Artikelsuche entfällt; die passende IO-Bildverarbeitung liefert weiterhin `urlPreview`.
+- Die vorhandene Defaultbild-Erweiterung bleibt erhalten. Keine zusätzlichen Bildabfragen, keine Änderungen an DE/EN/FR, gemeinsamen Bildvorlagen oder Frontend-Bundles.
+- Regressionen verwenden nun den echten IO-Bildfilter und prüfen Vorschaubild-/Produktzuordnung, Variantenpriorität und Platzhalter. Lokal korrigiert; native Abnahme in Pluginset 426 steht aus. Details in README.
+
 ## Unveröffentlicht – IT/ES-Vorschlagsroute und Galeriewechsel
 
 - IT/ES rufen den vorhandenen EN-Suchadapter über den eindeutigen GET-Pfad `guardiansbasicb2b/item/search/autocomplete` auf. Die gleichnamige IO-Route wird nicht mehr überschrieben; DE/EN/FR bleiben auf IO. Keine globale Service-Bindung, zusätzliche Suchanfrage oder Änderung der Shopsprache.
