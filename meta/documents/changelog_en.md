@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – mobile image tap in the variation matrix
+
+- On mobile, tapping a matrix image or magnifier opens the existing MagicZoomPlus expanded view for that variation. Quantities and the active variation are retained. Desktop clicks continue to update only the gallery on the left.
+- Quickview initializes one native instance on demand from the same cached image data and disposes it on dismissal/removal. No additional visible gallery, service requests or synthetic image-link clicks.
+- Expansion waits for the selected large image to become ready; rapid taps are coalesced until then. This prevents stale images and the vendor lifecycle race found in the first local implementation. Sources/minified files and the `gallery2-matrix2` JS suffix are synchronized.
+- Native acceptance of previously deployed commit `245e2a8` in plugin set 426 and local tests of the new change are documented separately in README/the report. The new change has not been deployed.
+
 ## Unreleased – variation groups, header logo and newsletter channel
 
 - Mobile variations, including the EAN/subtotal row, receive a stronger full-width lower boundary in `#969696` without additional height. Active shading, side bar, desktop columns and narrow cards remain; no new selection symbols.

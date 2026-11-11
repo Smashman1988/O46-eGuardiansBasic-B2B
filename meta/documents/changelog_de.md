@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – mobiler Bild-Tap in der Variantenmatrix
+
+- Mobil öffnet ein Tipp auf Matrixbild oder Lupe die vorhandene MagicZoomPlus-Großansicht mit den Bildern der angetippten Variante. Mengen und aktive Variante bleiben erhalten. Desktop-Klicks wechseln weiterhin nur die Galerie links.
+- Quickview initialisiert bei Bedarf eine eigene native Instanz aus denselben bereits geladenen Bilddaten und beendet sie beim Schließen/Entfernen. Keine neue sichtbare Galerie, zusätzlichen Serviceabfragen oder künstlichen Bildlink-Klicks.
+- Bereitschaft der großen Aufnahme wird abgewartet; schnelle Tipps werden bis dahin zusammengefasst. Das verhindert veraltete Bilder und die im ersten lokalen Entwurf gefundene Vendor-Race-Bedingung. Quellen/Min-Dateien und JS-Kennung `gallery2-matrix2` synchronisiert.
+- Native Abnahme des zuvor bereitgestellten Stands `245e2a8` in Pluginset 426 und lokale Tests der neuen Änderung sind getrennt in README/Prüfbericht dokumentiert. Neue Änderung nicht bereitgestellt.
+
 ## Unveröffentlicht – Variantengruppen, Header-Logo und Newsletter-Kanal
 
 - Mobile Varianten einschließlich EAN-/Summenzeile erhalten eine durchgehende stärkere Unterkante in `#969696`, ohne zusätzliche Höhe. Aktive Zeile, Seitenbalken, Desktop-Tabelle und schmale Karten bleiben erhalten; keine neuen Auswahlsymbole.

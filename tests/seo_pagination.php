@@ -839,7 +839,7 @@ namespace {
                 preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
                 check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
                 $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
-                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery1-matrix2';
+                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery2-matrix2';
                 check($url === $expected,'Wrong shipped asset or cache version');
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
                 check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');

@@ -3432,8 +3432,9 @@ $(document).ready(function () {
     });
   }
 
-  function getProductTitleForGallery() {
-    var h1 = document.querySelector("h1");
+  function getProductTitleForGallery(matrix) {
+    var scope = matrix && matrix.closest("article");
+    var h1 = (scope || document).querySelector("h1");
     var t2 = (h1 && h1.textContent) ? h1.textContent : document.title;
     return String(t2 || "").trim();
   }
@@ -3479,7 +3480,74 @@ $(document).ready(function () {
     }
   }
 
-  function updateMagicZoomWithGallery(matrix, zoomId, images) {
+  // One readiness callback for the existing vendor instance, never one per opening.
+  var matrixZoomCallbacksReady = false;
+  function initMatrixZoomCallbacks() {
+    if (matrixZoomCallbacksReady) return true;
+    if (!window.MagicZoom || typeof MagicZoom.registerCallback !== "function") return false;
+    MagicZoom.registerCallback("onZoomReady", function (id) {
+      var anchor = document.getElementById(id);
+      var pending = anchor && anchor._egMatrixExpand;
+      if (!pending) return;
+      if (!pending.matrix.isConnected || !anchor.isConnected) return;
+      var modal = pending.matrix.closest(".modal-cross");
+      if (modal && !modal.classList.contains("show")) return;
+      // v5.3.5 cannot safely stop an instance during its asynchronous image setup.
+      // Coalesce taps until readiness, then build only the most recent gallery.
+      var next = anchor._egMatrixNext;
+      anchor._egMatrixNext = null;
+      if (next) {
+        updateMagicZoomWithGallery(next.matrix, id, next.images, next);
+        return;
+      }
+      anchor._egMatrixExpand = null;
+      if (toInt(pending.matrix.getAttribute("data-eg-preview-token")) !== pending.token) return;
+      anchor._egMatrixExpanded = true;
+      MagicZoom.expand(anchor);
+    });
+    MagicZoom.registerCallback("onExpandClose", function (id) {
+      var anchor = document.getElementById(id);
+      if (anchor) anchor._egMatrixExpanded = false;
+    });
+    matrixZoomCallbacksReady = true;
+    return true;
+  }
+
+  function releaseMatrixZoom(root) {
+    if (!root || root.nodeType !== 1) return;
+    var matrices = root.matches("[data-eg-size-matrix]") ? [root] : root.querySelectorAll("[data-eg-size-matrix]");
+    for (var i = 0; i < matrices.length; i++) {
+      var anchor = matrices[i]._egMatrixZoomAnchor;
+      if (!anchor) continue;
+      anchor._egMatrixExpand = null;
+      anchor._egMatrixNext = null;
+      anchor._egMatrixExpanded = false;
+      if (window.MagicZoom) MagicZoom.stop(anchor);
+      matrices[i]._egMatrixZoomAnchor = null;
+    }
+  }
+
+  function ensureQuickviewZoom(matrix) {
+    var modal = matrix.closest(".modal-cross.show");
+    var article = matrix.closest("article");
+    if (!modal || !article) return;
+    if (!article.querySelector("#ItemImgZoom2")) {
+      // Quickview omits the PDP gallery markup. Keep one native gallery source
+      // outside the matrix layout; the vendor renders its dialog on document.body.
+      var host = document.createElement("div");
+      host.className = "sr-only";
+      host.setAttribute("aria-hidden", "true");
+      host.innerHTML = '<a id="ItemImgZoom2" class="MagicZoom" tabindex="-1" data-options="zoomMode: off; transitionEffect: false; lazyZoom: true; cssClass: white-bg; hint: off;"><img width="44" height="36"></a><div class="single-prev-images"></div>';
+      article.appendChild(host);
+    }
+    var jq = window.jQuery || window.$;
+    if (jq && !modal._egMatrixZoomBound) {
+      modal._egMatrixZoomBound = true;
+      jq(modal).on("hide.bs.modal.egMatrixZoom", function () { releaseMatrixZoom(modal); });
+    }
+  }
+
+  function updateMagicZoomWithGallery(matrix, zoomId, images, expandRequest) {
     if (!zoomId || !images || !images.length) return;
     if (!document.getElementById(zoomId)) return;
     if (!window.MagicZoom) return;
@@ -3495,14 +3563,14 @@ $(document).ready(function () {
 
     if (!firstFull || !firstMiddle) return;
 
-    var ctx = getZoomContextFromMatrix(matrix);
-    var prevImgSel = ctx.inModal ? ".modal-cross .single-prev-images" : ".single-prev-images";
-    var prev = document.querySelector(prevImgSel);
+    var scope = matrix.closest("article") || document;
+    var prev = scope.querySelector(".single-prev-images");
 
     // Dispose selector handlers before replacing their elements.
+    a._egMatrixExpand = null;
     MagicZoom.stop(zoomId);
 
-    var ttl = getProductTitleForGallery();
+    var ttl = getProductTitleForGallery(matrix);
     var ttlEsc = escapeHtml(ttl);
 
     if (prev) {
@@ -3528,12 +3596,28 @@ $(document).ready(function () {
       }
 
       if (html) prev.innerHTML = html;
+      if (prev.closest('[aria-hidden="true"]')) {
+        prev.querySelectorAll("a").forEach(function (selector) { selector.tabIndex = -1; });
+      }
     }
 
     setMainImageNow(zoomId, firstFull, firstMiddle, ttl);
 
     // Rebuild this gallery from the current anchor and selectors without a click.
-    MagicZoom.start(zoomId);
+    a._egMatrixExpand = expandRequest || null;
+    matrix._egMatrixZoomAnchor = a;
+    var options = a.getAttribute("data-options");
+    // v5.3.5's lazy readiness only covers the small image. For an explicit
+    // expansion request load the selected large image, then use onZoomReady.
+    if (expandRequest) a.setAttribute("data-options", (options || "").replace(/lazyZoom\s*:[^;]*/gi, "") + "; lazyZoom: false;");
+    try {
+      MagicZoom.start(zoomId);
+    } finally {
+      if (expandRequest) {
+        if (options == null) a.removeAttribute("data-options");
+        else a.setAttribute("data-options", options);
+      }
+    }
   }
 
   function setActiveRow(matrix, row) {
@@ -3548,11 +3632,19 @@ $(document).ready(function () {
     row.classList.add("eg-active");
   }
 
-  function previewVariationFromRow(matrix, row, force) {
+  function previewVariationFromRow(matrix, row, force, expand) {
     if (!matrix || !row) return;
 
     var vid = row.getAttribute("data-eg-variation-id");
     if (!vid) return;
+
+    // The row already obtained these images from the existing variation batch.
+    // A tap must not trigger a new detail/image service request or show an old image.
+    var cached = expand && vCache[toInt(vid)];
+    if (expand && (!cached || !cached.images || !cached.images.length || !initMatrixZoomCallbacks())) return;
+    var ctx = getZoomContextFromMatrix(matrix);
+    var anchor = document.getElementById(ctx.zoomId);
+    if (expand && anchor && anchor._egMatrixExpanded) return;
 
     if (!force) {
       var last = matrix.getAttribute("data-eg-preview-vid");
@@ -3564,7 +3656,14 @@ $(document).ready(function () {
     var token = (toInt(matrix.getAttribute("data-eg-preview-token")) || 0) + 1;
     matrix.setAttribute("data-eg-preview-token", String(token));
 
-    var ctx = getZoomContextFromMatrix(matrix);
+    if (expand) {
+      if (ctx.inModal) ensureQuickviewZoom(matrix);
+      anchor = document.getElementById(ctx.zoomId);
+      var request = { matrix: matrix, token: token, images: cached.images };
+      if (anchor && anchor._egMatrixExpand) anchor._egMatrixNext = request;
+      else updateMagicZoomWithGallery(matrix, ctx.zoomId, cached.images, request);
+      return;
+    }
 
     fetchVariationDetails(vid, function (v) {
       var cur = toInt(matrix.getAttribute("data-eg-preview-token"));
@@ -3989,8 +4088,10 @@ $(document).ready(function () {
       var row = link.closest(".eg-row");
       if (!row) return;
 
-      setActiveRow(matrix, row);
-      previewVariationFromRow(matrix, row, true);
+      var touch = window.matchMedia && window.matchMedia("(max-width: 991px)").matches &&
+        (e.pointerType === "touch" || window.matchMedia("(hover: none) and (pointer: coarse)").matches);
+      if (!touch) setActiveRow(matrix, row);
+      previewVariationFromRow(matrix, row, true, touch);
     }, true);
 
     matrix.addEventListener("pointerdown", function (e) {
@@ -4361,7 +4462,10 @@ $(document).ready(function () {
   var mo = new MutationObserver(function (mutations) {
     for (var i = 0; i < mutations.length; i++) {
       var m = mutations[i];
-      if (m.removedNodes) m.removedNodes.forEach(releaseMatrixHeadingLabels);
+      if (m.removedNodes) m.removedNodes.forEach(function (node) {
+        releaseMatrixHeadingLabels(node);
+        if (!node.isConnected) releaseMatrixZoom(node);
+      });
 
       if (!m.addedNodes || !m.addedNodes.length) continue;
 
