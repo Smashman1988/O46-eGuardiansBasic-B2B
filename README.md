@@ -1,7 +1,7 @@
 # Outlet46 – eGuardiansBasic B2B
 
 Technische Baseline **1.0.7**, lokal vorbereitet am **2026-11-03** auf **develop**.
-Die PlentyONE-Abnahme steht aus. Dies ist noch kein freigegebener Shop-Stand.
+Die aktuelle Live-Abnahme in Test-Pluginset 426 ist unten dokumentiert. Dies ist noch kein freigegebener Shop-Stand.
 
 Dieses Repository enthält die eigenen Inhalte und Funktionen des B2B-Shops.
 Der technische Plugin-Name und PHP-/Twig-Namespace lauten `GuardiansBasicB2B`;
@@ -9,6 +9,38 @@ der Marketplace-Name ist in Deutsch und Englisch `eGuardiansBasic B2B`.
 Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repository
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
+
+## Lokale Reparatur von Vorschlägen und Farbwechsel (develop, 2026-11-11)
+
+**Lokal vorbereitet; keine Produktionsfreigabe und keine Live-Abnahme des neuen PHP-Pfads.** Mit dem neuen Preview-Link wurden Stage `preview`, Pluginset 426 und die unveränderten Min-Bundles von `c23543f` verifiziert. Beide Ausgangsfehler sind erneut reproduziert. Der bestehende Audit unten bleibt als Baseline erhalten.
+
+- **IT/ES-Vorschläge:** Theme und IO registrierten denselben GET-Pfad. Die live aufgerufene IO-URL lieferte für fünf der sechs passenden Prüfbegriffe leere Arrays, während der vorhandene Adapter lokal EN-Filter und EN-Vervollständigung verwendet. Die Theme-Resource erhält jetzt den eindeutigen Pfad `/rest/guardiansbasicb2b/item/search/autocomplete/`; ausschließlich IT/ES wählen ihn im vorhandenen Handler. DE/EN/FR bleiben auf IO. Die tatsächlich gewinnende native Controllerbindung des alten Pfads ist ohne PlentyONE-Servertrace weiterhin nicht bewiesen. Kein PHP-Suchmodell, Formatter, Kundenkontext oder Service-Binding geändert.
+- **Tastaturauswahl:** In IT/ES öffnet Enter auf einem ausgewählten Produkt dessen vorhandenen lokalisierten Link. Der lokalisierte Produktname wird nicht erneut im englischen Textindex gesucht. Eine neue Eingabe setzt die alte Auswahl zurück. Normales Enter, Suchbutton und Textvorschläge behalten das konfigurierte Formularziel.
+- **Galerie:** Der 40-ms-Klick auf ein zuvor erzeugtes Thumbnail löste nach schnellen Wechseln eine echte JPG-Dokumentnavigation aus. Die alte Prüfung verglich zudem das bereits auf das neue Bild gesetzte `href` mit demselben Wert und führte dadurch unnötige Neustarts aus. Die betroffene MagicZoom-Instanz wird nun vor dem DOM-Austausch gestoppt und danach unmittelbar mit den aktuellen Bildern gestartet. Keine synthetischen Linkklicks, verzögerten Neustarts oder globalen Refresh-Timer; entfernte Matrizen und überholte Antworten ändern keine Galerie mehr. Normale Bildlinks bleiben erhalten.
+- **CLS:** Nur Diagnose am unveränderten Preview-Stand: 200 Messungen für fünf Seitentypen, Desktop/Mobil und frischen Cache/Reload; 20/20 Chrome-Traces bestätigen die erfassten CLS-Werte. Desktop-Median Marken-A–Z **0,0189 frisch / 0,0017 warm**, Produktdetail **0,2211 frisch / 0 warm**. Beteiligt sind Preview-Overlay, noch nicht reservierte Bildgeometrie und dynamischer Tabellenaufbau zusammen mit nachgeladenem CSS. Acht getrennte Erstbesuchsproben mit Cookie-/B2B-Dialog bestätigen den Produktdetail-Befund. CSS-Ladereihenfolge und bisherige kritische Layoutregeln bleiben unverändert. Details und begrenzte Folgevorschläge stehen im [Prüfbericht](.cache/fixes-20261111/Pruefbericht.html).
+
+Die lokale Suchprüfung besteht in **80/80** Kombinationen aus vier Quellen/vier Min-Dateien, fünf Sprachen und zwei Breiten; PHP-/IO-Verträge **638 Prüfungen**, Bootstrap **10 Prüfungen**. Galerie mit lokal ersetztem Artikel-Bundle und echten Preview-Daten: **20/20 Szenarien, insgesamt 1.000 schnelle Wechsel**, mit unveränderten Preis-/Bestands-/Größendaten; abschließende Zoom-Kontrollen einschließlich Schließen und Browserhistorie **10/10 PASS**. Zusätzlich **400 lokale Wechsel** einschließlich verspäteter Antworten und entfernter Matrizen. Quickview mit lokalem Kategorie-Bundle: **200 Öffnungen** sowie **500 schnelle Farbwechsel in 10/10 Szenarien**, je ein globaler Dropdown-Handler, Größenwahl, Nachladen und Browserhistorie bestanden. Die ausgelieferte Quickview enthält nur die Variantentabelle, keine Galerie; eine nicht vorhandene Quickview-Zoomfunktion wird nicht als bestanden gezählt.
+
+Twig 2.16.1 und 3.30.0: je **548/548 SEO-Fälle**, **171/171 Templates**, **38/38 Vergleichsfälle**, **60/60 Layoutfälle** und **36/36 Attribut-Rendervergleiche**. Kategorie-Min-Bundle: **107 JavaScript-Fälle und 11 Chrome-Fälle**. PHP-Lint/JS-Syntax: **21/21 Dateien**. Alle vier Min-Dateien reproduzierbar aus den geänderten Funktionsbereichen erzeugt; Bytes außerhalb dieser Bereiche erhalten. Vorhandene Twig-/PHP-Deprecations und korrigierte Teststeuerungsabbrüche sind im Prüfbericht eingeordnet. Keine Behauptung einer vollständig ausgeführten Gesamtsuite.
+
+Geändert: Route, `initLiveSearch` und Galerie-/Variantenfunktionen in `cat/item/main/vue.js`, die vier `-020726.min.js`, Cache-Kennungen in `PageDesign.twig`, gezielte Regressionen sowie README/Changelogs. Reproduzierbarer begrenzter Bundle-Bau: `.cache/fixes-20261111/build.cjs`; der historische vollständige JS-Build ist weiterhin nicht rekonstruierbar.
+
+**Offene native Abnahme:** Nach einer separat veranlassten Bereitstellung in 426 den neuen GET-Pfad mit allen sieben Begriffen in IT/ES prüfen, EN-Treffer gegen lokalisierte Links/Kundenkontexte vergleichen und die Galerie ohne Browserersetzung wiederholen. Angemeldete Kundenpreise, echte Warenkorbtransaktionen und Produktions-Performance sind nicht abgenommen. Kein Commit, Push, Merge, Deployment, Plugin-Sync oder Cache-Purge; B2C unverändert.
+
+## Live-Abnahme nach Bootstrap-Hotfix (develop c23543f, 2026-11-10)
+
+**Produktionsbereit: NEIN.** Reine Live-Abnahme des bereitgestellten Test-Pluginsets 426 mit Preview-Nachweis und Hashvergleich der geladenen B2B-CSS-/JS-Dateien gegen `develop`. Der Bootstrap-Hotfix wirkt; B2B-Templates werden wieder ausgeliefert. Kein Shop-HTTP-500 in den geprüften Antworten.
+
+- **Navigation/SEO:** 651 Headerziele in fünf Sprachen auch im Browser geprüft; 2.709 zusätzliche Sortier-, Filter-, Seiten- und Produktantworten mit HTTP 200. 117 gezielte Fälle bestätigen Server-/DOM-Metadaten einschließlich Marken-Parameterseiten und Listenenden. Leere Basiskategorien bleiben indexierbar.
+- **Normale IT/ES-Suche funktioniert:** Trefferlisten und Facetten verwenden den EN-Index; Enter, Lupe, Filter, Seitennavigation und lokalisierte Produktlinks bestanden. **Livesuche FAIL:** Für `adidas`, `nike`, `shoes`, `9885396` und `0002` bleibt die Vorschlags-API leer. Die doppelte IO-/Theme-Route ist verdächtig, ohne native Routenauflösung aber nicht als interne Ursache bewiesen. Pfeilauswahl eines lokalisierten Produktnamens aus der ID-Suche führt außerdem zu einer erfolglosen Textsuche im EN-Index.
+- **Quickview/Karten:** 200 Öffnungen; bei 1/5/10/20 Öffnungen jeweils ein globaler Handler und eine Ausführung pro Außenklick. 80 Größen-Kartenvergleiche und 30 Vergleiche ohne Größen stimmen mit der nativen Attribut-API überein. Interne Serviceanzahlen und Batching-Beschleunigung bleiben **NOT_TESTED**.
+- **Weiterer Variantenfehler:** Zwei direkt aufeinanderfolgende Farbwechsel können zur JPG-Datei navigieren. Nachgewiesener Auslöser ist der synthetische Galerie-Klick in `resources/js/item.js:3817`. Einzelklicks und die gezielten Wiederholungen mit 100/500 ms zusätzlichem Abstand bestanden. Der betreffende Code ist gegenüber dem Stand vor den letzten drei Änderungen unverändert.
+
+- **Layout/Restbefunde:** 340 Messungen mit aktivem CSS und ohne defekte sichtbare Bilder. Marken-Desktop frisch: CLS-Median 0,0164. Produktdetails frisch: Desktop-Median 0,2203 einschließlich Preview-Overlay; kein isolierter Produktionswert. Filmstreifen zeigen noch Übergänge beim Erstzeichnen. Zeitweise `Failed to fetch`-Exceptions blieben in der gezielten Gegenprobe ohne Reproduktion; kein pauschales JavaScript-Fehlerfrei-PASS. Italienische Weiß-/Schwarz-Bezeichnungen sind bereits in der nativen Attribut-API vertauscht, nicht erst durch das Batching.
+
+Die vollständige CLS-Messreihe, Screenshots, konkrete Korrekturvorschläge, bestehende Preis-/Metadatenbefunde und offene Abnahmepunkte stehen im [Live-Bericht](.cache/acceptance-c23543f/Abnahme.html); [alle Kategorien](.cache/acceptance-c23543f/URL-Matrix.html) sind einzeln dokumentiert. Langsame Preview-Antworten ohne ShopBooster-Beschleunigung sind laut Nutzerrückmeldung kein Produktions-Performancefehler. Produktions-Ladezeiten, explizite Robots-Sperren und angemeldete Kundenkontexte sind nicht abgenommen. Ältere Abschnitte darunter bleiben historische Nachweise.
+
+Nur Dokumentation geändert. Kein Commit, Push, Deployment, Plugin-Sync oder Cache-Purge; Shopcode und B2C unverändert. Startseiten, Warenkorb und Checkout bleiben außerhalb der Abnahme.
 
 ## Markenlayout, Kartenattribute und Suchsprache (develop, 2026-11-10)
 

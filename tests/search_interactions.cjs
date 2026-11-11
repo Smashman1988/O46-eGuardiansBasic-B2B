@@ -63,6 +63,8 @@ async function scenario(browser, asset, code, l, width, full) {
     const page = await context.newPage(), errors=[], api=[], seen=[];
     page.setDefaultTimeout(5000);page.on('pageerror',e=>errors.push(e.message));
     const root=prefix(l), action=root+'/search/', start=root+'/fixture/', product=root+'/product/a-2351296/';
+    const englishIndex = l === 'it' || l === 'es';
+    const autocomplete = '/rest/' + (englishIndex ? 'guardiansbasicb2b' : 'io') + '/item/search/autocomplete/';
     let value=term,category='',fail=false;const counts={};
     let searchResponse;
     const recorded=q=>captured?.find(v=>v.l===l&&v.q===q);
@@ -70,7 +72,8 @@ async function scenario(browser, asset, code, l, width, full) {
         const u=new URL(route.request().url());
         assert.equal(u.origin,origin);
         if(u.pathname==='/jquery.js'||u.pathname==='/handlers.js')return route.fulfill({contentType:'text/javascript',body:u.pathname==='/jquery.js'?jquery:code});
-        if(u.pathname==='/rest/io/item/search/autocomplete/') {
+        if(u.pathname.includes('/item/search/autocomplete/')) {
+            assert.equal(u.pathname, autocomplete, 'one language-specific endpoint');
             const q=u.searchParams.get('query');api.push(['ac',q]);
             if(searchResponse) return route.fulfill({json:{data:searchResponse}});
             if(q===sku) {
@@ -125,17 +128,19 @@ async function scenario(browser, asset, code, l, width, full) {
         await begin();await suggestions(sku);
         await input.press('ArrowDown');
         assert.equal(await input.inputValue(),sku);
-        await nav(()=>input.press('Enter'),action,{query:sku});
+        await nav(()=>input.press('Enter'),englishIndex?product:action,englishIndex?{v:'9'}:{query:sku});
         await begin();await suggestions(sku);
         await nav(()=>pick(productLinks.nth(1)),product,{v:'9'});
         seen.push('numeric, empty and HTML labels');
         await begin();await suggestions(term);await input.press('ArrowDown');assert.equal(await input.inputValue(),labels[0]);
         await input.press('ArrowDown');assert.equal(await input.inputValue(),labels[1]);
         await input.press('ArrowUp');assert.equal(await input.inputValue(),labels[0]);
-        await nav(()=>input.press('Enter'),action,{query:labels[0]});seen.push('keyboard');
+        await nav(()=>input.press('Enter'),englishIndex?product:action,englishIndex?{v:'0'}:{query:labels[0]});seen.push('keyboard');
         if(full) {
             await page.goBack();assert.equal(new URL(page.url()).pathname,start);
-            await page.goForward();assert.equal(new URL(page.url()).pathname,action);assert.equal(new URL(page.url()).searchParams.get('query'),labels[0]);seen.push('history');
+            await page.goForward();assert.equal(new URL(page.url()).pathname,englishIndex?product:action);assert.equal(new URL(page.url()).searchParams.get(englishIndex?'v':'query'),englishIndex?'0':labels[0]);seen.push('history');
+            await begin();await suggestions(term);await input.press('ArrowDown');await input.fill('nike');
+            await nav(()=>input.press('Enter'),action,{query:'nike'});seen.push('edited selection submits text');
             for(const how of ['Enter','button','product','suggestion','no matches','short']){
                 await begin();const q=how==='no matches'?empty:how==='short'?'ab':'nike';
                 if(how==='short'){await input.fill(q);await input.press('Enter');assert.equal(new URL(page.url()).pathname,start);}
@@ -168,7 +173,7 @@ async function scenario(browser, asset, code, l, width, full) {
             await setupSecond();
             const second=page.locator('.searchbox-404 input');
             await second.press('ArrowDown');assert.equal(await page.locator('[data-eg-search] input').inputValue(),'');
-            await nav(()=>second.press('Enter'),secondRoute,{query:labels[0]});
+            await nav(()=>second.press('Enter'),englishIndex?product:secondRoute,englishIndex?{v:'0'}:{query:labels[0]});
             await setupSecond();
             const secondLink=page.locator('.searchbox-404 .list-autocomplete-suggestion a').first();
             await nav(()=>mobile?secondLink.tap():secondLink.click(),secondRoute,{query:labels[0]});

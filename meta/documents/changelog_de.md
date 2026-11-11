@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unveröffentlicht – IT/ES-Vorschlagsroute und Galeriewechsel
+
+- IT/ES rufen den vorhandenen EN-Suchadapter über den eindeutigen GET-Pfad `guardiansbasicb2b/item/search/autocomplete` auf. Die gleichnamige IO-Route wird nicht mehr überschrieben; DE/EN/FR bleiben auf IO. Keine globale Service-Bindung, zusätzliche Suchanfrage oder Änderung der Shopsprache.
+- Enter nach Pfeilauswahl eines Produkts öffnet in IT/ES dessen lokalisierte Produkt-URL. Eine neue Eingabe hebt die vorherige Auswahl auf. Textvorschläge und normales Enter behalten das Formularziel.
+- Farbwechsel erneuern nur die betroffene MagicZoom-Instanz ohne künstlichen Bildlink-Klick. Verzögerte Neustarts und globale Refresh-Timer entfallen; verspätete Antworten für entfernte Variantentabellen werden ignoriert.
+- Alle vier JS-Quellen und Min-Bundles sind synchron; Cache-Zusatz `search3-gallery1`. Nur lokal vorbereitet. Native Suchabnahme und erneute Auslieferungsprüfung in Pluginset 426 stehen aus. CLS-Diagnose ohne CSS-Änderung; Details in README und Prüfbericht.
+
 ## Unveröffentlicht – Theme-Boot nach Suchintegration
 
 - Der Vorschlagsdienst wird über die bestehende GET-Route und `pluginApp` geladen. Die globale native Service-Bindung hatte in Pluginset 426 mit `class IO\Services\ItemSearchAutocompleteService not found` den Start des Themes abgebrochen und das Ceres-Standardlayout ausgelöst.

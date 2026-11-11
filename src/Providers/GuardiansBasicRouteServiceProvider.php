@@ -18,7 +18,8 @@ class GuardiansBasicRouteServiceProvider extends RouteServiceProvider
         $router->get('trackings', 'GuardiansBasicB2B\Controllers\ContentController@getTrackings');
         $api->version(['v1'], ['namespace' => 'GuardiansBasicB2B\Resources'], function ($api) {
             $api->resource('io/facet', 'FacetResource');
-            $api->get('io/item/search/autocomplete', 'SearchAutocompleteResource@index');
+            // Keep IO's route untouched; plugin registration order must not select the adapter.
+            $api->get('guardiansbasicb2b/item/search/autocomplete', 'SearchAutocompleteResource@index');
 
             // NEU: Batch-Endpoint für Variationsdaten (stock/price/ean/images)
             $api->get('io/variations/batch', 'VariationBatchResource@index');

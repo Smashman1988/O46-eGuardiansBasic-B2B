@@ -642,6 +642,7 @@ this.watchdogInit = function () {
             });
             // Fokusverhalten bleibt gleich
             var currentFocus = -1;
+            var useEnglishSearchIndex = activeLang === 'it' || activeLang === 'es';
             $(document).on('focus', '[data-eg-livesearch]', function () {
                 if ($(".row-search-wrap").length > 0) {
                     $(".row-search-wrap").show();
@@ -675,7 +676,10 @@ this.watchdogInit = function () {
                         templateType: "home"
                     };
 
-                    eGuardians.apiservice.get('/rest/io/item/search/autocomplete/', searchParams, function (response) {
+                    const autocompleteUrl = useEnglishSearchIndex
+                        ? '/rest/guardiansbasicb2b/item/search/autocomplete/'
+                        : '/rest/io/item/search/autocomplete/';
+                    eGuardians.apiservice.get(autocompleteUrl, searchParams, function (response) {
                         renderAutocompleteResults(response, $input);
                     });
 
@@ -735,7 +739,12 @@ this.watchdogInit = function () {
             }
 
             // Jetzt debounce aktivieren
-            $(_this).on('input', debounce(handleLiveSearchInput, 400));
+            const loadSuggestions = debounce(handleLiveSearchInput, 400);
+            $(_this).on('input', function (event) {
+                currentFocus = -1;
+                $(this).closest('[data-eg-search], .searchbox-404').find('.autocomplete-active').removeClass('autocomplete-active');
+                loadSuggestions.call(this, event);
+            });
             
             $(_this).keydown(function(e){
                 var x = $(this).closest('[data-eg-search], .searchbox-404').find('.list-autocomplete li').get();
@@ -744,10 +753,13 @@ this.watchdogInit = function () {
                     currentFocus += e.keyCode == 40 ? 1 : -1;
                     addAutocompleteItemActive(x);
                     $(this).val($(x[currentFocus]).find('a').attr('title'));
+                } else if (e.keyCode == 13 && useEnglishSearchIndex && $(x).is('.autocomplete-active')) {
+                    e.preventDefault();
+                    $(x).filter('.autocomplete-active').find('a')[0].click();
                 } else if (e.keyCode == 13 && !$(x).is('.autocomplete-active') && $.trim(this.value).length <= 2) {
                     e.preventDefault();
                 }
-                // Otherwise Enter submits this input's localized GET form, just like its button.
+                // Unselected Enter and DE/EN/FR retain their localized GET form behavior.
             });
             var addAutocompleteItemActive = function(x){
                     /*a function to classify an item as "active":*/
@@ -3610,6 +3622,9 @@ $(document).ready(function () {
     var prevImgSel = ctx.inModal ? ".modal-cross .single-prev-images" : ".single-prev-images";
     var prev = document.querySelector(prevImgSel);
 
+    // Dispose selector handlers before replacing their elements.
+    MagicZoom.stop(zoomId);
+
     var ttl = getProductTitleForGallery();
     var ttlEsc = escapeHtml(ttl);
 
@@ -3640,63 +3655,8 @@ $(document).ready(function () {
 
     setMainImageNow(zoomId, firstFull, firstMiddle, ttl);
 
-    var beforeHref = a.getAttribute("href") || "";
-    var updated = false;
-
-    try {
-      if (typeof MagicZoom.update === "function") {
-        MagicZoom.update(zoomId, firstFull, firstMiddle);
-        updated = true;
-      }
-    } catch (e) {
-      updated = false;
-    }
-
-    try {
-      if (typeof MagicZoom.refresh === "function") {
-        MagicZoom.refresh();
-      }
-    } catch (e2) {}
-
-    try {
-      var afterHref = a.getAttribute("href") || "";
-
-      if (!updated || !afterHref || (beforeHref && afterHref === beforeHref)) {
-        try {
-          MagicZoom.stop(zoomId);
-        } catch (e3) {}
-
-        setTimeout(function () {
-          try {
-            MagicZoom.start(zoomId);
-          } catch (e4) {}
-
-          try {
-            if (MagicZoom.refresh) MagicZoom.refresh();
-          } catch (e5) {}
-        }, 30);
-      }
-    } catch (e6) {}
-
-    if (prev) {
-      var firstThumb = prev.querySelector("a");
-
-      if (firstThumb) {
-        setTimeout(function () {
-          try {
-            firstThumb.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-          } catch (e7) {
-            try {
-              firstThumb.click();
-            } catch (e8) {}
-          }
-
-          try {
-            if (MagicZoom.refresh) MagicZoom.refresh();
-          } catch (e9) {}
-        }, 40);
-      }
-    }
+    // Rebuild this gallery from the current anchor and selectors without a click.
+    MagicZoom.start(zoomId);
   }
 
   function setActiveRow(matrix, row) {
@@ -3734,21 +3694,9 @@ $(document).ready(function () {
       if (cur !== token) return;
 
       function useImages(imgs) {
+        if (!matrix.isConnected || toInt(matrix.getAttribute("data-eg-preview-token")) !== token) return;
         if (!imgs || !imgs.length) return;
-
         updateMagicZoomWithGallery(matrix, ctx.zoomId, imgs);
-
-        setTimeout(function () {
-          try {
-            if (window.MagicZoom && MagicZoom.refresh) MagicZoom.refresh();
-          } catch (e) {}
-        }, 30);
-
-        setTimeout(function () {
-          try {
-            if (window.MagicZoom && MagicZoom.refresh) MagicZoom.refresh();
-          } catch (e) {}
-        }, 250);
       }
 
       if (!v || !v.images || !v.images.length) {

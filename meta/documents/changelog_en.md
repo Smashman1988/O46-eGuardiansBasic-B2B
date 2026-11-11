@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – IT/ES autocomplete route and gallery changes
+
+- Italian and Spanish autocomplete call the existing English-index adapter through the unique GET path `guardiansbasicb2b/item/search/autocomplete`. The IO route is no longer overridden; DE/EN/FR keep using IO. No global service binding, extra search request or storefront language change.
+- Enter on a keyboard-selected product opens its localized product URL in IT/ES. Editing the query clears the previous selection. Text suggestions and ordinary Enter retain the form action.
+- Color previews rebuild only the affected MagicZoom instance without synthesizing an image-link click. Delayed restarts and global refresh timers are removed; late responses for detached variation tables are ignored.
+- All four JS sources and minified bundles are synchronized with the `search3-gallery1` cache suffix. Prepared locally only; native search acceptance and delivery verification in plugin set 426 remain pending. CLS diagnosis does not change CSS. See README and the test report.
+
 ## Unreleased – theme bootstrap after search integration
 
 - Autocomplete resolves its service through the existing GET route and `pluginApp`. The global native service binding failed in plugin set 426 with `class IO\Services\ItemSearchAutocompleteService not found`, aborting theme startup and causing the standard Ceres layout to render.

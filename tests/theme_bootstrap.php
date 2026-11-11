@@ -92,7 +92,8 @@ namespace {
     }
     \BootstrapTest\check($api->routes['io/facet'] === 'GuardiansBasicB2B\\Resources\\FacetResource', 'facet route');
     if (!isset($argv[1])) {
-        \BootstrapTest\check($api->routes['io/item/search/autocomplete'] === 'GuardiansBasicB2B\\Resources\\SearchAutocompleteResource@index', 'autocomplete route');
+        \BootstrapTest\check($api->routes['guardiansbasicb2b/item/search/autocomplete'] === 'GuardiansBasicB2B\\Resources\\SearchAutocompleteResource@index', 'unique autocomplete route');
+        \BootstrapTest\check(!isset($api->routes['io/item/search/autocomplete']), 'native IO autocomplete route is not overridden');
     }
     echo "$assertions assertions passed; theme boot and routes preserved without native binding of plugin classes.\n";
 }
