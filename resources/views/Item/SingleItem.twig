@@ -432,6 +432,7 @@
 
     <div class="eg-size-matrix"
          data-eg-size-matrix
+         style="--eg-matrix-row-count: {{ variationsWithAttributes|default([])|filter(v => v.variationId is defined and v.variationId)|length }}"
          data-eg-mode="{{ mode }}"
          data-eg-size-attribute-id="{{ hasSize ? sizeAttr.attributeId : '' }}"
          data-eg-color-attribute-id="{{ hasColor ? colorAttr.attributeId : '' }}"

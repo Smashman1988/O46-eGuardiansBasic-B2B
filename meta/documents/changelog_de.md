@@ -1,5 +1,16 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Layoutstabilität und shopweiter Performance-Audit
+
+- Halte die fünf Bewertungssterne auf PDP und Quickview auch auf Desktop in einer Zeile: beide Ebenen verwenden dieselbe intrinsisch breite Rasterzelle statt der zu schmalen 105-px-Fläche. Die prozentuale Füllung bezieht sich auf die Sterne; der übersetzte Bewertungslink bleibt erhalten. 300 Sprach-/Breiten-/Bewertungsfälle geprüft.
+- Begrenze das bestehende 1000×600-Unternehmensvideo proportional auf seine Containerbreite und lasse den Warenkorb-Link seine konfigurierten Seitenabstände bei der Breitenberechnung berücksichtigen. Behebe damit vorhandene horizontale Überläufe ohne Änderung der Inhalte, Links oder Bestelllogik.
+- Reserviere vor der Matrixinitialisierung nur im vollständigen Tabellenlayout den Platz der bereits bekannten Variantenzeilen; verwende die vorhandene Attribut-Map ohne zusätzlichen Serviceaufruf. Befüllte Zeilen behalten ihre natürliche Höhe.
+- Stabilisiere die bestehenden Galerie-Miniaturen vor und während MagicZoomPlus, unter Beibehaltung ihrer Bildproportionen. Übernehme die Rahmengeometrie in die frühen PDP-Styles; mobile Großansicht und Bildwechsel bleiben unverändert.
+- Stelle die vorhandenen Footer-, Raster- und responsiven Anzeige-Regeln vor dem asynchronen Haupt-CSS bereit, ausdrücklich auf den Footer begrenzt und in der Reihenfolge der aktiven Min-CSS. Dies verhindert insbesondere das starke Umsortieren auf kurzen Seiten; Header und Produktraster bleiben erhalten.
+- Reserviere in bestehenden ShopBuilder-Inhalten Platz für das Unternehmensbanner, die vier zugehörigen Bilder und die fünf verwendeten Zahlungslogos anhand ihrer tatsächlichen Abmessungen. Stelle das vorhandene Zahlungsraster nur im bekannten Zahlungsarten-Widget früh bereit; andere eingebettete Listen bleiben unverändert. Keine neuen Bilder, Bibliotheken oder API-Aufrufe.
+- Synchronisiere Min-/Critical-CSS mit dem vorhandenen Build und verwende die CSS-Kennung `nl3-matrix4-logo1-gallery3-perf1`. Produktives JavaScript einschließlich aller Min-Dateien und Preis-/Bestelllogik bleibt bytegleich.
+- Native Preview 426, öffentliche Produktion 427, lokale Antwortvergleiche und Lighthouse werden getrennt dokumentiert. PageSpeed-API und Weboberfläche melden HTTP 429; keine Preview-Token oder Shop-Sitzungen an PageSpeed Insights übermittelt. Lokale Prüfungen und noch offene Abnahme siehe README/Performancebericht. Keine Bereitstellung.
+
 ## Unveröffentlicht – EAN ohne Kopierbuttons
 
 - EAN-Kopierbuttons, Symbol, Clipboard-/Fallback-Logik, Kopierfeedback, versteckte Statusausgabe, ausschließlich zugehörige CSS-Regeln und JS-Übersetzungen vollständig aus PDP/Quickview entfernt. Gemeinsame Variantenbild-Handler und sonstige Verbraucher bleiben erhalten.

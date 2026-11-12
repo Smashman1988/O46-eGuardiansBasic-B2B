@@ -1,4 +1,4 @@
-// Rebuild matrix, logo and newsletter regions; preserve unrelated asset bytes.
+// Rebuild owned matrix, logo, newsletter and first-paint regions; preserve unrelated rules.
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const acorn = require('acorn');
@@ -75,7 +75,7 @@ function matrixCall(source) {
     const output = old + startMark + root.toString().trim() + endMark;
     postcss.parse(output);
     fs.writeFileSync(file, output);
-    report.css = { file, editedLegacySelectorSpans: edits.length, unrelatedBytesPreserved: true };
+    report.css = { file, editedLegacySelectorSpans: edits.length, unrelatedRulesPreserved: true };
     // main.css loads asynchronously. Reuse its matrix geometry in the existing
     // PDP critical-style path so the new Twig markup never paints unformatted.
     const critical = root.clone();
@@ -167,6 +167,141 @@ function matrixCall(source) {
     postcss.parse(stylesheet);
     fs.writeFileSync(file, stylesheet);
     report.css.newsletterBytes = Buffer.byteLength(newsletter.toString().trim());
+    // The same geometry must exist before and after the asynchronous stylesheet.
+    // Copy the owning source rules rather than maintaining a second CSS definition.
+    const thumbSelectors = ['.single .single-prev-images a', '.single .single-prev-images a img', '.single-prev-images'];
+    const thumbs = postcss.root();
+    for (const selector of thumbSelectors) {
+        const from = source.indexOf('\n' + selector + '{');
+        assert.ok(from >= 0, 'Missing source geometry: ' + selector);
+        const to = source.indexOf('}', from) + 1;
+        thumbs.append(postcss.parse(source.slice(from, to)).nodes[0]);
+    }
+    assert.equal(thumbs.nodes.length, thumbSelectors.length);
+    const geometryBegin = source.indexOf('/* B2B first-paint geometry:');
+    const geometryEnd = source.indexOf('/* End B2B first-paint geometry */', geometryBegin);
+    assert.ok(geometryBegin > 0 && geometryEnd > geometryBegin);
+    const geometry = postcss.parse(source.slice(geometryBegin, geometryEnd));
+    for (const [name, tree] of [['pdp-layout', thumbs], ['first-paint', geometry]]) {
+        tree.walkComments(c => c.remove());
+        tree.walk(n => {
+            n.raws.before = ''; n.raws.after = '';
+            n.raws.between = n.type === 'decl' ? ':' : '';
+            if (n.type === 'decl') n.raws.important = '!important';
+        });
+        tree.raws.after = '';
+        const css = tree.toString().trim();
+        const markStart = `/* B2B ${name} bundle start */`, markEnd = `/* B2B ${name} bundle end */`;
+        stylesheet = fs.readFileSync(file, 'utf8');
+        const prior = stylesheet.indexOf(markStart);
+        if (prior >= 0) {
+            const last = stylesheet.indexOf(markEnd, prior);
+            assert.ok(last > prior);
+            stylesheet = stylesheet.slice(0, prior) + stylesheet.slice(last + markEnd.length);
+        }
+        if (name === 'pdp-layout') {
+            const spans = [];
+            postcss.parse(stylesheet).walkRules(rule => {
+                const selectors = postcss.list.comma(rule.selector);
+                const keep = selectors.filter(s => !thumbSelectors.includes(s.trim()));
+                if (keep.length === selectors.length) return;
+                const from = rule.source.start.offset;
+                spans.push([from, from + (keep.length ? rule.selector.length : rule.toString().length), keep.join(',')]);
+            });
+            for (const [from, to, value] of spans.sort((a,b) => b[0]-a[0])) stylesheet = stylesheet.slice(0,from)+value+stylesheet.slice(to);
+        }
+        stylesheet += markStart + css + markEnd;
+        postcss.parse(stylesheet);
+        fs.writeFileSync(file, stylesheet);
+        let head = fs.readFileSync(headFile, 'utf8');
+        const tag = `<style data-eg-${name}-critical>`;
+        const pattern = new RegExp(tag + '[\\s\\S]*?</style>');
+        if (pattern.test(head)) head = head.replace(pattern, tag + css + '</style>');
+        else {
+            const anchor = name === 'pdp-layout' ? '{# B2B matrix critical end #}' : '{# Generated from main.css: reserve proportional logo geometry before async CSS. #}';
+            assert.ok(head.includes(anchor));
+            head = head.replace(anchor, anchor + '\n' + tag + css + '</style>');
+        }
+        fs.writeFileSync(headFile, head);
+        report.css[name + 'Bytes'] = Buffer.byteLength(css);
+    }
+    // Short pages paint the footer above the fold. Its existing layout must not
+    // wait for main.css. No stylesheet behavior or footer markup is changed.
+    const footerFrom = source.indexOf('\nfooter{');
+    const footerTo = source.indexOf('\n.category-title{', footerFrom);
+    assert.ok(footerFrom > 0 && footerTo > footerFrom);
+    const footer = postcss.parse(source.slice(footerFrom, footerTo));
+    // The source region also contains old blog/table rules; they are not footer CSS.
+    footer.walkRules(rule => {
+        const keep = postcss.list.comma(rule.selector).filter(s => !/^\.blog-post\b|^\.scrollable-table\b/.test(s));
+        if (!keep.length) rule.remove();
+        else rule.selector = keep.join(',');
+    });
+    const pressFrom = source.indexOf('\n.footer-press-logos {');
+    const pressTo = source.indexOf('/* B2B matrix:', pressFrom);
+    assert.ok(pressFrom > 0 && pressTo > pressFrom);
+    footer.append(postcss.parse(source.slice(pressFrom, pressTo)).nodes);
+    // Existing critical CSS omits responsive visibility utilities. In particular,
+    // d-lg-block d-xl-none footer separators incorrectly wrap the fourth column
+    // before the asynchronous stylesheet arrives (1080px horizontal movement).
+    // Preserve the source order and breakpoints of the existing utilities.
+    // Legacy source/min Bootstrap ordering differs (d-xlg-none vs d-xl-block).
+    // Borrow the actually delivered utility cascade; do not reorder the site's grid.
+    const utilitySource = postcss.parse(fs.readFileSync(file, 'utf8'));
+    const utilities = postcss.root();
+    const footerGrid = new Set((fs.readFileSync('resources/views/PageDesign/Partials/Footer.twig', 'utf8').match(/\bcol(?:-(?:sm|md|lg|xl|xlg))?-\d+\b/g) || []).map(s => '.' + s));
+    utilitySource.walkRules(rule => {
+        const keep = postcss.list.comma(rule.selector).filter(s => s === '.col' || footerGrid.has(s) || /^\.d-(?:(?:sm|md|lg|xl|xlg)-)?(?:none|block|inline-block|flex)$/.test(s));
+        if (!keep.length) return;
+        const copy = rule.clone({selector: keep.join(',')});
+        if (rule.parent.type === 'atrule') utilities.append(rule.parent.clone({nodes: [copy]}));
+        else utilities.append(copy);
+    });
+    footer.prepend(utilities.nodes);
+    // Early grid utilities must not override the header/PDP critical breakpoints.
+    // Keep these borrowed rules local to their actual consumer, the footer.
+    footer.walkRules(rule => {
+        rule.selector = postcss.list.comma(rule.selector).map(s => /^footer\b/.test(s) ? s : ':where(footer) ' + s).join(',');
+    });
+    footer.walkComments(c => c.remove());
+    footer.walk(n => {
+        n.raws.before = ''; n.raws.after = '';
+        n.raws.between = n.type === 'decl' ? ':' : '';
+    });
+    footer.raws.after = '';
+    const footerTag = '<style data-eg-footer-critical>' + footer.toString().trim() + '</style>';
+    let footerHead = fs.readFileSync(headFile, 'utf8');
+    const footerPattern = /<style data-eg-footer-critical>[\s\S]*?<\/style>/;
+    footerHead = footerPattern.test(footerHead) ? footerHead.replace(footerPattern, footerTag) :
+        footerHead.replace('<style data-eg-first-paint-critical>', footerTag + '\n<style data-eg-first-paint-critical>');
+    fs.writeFileSync(headFile, footerHead);
+    report.css.footerCriticalBytes = Buffer.byteLength(footer.toString().trim());
+    // Existing payment/content widgets use this small Bootstrap grid. Reserve
+    // its normal rows before main.css, without changing other page grids or specificity.
+    const contentClasses = new Set(['.row', '.col-12', '.col-sm-6', '.col-lg-4', '.col-xl-3',
+        '.d-flex', '.align-self-center', '.flex-grow-1', '.text-center', '.mb-3', '.mr-3', '.ml-3']);
+    const contentLayout = postcss.root();
+    const paymentWidget = ':where(#page-body .widget-code:has(img[data-src$="/frontend/page/bilder/Footer/paypal.png"]))';
+    utilitySource.walkRules(rule => {
+        const keep = postcss.list.comma(rule.selector).filter(s => contentClasses.has(s));
+        if (!keep.length) return;
+        const copy = rule.clone({selector: keep.map(s => paymentWidget + ' ' + s).join(',')});
+        contentLayout.append(rule.parent.type === 'atrule' ? rule.parent.clone({nodes: [copy]}) : copy);
+    });
+    contentLayout.walk(n => {
+        n.raws.before = ''; n.raws.after = '';
+        n.raws.between = n.type === 'decl' ? ':' : '';
+    });
+    contentLayout.raws.after = '';
+    const contentTag = '<style data-eg-content-layout-critical>' + contentLayout.toString().trim() + '</style>';
+    const contentPattern = /<style data-eg-content-layout-critical>[\s\S]*?<\/style>/;
+    let contentHead = fs.readFileSync(headFile, 'utf8');
+    contentHead = contentPattern.test(contentHead) ? contentHead.replace(contentPattern, contentTag) :
+        contentHead.replace('<style data-eg-first-paint-critical>', contentTag + '\n<style data-eg-first-paint-critical>');
+    fs.writeFileSync(headFile, contentHead);
+    report.css.contentLayoutCriticalBytes = Buffer.byteLength(contentLayout.toString().trim());
+    // Removing legacy rules can expose whitespace at the old minified line end.
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/[\t ]+(?=\r?$)/gm, ''));
     if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(report, null, 2));
     console.log(JSON.stringify(report));
 })().catch(error => { console.error(error.stack || error.message); process.exitCode = 1; });

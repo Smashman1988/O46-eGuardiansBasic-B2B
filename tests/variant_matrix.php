@@ -28,13 +28,20 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
         $sizes = [];
         for ($i = 1; $i <= 12; $i++) { $sizes[] = ['attributeValueId' => $i, 'name' => (string) (35 + $i), 'position' => $i]; }
         $colors = [['attributeValueId' => 101, 'name' => 'Black', 'position' => 0], ['attributeValueId' => 102, 'name' => 'White', 'position' => 1]];
+        $rowCount = $hasSize ? ($hasColor ? 24 : 5) : ($hasColor ? 2 : 1);
+        $variations = [];
+        for ($i = 0; $i < $rowCount; $i++) { $variations[] = ['variationId' => 1001 + $i]; }
+        // Match buildRows: incomplete entries must not inflate the reserved table.
+        $variations[] = []; $variations[] = ['variationId' => 0];
         $html = $twig->render('matrix', ['mode' => $mode, 'hasSize' => $hasSize, 'hasColor' => $hasColor,
+            'variationsWithAttributes' => $variations,
             'sizeAttr' => ['attributeId' => 1, 'values' => $sizes], 'colorAttr' => ['attributeId' => 2, 'values' => $colors],
             'itemData' => ['variation' => ['id' => 1001]]]);
         if (substr_count($html, 'data-eg-matrix-add') !== 1 || substr_count($html, 'data-eg-total-sum') !== 1 ||
             substr_count($html, 'class="eg-size-matrix-table"') !== 1 ||
             !preg_match('/class="eg-size-matrix-body"><\/div>\s*<\/div>\s*<div class="eg-size-matrix-footer"/', $html) ||
-            substr_count($html, 'data-eg-col="ean"') !== 1 || str_contains($html, 'style="display:flex')) {
+            substr_count($html, 'data-eg-col="ean"') !== 1 || str_contains($html, 'style="display:flex') ||
+            !str_contains($html, 'style="--eg-matrix-row-count: ' . $rowCount . '"')) {
             throw new RuntimeException('Unexpected shared matrix markup: ' . $lang . '/' . $mode);
         }
         preg_match('/<div class="eg-size-matrix-head">([\s\S]*?)<div class="eg-size-matrix-body">/', $html, $head);

@@ -1,5 +1,16 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Layout stability and shop-wide performance audit
+
+- Keep all five PDP and quickview rating stars on one row, including desktop: both layers share an intrinsic-width grid cell instead of the undersized 105px area. Percentage fill is relative to the stars; preserve the translated review link. Verify 300 language/width/rating cases.
+- Constrain the existing 1000×600 company video proportionally to its container and let the basket link account for its configured side margins. Remove existing horizontal overflow without changing content, destinations or ordering logic.
+- Reserve the initial full-table matrix body using the already available variation map and existing row geometry. Populated rows retain natural height; no additional service request.
+- Stabilize gallery thumbnail frames before and during MagicZoomPlus initialization while preserving image proportions; include their geometry in PDP critical CSS. Preserve mobile expansion and gallery switching.
+- Deliver existing footer, grid and responsive visibility rules before the asynchronous main stylesheet, scoped to the footer and following the active minified cascade. Prevent large column rearrangements on short pages while preserving header and product grids.
+- Reserve space for the existing company banner, four company images and five payment logos using their measured intrinsic dimensions. Make the existing payment grid available early only inside its known widget; preserve other embedded lists. No new images, libraries or API calls.
+- Synchronize minified/critical CSS through the existing build; use CSS suffix `nl3-matrix4-logo1-gallery3-perf1`. All production JavaScript and minified bundles, pricing and ordering logic remain byte-identical.
+- Document native preview 426, public production 427, controlled local comparisons and Lighthouse separately. Both PageSpeed API and UI return HTTP 429; no preview tokens or shop sessions sent to PageSpeed Insights. See README/performance report for exact tests and pending native acceptance. No deployment.
+
 ## Unreleased – EAN display without copy buttons
 
 - Remove EAN copy buttons, icon, clipboard/fallback logic, copy feedback, hidden status output, dedicated CSS and JS translations from PDP and quickview. Preserve shared variation-image handlers and other consumers.
