@@ -178,6 +178,37 @@ function matrixCall(source) {
         thumbs.append(postcss.parse(source.slice(from, to)).nodes[0]);
     }
     assert.equal(thumbs.nodes.length, thumbSelectors.length);
+    // MagicZoom inserts its figure/lens before async main.css applies. Borrow only
+    // their existing layout declarations, scoped to the PDP anchor. Keep vendor
+    // CSS authoritative: no second definition or extra external bundle rules.
+    const zoomFrom = source.indexOf('\n.MagicZoom,\n.mz-figure,');
+    const zoomLast = source.indexOf('\n.mz-lens img {', zoomFrom);
+    assert.ok(zoomFrom > 0 && zoomLast > zoomFrom);
+    const zoomSource = postcss.parse(source.slice(zoomFrom, source.indexOf('}', zoomLast) + 1));
+    const zoomProperties = {
+        '.mz-figure': ['display', 'font-size', 'line-height', 'position', 'vertical-align'],
+        'figure.mz-figure': ['margin', 'overflow'],
+        '.mz-lens': ['position', 'overflow', 'pointer-events'],
+        '.mz-lens img': ['position', 'max-width', 'max-height'],
+        '.mz-figure > img': ['width', 'height']
+    };
+    const zoomCritical = postcss.root();
+    for (const [selector, properties] of Object.entries(zoomProperties)) {
+        const rule = postcss.rule({ selector: ':where(#ItemImgZoom) ' + selector });
+        zoomSource.walkRules(existing => {
+            if (!postcss.list.comma(existing.selector).includes(selector)) return;
+            existing.walkDecls(decl => { if (properties.includes(decl.prop)) rule.append(decl.clone()); });
+        });
+        assert.equal(rule.nodes.length, properties.length, 'Missing/duplicate MagicZoom geometry: ' + selector);
+        zoomCritical.append(rule);
+    }
+    zoomCritical.walk(n => {
+        n.raws.before = ''; n.raws.after = '';
+        n.raws.between = n.type === 'decl' ? ':' : '';
+        if (n.type === 'decl') n.raws.important = '!important';
+    });
+    zoomCritical.raws.after = '';
+    report.css.zoomCriticalBytes = Buffer.byteLength(zoomCritical.toString());
     const geometryBegin = source.indexOf('/* B2B first-paint geometry:');
     const geometryEnd = source.indexOf('/* End B2B first-paint geometry */', geometryBegin);
     assert.ok(geometryBegin > 0 && geometryEnd > geometryBegin);
@@ -216,11 +247,12 @@ function matrixCall(source) {
         let head = fs.readFileSync(headFile, 'utf8');
         const tag = `<style data-eg-${name}-critical>`;
         const pattern = new RegExp(tag + '[\\s\\S]*?</style>');
-        if (pattern.test(head)) head = head.replace(pattern, tag + css + '</style>');
+        const earlyCss = css + (name === 'pdp-layout' ? zoomCritical.toString() : '');
+        if (pattern.test(head)) head = head.replace(pattern, tag + earlyCss + '</style>');
         else {
             const anchor = name === 'pdp-layout' ? '{# B2B matrix critical end #}' : '{# Generated from main.css: reserve proportional logo geometry before async CSS. #}';
             assert.ok(head.includes(anchor));
-            head = head.replace(anchor, anchor + '\n' + tag + css + '</style>');
+            head = head.replace(anchor, anchor + '\n' + tag + earlyCss + '</style>');
         }
         fs.writeFileSync(headFile, head);
         report.css[name + 'Bytes'] = Buffer.byteLength(css);

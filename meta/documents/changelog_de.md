@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Kollisionsschutz, frühe Zoom-Geometrie und Datenladeprüfung
+
+- Bestehenden Kontaktwidget-Kollisionsschutz auf Desktop und Tablet erweitern. Nur tatsächliche Überdeckung blendet den geschlossenen Auslöser aus; offene Panels bleiben erhalten. Keine zusätzlichen globalen Scrollhandler; aktive JS-Kennung `contact3`.
+- Fünf bestehende MagicZoom-Geometrieregeln durch den vorhandenen Build früh im PDP-Critical-CSS bereitstellen, begrenzt auf `#ItemImgZoom`. Keine feste Galeriehöhe, zusätzliche vollständige Vendor-CSS oder neue Regelquelle. Aktive Min-Bundles unverändert.
+- Zwei unbenutzte Datenladeaufrufe aus der gemeinsamen PDP-/Quickview-Vorbereitung entfernen (`getVariationList` und `getBasePriceList`). Verwendete Varianten-, Preis-, Bestands- und Warenkorbdaten unverändert; kein Preis-Cache.
+- Direkte Matrixversorgung ausdrücklich gegen die erreichbare IO-VariationList mit SingleItem-ResultFields vergleichen: fünf Sprachen, Gastkontexte, PDP/Quickview, führende EAN-Nullen und zusätzliche 60 reale Varianten. Ersatz mangels vollständiger Kontext-/Filter-/Twig-Nachweise noch nicht aktiviert; bestehende kompakte Sonderabfrage erhalten. 60-Zeilen-Matrixtests, Twig 2/3, Browserregressionen und getrennte lokale/nativ vorhandene Nachweise im README/Prüfbericht.
+- Keine Bereitstellung, kein Plugin-Sync und keine Cache-Invalidierung. Native Abnahme der lokalen Änderungen in 426 steht aus.
+
 ## Unreleased – Layoutstabilität und shopweiter Performance-Audit
 
 - Halte die fünf Bewertungssterne auf PDP und Quickview auch auf Desktop in einer Zeile: beide Ebenen verwenden dieselbe intrinsisch breite Rasterzelle statt der zu schmalen 105-px-Fläche. Die prozentuale Füllung bezieht sich auf die Sterne; der übersetzte Bewertungslink bleibt erhalten. 300 Sprach-/Breiten-/Bewertungsfälle geprüft.

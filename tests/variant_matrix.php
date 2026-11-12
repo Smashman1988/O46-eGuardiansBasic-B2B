@@ -9,6 +9,7 @@ $end = strpos($source, '</div>', strpos($source, '</div>', $end) + 6) + 6;
 if ($start === false || $end <= $start) { throw new RuntimeException('Matrix template missing'); }
 $template = substr($source, $start, $end - $start);
 $out = [];
+$sizesPerColor = getenv('O46_MATRIX_LARGE') ? 30 : 12;
 function matrixTestTranslate($key) {
     $key = substr($key, strrpos($key, '.') + 1);
     if (!isset($GLOBALS['matrixTestTranslations'][$key])) { throw new RuntimeException('Missing translation ' . $key); }
@@ -26,9 +27,9 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
     foreach (['none', 'size', 'color', 'size_color'] as $mode) {
         $hasSize = str_contains($mode, 'size'); $hasColor = str_contains($mode, 'color');
         $sizes = [];
-        for ($i = 1; $i <= 12; $i++) { $sizes[] = ['attributeValueId' => $i, 'name' => (string) (35 + $i), 'position' => $i]; }
+        for ($i = 1; $i <= $sizesPerColor; $i++) { $sizes[] = ['attributeValueId' => $i, 'name' => (string) (35 + $i), 'position' => $i]; }
         $colors = [['attributeValueId' => 101, 'name' => 'Black', 'position' => 0], ['attributeValueId' => 102, 'name' => 'White', 'position' => 1]];
-        $rowCount = $hasSize ? ($hasColor ? 24 : 5) : ($hasColor ? 2 : 1);
+        $rowCount = $hasSize ? ($hasColor ? $sizesPerColor * 2 : 5) : ($hasColor ? 2 : 1);
         $variations = [];
         for ($i = 0; $i < $rowCount; $i++) { $variations[] = ['variationId' => 1001 + $i]; }
         // Match buildRows: incomplete entries must not inflate the reserved table.

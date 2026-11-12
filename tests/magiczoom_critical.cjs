@@ -1,0 +1,14 @@
+// Exercise the vendor's inserted figure/lens before asynchronous full CSS arrives.
+// node tests/magiczoom_critical.cjs <report.json>
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const {chromium}=require(process.env.O46_PLAYWRIGHT_MODULE||'playwright');
+const head=fs.readFileSync('resources/views/PageDesign/Partials/Head.twig','utf8');
+const early=head.match(/<style data-eg-pdp-layout-critical>([\s\S]*?)<\/style>/)[1];
+const full=fs.readFileSync('resources/css/main-211025.min.css','utf8');
+(async()=>{const b=await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE}),out=[];try{for(const width of [320,375,390,430,768,1024,1440])for(const [iw,ih]of [[600,900],[800,800],[1200,600]]){const p=await b.newPage({viewport:{width,height:900}});try{const image='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${iw}" height="${ih}"><rect width="100%" height="100%" fill="#ddd"/></svg>`);
+await p.setContent(`<style>${early}</style><div id="unrelated"><figure><img width="30" height="30" src="${image}"></figure></div><a id="ItemImgZoom"><figure class="mz-figure"><img src="${image}" style="width:150px;height:auto"><div class="mz-lens"><img src="${image}"></div></figure></a><div id="below">Following content</div>`);
+await p.waitForFunction(()=>[...document.images].every(e=>e.complete&&e.naturalWidth));
+const measure=()=>p.evaluate(()=>{const f=document.querySelector('#ItemImgZoom .mz-figure'),l=f.querySelector('.mz-lens'),i=f.querySelector(':scope > img'),u=document.querySelector('#unrelated figure'),r=x=>x.getBoundingClientRect().toJSON();return{margin:getComputedStyle(f).margin,display:getComputedStyle(f).display,position:getComputedStyle(f).position,lensPosition:getComputedStyle(l).position,lensImagePosition:getComputedStyle(l.firstElementChild).position,image:r(i),frame:r(f),unrelatedMargin:getComputedStyle(u).margin}});
+const before=await measure();assert.equal(before.margin,'0px');assert.equal(before.display,'inline-block');assert.equal(before.position,'relative');assert.equal(before.lensPosition,'absolute');assert.equal(before.lensImagePosition,'absolute');assert.ok(Math.abs(before.image.width/before.image.height-iw/ih)<.01);assert.ok(before.frame.height<=before.image.height+.6,'Lens must not enlarge the figure');assert.notEqual(before.unrelatedMargin,'0px','PDP scope must preserve unrelated figures');
+await p.addStyleTag({content:full});const after=await measure();assert.ok(Math.abs(after.frame.width-before.frame.width)<.6&&Math.abs(after.frame.height-before.frame.height)<.6,'Full stylesheet must preserve early frame dimensions');out.push({width,iw,ih,before,after,status:'PASS'});
+}finally{await p.close()}}}finally{await b.close();fs.writeFileSync(process.argv[2],JSON.stringify(out,null,2))}console.log(out.length+' early MagicZoom figure/lens cases PASS')})().catch(e=>{console.error(e);process.exitCode=1});

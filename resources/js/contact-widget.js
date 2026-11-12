@@ -24,7 +24,6 @@
         // visibility:hidden preserves that footprint, so hiding cannot cause flicker.
         // IntersectionObserver also respects clipping inside the Quickview scroller.
         if (window.IntersectionObserver && window.ResizeObserver) {
-            var mobile = window.matchMedia('(max-width: 991.98px)');
             var selector = '[data-eg-size-matrix], .basket-list-item';
             var targets = new Map();
             var intersection = null;
@@ -67,27 +66,26 @@
                 targets.clear();
                 intersection = null;
                 obstructed = false;
-                if (mobile.matches) {
-                    var rect = toggle.getBoundingClientRect();
-                    var width = document.documentElement.clientWidth;
-                    var height = document.documentElement.clientHeight;
-                    var left = Math.max(0, rect.left), top = Math.max(0, rect.top);
-                    var right = Math.min(width, rect.right), bottom = Math.min(height, rect.bottom);
-                    if (right > left && bottom > top) {
-                        intersection = new IntersectionObserver(function (entries, observer) {
-                            if (observer !== intersection) return;
-                            entries.forEach(function (entry) {
-                                if (targets.has(entry.target)) {
-                                    targets.set(entry.target, entry.isIntersecting &&
-                                        entry.intersectionRect.width > 0 && entry.intersectionRect.height > 0);
-                                }
-                            });
-                            updateObstruction();
-                        }, { rootMargin: -top + 'px ' + (right - width) + 'px ' +
-                            (bottom - height) + 'px ' + -left + 'px', threshold: 0 });
-                        observeTargets(document.body);
-                        mutations.observe(document.body, { childList: true, subtree: true });
-                    }
+                // The same footprint can cover controls on desktop and tablet.
+                var rect = toggle.getBoundingClientRect();
+                var width = document.documentElement.clientWidth;
+                var height = document.documentElement.clientHeight;
+                var left = Math.max(0, rect.left), top = Math.max(0, rect.top);
+                var right = Math.min(width, rect.right), bottom = Math.min(height, rect.bottom);
+                if (right > left && bottom > top) {
+                    intersection = new IntersectionObserver(function (entries, observer) {
+                        if (observer !== intersection) return;
+                        entries.forEach(function (entry) {
+                            if (targets.has(entry.target)) {
+                                targets.set(entry.target, entry.isIntersecting &&
+                                    entry.intersectionRect.width > 0 && entry.intersectionRect.height > 0);
+                            }
+                        });
+                        updateObstruction();
+                    }, { rootMargin: -top + 'px ' + (right - width) + 'px ' +
+                        (bottom - height) + 'px ' + -left + 'px', threshold: 0 });
+                    observeTargets(document.body);
+                    mutations.observe(document.body, { childList: true, subtree: true });
                 }
                 updateLauncher();
             }
@@ -98,7 +96,6 @@
 
             new ResizeObserver(scheduleIntersection).observe(toggle);
             window.addEventListener('resize', scheduleIntersection);
-            mobile.addEventListener('change', scheduleIntersection);
             scheduleIntersection();
         }
 

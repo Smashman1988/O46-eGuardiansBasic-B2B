@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Contact collision protection, early zoom geometry and data-loading audit
+
+- Extend existing contact-widget collision protection to desktop and tablet. Hide the closed launcher only on actual overlap; preserve open panels. No additional global scroll handlers; active script suffix `contact3`.
+- Generate five existing MagicZoom geometry rules into the existing early PDP style, scoped to `#ItemImgZoom`. No fixed gallery height, additional full vendor stylesheet or second rule source. Active minified bundles remain unchanged.
+- Remove two unused preparation calls shared by PDP and quickview (`getVariationList` and `getBasePriceList`). Preserve consumed variation, price, stock and basket data; no price cache.
+- Compare direct matrix data against the available IO VariationList with SingleItem result fields: five languages, guest contexts, PDP/quickview, leading EAN zeros and an additional 60 real variations. Preserve the compact custom endpoint until customer-context, filtering and direct Twig equivalence are fully demonstrated. Document 60-row fixtures, Twig 2/3, browser regressions and separate local/native evidence in README/report.
+- No deployment, plugin sync or cache invalidation. Native acceptance of the local changes in pluginset 426 remains pending.
+
 ## Unreleased – Layout stability and shop-wide performance audit
 
 - Keep all five PDP and quickview rating stars on one row, including desktop: both layers share an intrinsic-width grid cell instead of the undersized 105px area. Percentage fill is relative to the stars; preserve the translated review link. Verify 300 language/width/rating cases.

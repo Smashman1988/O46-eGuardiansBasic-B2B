@@ -48,9 +48,7 @@
 {# === Services & Daten === #}
 {% set detailurl = services.url.getCanonicalURL() %}
 {% set variationsWithAttributes = services.item.getVariationAttributeMap(itemId) %}
-{% set variationList = services.item.getVariationList(itemId, true) %}
 {% set basketItems = services.basket.getBasketForTemplate() %}
-{% set basePriceList = getBasePriceList(variationList) %}
 {% set crossSellingList = services.item.getItemCrossSellingList(itemId) %}
 {% set enabledRoutes = config("IO.routing.enabled_routes") | split(', ') %}
 {% set lang = services.localizationRepository.getLanguage() %}
