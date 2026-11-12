@@ -447,11 +447,6 @@ class Base_Extension extends Twig_Extension
 
     public function getItemsFromCatSimple($categoryId, $maxItemsPerPage, $ownFacets, $priceFilter = [0,0])
     {
-        $categoryService = pluginApp(CategoryService::class);
-        $activeCategory = $categoryService->get($categoryId);
-        // Simple widgets may occur in the same early ShopBuilder render. Their
-        // source category must not overwrite the routed page's context either.
-
         // --- NEU: Preisspanne flexibel auflösen (URL > Param > 0/0)
         [$priceMin, $priceMax] = $this->resolvePriceRange($priceFilter);
 

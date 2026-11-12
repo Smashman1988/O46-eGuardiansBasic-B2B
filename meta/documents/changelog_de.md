@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Geprüfte PHP-Bereinigung aus dem Theme-Audit
+
+- Entferne den unbenutzten Kategorie-Getter aus `getItemsFromCatSimple`. Suchoptionen, Preisfilter, Artikelkarten und die aktuelle Seitenkategorie bleiben erhalten. Ein Getter und eine Serviceauflösung weniger je Aufruf; keine pauschale Behauptung einer zusätzlichen Datenbankabfrage wegen des vorhandenen IO-MemoryCache.
+- Entferne die unbenutzte zweite Feedback-Repository-Auflösung aus `dynamicGetFeedbacks` samt Import. Der tatsächliche Bewertungsabruf sowie JSON-/HTML-Ausgabe bleiben erhalten.
+- Prüfe die realen PHP-/Twig-Pfade mit expliziten Servicefixtures unter Twig 2/3 und unabhängigen bestehenden Regressionen. Native Messungen des Ausgangsstands, öffentliche Lighthouse-Referenz, Inventar und offene Kontexte stehen im README und Auditbericht.
+- Ausschließlich lokal auf `develop`; neue PHP-Änderungen noch nicht in Pluginset 426 abgenommen. Variantenmatrix, Preis-/Bestelllogik und sämtliche Frontend-Assets unverändert. Kein Commit, Push, Deployment, Sync oder Cache-Purge.
+
 ## Unreleased – Kollisionsschutz, frühe Zoom-Geometrie und Datenladeprüfung
 
 - Bestehenden Kontaktwidget-Kollisionsschutz auf Desktop und Tablet erweitern. Nur tatsächliche Überdeckung blendet den geschlossenen Auslöser aus; offene Panels bleiben erhalten. Keine zusätzlichen globalen Scrollhandler; aktive JS-Kennung `contact3`.

@@ -5,7 +5,6 @@ use Plenty\Plugin\Controller;
 use Plenty\Plugin\Templates\Twig;
 use IO\Services\ItemService;
 use GuardiansBasicB2B\Extensions\Base_Extension;
-use Plenty\Modules\Feedback\Contracts\FeedbackRepositoryContract;
 use Plenty\Plugin\Http\Request;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\VariationAttributeMap;
 use Plenty\Modules\Webshop\ItemSearch\Services\ItemSearchService;
@@ -73,9 +72,6 @@ class ContentController extends Controller
         /** @var FeedbackAverageRepositoryContract $FeedbackAverageRepositoryContract */
         $Base_Extension = pluginApp(Base_Extension::class);
         $feedbackItems = $Base_Extension->getFeedbackItemList($_GET["itemId"],$_GET["page"],$_GET["maxcount"]);
-        /** @var FeedbackRepositoryContract $FeedbackRepositoryContract */
-        $FeedbackRepositoryContract = pluginApp(FeedbackRepositoryContract::class);
-        
         $templateData = array(
             'feedbackItems' => $feedbackItems
         );

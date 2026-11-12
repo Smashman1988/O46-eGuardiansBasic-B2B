@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Verified PHP cleanup from the theme audit
+
+- Remove the unused category getter from `getItemsFromCatSimple`. Preserve search options, price filters, item cards and the routed category. Save one getter and service resolution per invocation; do not equate this with a database query because IO already uses an in-memory cache.
+- Remove the unused second feedback repository resolution and import from `dynamicGetFeedbacks`. Preserve the actual feedback query and JSON/HTML output.
+- Compare real PHP/Twig paths using explicit service fixtures under Twig 2/3 and independent existing regressions. Document native baseline measurements, separate public Lighthouse references, the inventory and untested contexts in README and the audit report.
+- Local `develop` changes only; native acceptance of the new PHP changes in pluginset 426 remains pending. Preserve the variation matrix, pricing/ordering logic and all frontend assets. No commit, push, deployment, sync or cache purge.
+
 ## Unreleased – Contact collision protection, early zoom geometry and data-loading audit
 
 - Extend existing contact-widget collision protection to desktop and tablet. Hide the closed launcher only on actual overlap; preserve open panels. No additional global scroll handlers; active script suffix `contact3`.
