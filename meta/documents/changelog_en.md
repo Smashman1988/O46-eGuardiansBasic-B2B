@@ -1,5 +1,21 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Shared head routes without an additional PDP controller
+
+- Reuse existing IO/hreflang targets in the existing modal flow across categories, search and PDPs. Preserve the configured ShopBuilder dialog; remove duplicate route JSON and the language observer from the facet controller. Preserve editorial/forced canonical SEO policy and mark the existing navigation route in the head when needed.
+- Remove the facet asset and extra route JSON on PDPs. Preserve category/search facets and unapplied selections. Carry verified variant IDs through IO's registered path route; ignore Quickview context and arbitrary query parameters. Forward only explicit valid currency/shipping-country context on PDPs; no quantity, price or ordering changes.
+- Rebuild only the existing modal regions in all four active bundles (`…-language1`); other bundle regions remain byte-identical. Facet asset `facets3`: 7,518 bytes. PDP net −6,721 uncompressed JS bytes and one fewer asset; category/search +797 bytes at the same asset count. Repeated local HTTP/Brotli/LCP/CPU measurements and limitations are documented; no native performance approval.
+- Document five languages, 197 product/variant/modal cases and the completed facet/search/SEO/Quickview/matrix/gallery/rating/layout regressions with exact results and interrupted attempts. Local develop only; native post-change acceptance in 426 pending. No commit, push, merge, deployment, sync or cache purge. B2C unchanged.
+
+## Unreleased – Localized filter removal URLs and product language switching
+
+Historical local intermediate state: the additional PDP controller, route JSON and blanket parameter forwarding have been superseded by the shared head/modal approach above. The removal/reset fix remains in place.
+
+- Fix the natively reproduced removal/reset links losing their EN/FR/IT/ES prefix. The shared facet partial now obtains the current localized IO route with `getCanonicalURL(null, true)` instead of the language-stripped request path. No hard-coded prefix assembly; editorial canonicals are not navigation targets. Preserve the existing filter/price/query parameter handling.
+- Extend the existing language dialog handler to product detail pages. IO provides item/variation routes through safely encoded JSON; preserve URL parameters and fragments. Explain and disable unavailable routes. No changes to item, matrix, pricing or ordering logic.
+- Synchronize `facets.js` and its active minified file, with JS identifier `facets2`. The asset grows by 390 to 9,200 uncompressed bytes and is additionally loaded with `defer` on PDPs. CSS and the four main bundles are unchanged; retain 69 initial facet elements and no additional group requests. No unproven performance gain claimed.
+- Locally verify 100 URL combinations per Twig version, 162 focused browser cases including 60 product language switches, 534 existing facet browser cases, 133 facet and 585 SEO/layout cases per Twig version, plus search/matrix regressions. The report documents fixtures, corrected test doubles, interrupted attempts and limitations. Native post-change acceptance in plugin set 426 remains required; the previously failing native build is not approved. Local `develop` only; no commit, push, merge, deployment, sync or cache purge. B2C unchanged.
+
 ## Unreleased – Facet state, language switching and compact rendering
 
 - Fix the three reproduced facet defects: price parameters receive NOINDEX while preserving existing robots restrictions; active filters and reset survive empty result buckets; the existing language dialog retains filter semantics using the actual translated IO routes.

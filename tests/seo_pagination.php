@@ -703,6 +703,11 @@ namespace {
                 $html = $twig->render('regular',$ctx);
                 $expected = ['configured'=>'https://external.test/special/?key=x&page=5','forced'=>'https://external.test/forced/?page=7','missing'=>null,'empty-forced'=>'https://example.test/damen/?page=2'][$mode];
                 check(canonical($html) === $expected,'Explicit/missing canonical mishandled');
+                if ($mode === 'configured') check(strpos($html,'data-eg-language-url="https://example.test/en/damen/"') !== false,'Configured SEO canonical replaced the language navigation route');
+                if ($mode === 'forced') {
+                    check(strpos($html,'rel="alternate"') === false,'Forced canonical SEO policy changed');
+                    check(substr_count($html,'name="o46-language-route"') === 5,'Forced canonical lost language navigation');
+                }
             } finally { $urls->configured = null; $urls->base = 'https://example.test/damen/'; $templateService->template = 'tpl.category.content'; }
         });
     }
@@ -840,7 +845,7 @@ namespace {
                 preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
                 check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
                 $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
-                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery2-matrix3';
+                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery2-matrix3-language1';
                 check($url === $expected,'Wrong shipped asset or cache version');
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
                 check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');
@@ -851,6 +856,36 @@ namespace {
                 return ['script'=>$url];
             } finally { $builderMode = 'single'; $templateService->template = 'tpl.category.content'; }
         });
+    }
+    foreach (['de','en','fr','it','es'] as $language) {
+        foreach (['tpl.item','tpl.search','tpl.category.item','tpl.home','tpl.basket'] as $type) {
+            test('asset-inclusion/item-language/' . $type . '/' . $language,function () use ($language,$type,$twig,$base,$request,$urls,$templateService) {
+                $oldBase = $urls->base;
+                $request->params = [];
+                $templateService->template = $type;
+                // Exercise the actual PageDesign condition, not a copied fragment.
+                $urls->base = 'https://example.test/product/a-123/?context=</script><img src=x>&"';
+                try {
+                    $context = localizedContext($base,$language);
+                    $context['category'] = $type === 'tpl.category.item' ? $base['category'] : [];
+                    $context['isSearch'] = $type === 'tpl.search'; // Supplied by Ceres ItemSearchContext.
+                    $html = $twig->render('layout',$context);
+                    check(strpos($html,'data-eg-item-languages') === false,'Duplicate PDP language JSON remains');
+                    if ($type === 'tpl.item') {
+                        $withCategory = $twig->render('layout',array_replace($context,['category'=>$base['category']]));
+                        check(strpos($withCategory,'/js/facets.min.js') === false,'PDP with category context still loads facets');
+                    }
+                    preg_match_all('~<script src="([^"]*/js/facets.min.js[^\"]*)"([^>]*)>~',$html,$scripts);
+                    $expected = in_array($type,['tpl.search','tpl.category.item'],true);
+                    check(count($scripts[1]) === ($expected ? 1 : 0),'Wrong number of facet controller inclusions');
+                    if ($expected) {
+                        check(strpos($scripts[1][0],'-facets3') !== false,'Stale facet cache identifier');
+                        check(strpos($scripts[2][0],'defer') !== false,'Facet controller lost defer');
+                    }
+                    return ['itemContext'=>$type === 'tpl.item','facetScript'=>$expected];
+                } finally { $urls->base = $oldBase; $templateService->template = 'tpl.category.content'; }
+            });
+        }
     }
     foreach ([['single','1'],['single','2'],['single','999'],['single','abc'],
         ['none','2'],['simple-only','2'],['multiple','2']] as [$mode,$number]) {

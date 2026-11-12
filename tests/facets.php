@@ -22,11 +22,18 @@ namespace {
     require dirname(__DIR__) . '/src/Extensions/Base_Extension.php';
     function pluginApp($class) { throw new RuntimeException('Unexpected service/search call: ' . $class); }
     class FacetCallbacks {
-        public $request, $labels, $routes;
+        public $request, $labels, $routes, $lang, $canonicalOverride;
         public function trans($key) { return $this->labels[explode('::Template.', $key)[1]] ?? $key; }
-        public function queryString($replace) { $q = array_replace($this->request->params, $replace); return '?' . http_build_query($q); }
+        public function queryString($replace) {
+            $q = array_replace($this->request->params, $replace);
+            $query = http_build_query($q, '', '&', PHP_QUERY_RFC3986);
+            return $query === '' ? '' : '?' . $query;
+        }
         public function getLanguageURLs() { return $this->routes; }
-        public function getCanonicalURL($lang = null, $ignore = false) { return $this->routes[$lang ?? 'de'] ?? ''; }
+        public function getCanonicalURL($lang = null, $ignore = false) {
+            if (!$ignore && $this->canonicalOverride !== null) return $this->canonicalOverride;
+            return $this->routes[$lang ?? $this->lang] ?? '';
+        }
     }
     function renderFacets(array $options): array {
         $root = dirname(__DIR__);
@@ -36,7 +43,14 @@ namespace {
         $request = new \Plenty\Plugin\Http\Request();
         $request->params = $options['params'] ?? [];
         $request->path = $options['path'] ?? parse_url($fixture['languages'][$lang], PHP_URL_PATH);
+        // Native Plenty evidence: the routed Request URI can omit the language prefix.
+        if ($lang !== 'de' && str_starts_with($request->path, '/' . $lang . '/')) {
+            $request->path = substr($request->path, strlen('/' . $lang));
+        }
+        $request->path = $options['requestPath'] ?? $request->path;
         $callback = new FacetCallbacks(); $callback->request = $request; $callback->labels = [];
+        $callback->lang = $lang;
+        $callback->canonicalOverride = $options['canonicalOverride'] ?? null;
         foreach (file($root . '/resources/lang/' . $lang . '/Template.properties') as $line) {
             if (preg_match('/^([a-zA-Z0-9]+)\s*=\s*(.*)$/u', trim($line), $m)) $callback->labels[$m[1]] = $m[2];
         }
@@ -56,9 +70,10 @@ namespace {
             'searchOptions'=>['defaultItemsPerPage'=>24], 'currencyData'=>['symbol'=>'€'], 'currencyFormat'=>'symbol'];
         $html = $twig->render('GuardiansBasicB2B::Category.Item.Partials.' . ($options['template'] ?? 'FacetFilter2'), $context);
         $seo = new \GuardiansBasicB2B\Helper\SeoPage($request->params, ($options['kind'] ?? '') === 'search' ? 'tpl.search' : 'tpl.category.item', 10, 1, 240);
-        return ['html'=>$html, 'model'=>$helper->getFacetView($groups, $context['selectedFacets']),
+        return ['html'=>$html, 'model'=>$helper->getFacetView($groups, $context['selectedFacets']), 'requestPath'=>$request->path, 'languageUnavailable'=>$callback->labels['facetLanguageUnavailable'],
             'robots'=>$seo->getRobots('', $options['robots'] ?? 'INDEX,FOLLOW', false)];
     }
+    if ($argv[2] === '--library') return;
     if ($argv[2] === '--render') {
         echo json_encode(renderFacets(json_decode(stream_get_contents(STDIN), true)), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         exit;
@@ -79,7 +94,7 @@ namespace {
                 preg_match('~data-eg-facet-data>(.*?)</script>~s', $r['html'], $m);
                 $data = json_decode($m[1], true, 512, JSON_THROW_ON_ERROR);
                 check($data['values'] === $r['model']['values'], 'JSON values altered');
-                check(count($data['languages']) === 5, 'Missing actual route map');
+                check(!array_key_exists('languages',$data), 'Duplicate language routes in facet JSON');
                 return ['htmlBytes'=>strlen($r['html']), 'jsonBytes'=>strlen($m[1]), 'values'=>array_sum(array_map('count', $data['values']))];
             });
         }

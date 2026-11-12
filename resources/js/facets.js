@@ -12,7 +12,7 @@
         return node;
     };
     function urlFor(root, target, languageChange) {
-        const state = states.get(root), url = new URL(target, location.href);
+        const state = root ? states.get(root) : null, url = new URL(target, location.href);
         const current = new URL(location.href);
         if (languageChange) {
             url.search = '';
@@ -205,55 +205,6 @@
             if (event.key === 'Enter' && event.target.matches('.facet-input-price-min, .facet-input-price-max')) { event.preventDefault(); filter(root, true); }
         });
     }
-    function languageLinks(modal) {
-        const root = roots()[0]; if (!root) return;
-        const state = states.get(root); if (!state) return;
-        for (const link of modal.querySelectorAll('a[href]')) {
-            let code = link.dataset.egFacetLanguage;
-            if (!code) {
-                const original = new URL(link.href, location.href);
-                if (original.origin !== location.origin) continue;
-                const match = original.pathname.match(/^\/(?:(de|en|fr|it|es)\/?)?$/);
-                if (!match) continue;
-                code = match[1] || 'de'; link.dataset.egFacetLanguage = code;
-            }
-            const target = state.languages[code];
-            if (target && /^https?:/.test(new URL(target, location.href).protocol)) {
-                link.href = urlFor(root, target, true).href;
-                link.removeAttribute('aria-disabled');
-            } else {
-                link.setAttribute('aria-disabled', 'true'); link.title = state.texts.languageUnavailable;
-            }
-        }
-    }
-    let languageModal = null, observer = null;
-    document.addEventListener('click', event => {
-        if (event.target.closest('[data-eg-handler="modalContent"]') && !event.target.closest('[data-eg-language-switch]')) {
-            if (observer) observer.disconnect();
-            languageModal = null;
-        }
-        if (event.target.closest('[data-eg-language-switch]')) {
-            languageModal = document.querySelector('.dynamicModal');
-            if (languageModal) {
-                if (observer) observer.disconnect();
-                observer = new MutationObserver(() => languageLinks(languageModal));
-                observer.observe(languageModal, {childList: true, subtree: true});
-                languageLinks(languageModal);
-            }
-        }
-        const link = event.target.closest('[data-eg-facet-language]');
-        if (link) {
-            languageLinks(languageModal);
-            if (link.getAttribute('aria-disabled') === 'true') {
-                event.preventDefault(); event.stopImmediatePropagation();
-                const root = roots()[0], message = states.get(root).texts.languageUnavailable;
-                root.querySelector('.facet-status').textContent = message;
-                let notice = languageModal.querySelector('.facet-language-status');
-                if (!notice) { notice = create('p', 'facet-language-status'); notice.setAttribute('role', 'status'); languageModal.querySelector('.modal-body').append(notice); }
-                notice.textContent = message;
-            }
-        }
-    }, true);
     const signature = () => {
         const params = new URLSearchParams(location.search);
         return ['facets', 'priceMin', 'priceMax', 'query', 'sorting'].map(key => params.get(key)).join('|');
@@ -274,6 +225,12 @@
             clearTimeout(state.timer); state.sequence++; if (state.controller) state.controller.abort();
         }
     });
-    window.egFacets = {init: () => roots().forEach(init)};
+    window.egFacets = {
+        init: () => roots().forEach(init),
+        languageURL: target => {
+            const root = roots()[0];
+            return root && states.has(root) ? urlFor(root, target, true) : null;
+        }
+    };
     window.egFacets.init();
 })();

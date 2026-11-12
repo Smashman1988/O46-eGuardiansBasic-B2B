@@ -3,8 +3,10 @@
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), zlib = require('node:zlib');
 const assert = require('node:assert/strict'), {execFileSync} = require('node:child_process');
 const {chromium} = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
+const {moduleCode}=require('./language_modal.cjs');
 const widths=[320,375,390,430,768,1024,1440,1920];
 const D = path.resolve(process.argv[2]), smoke = process.argv.includes('--smoke');
+const languageStateOnly = process.argv.includes('--language-state-only');
 fs.mkdirSync(D, {recursive:true});
 const fixtures = require('./fixtures/facets.json'), langs = ['de','en','fr','it','es'];
 const php = path.resolve('.cache/php-runtime/php-8.4.23/php.exe');
@@ -34,6 +36,7 @@ function send(res, body, type='text/html', status=200) {
 const server = http.createServer((req,res) => {
     const url = new URL(req.url,origin || 'http://localhost');
     try {
+        if (url.pathname === '/language-module.js') return send(res,moduleCode('resources/js/cat-020726.min.js'),'text/javascript');
         if (url.pathname === '/facets.js') return send(res,file('resources/js/facets.min.js'),'text/javascript');
         if (url.pathname === '/main.css') return send(res,file('resources/css/main-211025.min.css'),'text/css');
         if (url.pathname === '/jquery.js') return send(res,file('resources/js/jquery-3.7.1.min.js'),'text/javascript');
@@ -51,16 +54,17 @@ const server = http.createServer((req,res) => {
             const delay=responseMode==='race' && serial%2 ? 650 : 15;
             return setTimeout(()=>{if(!res.destroyed)send(res,body,'application/json');},delay);
         }
-        let lang='de',kind='women';
+        let lang='de',kind=null;
         for(const [k,fixture] of Object.entries(fixtures)) for(const [l,target] of Object.entries(fixture.languages)) {
             if(new URL(target).pathname===url.pathname && k!=='filtered') {kind=k;lang=l;}
         }
+        if (kind === null) return send(res,'Unknown localized route','text/plain',404);
         const params=Object.fromEntries(url.searchParams), languages=Object.fromEntries(langs.map(l=>[l,route(kind,l)]));
         if(params.__missingLanguage) delete languages[params.__missingLanguage];
         const zero=params.__zero==='1'||String(params.query||'').startsWith('no-match-')||Number(params.priceMin)>=999999;
         const r=render({kind,lang,path:url.pathname,params,languages,...(zero?{groups:[]}:{})});
-        const html=`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="${r.robots}"><link rel="canonical" href="${route(kind,lang)}">${criticalStyles}<link rel="stylesheet" href="/main.css"><style>body{font-family:Arial} .audit-header{padding:12px} .dynamicModal{display:none;background:white;padding:20px;position:fixed;inset:50px;z-index:9999}</style><script src="/jquery.js" defer></script><script src="/facets.js" defer></script></head><body class="hold-transition"><header class="audit-header"><button data-eg-language-switch data-eg-handler="modalContent">Language</button><button id="mobile-filter">Filter</button></header><div class="main"><main class="categoriegrid page-content container"><h1>${kind} (${zero?0:42})</h1><div class="row"><div class="col-12"><div class="leftsidecat">${r.html}</div></div></div><div class="category-product-list">Local result fixture</div></main></div><div class="dynamicModal"><div class="modal-body"></div></div><script>
-        document.querySelector('[data-eg-language-switch]').onclick=function(){document.querySelector('.dynamicModal').style.display='block';document.querySelector('.modal-body').innerHTML='<a href="/">Deutsch</a> <a href="/en/">English</a> <a href="/fr/">Français</a> <a href="/it/">Italiano</a> <a href="/es/">Español</a>'};
+        const html=`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="${r.robots}"><link rel="canonical" href="${route(kind,lang)}">${Object.entries(languages).map(([l,u])=>`<link rel="alternate" hreflang="${l}" href="${u}">`).join('')}${criticalStyles}<link rel="stylesheet" href="/main.css"><style>body{font-family:Arial} .audit-header{padding:12px} .dynamicModal{display:none;background:white;padding:20px;position:fixed;inset:50px;z-index:9999}</style><script src="/jquery.js" defer></script><script src="/language-module.js" defer></script><script src="/facets.js" defer></script></head><body class="hold-transition"><header class="audit-header"><button data-eg-language-switch data-eg-language-unavailable="Language unavailable" data-eg-handler="modalContent">Language</button><button id="mobile-filter">Filter</button></header><div class="main"><main class="categoriegrid page-content container"><h1>${kind} (${zero?0:42})</h1><div class="row"><div class="col-12"><div class="leftsidecat">${r.html}</div></div></div><div class="category-product-list">Local result fixture</div></main></div><div class="dynamicModal"><div class="modal-body"></div></div><script>
+        document.querySelector('[data-eg-language-switch]').onclick=function(){eGuardians.events.modalContent(this)};
         document.querySelector('#mobile-filter').onclick=()=>document.documentElement.classList.toggle('filter-open');
         document.addEventListener('click',e=>{if(e.target.closest('.basket-prev-close'))document.documentElement.classList.remove('filter-open')});
         document.addEventListener('DOMContentLoaded',()=>{ // Existing legacy bindings deliberately coexist to detect double toggles.
@@ -71,7 +75,7 @@ const server = http.createServer((req,res) => {
     }catch(e){console.error(e.stack);send(res,String(e),'text/plain',500);}
 });
 const save=()=>fs.writeFileSync(path.join(D,'browser.json'),JSON.stringify({mode:'LOCAL_IO_FIXTURES',startHashes,endHashes:hashes(),records,requests,errors,consoleErrors,responses},null,2));
-async function test(name, run) {try{const evidence=await run();records.push({name,status:'PASS',...evidence});}catch(e){records.push({name,status:'FAIL',error:e.stack});save();throw e;}save();}
+async function test(name, run) {if(languageStateOnly&&!name.startsWith('language-dirty/'))return;try{const evidence=await run();records.push({name,status:'PASS',...evidence});}catch(e){records.push({name,status:'FAIL',error:e.stack});save();throw e;}save();}
 async function ready(p,url) {await p.goto(url);await p.waitForFunction(()=>window.egFacets);}
 async function open(p,id) {
     if(await p.evaluate(()=>innerWidth<992&&!document.documentElement.classList.contains('filter-open'))) await p.locator('#mobile-filter').click();
@@ -144,6 +148,18 @@ async function selected(p){return p.locator('[data-eg-remove-facet]').evaluateAl
             assert.equal(target.searchParams.get('sorting'),'texts.name1_asc');assert.equal(target.searchParams.has('page'),false);
             await open(p,brand.id);assert.equal(await p.locator(`#facet-item-${ids[1]}`).isChecked(),true);
             return {ids,extra,lang:langs[i%5],width:widths[i%8],request:request.serial};
+        });
+        for(const source of langs)for(const kind of ['women','search'])await test(`language-dirty/${source}/${kind}`,async()=>{
+            await p.setViewportSize({width:1440,height:900});
+            await ready(p,route(kind,source,{facets:'3118',query:'Nike & + Größe',page:'3',sorting:'texts.name1_asc'}));
+            const brand=fixtures[kind].groups.find(g=>g.id===3),brandId=String(brand.values[0].id);await open(p,brand.id);
+            await Promise.all([p.waitForResponse(r=>r.url().includes('/rest/io/facet/')),p.locator(`label[for="facet-item-${brandId}"]`).click()]);
+            await open(p,'8');
+            await p.locator('.facet-input-price-min').fill('2');await p.locator('.facet-input-price-max').fill('10');
+            await p.evaluate(()=>{const q=document.createElement('div');q.className='modal';q.innerHTML='<article class="single" data-item data-mainitemid="999" data-eg-active-variation="9999"></article>';document.body.append(q)});
+            const n=requests.length,target=langs[(langs.indexOf(source)+1)%5];await p.locator('[data-eg-language-switch]').click();const a=p.locator(`[data-eg-facet-language="${target}"]`);await a.waitFor();
+            const u=new URL(await a.getAttribute('href')),expected=['3118',brandId].sort();assert.deepEqual((u.searchParams.get('facets')||'').split(',').sort(),expected);assert.equal(u.searchParams.get('query'),'Nike & + Größe');assert.equal(u.searchParams.get('priceMin'),'2');assert.equal(u.searchParams.get('priceMax'),'10');assert.equal(u.searchParams.has('page'),false);assert.equal(u.searchParams.get('sorting'),'texts.name1_asc');assert.equal(requests.length,n);
+            await Promise.all([p.waitForURL(u=>u.pathname===new URL(route(kind,target)).pathname),a.click()]);assert.deepEqual((await selected(p)).sort(),expected);return{source,target,kind,brandId,dirtyFilters:true,quickviewIgnored:true,extraFacetRequests:0};
         });
         for(let i=0;i<(smoke?2:50);i++) await test(`language/${i}`,async()=>{
             await p.setViewportSize({width:widths[i%8],height:900});

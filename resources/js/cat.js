@@ -318,7 +318,8 @@ this.addItemToBasket = function (_this) {
             $(_this).closest('.eg-ddown').removeClass('ddown-open')
         };
         this.modalContent = function(_this){
-            eGuardians.ui.modal.modalRestContent($(_this).data('eg-href'),$(_this).data('eg-params'),$(_this).data('eg-title'),$(_this).data('eg-type'));
+            eGuardians.ui.modal.modalRestContent($(_this).data('eg-href'),$(_this).data('eg-params'),$(_this).data('eg-title'),$(_this).data('eg-type'),
+                _this.hasAttribute('data-eg-language-switch') ? _this.getAttribute('data-eg-language-unavailable') : undefined);
         };
         this.openBasketPreview = function(_this){
             eGuardians.basket.openBasketPreview()
@@ -1351,7 +1352,7 @@ this.facetFilter = debounce(function (_this) {
             show: function(content, title){
 
             },
-            modalRestContent: function(route,data,title,modalType){
+            modalRestContent: function(route,data,title,modalType,languageMessage){
                 $('.dynamicModal .loader-basket').addClass('load-rotate');
                 modalType = modalType || "";
                 $('.dynamicModal').find('.modal-dialog').addClass(modalType);
@@ -1368,8 +1369,81 @@ this.facetFilter = debounce(function (_this) {
                     if(typeof callback === 'function') {
                         callback(response);
                     }
+                    if (languageMessage !== undefined) {
+                        eGuardians.ui.modal.languageLinks(document.querySelector('.dynamicModal'), languageMessage);
+                    }
                     eGuardians.events.bindEvents('.dynamicModal [data-eg-event]');
                 });
+            },
+            // The existing modal owns language links on every page. IO already emitted
+            // the routes in the head; facets supply state only, never another route map.
+            languageLinks: function(modal, unavailable){
+                if (!modal) return;
+                const routes = new Map();
+                document.head.querySelectorAll('link[rel="alternate"][hreflang], meta[name="o46-language-route"][lang]').forEach(link => {
+                    const code = (link.getAttribute('hreflang') || link.lang).toLowerCase().split('-')[0];
+                    if (code !== 'x') routes.set(code, link.dataset.egLanguageUrl || link.getAttribute('content') || link.href);
+                });
+                const current = new URL(location.href);
+                const item = [...document.querySelectorAll('article.single[data-item]')].find(node => !node.closest('.modal'));
+                const positiveId = value => /^[1-9][0-9]*$/.test(String(value || ''));
+                let selectedVariation = null;
+                if (item) {
+                    const variations = item.querySelector('[data-eg-variations]');
+                    const preview = item.querySelector('[data-eg-size-matrix]')?.dataset.egPreviewVid;
+                    const legacy = variations ? $(variations).data('activeVariationId') : null;
+                    const direct = current.pathname.match(/(?:\/|_)([0-9]+)_([0-9]+)\/?$/);
+                    const selected = preview || legacy || (direct && direct[1] === item.dataset.mainitemid ? direct[2] : null);
+                    if (positiveId(item.dataset.mainitemid) && positiveId(selected) && variations) {
+                        try {
+                            if (JSON.parse(variations.dataset.egVariations).some(v => String(v.variationId) === String(selected))) selectedVariation = String(selected);
+                        } catch (_) { /* An invalid map must never fabricate a variation route. */ }
+                    }
+                }
+                for (const link of modal.querySelectorAll('a[href]')) {
+                    const path = new URL(link.getAttribute('href'), location.href).pathname;
+                    const match = path.match(/^\/(de|en|fr|it|es)?\/?$/);
+                    const code = link.dataset.egFacetLanguage || (match ? match[1] || 'de' : null);
+                    if (!code) continue;
+                    link.dataset.egFacetLanguage = code;
+                    const target = routes.get(code);
+                    let url = target ? new URL(target, location.href) : null;
+                    if (url && !/^https?:$/.test(url.protocol)) url = null;
+                    if (url) {
+                        if (!item && window.egFacets) url = window.egFacets.languageURL(url.href) || url;
+                        if (item && selectedVariation) {
+                            // IO's registered itemId_variationId route accepts both IDs.
+                            // Reuse the prefix actually present in IO's target, not a guessed default language.
+                            const prefix = url.pathname.startsWith('/' + code + '/') ? '/' + code + '/' : '/';
+                            url.pathname = prefix + item.dataset.mainitemid + '_' + selectedVariation;
+                        }
+                        // Only supported explicit checkout context crosses languages.
+                        // Never carry Lang, quickViewItem, arbitrary variationId, tracking or search parameters onto a PDP.
+                        const currency = current.searchParams.get('currency') || current.searchParams.get('Currency');
+                        const country = current.searchParams.get('ShipToCountry');
+                        if (currency && /^[A-Z]{3}$/.test(currency.toUpperCase())) url.searchParams.set('currency', currency.toUpperCase());
+                        if (positiveId(country)) url.searchParams.set('ShipToCountry', country);
+                        link.href = url.href;
+                        link.removeAttribute('aria-disabled');
+                        link.removeAttribute('title');
+                    } else {
+                        link.setAttribute('aria-disabled', 'true');
+                        link.title = unavailable;
+                    }
+                    if (!link.dataset.egLanguageBound) {
+                        link.dataset.egLanguageBound = 'true';
+                        link.addEventListener('click', event => {
+                            if (link.getAttribute('aria-disabled') !== 'true') return;
+                            event.preventDefault(); event.stopImmediatePropagation();
+                            let notice = modal.querySelector('.facet-language-status');
+                            if (!notice) {
+                                notice = document.createElement('p'); notice.className = 'facet-language-status';
+                                notice.setAttribute('role', 'status'); modal.querySelector('.modal-body').append(notice);
+                            }
+                            notice.textContent = unavailable;
+                        });
+                    }
+                }
             }
         };
         this.message = new function(){

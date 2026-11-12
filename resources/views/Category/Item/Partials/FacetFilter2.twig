@@ -2,26 +2,16 @@
 {% set facetView = getFacetView(facets|default([]), selectedFacets|default([])) %}
 {% set priceMax = request.get('priceMax') %}
 {% set priceMin = request.get('priceMin') %}
-{% set facetRoute = request.getRequestUri()|split('?')|first %}
-{% set facetLanguages = {} %}
-{% for language, href in services.url.getLanguageURLs() %}
-    {% if language != 'x-default' and href|trim is not empty %}
-        {% set languageCode = language|split('-')|first %}
-        {% set languageRoute = services.url.getCanonicalURL(languageCode, true) %}
-        {% if languageRoute|trim is not empty %}
-            {% set facetLanguages = facetLanguages|merge({(languageCode): languageRoute}) %}
-        {% endif %}
-    {% endif %}
-{% endfor %}
+{# IO restores the current language route; ignore an editorial SEO canonical override. #}
+{% set facetRoute = services.url.getCanonicalURL(null, true) %}
 {% set facetTexts = {
     loading: trans('GuardiansBasicB2B::Template.facetLoading'),
     result: trans('GuardiansBasicB2B::Template.facetResult'),
     error: trans('GuardiansBasicB2B::Template.facetError'),
-    unavailable: trans('GuardiansBasicB2B::Template.facetUnavailable'),
-    languageUnavailable: trans('GuardiansBasicB2B::Template.facetLanguageUnavailable')
+    unavailable: trans('GuardiansBasicB2B::Template.facetUnavailable')
 } %}
 <section data-eg-facets data-eg-compact-facets data-eg-catid="{{ category.id }}" data-eg-searchstring="{{ request.get('query') }}" data-eg-defaultitemsperpage="{{ searchOptions.defaultItemsPerPage }}">
-    <script type="application/json" data-eg-facet-data>{{ {values: facetView.values, selected: facetView.selected, languages: facetLanguages, texts: facetTexts}|json_encode(15)|raw }}</script>
+    <script type="application/json" data-eg-facet-data>{{ {values: facetView.values, selected: facetView.selected, texts: facetTexts}|json_encode(15)|raw }}</script>
     <div class="filter-container">
         <div class="wrap-filter-mobile">
             <div class="row filter-no-mobile"><div class="col-12 text-center">

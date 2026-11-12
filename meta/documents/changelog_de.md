@@ -1,5 +1,21 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Gemeinsame Head-Routen, kein zusätzlicher PDP-Controller
+
+- Verwende vorhandene IO-/hreflang-Ziele im bestehenden Modalablauf gemeinsam für Kategorien, Suche und PDP. Behalte den konfigurierten ShopBuilder-Dialog; entferne doppelte Sprachrouten-JSON-Ausgabe und Sprach-Observer aus dem Facettencontroller. Redaktionelle/erzwungene Canonicals behalten ihre SEO-Wirkung; die vorhandene Bedienroute wird bei Bedarf im Head separat markiert.
+- Entferne Facettenasset und Zusatz-JSON auf PDPs. Erhalte Kategorie-/Suchfacetten und noch nicht angewendete Filter. Unterstütze geprüfte Varianten-IDs über die registrierte IO-Pfadroute; ignoriere Quickview-Kontext und beliebige Queryparameter. Auf PDP nur explizite gültige Währungs-/Versandlandparameter übernehmen; keine Mengen-/Preis-/Bestelländerung.
+- Baue ausschließlich die bestehenden Modalbereiche der vier aktiven Bundles neu (`…-language1`); übrige Bundlebereiche bleiben bytegleich. Facettenasset `facets3`: 7.518 Byte. PDP netto −6.721 unkomprimierte JS-Byte und ein Asset weniger; Kategorie/Suche +797 Byte bei gleicher Assetzahl. Wiederholte lokale HTTP-/Brotli-/LCP-/CPU-Messungen und deren Grenzen im Bericht; keine native Performancefreigabe.
+- Dokumentiere fünf Sprachen, 197 Artikel-/Varianten-/Modalfälle und vollständige ausgeführte Facetten-/Such-/SEO-/Quickview-/Matrix-/Galerie-/Bewertungs-/Layoutregressionen mit genauen Ergebnissen und Testabbrüchen. Nur lokal auf develop; native Nachher-Abnahme in 426 offen. Kein Commit/Push/Merge/Deployment/Sync/Cache-Purge; B2C unverändert.
+
+## Unreleased – Sprachsichere Filterlinks und Artikel-Sprachwechsel
+
+Historischer lokaler Zwischenstand: PDP-Zusatzcontroller, Routen-JSON und pauschale Parameterübernahme wurden durch den darüber beschriebenen gemeinsamen Head-/Modalansatz ersetzt. Die Entfernen-/Reset-Korrektur bleibt erhalten.
+
+- Korrigiere die nativ belegten sprachlosen Entfernen-/Reset-Links in EN/FR/IT/ES. Das gemeinsame Facetten-Partial verwendet die aktuelle IO-Sprachroute mit `getCanonicalURL(null, true)` statt des sprachbereinigten Request-Pfads. Keine feste Präfixverkettung; redaktionelle Canonicals werden nicht zu Bedienlinks. Bestehende Filter-/Preis-/Query-Parameterbehandlung bleibt erhalten.
+- Erweitere den vorhandenen Sprachdialog-Handler auf Produktdetailseiten. IO liefert die Artikel-/Variantenrouten über sicher kodiertes JSON; vorhandene URL-Parameter und Fragmente bleiben erhalten. Fehlende Routen werden erklärt und gesperrt. Keine Änderung an Artikel-, Matrix-, Preis- oder Bestelllogik.
+- Synchronisiere `facets.js` und die aktive Min-Datei, neue JS-Kennung `facets2`. Das Asset wächst um 390 auf 9.200 unkomprimierte Byte und wird zusätzlich auf PDPs mit `defer` geladen. CSS und vier Hauptbundles bleiben unverändert; 69 initiale Facettenelemente, keine zusätzlichen Gruppenrequests. Kein unbewiesener Performancegewinn.
+- Prüfe lokal 100 URL-Kombinationen je Twig-Version, 162 gezielte Browserfälle einschließlich 60 Artikel-Sprachwechseln, 534 bestehende Facetten-Browserfälle, je 133 Facetten- und 585 SEO-/Layoutfälle unter Twig 2/3 sowie Such-/Matrixregressionen. Bericht dokumentiert Testumgebung, korrigierte Testdoubles, Abbrüche und Grenzen. Native Nachher-Abnahme in Pluginset 426 bleibt erforderlich; keine Freigabe des bisher fehlerhaften nativen Stands. Nur lokal auf `develop`; kein Commit/Push/Merge/Deployment/Sync/Cache-Purge, B2C unverändert.
+
 ## Unreleased – Facettenzustand, Sprachwechsel und kompakte Ausgabe
 
 - Behebe die drei nachgewiesenen Facettenfehler: Preisparameter erhalten NOINDEX unter Wahrung bestehender Robots-Regeln; aktive Filter und Reset bleiben auch ohne Ergebnis-Buckets erhalten; der Sprachdialog übernimmt den fachlichen Filterzustand auf die echten übersetzten IO-Routen.

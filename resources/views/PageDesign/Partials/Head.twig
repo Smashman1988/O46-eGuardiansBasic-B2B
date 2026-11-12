@@ -35,6 +35,13 @@
 {% set canonicalPageQuery = pagination.valid and pagination.currentPage > 1 ? '?page=' ~ pagination.currentPage : '' %}
 {% if forcedCanonicalUrl is defined and forcedCanonicalUrl | trim is not empty %}
     <link rel="canonical" href="{{ forcedCanonicalUrl }}">
+    {# This branch intentionally omits SEO alternates; retain navigation routes without changing that SEO policy. #}
+    {% for language, href in services.url.getLanguageURLs() %}
+        {% if language != 'x-default' %}
+            {% set languageRouteUrl = services.url.getCanonicalURL(language | split('-') | first, true) %}
+            {% if languageRouteUrl|trim is not empty %}<meta name="o46-language-route" lang="{{ language }}" content="{{ languageRouteUrl }}">{% endif %}
+        {% endif %}
+    {% endfor %}
 {% else %}
     {% if canonicalUrl | trim is not empty %}
         <link rel="canonical" href="{{ canonicalUrl ~ (hasConfiguredCanonical ? '' : canonicalPageQuery) }}">
@@ -43,7 +50,7 @@
         {% if language != 'x-default' and href | trim is not empty %}
             {# A language URL may itself be explicitly configured. #}
             {% set languageRouteUrl = services.url.getCanonicalURL(language | split('-') | first, true) %}
-            <link rel="alternate" hreflang="{{ language }}" href="{{ href ~ (href == languageRouteUrl and not hasConfiguredCanonical ? canonicalPageQuery : '') }}">
+            <link rel="alternate" hreflang="{{ language }}" href="{{ href ~ (href == languageRouteUrl and not hasConfiguredCanonical ? canonicalPageQuery : '') }}"{% if languageRouteUrl|trim is not empty and href != languageRouteUrl %} data-eg-language-url="{{ languageRouteUrl }}"{% endif %}>
         {% endif %}
     {% endfor %}
 {% endif %}
