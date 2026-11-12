@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Facettenzustand, Sprachwechsel und kompakte Ausgabe
+
+- Behebe die drei nachgewiesenen Facettenfehler: Preisparameter erhalten NOINDEX unter Wahrung bestehender Robots-Regeln; aktive Filter und Reset bleiben auch ohne Ergebnis-Buckets erhalten; der Sprachdialog übernimmt den fachlichen Filterzustand auf die echten übersetzten IO-Routen.
+- Stelle Checkboxen/Wertelisten erst beim ersten Öffnen aus kompakten vorhandenen IO-Daten her. Bereits erzeugte Elemente bleiben erhalten, geänderte Werte/Zahlen werden aktualisiert. Keine Gruppenanfragen und keine zusätzliche serverseitige Facettensuche; Preis-Eingabe startet erst beim Anwenden eine Anfrage. Entfernen arbeitet über serverseitig erzeugte Links, auch ohne passende Checkbox. Fehlende Metadaten werden mit übersetztem Hinweis und ID dargestellt.
+- Ergänze Tastatur/Fokus, Fehleranzeige statt falscher Nulltreffer, veraltete-Antwort-Abwehr und Schutz vor mehrfacher Initialisierung. Verwende einen gemeinsamen Controller für die aktiven Kategorie-/Such-/Listen-Partials. Ein zusätzliches initiales JS-Asset; vorhandene vier JS-Bundles unverändert. Aktualisiere die Facetten-Min-Datei und ausschließlich begrenzte CSS-Ergänzungen; Cache-Kennungen `facets1` bzw. `…-perf1-facets1`.
+- Messe lokal bei „Alle Artikel“ 459.255 → 16.717 Byte Facetten-HTML und 3.059 → 69 initiale Facettenelemente. Der kalte komprimierte Gesamttransfer sinkt dort um 1.605 Byte; kleinere Listen übertragen 1.707–2.916 Byte mehr. Kein nachgewiesener Gewinn bis zur ersten Interaktion, keine native TTFB-/PHP-Einsparung behauptet. 120 kontrollierte Messläufe, alle Grenzen und Screenshots im Prüfbericht.
+- Prüfe 534 lokale Browserfälle einschließlich 100 Kombinationen/Öffnungszyklen und je 50 Sprach-, Nulltreffer- und Preisfällen; zusätzlich Twig 2/3, SEO-, Such- und Matrixregressionen. Fünf Sprachen und acht Breiten. Native Abnahme dieses Stands in 426 offen; keine Produktivfreigabe. Variantenmatrix, Preise/Rundung/Bestellungen, Galerie, Quickview-Daten und B2C unverändert. Kein Commit/Push/Merge/Deployment/Sync/Cache-Purge.
+
 ## Unreleased – Geprüfte PHP-Bereinigung aus dem Theme-Audit
 
 - Entferne den unbenutzten Kategorie-Getter aus `getItemsFromCatSimple`. Suchoptionen, Preisfilter, Artikelkarten und die aktuelle Seitenkategorie bleiben erhalten. Ein Getter und eine Serviceauflösung weniger je Aufruf; keine pauschale Behauptung einer zusätzlichen Datenbankabfrage wegen des vorhandenen IO-MemoryCache.

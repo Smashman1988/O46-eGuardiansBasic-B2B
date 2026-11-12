@@ -1,122 +1,74 @@
-{% set canonicalURL = services.url.getCanonicalURL() %}
-{% set priceMax = request.get("priceMax") %}
-{% set priceMin = request.get("priceMin") %}
-<section data-eg-target=".facet-item-value-chk" data-eg-event="change" data-eg-facets data-eg-catid="{{ category.id }}" data-eg-defaultitemsperpage="{{ searchOptions.defaultItemsPerPage }}">
+{# One request-scoped model from the existing IO result; no additional search. #}
+{% set facetView = getFacetView(facets|default([]), selectedFacets|default([])) %}
+{% set priceMax = request.get('priceMax') %}
+{% set priceMin = request.get('priceMin') %}
+{% set facetRoute = request.getRequestUri()|split('?')|first %}
+{% set facetLanguages = {} %}
+{% for language, href in services.url.getLanguageURLs() %}
+    {% if language != 'x-default' and href|trim is not empty %}
+        {% set languageCode = language|split('-')|first %}
+        {% set languageRoute = services.url.getCanonicalURL(languageCode, true) %}
+        {% if languageRoute|trim is not empty %}
+            {% set facetLanguages = facetLanguages|merge({(languageCode): languageRoute}) %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
+{% set facetTexts = {
+    loading: trans('GuardiansBasicB2B::Template.facetLoading'),
+    result: trans('GuardiansBasicB2B::Template.facetResult'),
+    error: trans('GuardiansBasicB2B::Template.facetError'),
+    unavailable: trans('GuardiansBasicB2B::Template.facetUnavailable'),
+    languageUnavailable: trans('GuardiansBasicB2B::Template.facetLanguageUnavailable')
+} %}
+<section data-eg-facets data-eg-compact-facets data-eg-catid="{{ category.id }}" data-eg-searchstring="{{ request.get('query') }}" data-eg-defaultitemsperpage="{{ searchOptions.defaultItemsPerPage }}">
+    <script type="application/json" data-eg-facet-data>{{ {values: facetView.values, selected: facetView.selected, languages: facetLanguages, texts: facetTexts}|json_encode(15)|raw }}</script>
     <div class="filter-container">
-
         <div class="wrap-filter-mobile">
-            <div class="row filter-no-mobile">
-                <div class="col-12 text-center">
-                    <button class="btn btn-primary btn-big mt-2 filter-no-desktop btnfilter-mobile-top" data-eg-btnfilter aria-label="Produkte anzeigen">
-                        <span></span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12 text-center">
-                    <div class="light-big-txt filter-head mt-xl-0">
-                        <button class="basket-prev-close close d-lg-none" data-eg-handler="tgClass" data-eg-event="click" data-eg-param="html,filter-open" aria-label="Schließen">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-                </div> 
-            </div>
+            <div class="row filter-no-mobile"><div class="col-12 text-center">
+                <button type="button" class="btn btn-primary btn-big mt-2 filter-no-desktop btnfilter-mobile-top" data-eg-btnfilter><span></span></button>
+            </div></div>
+            <div class="row"><div class="col-12 text-center"><div class="light-big-txt filter-head mt-xl-0">
+                <button type="button" class="basket-prev-close close d-lg-none" data-eg-handler="tgClass" data-eg-event="click" data-eg-param="html,filter-open" aria-label="{{ trans('GuardiansBasicB2B::Template.facetClose') }}"><span aria-hidden="true">×</span></button>
+            </div></div></div>
             <div class="wrap-filter-mobile-scrollable">
-                <div class="row rowFilter"> 
-                    {% set activeFacets = (request.get("facets") is not empty ? request.get("facets")|split(',') : [])|merge(selectedFacets|default([])) %}
-                    {% set activeFacetList = {} %}
-                    {% for facet in facets %}
-                        <div class="col-12 colFilter {{ facet.cssClass }} facet-{{ facet.id }}">
-                            <div class="cat-facet eg-dropdown">
-                                <div class="btn-primary cat-facet-name eg-dropdown-value">{{ facet.name }} <span class="icon-down-open-big"></span></div>
-                                <div class="eg-dropdown-content">
-                                    <ul class="list-no-style {% if facet.id==2 %} facet-color d-flex{% endif %} facetgroup-{{ facet.id }}">
-                                    {% if facet.id==8 %} 
-                                        <li> 
-                                            <div class="input-group m-b-1">
-                                                <div class="input-group-prepend">
-                                                  <div class="input-group-text">{{ currencyData[currencyFormat] }}</div>
-                                                </div>
-                                                <input type="number" class="form-control facet-input-price-min" min="1" placeholder="Min." {% if priceMin is not empty %}value="{{ priceMin }}"{% endif %}>
-                                            </div>
-                                            <div class="input-group m-b-1">
-                                                <div class="input-group-prepend">
-                                                  <div class="input-group-text">{{ currencyData[currencyFormat] }}</div>
-                                                </div>
-                                                <input type="number" class="form-control facet-input-price-max" placeholder="Max." {% if priceMax is not empty %}value="{{ priceMax }}"{% endif %}>
-                                            </div>
-                                            <button class="btn btn-secondary btn-small btn-block m-b-1 pricefilter" data-eg-event="click" data-eg-handler="facetFilter" aria-label="Filter anwenden">{{ trans("GuardiansBasicB2B::Template.apply") }}</button>
-                                        </li>
-                                    {% else %}
-                                        {% set activeFacetIds = activeFacets|map(v => v|default(0)) %}
-                                        {%- for facetValue in facet.values -%}
-                                            {% set isActive = facetValue.id in activeFacetIds %}
-                                            {% if isActive %}
-                                                {% set activeFacetInfos = { facetId: facetValue.id, facetName: facetValue.name } %}
-                                                {% set activeFacetList = activeFacetList|merge([activeFacetInfos]) %}
-                                            {% endif %}
-                                            <li data-eg-facet-itemcount="{{ facetValue.count }}">
-                                                <input id="facet-item-{{ facetValue.id }}" type="checkbox" class="hidden-xs-up facet-item-value-chk" data-eg-handler="facetFilter" data-eg-facetvalueid="{{ facetValue.id }}" {{ isActive ? 'checked' : '' }} />
-                                                <label for="facet-item-{{ facetValue.id }}" class="facet-item-value">
-                                                    {% if facet.id==2 %}
-                                                        <span>{{ facetValue.name }}</span>
-                                                    {% else %}
-                                                    <span class="chk-box">
-                                                          {% include "GuardiansBasicB2B::Category.Item.Partials.check-icon" %}
-                                                        </span>
-                                                    {{ facetValue.name }}
-                                                    <span class="chk-count">{{ facetValue.count }}</span>
-                                                    {% endif %}    
-                                                </label>
-                                            </li>
-                                        {%- endfor -%}
-                                    {% endif %} 
-                                    </ul>
-                                </div>
+                <div class="row rowFilter">
+                {% for facet in facets %}
+                    <div class="col-12 colFilter {{ facet.cssClass }} facet-{{ facet.id }}" data-eg-facet-group="{{ facet.id }}">
+                        <div class="cat-facet eg-dropdown">
+                            <div class="btn-primary cat-facet-name eg-dropdown-value" data-eg-facet-toggle role="button" tabindex="0" aria-expanded="false">{{ facet.name }} <span class="icon-down-open-big" aria-hidden="true"></span></div>
+                            <div class="eg-dropdown-content">
+                                <ul class="list-no-style{% if facet.id == 2 %} facet-color d-flex{% endif %} facetgroup-{{ facet.id }}">
+                                {% if facet.id == 8 %}
+                                    <li>
+                                        <div class="input-group m-b-1"><div class="input-group-prepend"><div class="input-group-text">{{ currencyData[currencyFormat] }}</div></div><input type="number" class="form-control facet-input-price-min" min="1" placeholder="Min." aria-label="{{ trans('GuardiansBasicB2B::Template.facetPriceMin') }}" value="{{ priceMin }}"></div>
+                                        <div class="input-group m-b-1"><div class="input-group-prepend"><div class="input-group-text">{{ currencyData[currencyFormat] }}</div></div><input type="number" class="form-control facet-input-price-max" placeholder="Max." aria-label="{{ trans('GuardiansBasicB2B::Template.facetPriceMax') }}" value="{{ priceMax }}"></div>
+                                        <button type="button" class="btn btn-secondary btn-small btn-block m-b-1 pricefilter">{{ trans('GuardiansBasicB2B::Template.apply') }}</button>
+                                    </li>
+                                {% endif %}
+                                </ul>
                             </div>
-                        </div>       
-                    {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
                 </div>
-                <button class="btn btn-primary btn-big d-lg-none btnfilter-mobile btnfilter-mobile-bottom" data-eg-btnfilter  aria-label="Produkte anzeigen">
-                    <span></span> 
-                </button>
+                <button type="button" class="btn btn-primary btn-big d-lg-none btnfilter-mobile btnfilter-mobile-bottom" data-eg-btnfilter><span></span></button>
             </div>
-        </div>      
-    </div>
-</section>
-{% if activeFacetList or priceMax or priceMin %}
-    <hr class="hr-style">
-    <div class="row mt-2 mb-3 tcenter">
-        <div class="col-12">
-            <p class="category-title mb-3 d-lg-block">{{ trans("GuardiansBasicB2B::Template.selectedfilters") }}</p>
-            {% if priceMax or priceMin %}
-                <label class="btn btn-secondary facet-remove-btn facet-remove-price" data-eg-handler="facetFilter" data-eg-event="click">
-                    <span class="facet-item-value facet-value-remove">
-                        {{ priceMin ~ " " ~ currencyData[currencyFormat] }}&nbsp;-&nbsp;{{ priceMax ~ " " ~ currencyData[currencyFormat] }}
-                    </span>
-                </label>
-            {% endif %}
-            {% for activeFacet in activeFacetList %}
-                <label class="btn btn-secondary facet-remove-btn" for="facet-item-{{ activeFacet.facetId }}">
-                    <span class="facet-item-value facet-value-remove">
-                        {{ activeFacet.facetName }}
-                    </span>
-                </label>
-            {% endfor %}
-            <a href="{{ canonicalURL ~ queryString({'facets':null,'priceMin':null,'priceMax':null}) }}" class="btn btn-secondary facet-remove-btn facet-remove-price facet-remove-all">
-                <label class="facet-item-value facet-value-remove">
-                    {{ trans("GuardiansBasicB2B::Template.resetallfilters") }}
-                </label>
-            </a>
         </div>
     </div>
-{% endif %}
-<div class="row">
-    <div class="col-12 text-center">
-        <button class="btn btn-primary btn-big mt-2 display-none btnfilter-desktop" data-eg-btnfilter aria-label="Produkte anzeigen">
-            <span></span>
-        </button>
-    </div>
-</div>
-<hr class="hr-style">
+    {% if facetView.active or priceMax or priceMin %}
+        <hr class="hr-style">
+        <div class="row mt-2 mb-3 tcenter"><div class="col-12" data-eg-active-facets>
+            <p class="category-title mb-3 d-lg-block">{{ trans('GuardiansBasicB2B::Template.selectedfilters') }}</p>
+            {% if priceMax or priceMin %}
+                <a href="{{ facetRoute ~ queryString({'priceMin':null, 'priceMax':null, 'page':null}) }}" class="btn btn-secondary facet-remove-btn facet-remove-price"><span class="facet-item-value facet-value-remove">{{ priceMin ~ ' ' ~ currencyData[currencyFormat] }}&nbsp;-&nbsp;{{ priceMax ~ ' ' ~ currencyData[currencyFormat] }}</span></a>
+            {% endif %}
+            {% for activeFacet in facetView.active %}
+                <a href="{{ facetRoute ~ queryString({'facets':activeFacet.remaining ?: null, 'page':null}) }}" class="btn btn-secondary facet-remove-btn" data-eg-remove-facet="{{ activeFacet.id }}"><span class="facet-item-value facet-value-remove">{% if activeFacet.name is not null %}{{ activeFacet.name }}{% else %}{{ trans('GuardiansBasicB2B::Template.facetUnavailable') }} #{{ activeFacet.id }}{% endif %}</span></a>
+            {% endfor %}
+            <a href="{{ facetRoute ~ queryString({'facets':null, 'priceMin':null, 'priceMax':null, 'page':null}) }}" class="btn btn-secondary facet-remove-btn facet-remove-all"><span class="facet-item-value facet-value-remove">{{ trans('GuardiansBasicB2B::Template.resetallfilters') }}</span></a>
+        </div></div>
+    {% endif %}
+    <p class="facet-status" role="status" aria-live="polite"></p>
+    <div class="row"><div class="col-12 text-center"><button type="button" class="btn btn-primary btn-big mt-2 display-none btnfilter-desktop" data-eg-btnfilter><span></span></button></div></div>
+    <hr class="hr-style">
+</section>

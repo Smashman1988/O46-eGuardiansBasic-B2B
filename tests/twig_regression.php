@@ -56,7 +56,7 @@ $syntax = environment();
 // Explicit syntax-only registry: Plenty/IO/Ceres and Base_Extension functions used here.
 // Unknown functions/filters are NOT accepted automatically. These callbacks must never render.
 $functions = ['component','config','csrf_token','getAttributesWithImages','getCardAttributeMaps','getBasePriceList',
-    'getFacetsFromCat','getFeedbackItemList','getImageAttributeList','getListFeedbackAverages',
+    'getFacetsFromCat','getFacetView','getFeedbackItemList','getImageAttributeList','getListFeedbackAverages',
     'getPartial','get_additional_scripts','get_additional_styles','get_consent_scripts',
     'get_filtered_tags','get_json_data','get_shop_builder_scripts','plugin_path','queryString',
     'shop_builder_category_template','ssr_entry','trans','createSeoPage','prepareSeoContent'];

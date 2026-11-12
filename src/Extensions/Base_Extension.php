@@ -63,6 +63,7 @@ class Base_Extension extends Twig_Extension
             $this->factory->createSimpleFunction('getFeedbackItemList', [$this, 'getFeedbackItemList']),
             $this->factory->createSimpleFunction('getListFeedbackAverages', [$this, 'getListFeedbackAverages']),
             $this->factory->createSimpleFunction('getFacetsFromCat', [$this, 'getFacetsFromCat']),
+            $this->factory->createSimpleFunction('getFacetView', [$this, 'getFacetView']),
             $this->factory->createSimpleFunction('sortCatByKey', [$this, 'sortCatByKey']),
             $this->factory->createSimpleFunction('getCrossSeller', [$this, 'getCrossSeller']),
             $this->factory->createSimpleFunction('restGetContent', [$this, 'restGetContent']),
@@ -74,6 +75,39 @@ class Base_Extension extends Twig_Extension
             $this->factory->createSimpleFunction('getAttributesWithImages', [$this, 'getAttributesWithImages']),
             $this->factory->createSimpleFunction('getCardAttributeMaps', [$this, 'getCardAttributeMaps']),
         ];
+    }
+
+    /** Presentation only: reuse this request's IO result, without another search or cache. */
+    public function getFacetView(array $facets, array $selectedFacets = []): array
+    {
+        $raw = $this->req->get('facets');
+        $requested = is_string($raw) ? explode(',', $raw) : [];
+        $selected = [];
+        foreach (array_merge($requested, $selectedFacets) as $value) {
+            $id = SeoPage::positiveInteger($value);
+            if ($id !== null && !in_array((string)$id, $selected, true)) {
+                $selected[] = (string)$id;
+            }
+        }
+        $values = [];
+        $names = [];
+        foreach ($facets as $facet) {
+            $rows = [];
+            foreach ($facet['values'] ?? [] as $value) {
+                $id = (string)$value['id'];
+                $rows[] = [$id, $value['name'], (int)$value['count']];
+                $names[$id] = $value['name'];
+            }
+            $values[(string)$facet['id']] = $rows;
+        }
+        $active = [];
+        // Selected IDs belong to the URL/configuration, not to the result buckets.
+        // An absent bucket is not proof of an invalid ID or an untranslated facet.
+        foreach ($selected as $id) {
+            $active[] = ['id' => $id, 'name' => $names[$id] ?? null,
+                'remaining' => implode(',', array_values(array_diff($selected, [$id])))];
+        }
+        return ['values' => $values, 'selected' => $selected, 'active' => $active];
     }
 
     public function getAttributesWithImages($itemId){

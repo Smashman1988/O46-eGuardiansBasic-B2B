@@ -125,7 +125,7 @@ class SeoPage
         $noindex = $forceNoIndex || in_array('NOINDEX', $restrictions, true) || $this->getPagination()['noindex'];
         $nofollow = in_array('NOFOLLOW', $restrictions, true);
         foreach (array_keys($this->query) as $key) {
-            if (in_array(strtolower($key), ['query', 'currency', 'quickviewitem', 'facets', 'sorting'], true)) {
+            if (in_array(strtolower($key), ['query', 'currency', 'quickviewitem', 'facets', 'sorting', 'pricemin', 'pricemax'], true)) {
                 $noindex = true;
             }
         }

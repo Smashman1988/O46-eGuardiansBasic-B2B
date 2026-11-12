@@ -244,6 +244,7 @@ namespace {
         'GuardiansBasicB2B::Category.Item.Partials.CategoryGridOnly'=>'<div class="simple">{% for item in itemList %}{{ item.data.variation.id }},{% endfor %}</div>',
         'GuardiansBasicB2B::Category.Item.Partials.CategoryListItem'=>'<span class="item">{{ item.data.variation.id }}</span>',
         'GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2'=>'<span class="item-first">{{ item.data.variation.id }}</span>',
+        'GuardiansBasicB2B::Category.Item.Partials.FacetFilter2'=>readView('Category/Item/Partials/FacetFilter2'),
         'GuardiansBasicB2B::Category.Item.Partials.FacetFilter3'=>readView('Category/Item/Partials/FacetFilter3'),
         'GuardiansBasicB2B::Category.Item.Partials.Pagination'=>readView('Category/Item/Partials/Pagination'),
         'empty'=>'',
@@ -267,7 +268,7 @@ namespace {
     $twig = new Twig\Environment($loader, ['cache'=>false, 'autoescape'=>'html']);
     $renderer->environment = $twig;
     function addFunction($twig, $name, $callback) { $twig->addFunction(new Twig\TwigFunction($name, [new Callback($callback),'invoke'])); }
-    foreach (['createSeoPage','prepareSeoContent','getItemsFromCat','getItemsFromCatSimple','getCardAttributeMaps'] as $name) { addFunction($twig, $name, [$extension,$name]); }
+    foreach (['getFacetView','createSeoPage','prepareSeoContent','getItemsFromCat','getItemsFromCatSimple','getCardAttributeMaps'] as $name) { addFunction($twig, $name, [$extension,$name]); }
     foreach (['get_consent_scripts','get_filtered_tags','get_json_data','get_shop_builder_scripts','component','ssr_entry','csrf_token'] as $name) { addFunction($twig,$name,function () { return ''; }); }
     foreach (['get_additional_styles','get_additional_scripts'] as $name) { addFunction($twig,$name,function () { return []; }); }
     addFunction($twig,'getPartial',function ($name) { return ['page-design'=>'layout','head'=>'head','page-metadata'=>'metadata'][$name] ?? 'empty'; });
@@ -337,11 +338,11 @@ namespace {
             });
         }
     }
-    foreach (['query','currency','quickViewItem','quickviewitem','facets','sorting','Sorting','notsorting','myquery','utm_source','gclid'] as $key) {
+    foreach (['query','currency','quickViewItem','quickviewitem','facets','sorting','Sorting','priceMin','priceMax','PriceMin','mypriceMin','notsorting','myquery','utm_source','gclid'] as $key) {
         foreach (['x','',[]] as $value) {
             test('parameters/' . $key . '/' . json_encode($value),function () use ($key,$value) {
                 $page = new SeoPage([$key=>$value],'tpl.category.item',69,1,1654);
-                $hard = in_array(strtolower($key),['query','currency','quickviewitem','facets','sorting'],true);
+                $hard = in_array(strtolower($key),['query','currency','quickviewitem','facets','sorting','pricemin','pricemax'],true);
                 check($page->getRobots('','INDEX,FOLLOW',false) === ($hard ? 'NOINDEX,FOLLOW' : 'INDEX,FOLLOW'),'Parameter-key recognition failed');
             });
         }
@@ -801,7 +802,7 @@ namespace {
                         check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Directory exposes a pager');
                         check(strpos($html,'brandTiles') !== false && strpos($html,'/alpha') !== false && strpos($html,'/beta') !== false,'Actual brand list missing');
                         check(strpos($html,'.brandTiles .col-xl-3 {') !== false,'Directory critical grid CSS missing');
-                        check(strpos($html,'main-211025.min.css?v=fixture-nl3-matrix4-logo1-gallery3-perf1" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
+                        check(strpos($html,'main-211025.min.css?v=fixture-nl3-matrix4-logo1-gallery3-perf1-facets1" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
                         check(count($search->calls) === $calls,'Directory issued an embedded item query');
                     } finally { $urls->base = $oldBase; $templateService->template = $oldTemplate; }
                 });
@@ -938,7 +939,7 @@ namespace {
     test('compatibility/production-source',function () use ($root) {
         $fragments = ['SeoPage'=>file_get_contents($root . '/src/Helper/SeoPage.php')];
         $lines = file($root . '/src/Extensions/Base_Extension.php');
-        foreach (['createSeoPage','prepareSeoContent','getItemsFromCat','cardAttributeFactory','getCardAttributeMaps'] as $name) {
+        foreach (['getFacetView','createSeoPage','prepareSeoContent','getItemsFromCat','cardAttributeFactory','getCardAttributeMaps'] as $name) {
             $method = new ReflectionMethod(Base_Extension::class,$name);
             $fragments[$name] = "<?php\n" . implode('',array_slice($lines,$method->getStartLine()-1,$method->getEndLine()-$method->getStartLine()+1));
         }

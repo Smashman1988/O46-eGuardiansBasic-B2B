@@ -400,6 +400,9 @@
       </div>
     </div>
 </div>    
+            {% if category.id or isSearch %}
+                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/facets.min.js?v={{ buildHash }}-facets1" defer></script>
+            {% endif %}
             {% if "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or category.id in mainjs  %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3" defer></script>

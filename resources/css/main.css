@@ -13207,3 +13207,21 @@ body:has(#shop-mode-modal:not(.smm-hidden), .o46-b2b-contact-toggle[aria-expande
     object-fit: contain;
 }
 /* End B2B first-paint geometry */
+
+/* B2B compact facets: keyboard access without changing the existing green headings. */
+[data-eg-compact-facets] .facet-item-value-chk {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+}
+[data-eg-compact-facets] .facet-item-value-chk:focus-visible + label,
+[data-eg-compact-facets] [data-eg-facet-toggle]:focus-visible {
+    outline: 2px solid #284a13;
+    outline-offset: -2px;
+}
+[data-eg-compact-facets] li.eg-facet-selected { display: list-item; }
+[data-eg-compact-facets] .facet-status:empty { display: none; }
+/* End B2B compact facets */

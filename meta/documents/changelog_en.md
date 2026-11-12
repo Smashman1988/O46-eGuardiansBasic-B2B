@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Facet state, language switching and compact rendering
+
+- Fix the three reproduced facet defects: price parameters receive NOINDEX while preserving existing robots restrictions; active filters and reset survive empty result buckets; the existing language dialog retains filter semantics using the actual translated IO routes.
+- Build checkbox/value lists on first opening from compact existing IO data. Reuse rendered elements and refresh counts/values after changes. No group requests or additional server-side facet search; typing a price does not search until Apply. Server-rendered removal links also work without a matching checkbox. Missing metadata uses a translated notice and the selected ID.
+- Add keyboard/focus support, an explicit error state instead of a false zero count, stale-response protection and idempotent initialization. Share one controller across the active category/search/list partials. One additional initial JS asset; all four existing JS bundles remain unchanged. Build the new minified asset and narrowly scoped CSS additions; cache identifiers `facets1` and `…-perf1-facets1`.
+- Measure 459,255 → 16,717 facet HTML bytes and 3,059 → 69 initial facet elements for All Items locally. Its cold compressed total drops by 1,605 bytes; smaller lists transfer 1,707–2,916 more bytes. No demonstrated first-interaction improvement or native TTFB/PHP saving claimed. The report includes 120 controlled measurements, screenshots and limitations.
+- Run 534 local browser cases, including 100 combinations/open-close cycles and 50 language, zero-result and price cases each; also Twig 2/3, SEO, search and matrix regressions. Five languages and eight viewport widths. Native acceptance of this version in plugin set 426 remains pending; no production approval. Matrix, pricing/rounding/orders, gallery, Quickview data and B2C unchanged. No commit, push, merge, deployment, sync or cache purge.
+
 ## Unreleased – Verified PHP cleanup from the theme audit
 
 - Remove the unused category getter from `getItemsFromCatSimple`. Preserve search options, price filters, item cards and the routed category. Save one getter and service resolution per invocation; do not equate this with a database query because IO already uses an in-memory cache.
