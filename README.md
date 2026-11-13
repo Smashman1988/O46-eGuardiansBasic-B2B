@@ -10,6 +10,17 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Lokale Desktop-Warenkorbkorrektur und MagicZoom-Diagnose (2026-11-13)
+
+Ausgangsstand `964b6f5ec2caf86b837ac21a7e9be47df1394393` auf `develop`. Der [lokale Prüfbericht](.cache/theme-magiczoom-cls-964b6f5-20261113/Pruefbericht.html) trennt native Ausgangsbelege, kontrollierte ALT-/NEU-Replays, technische Abbrüche und offene Nachher-Abnahmen.
+
+- **Einziger Produktfix:** Im allgemeinen Critical-CSS-Zweig von `resources/views/PageDesign/Partials/Head.twig` fehlte die Desktop-Regel für `.col-lg-7`. Ergänzt sind genau 75 Byte ab `min-width:992px`, entsprechend dem vorhandenen Hauptstylesheet. Damit ist die bestehende Spaltenbreite von 58,333333 % bereits vor dessen Laden definiert. Keine neue Layoutvorgabe, keine zusätzliche Ressource; JS-/CSS-Quelldateien und aktive Min-Dateien bleiben unverändert.
+- **MagicZoom bleibt unverändert:** Eine native Touch-Eingabe erreicht den Schließen-Button während der Öffnungsanimation, obwohl dessen Vorfahr noch `opacity:0` hat. Der vorhandene Vendor-Guard `!ready || !expanded` verwirft diesen frühen Schließversuch. Der betreffende Vendor-Block ist zwischen `1647723` und `964b6f5` identisch; das ersetzt keinen nativen ALT-Vergleich. Keine Änderung an Vendor, Galerie, Quickview oder Variantenmatrix und keine Behauptung einer abgeschlossenen Schließ-Stressabnahme.
+- **Bewusst offen:** Der mobile Ceres-Lader verursacht weiterhin den nachgewiesenen 120-Pixel-Höhenwechsel. Ohne nachgewiesen sichere, inhaltsabhängige Stabilisierung gibt es weder feste Mindesthöhe noch Eingriff in den fremden Ladeablauf. Die bestehende Critical-CSS-Lücke für `.col-md-6` im Tabletbereich 768–991 px bleibt ebenfalls unverändert.
+- **Prüfgrenze:** Lokale Geometrie-Replays und Syntax-/Build-Prüfungen belegen keine Verbesserung des gesamten nativen CLS, LCP oder JavaScript-Aufwands. Tests auf einem realen Mobilgerät, ein nativer historischer ALT-Vergleich und die native Nachher-Abnahme nach einer späteren Benutzerbereitstellung in Pluginset 426 bleiben offen. Einzelne Prüfstände und genaue Ergebnisse stehen im Bericht; keine Gesamtfreigabe.
+
+Keine Versionsanhebung. Nur lokal; kein Commit, Push, Merge, Deployment, Plugin-Sync oder Cache-Purge. B2C, Preise, Bestände, Bestelllogik, Variantenmatrix und externe Zahlungs-SDKs unverändert.
+
 ## Vertiefte Kategorie-Diagnose und sichere lokale Korrekturen (2026-11-13)
 
 Basis `1647723c59ca3943d740b5d555d27faa44d2792f`, ausschließlich `develop`. [HTML-Prüfbericht mit zehn Arbeitspaketen, Rohdaten, Screenshots und Grenzen](.cache/category-rootcause-1647723-20261113/Pruefbericht.html). **Keine Produktionsfreigabe. Neue Änderungen sind nur lokal geprüft; native Nachher-Abnahme nach Bereitstellung in 426 offen.**

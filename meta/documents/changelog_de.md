@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Frühe Desktop-Warenkorbspalte (2026-11-13)
+
+- Ergänze ausschließlich im allgemeinen Critical-CSS-Zweig von `Head.twig` die vorhandene `.col-lg-7`-Geometrie ab 992 px: genau 75 Byte, 58,333333 % Spaltenbreite entsprechend dem Hauptstylesheet. Keine neuen Requests; JS-/CSS-Quellen und aktive Min-Dateien unverändert.
+- Dokumentiere den frühen MagicZoom-Schließversuch: Native Touch-Eingabe erreicht den noch über einen Vorfahren unsichtbaren Button während der Öffnungsanimation; der Vendor-Guard `!ready || !expanded` verwirft den Aufruf. Vendor-Block zwischen `1647723` und `964b6f5` identisch. Kein MagicZoom-Fix und keine abgeschlossene Stressabnahme behauptet; nativer ALT-Vergleich offen.
+- Mobile Ceres-Laderhöhe von 120 px und bestehende Tablet-Lücke der Critical-Regel `.col-md-6` bei 768–991 px bleiben unverändert. Lokale Geometrieprüfungen belegen keinen gesamten nativen CLS-/LCP-Gewinn. [Prüfbericht mit Ergebnissen und Grenzen](../../.cache/theme-magiczoom-cls-964b6f5-20261113/Pruefbericht.html).
+- Keine Versionsanhebung; lokal auf develop. Reales Mobilgerät und native Nachher-Abnahme nach Benutzerbereitstellung in 426 offen; keine Produktionsfreigabe. Kein Commit, Push, Merge, Deployment, Sync oder Cache-Purge. B2C, Preise, Bestelllogik, Matrix und Zahlungs-SDKs unverändert.
+
 ## Unreleased – CSS, Shop-Auswahldialog und sichere Asset-Ersetzung (2026-11-13)
 
 - Entferne ungültige CSS-Quellsyntax und sieben bereits ignorierte Deklarationen ohne Änderung der wirksamen CSSOM. Checkout-Min-Datei −219 Byte; Haupt-Min-CSS unverändert. 20 lokale Layout-/Pixelvergleiche PASS; neue Checkout-Kennung `…-css1`.

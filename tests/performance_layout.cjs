@@ -2,7 +2,8 @@
 // node tests/performance_layout.cjs <report.json>
 const fs=require('node:fs'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.O46_PLAYWRIGHT_MODULE||'playwright');
-const head=fs.readFileSync('resources/views/PageDesign/Partials/Head.twig','utf8');
+// An optional archived template permits a failing pre-fix control without editing sources.
+const head=fs.readFileSync(process.env.O46_HEAD_TEMPLATE||'resources/views/PageDesign/Partials/Head.twig','utf8');
 const critical=[...head.matchAll(/<style data-eg-(?:pdp-layout|first-paint)-critical>([\s\S]*?)<\/style>/g)].map(x=>x[1]).join('');
 const full=fs.readFileSync('resources/css/main-211025.min.css','utf8');
 const images=[['https://www.outlet46.de/documents/category/31/lager.jpg',2500,800],
@@ -37,6 +38,22 @@ const images=[['https://www.outlet46.de/documents/category/31/lager.jpg',2500,80
  const footerClasses=[...fs.readFileSync('resources/views/PageDesign/Partials/Footer.twig','utf8').matchAll(/<div class="([^"]*\bcol-\d+[^\"]*)"/g)].map(x=>x[1]);
  const baseStyles=[...head.matchAll(/<style>([\s\S]*?)<\/style>/g)].slice(0,3).map(x=>x[1]);
  assert.equal(baseStyles.length,3,'All three existing critical CSS branches are tested');
+ // Actual cart grid classes: preserve the final layout and reserve the desktop columns
+ // before asynchronous main.css. The pre-existing 768/991px tablet gap is recorded,
+ // not repaired by this desktop-only regression test.
+ for(const width of [320,375,390,428,768,991,992,1024,1280,1440,1920]){
+ const p=await b.newPage({viewport:{width,height:900}});
+ const cartMarkup='<main id="page-body"><div id="cart-columns" class="widget widget-grid widget-two-col row"><div class="widget-inner col-xl-7 widget-prop-xl-2-1 col-lg-7 widget-prop-lg-2-1 col-md-6 widget-prop-md-3-1 col-sm-12 widget-prop-sm-3-1 widget-stacked-mobile col-12 widget-prop-3-1 widget-stacked-mobile"><div>Artikel</div></div><div class="widget-inner col-xl-5 widget-prop-xl-auto col-lg-5 widget-prop-lg-auto col-md-6 widget-prop-md-3-1 col-sm-12 widget-prop-sm-3-1 col-12 widget-prop-3-1"><div>Summe / Versand</div></div></div></main>';
+ await p.setContent('<style>body{margin:0}</style><style data-cart-critical>'+baseStyles[2]+'</style>'+cartMarkup);
+ const measure=()=>p.locator('#cart-columns > .widget-inner').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return{x:r.x,width:r.width,maxWidth:s.maxWidth,flexBasis:s.flexBasis,flexGrow:s.flexGrow,flexShrink:s.flexShrink,paddingLeft:s.paddingLeft,paddingRight:s.paddingRight}}));
+ const before=await measure();await p.addStyleTag({content:full});const after=await measure();
+ const initialStable=before.every((v,i)=>Math.abs(v.x-after[i].x)<.1&&Math.abs(v.width-after[i].width)<.1&&['maxWidth','flexBasis','flexGrow','flexShrink'].every(k=>v[k]===after[i][k]));
+ if(width<768||width>=992)assert.ok(initialStable,'Cart critical grid must match main.css: '+JSON.stringify({width,before,after}));
+ await p.locator('style[data-cart-critical]').evaluate(e=>e.remove());const fullOnly=await measure();
+ assert.deepEqual(fullOnly,after,'Cart final geometry/spacing must be identical without critical CSS: '+width);
+ assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Cart grid must not overflow: '+width);
+ out.push({width,cartGridBefore:before,cartGridAfter:after,cartGridFullOnly:fullOnly,initialStable,legacyTabletInitialMismatch:width>=768&&width<992&&!initialStable,finalLayoutUnchanged:true});await p.close();
+ }
  for(const width of [375,390,768,1024,1440,1920])for(const [variant,base]of baseStyles.entries()){
  const p=await b.newPage({viewport:{width,height:900}});
  const markup='<main id="non-footer"><div class="row"><div class="col-12 col-xl-6">Gallery</div><div class="col-12 col-xl-6">Matrix</div></div></main><footer><div class="container"><div class="row">'+footerClasses.map(c=>'<div class="'+c+'">'+(c.includes('d-none')?'<hr>':'<p class="footer-title">Footer</p>')+'</div>').join('')+'</div></div></footer>';
@@ -53,4 +70,4 @@ const images=[['https://www.outlet46.de/documents/category/31/lager.jpg',2500,80
  await early.evaluate(e=>e.remove());assert.deepEqual(await measure(),after,'Final footer layout must equal the full stylesheet without the early copy');assert.deepEqual(await content(),contentBefore,'Final content layout must equal the full stylesheet without the early copy');
  out.push({width,variant,footerGridBefore:before,footerGridAfter:after,contentGrid:contentBefore,nonFooterUnchanged:true,finalLayoutUnchanged:true});await p.close();
  }
- }finally{await b.close();fs.writeFileSync(process.argv[2],JSON.stringify(out,null,2))}console.log('120 delayed images + 12 content overflow cases with 5 checkout labels + 4 thumbnail layouts + 18 footer/content grids; outside and final layouts unchanged PASS');})().catch(e=>{console.error(e);process.exitCode=1});
+ }finally{await b.close();fs.writeFileSync(process.argv[2],JSON.stringify(out,null,2))}console.log('120 delayed images + 12 content overflow cases with 5 checkout labels + 4 thumbnail layouts + 11 cart grids + 18 footer/content grids; outside and final layouts unchanged PASS');})().catch(e=>{console.error(e);process.exitCode=1});

@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Early desktop basket column (2026-11-13)
+
+- Add only the existing `.col-lg-7` geometry from 992 px to the general critical CSS branch in `Head.twig`: exactly 75 bytes, with the same 58.333333% column width as the main stylesheet. No new requests; JS/CSS sources and active minified assets unchanged.
+- Document the early MagicZoom close attempt: native touch input reaches a button whose ancestor is still invisible during the opening animation; the vendor guard `!ready || !expanded` rejects the call. The vendor block is identical between `1647723` and `964b6f5`. No MagicZoom fix or completed stress acceptance is claimed; a native historical comparison remains open.
+- Leave the mobile Ceres loader's 120 px height change and the existing `.col-md-6` critical CSS gap at 768–991 px unchanged. Local geometry checks do not establish an overall native CLS/LCP improvement. [Report with results and limitations](../../.cache/theme-magiczoom-cls-964b6f5-20261113/Pruefbericht.html).
+- No version increase; local develop only. Physical mobile-device checks and native post-deployment acceptance in 426 remain open until user deployment; no production approval. No commit, push, merge, deployment, sync or cache purge. B2C, prices, ordering, variant matrix and payment SDKs unchanged.
+
 ## Unreleased – CSS, shop-mode dialog and bounded asset replacement (2026-11-13)
 
 - Remove invalid CSS source syntax and seven already ignored declarations while preserving the effective CSSOM. Checkout minified CSS −219 bytes; main minified CSS unchanged. Twenty local layout/pixel comparisons pass; checkout cache suffix `…-css1`.
