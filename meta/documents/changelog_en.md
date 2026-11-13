@@ -1,5 +1,15 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Shared assets, critical CSS and navigation (2026-11-13)
+
+- Move twelve identical JS modules into a shared core while preserving execution order, Ceres dependencies and page-specific behavior. Load MagicZoom directly on PDPs and on demand for other Quickviews. Wait for the vendor's internal ready event; handle concurrent loads, errors/timeouts and normal product navigation as fallback. Reject stale Quickview responses and normalize duplicate `quickViewItem` parameters.
+- Rebuild all eight production minified JS assets completely from versioned sources with pinned dependencies, preserving vendor payloads/licenses. Existing partial build commands delegate to the full JS build. Page entries no longer carry the extracted implementations.
+- Remove only proven duplicate critical-CSS declarations: 1,069–7,404 fewer HTML bytes per page. Preserve layout stabilization and external stylesheets; 23 browser comparison pairs pass.
+- Share navigation markup across five language data sets, preserving all links, attributes, order and mobile interactions. Save 21,611–27,945 HTML bytes per language/page. Element counts are unchanged; whitespace text nodes decrease. Ten browser pairs pass; no PHP-time improvement claimed.
+- Reuse the PDP basket snapshot in the header (two getters become one), skip 32 unnecessary Quickview translations and register the route provider once. Validate controller IDs, feedback page/count and IT/ES autocomplete parameter types before data access. Preserve dynamic footer URLs, existing attribute batches and getters with side effects.
+- Local HTTP comparison: homepage/category approximately 87 KB fewer JS body bytes with one additional request; cold PDP adds 11,679 bytes and two requests. Three-page navigation transfers 875,600 → 417,023 JS bytes including local headers. No native S3/CWV/TTFB claim or Brotli extrapolation.
+- [Full report with files, measurements, tests, screenshots and limitations](../../.cache/systematic-optimization-96e50ee-20261113/Pruefbericht.html). Twig 2/3 each pass 173 templates and 585 SEO cases; PHP 13 files, matrix 70 functional/440 layout cases, real asset/MagicZoom loading and targeted regressions pass. Intermediate technical failures are documented. Native after-deployment, customer-class and payment acceptance remain `NOT_TESTED`. Local `develop` only; no commit/push/merge/deployment/sync/cache purge or version increase.
+
 ## Unreleased – Global search, early layout and Quickview preparation (2026-11-13)
 
 - Reject stale autocomplete responses after clearing or changing input; remove the full result row and loading state for short queries. Preserve debounce, API routes and all five languages. Four source/active minified bundles remain consistent through a targeted search builder and `search4` marker; +91 JS bytes per bundle, no extra requests. 40 new and 80 existing search scenarios pass; 16 baseline defects reproduced.

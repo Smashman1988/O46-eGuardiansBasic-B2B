@@ -1,3 +1,4 @@
+const { readAsset } = require('./theme_assets.cjs');
 // Local regression for delayed responses and synthetic image-link navigation.
 // The four production sources run against real DOMs; the native zoom API is a recorder.
 const fs=require('node:fs'),assert=require('node:assert/strict'),acorn=require('acorn');
@@ -12,7 +13,7 @@ function functions(source){const found={};function walk(n){if(!n?.type)return;if
  await p.addScriptTag({content:`window.calls=[];window.pending=[];window.linkClicks=0;var matrixZoomCallbacksReady=false;window.vCache={};window.zoomCallbacks={};document.addEventListener('click',e=>{if(e.target.closest('a'))linkClicks++});
  window.MagicZoom={stop:id=>calls.push(['stop',id]),start:id=>calls.push(['start',id]),update:id=>calls.push(['update',id]),refresh:id=>calls.push(['refresh',id]),expand:node=>calls.push(['expand',node.id]),registerCallback:(name,fn)=>{if(zoomCallbacks[name])throw Error('duplicate callback');zoomCallbacks[name]=fn}};
  function fetchVariationDetails(id,cb){pending.push({id,cb})}function fetchVariationDetailsSingle(id,cb){pending.push({id,cb})}
- ${functions(fs.readFileSync('resources/js/'+name+'.js','utf8'))}`});
+ ${functions(readAsset('resources/js/'+name+'.js','utf8'))}`});
  const outcome=await p.evaluate(async id=>{
  const matrix=document.getElementById('matrix'),rows=[...matrix.children];
  const result=n=>({images:[{url:'https://gallery-fixture.invalid/'+n+'-large',urlMiddle:'https://gallery-fixture.invalid/'+n+'-middle',urlPreview:'https://gallery-fixture.invalid/'+n+'-thumb'}]});

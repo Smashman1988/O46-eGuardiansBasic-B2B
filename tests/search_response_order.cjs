@@ -1,12 +1,13 @@
+const { readAsset } = require('./theme_assets.cjs');
 // Isolated browser regression: real search handlers, controlled response ordering.
 // No shop requests; this is not native deployment or INP acceptance.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),acorn=require('acorn');
 const {chromium}=require(process.env.O46_PLAYWRIGHT_MODULE||'playwright');
 const dir=path.resolve(process.env.O46_SEARCH_ASSETS||path.join(__dirname,'../resources/js'));
-const jquery=fs.readFileSync(path.join(__dirname,'../resources/js/jquery-3.7.1.min.js'),'utf8');
+const jquery=readAsset(path.join(__dirname,'../resources/js/jquery-3.7.1.min.js'),'utf8');
 const report={mode:'ISOLATED_ORIGINAL_HANDLERS_CONTROLLED_RESPONSES',rows:[],errors:[],browserClosed:false};
 function handlers(file){
-    const source=fs.readFileSync(path.join(dir,file),'utf8'),found={};
+    const source=readAsset(path.join(dir,file),'utf8'),found={};
     function walk(node){
         if(!node?.type)return;
         if(node.type==='AssignmentExpression'&&node.left.type==='MemberExpression'){

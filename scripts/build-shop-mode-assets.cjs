@@ -1,4 +1,4 @@
-// Replace only the existing shop-mode dialog in the four shipped bundles.
+// Legacy command retained; production assets now use the complete reproducible build.
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const acorn = require('acorn');
@@ -23,25 +23,8 @@ function region(source) {
 }
 
 async function build() {
-    const results = [];
-    for (const name of ['main', 'cat', 'item', 'vue']) {
-        const source = fs.readFileSync(`resources/js/${name}.js`, 'utf8');
-        const part = region(source);
-        const file = `resources/js/${name}-020726.min.js`;
-        const before = fs.readFileSync(file, 'utf8');
-        const target = region(before);
-        const built = await minify('window.__shopModeBuild=' + source.slice(part.callee.start, part.callee.end), {
-            compress: false, mangle: true, format: {comments: false}
-        });
-        const expression = acorn.parse(built.code, {ecmaVersion: 'latest'}).body[0].expression.right;
-        const replacement = '(' + built.code.slice(expression.start, expression.end) + ')()';
-        const after = before.slice(0, target.start) + replacement + before.slice(target.end);
-        acorn.parse(after, {ecmaVersion: 'latest'});
-        fs.writeFileSync(file, after);
-        results.push({file, before: Buffer.byteLength(before), after: Buffer.byteLength(after), unchangedOutsideDialog: true});
-    }
-    console.log(JSON.stringify(results, null, 2));
+    const report = await require('./build-js.cjs').build();
+    console.log(JSON.stringify(report));
 }
-
 module.exports = {region};
 if (require.main === module) build().catch(error => { console.error(error); process.exitCode = 1; });

@@ -13,7 +13,7 @@
 {% else %}
   {% import "GuardiansBasicB2B::Category.Macros.CategoryTree.twig" as Tree %}
 {% endif %}
-{% set basketItems = services.basket.getBasketForTemplate() %}
+{% set basketItems = pdpBasketForHeader is defined ? pdpBasketForHeader : services.basket.getBasketForTemplate() %}
     {% set isVueView = false %}
 {% if services.template.getCurrentTemplate() == "tpl.basket" or services.template.getCurrentTemplate() == "tpl.login" or services.template.isCheckout() or services.template.getCurrentTemplate() == "tpl.register" %}
     {% set isVueView = false %}

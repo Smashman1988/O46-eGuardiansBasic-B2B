@@ -172,6 +172,17 @@ namespace {
         return $source;
     }
     function compactHtml($html) { return preg_replace('/>\s+</', '><', trim($html)); }
+    function checkThemeAssetOrder($html, $page, $isItem) {
+        $base = '/plugins/GuardiansBasicB2B/js/';
+        preg_match_all('~<script\s+src="([^"]*/js/(?:core|magiczoom|(?:cat|main|vue|item)-020726)\\.min\\.js\\?[^"]*)"([^>]*)>~', $html, $tags, PREG_SET_ORDER);
+        $expected = [$base . 'core.min.js?v=fixture-core1', $base . $page . '-020726.min.js?v=fixture-core1'];
+        if ($isItem) { $expected[] = $base . 'magiczoom.min.js?v=fixture-zoom1'; }
+        check(array_map(function ($tag) { return html_entity_decode($tag[1], ENT_QUOTES, 'UTF-8'); }, $tags) === $expected,
+            'Core/page/MagicZoom script count, URL or execution order changed');
+        foreach ($tags as $tag) { check(strpos($tag[2], 'defer') !== false, 'Theme script lost defer'); }
+        check(strpos($tags[0][2], 'data-eg-magiczoom-src="' . $base . 'magiczoom.min.js?v=fixture-zoom1"') !== false,
+            'Core lost the versioned on-demand MagicZoom URL');
+    }
     // Targeted source guard, NOT the PlentyONE compiler/validator. Native names
     // checked against the official NativePHPFunctionsAndClasses list, 2026-11-09.
     function checkPluginSource($source): array {
@@ -807,7 +818,7 @@ namespace {
                         check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Directory exposes a pager');
                         check(strpos($html,'brandTiles') !== false && strpos($html,'/alpha') !== false && strpos($html,'/beta') !== false,'Actual brand list missing');
                         check(strpos($html,'.brandTiles .col-xl-3 {') !== false,'Directory critical grid CSS missing');
-                        check(strpos($html,'main-211025.min.css?v=fixture-nl3-matrix4-logo1-gallery3-perf1-facets1" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
+                        check(strpos($html,'main-211025.min.css?v=fixture-nl3-matrix4-logo1-gallery3-perf1-facets1-footer1" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
                         check(count($search->calls) === $calls,'Directory issued an embedded item query');
                     } finally { $urls->base = $oldBase; $templateService->template = $oldTemplate; }
                 });
@@ -845,8 +856,9 @@ namespace {
                 preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
                 check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
                 $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
-                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-nl1' . ($asset === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery2-matrix3-language1' . ($asset === 'cat' ? '-history1' : '') . '-lazy1-mode1';
+                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-core1';
                 check($url === $expected,'Wrong shipped asset or cache version');
+                checkThemeAssetOrder($html, $asset, false);
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
                 check(strpos($html,'/js/cat.js') === false,'Unminified source loaded into shop');
                 check(strpos($html,'.brandTiles .col-xl-3 {') === false,'Brand critical CSS leaked into an item list or editorial page');
@@ -870,9 +882,12 @@ namespace {
                     $context['category'] = $type === 'tpl.category.item' ? $base['category'] : [];
                     $context['isSearch'] = $type === 'tpl.search'; // Supplied by Ceres ItemSearchContext.
                     $html = $twig->render('layout',$context);
+                    $page = $type === 'tpl.item' ? 'item' : (in_array($type, ['tpl.search','tpl.category.item'], true) ? 'cat' : 'main');
+                    checkThemeAssetOrder($html, $page, $type === 'tpl.item');
                     check(strpos($html,'data-eg-item-languages') === false,'Duplicate PDP language JSON remains');
                     if ($type === 'tpl.item') {
                         $withCategory = $twig->render('layout',array_replace($context,['category'=>$base['category']]));
+                        checkThemeAssetOrder($withCategory, 'cat', true);
                         check(strpos($withCategory,'/js/facets.min.js') === false,'PDP with category context still loads facets');
                     }
                     preg_match_all('~<script src="([^"]*/js/facets.min.js[^\"]*)"([^>]*)>~',$html,$scripts);

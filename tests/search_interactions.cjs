@@ -1,3 +1,4 @@
+const { readAsset } = require('./theme_assets.cjs');
 // Local browser regression for the actual search handlers in all four page bundles.
 // Same Chromium / Playwright environment variables as tests/quickview_dropdown.cjs.
 const assert = require('node:assert/strict');
@@ -6,7 +7,7 @@ const path = require('node:path');
 const acorn = require('acorn');
 const {chromium} = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
 const dir = path.resolve(__dirname, '../resources/js');
-const jquery = fs.readFileSync(path.join(dir, 'jquery-3.7.1.min.js'), 'utf8');
+const jquery = readAsset(path.join(dir, 'jquery-3.7.1.min.js'), 'utf8');
 const langs = ['de','en','fr','it','es'];
 const origin = 'https://search-fixture.invalid';
 const prefix = l => l === 'de' ? '' : '/' + l;
@@ -14,11 +15,11 @@ const term = '2351296', labels = ['Alpha & Beta + 50%', 'Caffè #2'], empty = 'z
 const sku = '9885396';
 const quotedLabel = '9885396 "><img src=x onerror="window.badLabel=1"> & Zubehör';
 const escape = s => String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
-const captured = process.env.O46_SEARCH_CAPTURE ? JSON.parse(fs.readFileSync(process.env.O46_SEARCH_CAPTURE)) : null;
+const captured = process.env.O46_SEARCH_CAPTURE ? JSON.parse(readAsset(process.env.O46_SEARCH_CAPTURE)) : null;
 const results = [];
 
 function handlers(asset) {
-    const source = fs.readFileSync(path.join(process.env.O46_SEARCH_ASSETS || dir, asset), 'utf8');
+    const source = readAsset(path.join(process.env.O46_SEARCH_ASSETS || dir, asset), 'utf8');
     const found = {};
     function walk(n) {
         if (!n?.type) return;

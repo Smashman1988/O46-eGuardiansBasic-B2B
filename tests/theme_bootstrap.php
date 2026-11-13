@@ -5,13 +5,13 @@
 // Their compiled names are resolved later by pluginApp, not by Application::bind.
 namespace BootstrapTest {
     class Application {
-        public $providers = [];
+        public $providers = [], $registrationCalls = [];
         public function bind($abstract, $concrete = null) {
             if (!class_exists($abstract)) {
                 throw new \RuntimeException('class ' . $abstract . ' not found');
             }
         }
-        public function register($provider) { $this->providers[$provider] = true; }
+        public function register($provider) { $this->registrationCalls[] = $provider; $this->providers[$provider] = true; }
     }
     function check($condition, $message) {
         if (!$condition) { throw new \RuntimeException($message); }
@@ -39,7 +39,10 @@ namespace Plenty\Plugin\Events {
     }
 }
 namespace Plenty\Plugin\Routing {
-    class Router { public function get($path, $controller) {} }
+    class Router {
+        public $routes = [];
+        public function get($path, $controller) { $this->routes[$path] = $controller; }
+    }
     class ApiRouter {
         public $namespace, $routes = [];
         public function version($versions, $options, $callback) {
@@ -87,11 +90,20 @@ namespace {
         \BootstrapTest\check(isset($events->listeners[$event]), $event . ' listener');
     }
     $api = new \Plenty\Plugin\Routing\ApiRouter();
+    $router = new \Plenty\Plugin\Routing\Router();
     foreach (array_keys($application->providers) as $class) {
-        (new $class())->map(new \Plenty\Plugin\Routing\Router(), $api);
+        (new $class())->map($router, $api);
     }
     \BootstrapTest\check($api->routes['io/facet'] === 'GuardiansBasicB2B\\Resources\\FacetResource', 'facet route');
     if (!isset($argv[1])) {
+        \BootstrapTest\check($application->registrationCalls === [\GuardiansBasicB2B\Providers\GuardiansBasicRouteServiceProvider::class], 'route provider registered exactly once');
+        foreach (['loginPreview'=>'dynamicLogin', 'basketPreview'=>'dynamicBasketPreview', 'basketPreviewSmall'=>'dynamicBasketPreviewSmall',
+                  'catPreviewImages'=>'dynamicCatPreviewImages', 'getFeedbacks'=>'dynamicGetFeedbacks',
+                  'getShopBuilderContent'=>'getShopBuilderContent', 'trackings'=>'getTrackings'] as $path => $method) {
+            \BootstrapTest\check(($router->routes[$path] ?? null) === 'GuardiansBasicB2B\\Controllers\\ContentController@' . $method, 'HTML route ' . $path);
+        }
+        \BootstrapTest\check(count($router->routes) === 7 && count($api->routes) === 3, 'all 10 route declarations retained');
+        \BootstrapTest\check($api->routes['io/variations/batch'] === 'GuardiansBasicB2B\\Resources\\VariationBatchResource@index', 'batch route');
         \BootstrapTest\check($api->routes['guardiansbasicb2b/item/search/autocomplete'] === 'GuardiansBasicB2B\\Resources\\SearchAutocompleteResource@index', 'unique autocomplete route');
         \BootstrapTest\check(!isset($api->routes['io/item/search/autocomplete']), 'native IO autocomplete route is not overridden');
     }

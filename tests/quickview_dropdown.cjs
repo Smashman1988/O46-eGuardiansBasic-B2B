@@ -1,3 +1,4 @@
+const { readAsset } = require('./theme_assets.cjs');
 // node tests/quickview_dropdown.cjs (same Chrome/Playwright overrides as seo_metadata.cjs).
 // Exercise the real registration, opener and element binder. Only Quickview transport,
 // modal display, image observers and the two products are fixtures; no shop is contacted.
@@ -47,10 +48,10 @@ function quickviewParts(source) {
 }
 
 async function exercise(browser, asset) {
-    const parts = quickviewParts(fs.readFileSync(path.join(assets, asset), 'utf8'));
+    const parts = quickviewParts(readAsset(path.join(assets, asset), 'utf8'));
     const page = await browser.newPage();
     try {
-        await page.setContent('<button class="linkabso" data-href="A">A</button><button class="linkabso" data-href="B">B</button>' +
+        await page.setContent('<button class="linkabso" data-href="https://fixture.invalid/A">A</button><button class="linkabso" data-href="https://fixture.invalid/B">B</button>' +
             '<div class="modal-cross" hidden><div class="modal-body"></div></div>' +
             '<div class="eg-dropdown"><button>Inside</button></div><div class="eg-dropdown cat-facet"></div>');
         await page.addScriptTag({ path: path.join(assets, 'jquery-3.7.1.min.js') });
@@ -68,6 +69,7 @@ async function exercise(browser, asset) {
                 } }
             };
         });
+        await page.addScriptTag({content: 'window.O46Core={};' + fs.readFileSync(path.join(assets, 'zoom-loader.js'), 'utf8')});
         await page.addScriptTag({ content: 'eGuardians.events.observeLazyImages = ((' + parts.owner + ') => (' + parts.lazy + '))(eGuardians);' +
             'eGuardians.events.bindEvents = ((' + parts.owner + ') => (' + parts.bind + '))(eGuardians);' +
             parts.register + ';' + parts.open + ';eGuardians.events.bindEvents();' });

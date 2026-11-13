@@ -1,0 +1,36 @@
+{# Shared markup for the five existing language menus. Keep all links in the
+   initial HTML: desktop, mobile and crawlers use the same navigation tree. #}
+{% macro render(menu, labels, currency) -%}
+    {%- set currencySuffix = currency != 'EUR' ? '?currency=' ~ currency : '' -%}
+    {%- for entry in menu -%}
+        <li class="{% if entry.items is defined %}eg-ddown {% endif %}cat-{{ entry.id }}">
+            <a href="{{ entry.url }}{{ currencySuffix }}" title="{{ entry.title|default(entry.label) }}"><span class="nav-cat-name{% if entry.highlight|default(false) %} font-red{% endif %}">{{ entry.label }}</span>
+                {%- if entry.items is defined -%}
+                    <span class="d-lg-none open-ddown" data-eg-open-ddown="" data-eg-handler="ddownOpen"></span>
+                {%- endif -%}
+            </a>
+            {%- if entry.items is defined -%}
+                <div class="ddown-wrap transition">
+                    <button class="hidden-lg-up back-ddown" data-eg-back-ddown="" data-eg-handler="ddownBack" aria-label="{{ labels.backAria }}">«&nbsp;{{ labels.back }}</button>
+                    <div class="container scrollable-nav"><div class="row align-items-center"><div class="col-lg-12">
+                        <ul class="cccount scrollable-nav cat-{{ entry.listId }}">
+                            <li class="level2"><a href="javascript:void(0)" title="{{ labels.showAllTitle }}" class="menuShowAll">{{ entry.showAll }}</a></li>
+                            {%- for item in entry.items -%}
+                                <li class="cat-{{ item.id }} level2"><a href="{{ item.url }}{{ currencySuffix }}" title="{{ item.title|default(item.label) }}">
+                                    {%- if item.heading|default(false) -%}
+                                        <span class="f-size20"><u>{{ item.label }}</u></span>
+                                    {%- else -%}
+                                        <span>{{ item.label }}</span>
+                                    {%- endif -%}
+                                </a></li>
+                            {%- endfor -%}
+                        </ul>
+                    </div></div></div>
+                </div>
+            {%- endif -%}
+        </li>
+        {%- if entry.separator is defined -%}
+            <span class="nav-cat-name d-lg-block {{ entry.separator }}">|</span>
+        {%- endif -%}
+    {%- endfor -%}
+{%- endmacro %}

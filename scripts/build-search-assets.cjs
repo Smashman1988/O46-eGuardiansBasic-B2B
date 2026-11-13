@@ -1,4 +1,4 @@
-// Replace only the existing autocomplete handler; keep all other shipped code intact.
+// Legacy command retained; production assets now use the complete reproducible build.
 const fs=require('node:fs'),assert=require('node:assert/strict'),acorn=require('acorn'),{minify}=require('terser');
 function handler(source){
     const found=[];
@@ -12,16 +12,6 @@ function handler(source){
     return found[0];
 }
 module.exports={handler};
-if(require.main===module)(async()=>{
-    const report=[];
-    for(const name of ['cat','item','main','vue']){
-        const source=fs.readFileSync(`resources/js/${name}.js`,'utf8'),a=handler(source),file=`resources/js/${name}-020726.min.js`;
-        const old=fs.readFileSync(file,'utf8'),b=handler(old);
-        const result=await minify('window.__searchBuild='+source.slice(a.start,a.end),{compress:false,mangle:true,format:{comments:false}});
-        const expression=acorn.parse(result.code,{ecmaVersion:'latest'}).body[0].expression.right;
-        const output=old.slice(0,b.start)+result.code.slice(expression.start,expression.end)+old.slice(b.end);
-        acorn.parse(output,{ecmaVersion:'latest'});fs.writeFileSync(file,output);
-        report.push({file,bytes:Buffer.byteLength(output),unchangedOutsideAutocomplete:true});
-    }
-    console.log(JSON.stringify(report));
-})().catch(error=>{console.error(error);process.exitCode=1});
+if (require.main === module) require('./build-js.cjs').build()
+    .then(report => console.log(JSON.stringify(report)))
+    .catch(error => { console.error(error); process.exitCode = 1; });

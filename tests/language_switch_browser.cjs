@@ -1,18 +1,19 @@
+const { readAsset } = require('./theme_assets.cjs');
 // Real shipped modal + matrix methods, real Twig matrix; explicit local IO routes/catalogue.
 // node tests/language_switch_browser.cjs <rendered-matrix.json> <report-dir>
 const fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict'),acorn=require('acorn');
 const {chromium}=require(process.env.O46_PLAYWRIGHT_MODULE||'playwright'),{moduleCode}=require('./language_modal.cjs');
-const templates=JSON.parse(fs.readFileSync(process.argv[2])),D=path.resolve(process.argv[3]);fs.mkdirSync(D,{recursive:true});
+const templates=JSON.parse(readAsset(process.argv[2])),D=path.resolve(process.argv[3]);fs.mkdirSync(D,{recursive:true});
 const items=require('./fixtures/item_language_urls.json'),langs=['de','en','fr','it','es'],assets=['item','cat','main','vue'];
 const out={mode:'LOCAL_IO_FIXTURES_REAL_MODAL_AND_MATRIX',checks:[],requests:[],exceptions:[],complete:false},save=()=>fs.writeFileSync(D+'/browser.json',JSON.stringify(out,null,2));let origin;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const local=(item,lang)=>origin+new URL(item.languages[lang]).pathname;
-function matrixCode(file){const s=fs.readFileSync(file,'utf8'),nodes=[];function walk(n){if(!n?.type)return;if(n.type==='CallExpression'&&n.callee.type==='FunctionExpression'&&s.slice(n.start,n.end).includes('window.__egSizeMatrixLoaded'))nodes.push(n);for(const v of Object.values(n)){if(Array.isArray(v))v.forEach(walk);else if(v?.type)walk(v)}}walk(acorn.parse(s,{ecmaVersion:'latest'}));assert.equal(nodes.length,1);return '('+s.slice(nodes[0].start,nodes[0].end)+')';}
+function matrixCode(file){const s=readAsset(file,'utf8'),nodes=[];function walk(n){if(!n?.type)return;if(n.type==='CallExpression'&&n.callee.type==='FunctionExpression'&&s.slice(n.start,n.end).includes('window.__egSizeMatrixLoaded'))nodes.push(n);for(const v of Object.values(n)){if(Array.isArray(v))v.forEach(walk);else if(v?.type)walk(v)}}walk(acorn.parse(s,{ecmaVersion:'latest'}));assert.equal(nodes.length,1);return '('+s.slice(nodes[0].start,nodes[0].end)+')';}
 const matrix=matrixCode('resources/js/item-020726.min.js');
 const boot=`const fixture={};const variants=Array.from({length:24},(_,i)=>{const id=1001+i;fixture[id]={id,stock:50,price:4.99,ean:'001234'+id,images:[{url:location.origin+'/image.svg',urlMiddle:location.origin+'/image.svg',urlPreview:location.origin+'/image.svg'}]};return {variationId:id,attributes:[{attributeId:1,attributeValueId:i%12+1},{attributeId:2,attributeValueId:i<12?101:102}]}});const get=eGuardians.apiservice.get;eGuardians.apiservice.get=(u,a,cb)=>u.includes('/variations/batch')?queueMicrotask(()=>cb({data:{items:fixture}})):u.includes('/basket/')?queueMicrotask(()=>cb({data:[]})):get(u,a,cb);window.MagicZoom={stop(){},start(){},registerCallback(){}};document.querySelector('[data-eg-variations]').dataset.egVariations=JSON.stringify(variants);`;
 const server=http.createServer((req,res)=>{const u=new URL(req.url,origin);out.requests.push(u.pathname);const send=(body,type='text/html',status=200)=>{res.writeHead(status,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-store'});res.end(body)};
- if(u.pathname==='/jquery.js')return send(fs.readFileSync('resources/js/jquery-3.7.1.min.js'),'text/javascript');
- if(u.pathname==='/main.css')return send(fs.readFileSync('resources/css/main-211025.min.css'),'text/css');
+ if(u.pathname==='/jquery.js')return send(readAsset('resources/js/jquery-3.7.1.min.js'),'text/javascript');
+ if(u.pathname==='/main.css')return send(readAsset('resources/css/main-211025.min.css'),'text/css');
  if(u.pathname==='/image.svg')return send('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="120"><rect width="100" height="120" fill="silver"/></svg>','image/svg+xml');
  if(u.pathname==='/modal.js')return send(moduleCode(`resources/js/${assets.includes(u.searchParams.get('asset'))?u.searchParams.get('asset'):'item'}-020726.min.js`),'text/javascript');
  if(/\.(?:woff2?|ttf|ico)$/.test(u.pathname)){res.writeHead(204);return res.end()}

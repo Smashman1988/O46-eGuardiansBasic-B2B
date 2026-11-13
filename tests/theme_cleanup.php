@@ -6,7 +6,11 @@ namespace Plenty\Plugin\Templates\Extensions { class Twig_Extension {} }
 namespace Plenty\Plugin\Templates\Factories { class TwigFactory {} }
 namespace Plenty\Plugin { class Controller { public function __construct() {} } }
 namespace Plenty\Plugin\Http {
-    class Request { public $params = []; public function get($key, $default = null) { return $this->params[$key] ?? $default; } }
+    class Request {
+        public $params = [];
+        public function get($key, $default = null) { return $this->params[$key] ?? $default; }
+        public function query($key, $default = null) { return array_key_exists($key, $this->params) ? $this->params[$key] : $default; }
+    }
 }
 namespace Plenty\Plugin\Templates {
     class Twig {
@@ -66,6 +70,7 @@ set_error_handler(function ($level, $message, $file, $line) use (&$deprecations)
     throw new \ErrorException($message, 0, $level, $file, $line);
 });
 require $argv[1];
+require_once dirname(__DIR__) . '/src/Helper/SeoPage.php';
 class CleanupData { private $data; public function __construct($data) { $this->data = $data; } public function toArray() { return $this->data; } }
 class CleanupCallback { private $fn; public function __construct($fn) { $this->fn = $fn; } public function call(...$args) { return ($this->fn)(...$args); } }
 function cb($fn) { return [new CleanupCallback($fn), 'call']; }
@@ -129,11 +134,13 @@ foreach (['de','en','fr','it','es'] as $lang) foreach ([null,[],[true,false],[tr
         $GLOBALS['services'] = ['GuardiansBasicB2B\\Extensions\\Base_Extension'=>$extension,\Plenty\Modules\Feedback\Contracts\FeedbackRepositoryContract::class=>$repo]; $GLOBALS['resolutions'] = [];
         $class = 'GuardiansBasicB2B\\Controllers\\Cleanup'.$version.'ContentController'; $controller = new $class(new \IO\Services\ItemService());
         $_GET = ['itemId'=>'42','page'=>'2','maxcount'=>'20'];
-        $json = $controller->dynamicGetFeedbacks($renderer);
+        $request = new \Plenty\Plugin\Http\Request(); $request->params = $_GET;
+        $json = $controller->dynamicGetFeedbacks($renderer, $request);
         $results[$version] = ['json'=>$json,'queries'=>$repo->calls,'renders'=>$renderer->calls,'resolutions'=>array_count_values($GLOBALS['resolutions'])];
     }
     check($results['Before']['json'] === $results['After']['json'],'Changed feedback JSON/HTML');
-    check($results['Before']['queries'] === $results['After']['queries'],'Changed feedback query');
+    check($results['Before']['queries'] === [['2','20',[],['itemId'=>'42','ratingValue'=>5]]], 'Historical feedback query contract');
+    check($results['After']['queries'] === [[2,20,[],['itemId'=>42,'ratingValue'=>5]]], 'Validated feedback query retains values');
     check($results['Before']['renders'] === $results['After']['renders'],'Changed feedback template data');
     $key = \Plenty\Modules\Feedback\Contracts\FeedbackRepositoryContract::class;
     check($results['Before']['resolutions'][$key] === 2 && $results['After']['resolutions'][$key] === 1,'Expected one eliminated container resolution');
@@ -146,7 +153,8 @@ foreach (['Before','After'] as $version) foreach (['validation','search','feedba
     $renderer = new \Plenty\Plugin\Templates\Twig(); $class = 'GuardiansBasicB2B\\Extensions\\Cleanup'.$version.'Base_Extension';
     $extension = new $class(new \Plenty\Plugin\Templates\Factories\TwigFactory(),$renderer,new \Plenty\Plugin\Http\Request());
     $GLOBALS['services'] = [\IO\Services\CategoryService::class=>new \IO\Services\CategoryService(),\Plenty\Modules\Webshop\ItemSearch\Services\ItemSearchService::class=>$search,\Plenty\Modules\Feedback\Contracts\FeedbackRepositoryContract::class=>$repo,'GuardiansBasicB2B\\Extensions\\Base_Extension'=>$extension];
-    try { if ($failure === 'feedback') { $class='GuardiansBasicB2B\\Controllers\\Cleanup'.$version.'ContentController'; (new $class(new \IO\Services\ItemService()))->dynamicGetFeedbacks($renderer); } else { $extension->getItemsFromCatSimple(42,$failure==='validation'?0:24,[]); } throw new \LogicException('Failure swallowed'); }
+    $request = new \Plenty\Plugin\Http\Request(); $request->params = $_GET;
+    try { if ($failure === 'feedback') { $class='GuardiansBasicB2B\\Controllers\\Cleanup'.$version.'ContentController'; (new $class(new \IO\Services\ItemService()))->dynamicGetFeedbacks($renderer, $request); } else { $extension->getItemsFromCatSimple(42,$failure==='validation'?0:24,[]); } throw new \LogicException('Failure swallowed'); }
     catch (\RuntimeException|\InvalidArgumentException $e) { check($e->getMessage() === ['validation'=>'Invalid page size','search'=>'Search unavailable','feedback'=>'Feedback unavailable'][$failure],'Wrong upstream failure'); }
 }
 file_put_contents($argv[4],json_encode(['twig'=>\Twig\Environment::VERSION,'mode'=>'LOCAL_REAL_PHP_TWIG_WITH_EXPLICIT_SERVICE_FIXTURES','assertions'=>$assertions,'comparisons'=>$rows,'errorPropagationCases'=>6,'dependencyDeprecations'=>$deprecations],JSON_PRETTY_PRINT));

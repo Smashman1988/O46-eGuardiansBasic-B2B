@@ -1,5 +1,15 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Gemeinsame Assets, Critical CSS und Navigation (2026-11-13)
+
+- Führe zwölf identische JS-Module in einem gemeinsamen Core zusammen; erhalte Reihenfolge, Ceres-Abhängigkeiten und seitenspezifische Logik. Lade MagicZoom auf PDPs direkt und sonst erst bei Quickview. Berücksichtige das interne Vendor-Ready-Signal, parallele Aufrufe, Fehler/Timeout und normale Produktnavigation als Fallback. Verhindere veraltete Quickview-Antworten und doppelte `quickViewItem`-Parameter.
+- Baue alle acht produktiven Min-JS-Dateien vollständig und reproduzierbar mit gepinnten Abhängigkeiten; erhalte Vendor-Payloads und Lizenzen. Alte Teil-Builder delegieren an den vollständigen JS-Build. Die vier Seitenskripte enthalten die ausgelagerten Implementierungen nicht mehr.
+- Entferne ausschließlich nachweislich redundante Critical-CSS-Deklarationen: je HTML-Antwort −1.069 bis −7.404 Byte. Layoutstabilisierungen und externe Stylesheets bleiben unverändert; 23 Browser-Vergleichspaare PASS.
+- Vereinheitliche fünf aktive Kategorie-Navigationen mit sprachabhängigen Daten. Erhalte alle Links, Attribute, Reihenfolgen und mobile Bedienung; spare 21.611–27.945 HTML-Byte pro Sprache/Seite. Elementanzahl gleich, weniger Whitespace-Textknoten. Zehn Browserpaare PASS; kein PHP-Laufzeitgewinn.
+- Verwende den PDP-Basket-Snapshot im Header erneut (2 → 1 Getter), überspringe 32 Quickview-Übersetzungen und registriere den Route-Provider einmal. Validiere Controller-IDs, Feedbackseite/maxcount und IT-/ES-Autocomplete-Parametertypen vor Datenzugriff. Dynamische Footerauflösung, vorhandene Attributbatches und Getter mit Seiteneffekten bleiben erhalten.
+- Lokaler HTTP-Vergleich: Startseite/Kategorie ca. 87 KB weniger JS-Body bei einem zusätzlichen Request; kalte PDP +11.679 Byte und zwei zusätzliche Requests. Dreiseitige Navigation 875.600 → 417.023 Byte JS-Transfer, inklusive lokaler Header. Keine Aussage über native S3-/CWV-/TTFB-Gewinne; keine Brotli-Hochrechnung.
+- [Bericht mit vollständigen Dateien, Messwerten, Tests, Screenshots und Grenzen](../../.cache/systematic-optimization-96e50ee-20261113/Pruefbericht.html). Twig 2/3 jeweils 173 Templates und 585 SEO-Fälle, PHP 13 Dateien, Matrix 70 Funktionen/440 Layouts, echte Asset-/MagicZoom-Ladekette und gezielte Regressionen PASS. Technische Zwischenabbrüche dokumentiert. Native Nachher-Abnahme, Kundenklassen und Zahlungen `NOT_TESTED`. Nur lokal auf `develop`, kein Commit/Push/Merge/Deploy/Sync/Cache-Purge, keine Versionsanhebung.
+
 ## Unreleased – Globale Suche, frühes Layout und Quickview-Aufbereitung (2026-11-13)
 
 - Verhindere veraltete Autocomplete-Antworten nach Löschen oder erneuter Eingabe; entferne bei kurzem Suchtext die gesamte Ergebniszeile und den Ladezustand. Bestehende Debounce, API-Routen und fünf Sprachen unverändert. Vier Quellen/aktive Min-Dateien konsistent, gezielter Such-Builder und Kennung `search4`; +91 JS-Byte pro Bundle, keine zusätzlichen Requests. 40 neue und 80 bestehende Suchszenarien PASS; 16 ALT-Fehler reproduziert.

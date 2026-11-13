@@ -21,24 +21,7 @@ function matrixCall(source) {
 }
 (async () => {
     const report = { javascript: [], css: {} };
-    for (const name of ['cat', 'item', 'main', 'vue']) {
-        const source = fs.readFileSync(`resources/js/${name}.js`, 'utf8');
-        const file = `resources/js/${name}-020726.min.js`;
-        const old = fs.readFileSync(file, 'utf8'), a = matrixCall(source), b = matrixCall(old);
-        const result = await minify('window.__matrixBuild=' + source.slice(a.start, a.end), {
-            compress: false, mangle: true, format: { comments: false }
-        });
-        const expr = acorn.parse(result.code, { ecmaVersion: 'latest' }).body[0].expression.right;
-        const replacement = '(' + result.code.slice(expr.start, expr.end) + ')';
-        // Acorn excludes the IIFE's grouping parentheses. Replace them too so
-        // repeated builds do not accumulate another pair around the same call.
-        let from = b.start, to = b.end;
-        while (old[from - 1] === '(' && old[to] === ')') { from--; to++; }
-        const output = old.slice(0, from) + replacement + old.slice(to);
-        acorn.parse(output, { ecmaVersion: 'latest' });
-        fs.writeFileSync(file, output);
-        report.javascript.push({ file, unchangedOutsideMatrix: true, matrixBytes: Buffer.byteLength(replacement) });
-    }
+    report.javascript = await require('./build-js.cjs').build();
     const source = fs.readFileSync('resources/css/main.css', 'utf8');
     const begin = source.indexOf('/* B2B matrix:'), end = source.indexOf('/* End B2B responsive matrix */', begin);
     assert.ok(begin > 0 && end > begin);

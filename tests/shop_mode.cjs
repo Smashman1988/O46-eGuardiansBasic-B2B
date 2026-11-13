@@ -1,3 +1,4 @@
+const { readAsset } = require('./theme_assets.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
@@ -14,7 +15,7 @@ async function run() {
     try {
         for (const name of ['main', 'cat', 'item', 'vue']) for (const suffix of ['.js', '-020726.min.js']) {
             const file = `resources/js/${name}${suffix}`;
-            const source = revision ? cp.execFileSync('git', ['show', revision + ':' + file], {encoding: 'utf8'}) : fs.readFileSync(file, 'utf8');
+            const source = revision ? cp.execFileSync('git', ['show', revision + ':' + file], {encoding: 'utf8'}) : readAsset(file, 'utf8');
             const part = region(source), script = '(' + source.slice(part.callee.start, part.callee.end) + ')()';
             for (const lang of ['de', 'en', 'fr', 'it', 'es']) {
                 const context = await browser.newContext({viewport: {width: lang === 'de' ? 1024 : 390, height: 844}, locale: lang});

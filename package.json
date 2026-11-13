@@ -1,0 +1,14 @@
+{
+  "name": "outlet46-b2b-theme-assets",
+  "private": true,
+  "scripts": {
+    "build:js": "node scripts/build-js.cjs",
+    "check:js": "node scripts/build-js.cjs --check",
+    "test:bundles": "node tests/theme_bundles.cjs"
+  },
+  "devDependencies": {
+    "acorn": "8.15.0",
+    "postcss": "8.5.6",
+    "terser": "5.44.0"
+  }
+}

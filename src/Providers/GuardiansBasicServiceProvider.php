@@ -28,7 +28,6 @@ class GuardiansBasicServiceProvider extends ServiceProvider
     public function register()
     {
         $this->getApplication()->register(\GuardiansBasicB2B\Providers\GuardiansBasicRouteServiceProvider::class);
-        $this->getApplication()->register(\GuardiansBasicB2B\Providers\GuardiansBasicRouteServiceProvider::class);
         $consentRepository = pluginApp(ConsentRepositoryContract::class);
         $consentRepository->registerConsent(
             'PoP-UP Anzeige',

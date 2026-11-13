@@ -1,3 +1,4 @@
+const { readAsset } = require('./theme_assets.cjs');
 // node tests/seo_metadata.cjs <report.json> [<seo-php-report.json> ...] [--browser] [--asset=<js-file>]
 // Executes the actual category metadata IIFE with a minimal DOM/history fixture.
 const assert = require('node:assert/strict');
@@ -6,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const assetOption = process.argv.find(arg => arg.startsWith('--asset='));
 const asset = assetOption ? path.resolve(assetOption.slice('--asset='.length)) : path.join(__dirname, '../resources/js/cat.js');
-const source = fs.readFileSync(asset, 'utf8');
+const source = readAsset(asset, 'utf8');
 let script;
 if (assetOption) {
     // Parse the complete shipped asset, then execute its actual metadata IIFE.
@@ -186,7 +187,7 @@ for (const [name, url, server, items, accepted] of [
     metadata(f, title + suffix, description + suffix);
 });
 for (const reportFile of process.argv.slice(3).filter(arg => !arg.startsWith('--'))) {
-    const php = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+    const php = JSON.parse(readAsset(reportFile, 'utf8'));
     for (const [name, value] of Object.entries(php.cases).filter(([name]) => name.startsWith('client-pagination/'))) {
         browserFixtures.push({ name: 'browser-' + php.twig + '/' + name, value, tail: php.cases['documents/1654/1658/70'] });
         test('php-' + php.twig + '/' + name, () => {

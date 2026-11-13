@@ -3,7 +3,9 @@
 {% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
 {# === Basisdaten sammeln === #}
 {% set itemData = item.documents[0].data %}
-          {% set attributeCache = {
+{# Detail properties and recommendation cards are omitted from Quickview. #}
+{% if request.get('quickViewItem') is empty %}
+{% set attributeCache = {
     46: trans("GuardiansBasicB2B::Template.mainmaterial"),
     115: trans("GuardiansBasicB2B::Template.materialcomposition"),
     105: trans("GuardiansBasicB2B::Template.materialconstruction"),
@@ -41,6 +43,7 @@
     availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize"),
     morethen18: trans("GuardiansBasicB2B::Template.morethen18")
 } %}
+{% endif %}
 {% set itemId = itemData.item.id %}
 {% set variationId = itemData.variation.id %}
 {% set mainImg = itemData.images.all | orderByKey('position') | first %}
@@ -49,6 +52,7 @@
 {% set detailurl = services.url.getCanonicalURL() %}
 {% set variationsWithAttributes = services.item.getVariationAttributeMap(itemId) %}
 {% set basketItems = services.basket.getBasketForTemplate() %}
+{% set pdpBasketForHeader = basketItems %}
 {% if request.get('quickViewItem') is empty %}{% set crossSellingList = services.item.getItemCrossSellingList(itemId) %}{% endif %}
 {% set enabledRoutes = config("IO.routing.enabled_routes") | split(', ') %}
 {% set lang = services.localizationRepository.getLanguage() %}
