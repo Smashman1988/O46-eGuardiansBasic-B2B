@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Homepage grid and shared card preparation (2026-11-13)
+
+- Add `LiveShoppingGrid` for user-approved slots 1–6 using the existing normal grid. Preserve slot lookups, validity, item order and card data; reuse the existing attribute batch instead of six individual calls. Prepare seven translations and currency once; do not claim six fewer database queries because IO already caches currency within the request.
+- Prioritize only the first actually rendered LiveShopping product image, retaining AVIF/fallback URLs and dimensions. Other product images and logos remain lazy; existing card callers retain their behavior. No additional JS/CSS resource or active minified-asset change.
+- Prepare the vendor asset prefix once in the existing category grid and remove two unused card macro imports. Preserve the standalone fallback and byte-identical 60-item output. No change to PHP search, pricing, inventory or ordering.
+- Document 60 native baseline runs and 36 isolated comparisons. Median TTFB is 5,263 ms with no observed backend attribution; no native loading-time saving claimed. Reviews add 75 requests and confirmed iframe layout shifts; a local `defer` content snippet for category 5153/description 2/de passes 20 browser cases without claiming a CLS fix.
+- [Report with tests, screenshots and limitations](../../.cache/homepage-performance-25d2ca8-20261113/Pruefbericht.html). Activation later requires one full-width ShopBuilder code widget in place of the six old widgets. Plenty content unchanged; native post-change acceptance remains open. Local develop only; no commit, push, merge, deployment, sync or cache purge. B2C and variant matrix unchanged.
+
 ## Unreleased – Early desktop basket column (2026-11-13)
 
 - Add only the existing `.col-lg-7` geometry from 992 px to the general critical CSS branch in `Head.twig`: exactly 75 bytes, with the same 58.333333% column width as the main stylesheet. No new requests; JS/CSS sources and active minified assets unchanged.

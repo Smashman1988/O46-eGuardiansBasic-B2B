@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Startseiten-Grid und gemeinsame Kartenvorbereitung (2026-11-13)
+
+- Ergänze `LiveShoppingGrid` für die vom Nutzer freigegebenen Slots 1–6 im bestehenden normalen Grid. Erhalte Slotabrufe, Gültigkeit, Artikelreihenfolge und Kartendaten; verwende den vorhandenen Attributbatch statt sechs Einzelaufrufen. Bereite sieben Übersetzungen und Währung einmal vor; kein behaupteter Wegfall von sechs Datenbankabfragen, da IO die Währung bereits im Request cached.
+- Priorisiere ausschließlich das erste tatsächlich ausgegebene LiveShopping-Produktbild mit unveränderten AVIF-/Fallback-URLs und Abmessungen. Andere Bilder/Logos bleiben lazy; vorhandene Kartenaufrufe ändern ihr Verhalten nicht. Keine neue JS-/CSS-Ressource oder Änderung aktiver Min-Assets.
+- Bereite den Herstellerpfad einmal im vorhandenen Kategoriegrid vor und entferne zwei unbenutzte Makroimports aus der Karte. Erhalte den Einzelkarten-Fallback und die bytegleiche 60-Artikel-Ausgabe. Keine Änderung an PHP-Suche, Preis-/Bestands- oder Bestelllogik.
+- Dokumentiere 60 native Ausgangsmessungen und 36 isolierte Vergleiche. TTFB-Median 5.263 ms ohne beobachtbare Backend-Aufteilung; keine native Ladezeiteinsparung behauptet. Reviews: 75 Requests und nachgewiesener iframe-CLS; lokale `defer`-Inhaltsvorlage für Kategorie 5153/Beschreibung 2/de mit 20 erfolgreichen Browserfällen, ohne behauptete CLS-Behebung.
+- [Bericht mit Tests, Screenshots und Grenzen](../../.cache/homepage-performance-25d2ca8-20261113/Pruefbericht.html). Die neue Partial benötigt später ein vollbreites ShopBuilder-Codewidget statt der bisherigen sechs Einzelwidgets. Plenty-Inhalte unverändert; native Nachher-Abnahme offen. Nur lokal auf develop, kein Commit/Push/Merge/Deployment/Sync/Cache-Purge. B2C und Variantenmatrix unverändert.
+
 ## Unreleased – Frühe Desktop-Warenkorbspalte (2026-11-13)
 
 - Ergänze ausschließlich im allgemeinen Critical-CSS-Zweig von `Head.twig` die vorhandene `.col-lg-7`-Geometrie ab 992 px: genau 75 Byte, 58,333333 % Spaltenbreite entsprechend dem Hauptstylesheet. Keine neuen Requests; JS-/CSS-Quellen und aktive Min-Dateien unverändert.

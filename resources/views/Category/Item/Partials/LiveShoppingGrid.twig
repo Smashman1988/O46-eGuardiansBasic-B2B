@@ -1,0 +1,11 @@
+{% set liveShoppingItems = [] %}
+{% for liveshoppingid in 1..6 %}
+    {% set liveShoppingData = services.LiveShopping.getLiveShoppingData(liveshoppingid) %}
+    {% if liveShoppingData is not empty and liveShoppingData.item is not empty %}
+        {% set timestamp = 'now'|date('U') %}
+        {% if timestamp <= liveShoppingData.liveShopping.toTime %}
+            {% set liveShoppingItems = liveShoppingItems|merge([{'data': liveShoppingData.item}]) %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
+{% include "GuardiansBasicB2B::Category.Item.Partials.CategoryGridOnly" with {'itemList': liveShoppingItems, 'prioritizeFirstCardImage': true} %}

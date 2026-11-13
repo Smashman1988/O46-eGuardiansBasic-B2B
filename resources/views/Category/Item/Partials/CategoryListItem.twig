@@ -1,10 +1,9 @@
-{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
-{% import "Ceres::PageDesign.Macros.ItemName" as ItemName %}
 
 {# set itemAttributes  = services.item.getAttributeNameMap(item.data.item.id)#}
 {% set itemUrl =  item.data | itemURL %}
 {% set currencycheck = currencycheck ?? 'EUR' %}
 {% set img = (item.data.images.all[0].urlPreview ?? '') %}
+{% set cardHasPriorityImage = cardPriorityImage|default(false) and img is not empty -%}
 {% set itemName = item.data | itemName %}
 
     <div class="cat-item has-rrp has-variations" data-eg-item="{{ item.data.variation.itemId }}">
@@ -42,7 +41,7 @@
             </span>
             <span class="col-5">
             {% set rawLogo = item.data.item.manufacturer.logo %}
-            {% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'}) %}
+            {% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': cardVendorLogoBase ?? (plugin_path('GuardiansBasicB2B') ~ '/images/vendors/')}) %}
             {% if vendorlogo is not empty %}
                 <img src="" data-src="{{ vendorlogo }}" class="lozad cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">
             {% elseif rawLogo is not empty %}
@@ -53,8 +52,8 @@
             <div class="article-body cat-item-image text-center {% if isShoeCategory %}cat-item-shoe{% endif %}">
             <a class="product-list article a" href="{{ itemUrl }}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" title="{{ itemName }}">   
                 <picture>
-                    <source srcset="" type="image/avif" data-srcset="{{ img }}.avif" class="lozad">
-                    <img src="" decoding="async" data-src="{{ img }}" width="225px" height="300px" class="lozad" alt="{{ itemName }}" title="{{ itemName }}">
+                    <source srcset="{% if cardHasPriorityImage %}{{ img }}.avif{% endif %}" type="image/avif"{% if not cardHasPriorityImage %} data-srcset="{{ img }}.avif" class="lozad"{% endif %}>
+                    <img src="{% if cardHasPriorityImage %}{{ img }}{% endif %}" decoding="async"{% if cardHasPriorityImage %} loading="eager" fetchpriority="high"{% else %} data-src="{{ img }}"{% endif %} width="225px" height="300px"{% if not cardHasPriorityImage %} class="lozad"{% endif %} alt="{{ itemName }}" title="{{ itemName }}">
                 </picture>
             </a>
         </div>

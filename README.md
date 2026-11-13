@@ -10,6 +10,26 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Startseite: Ursachenanalyse und lokale Optimierung (2026-11-13)
+
+Ausgangsstand `25d2ca883d552e442f6e29e93a4586faca300929`, Branch `develop`. Der [HTML-Prüfbericht](.cache/homepage-performance-25d2ca8-20261113/Pruefbericht.html) enthält 60 native Ausgangsmessungen, 36 isolierte Komponentenvergleiche, Netzwerk-/Widgettraces, lokale Regressionen und Screenshots. **Keine native Nachher-Freigabe: Theme und externe Inhaltsvorlagen sind nur lokal vorbereitet.**
+
+- **Hauptbefund:** Die native TTFB liegt über alle 60 Messungen im Median bei 5.263 ms. Sie ist keine PHP-Renderzeit; die Anteile von LiveShopping, Kategorie-/Attributsuche und übriger Plattform sind ohne Backend-Telemetrie nicht belegt. Fünf Sprachen, Gast/EUR/Lieferland 1, 390/1440 px, je drei kalte/warme Wiederholungen; exakte Einzelzellen und Messgrenzen im Bericht. iframe-Transfers sind in der Haupt-CDP-Baseline unvollständig, deshalb keine erfundene Gesamttransferzahl.
+- **LiveShopping:** Die neue `LiveShoppingGrid.twig` sammelt die autorisierten Slots 1–6 und verwendet das bestehende `CategoryGridOnly`. Sechs LiveShopping-Datenabrufe bleiben erhalten; sechs Attribut-Einzelaufrufe werden durch einen vorhandenen Batch mit denselben sechs Suchfabriken ersetzt. Übersetzungen 42 → 7, Währungs-Getter 6 → 1; die Währungsaufbereitung war bereits im IO-MemoryCache zwischengespeichert. Keine neue API, Preis-/Bestandslogik oder zweite Kartenimplementierung. Das erste tatsächlich ausgegebene Produktbild erhält gezielt frühe Priorität; andere Produktbilder und Logos bleiben lazy. Andere Kartenaufrufe behalten ihre bisherige Ausgabe.
+- **60 Kategorieartikel:** `getItemsFromCatSimple(60, 60, [8855])` bedeutet Kategorie 60, Seitengröße 60, Facette 8855. Die bestehende Implementierung verwendet bereits eine Listensuche und drei Attributbatches für 60 unterschiedliche IDs. Keine PHP-Änderung. Im vorhandenen Grid wird der Herstellerpfad einmal vorbereitet; zwei unbenutzte Karten-Makroimports entfallen. Kategorieausgabe und Suchoptionen sind lokal bytegleich. Lokale warme Renderfixtures sparen etwa 0,12/0,15 ms Median unter Twig 2/3; daraus folgt keine native Backend-Einsparung.
+- **Bewertungen:** Bestätigter Inhaltsort ist Kategorie 5153, Beschreibung 2, Deutsch, über `CategoryDescription2` mit `lang: "de"`. Der native Stand liefert eine andere öffentliche Widgetkennung als der Nutzer-Code; beide Belege bleiben getrennt. Das aktuelle Widget verursacht 75 Requests, rund 213 kB komprimierte Response-Bodies und nachgewiesene Layoutverschiebungen beim iframe-Höhenaufbau. Die [lokale Ersatzvorlage](.cache/homepage-performance-25d2ca8-20261113/reviews/widget-user-candidate.html) behält die Nutzerkennung und ergänzt ausschließlich `defer`: 20 lokale Fälle und zehn vollständige Text-/Höhenvergleiche PASS. Die 75 Requests und der Reviews-CLS bleiben; kein späteres Verstecken sichtbarer Bewertungen und keine Manipulation des Anbieter-Scripts.
+- **Bilddiagnose:** Das erste LiveShopping-Bild war in 57/60 nativen Läufen LCP, mobil 30/30. In sechs kontrollierten Vergleichen mit gleicher eingefrorener Hauptantwort blieb es das LCP-Element: Median 390 px 840 → 200 ms, 1440 px 1.068 → 212 ms. Diese Messung ohne native Backend-Latenz belegt keine entsprechende Live-Einsparung. Keine zusätzlichen JS-/CSS-Dateien, unveränderte aktive Min-Assets und Cachekennungen.
+
+**Inhaltsübergabe:** Nach einer späteren Benutzerbereitstellung die bisherigen sechs ShopBuilder-Codewidgets samt schmalen Spalten durch **ein vollbreites** Codewidget ersetzen:
+
+```twig
+{% include "GuardiansBasicB2B::Category.Item.Partials.LiveShoppingGrid" %}
+```
+
+Den Kategorieaufruf darunter unverändert lassen. Die Reviews-Ersatzvorlage gehört in Kategorie 5153/Beschreibung 2/de; der vorhandene Startseiten-Include bleibt gleich. Diese Plenty-Inhalte wurden nicht geändert. Exakte PHP-/JS-/Twig-2/3-, Build-, Bild-/Grid-/Quickview-Prüfungen und technische Testabbrüche stehen im Bericht. Reale Mobilgeräte, Kundenkonto, Bestellung und native Nachher-Abnahme sind offen. Hohe TTFB und Widget-CLS sind nicht als behoben freigegeben.
+
+Nur lokal; kein Commit, Push, Merge, Deployment, Plugin-Sync oder Cache-Purge. Keine Versionsanhebung. B2C, Variantenmatrix, Preise, Bestände und Bestelllogik unverändert.
+
 ## Lokale Desktop-Warenkorbkorrektur und MagicZoom-Diagnose (2026-11-13)
 
 Ausgangsstand `964b6f5ec2caf86b837ac21a7e9be47df1394393` auf `develop`. Der [lokale Prüfbericht](.cache/theme-magiczoom-cls-964b6f5-20261113/Pruefbericht.html) trennt native Ausgangsbelege, kontrollierte ALT-/NEU-Replays, technische Abbrüche und offene Nachher-Abnahmen.
