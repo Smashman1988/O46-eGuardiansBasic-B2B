@@ -49,10 +49,10 @@
 {% set detailurl = services.url.getCanonicalURL() %}
 {% set variationsWithAttributes = services.item.getVariationAttributeMap(itemId) %}
 {% set basketItems = services.basket.getBasketForTemplate() %}
-{% set crossSellingList = services.item.getItemCrossSellingList(itemId) %}
+{% if request.get('quickViewItem') is empty %}{% set crossSellingList = services.item.getItemCrossSellingList(itemId) %}{% endif %}
 {% set enabledRoutes = config("IO.routing.enabled_routes") | split(', ') %}
 {% set lang = services.localizationRepository.getLanguage() %}
-{% set itemAttributes = services.item.getAttributeNameMap(itemId) %}
+{% if request.get('quickViewItem') is empty %}{% set itemAttributes = services.item.getAttributeNameMap(itemId) %}{% endif %}
 {% set isInWishList = services.wishList.isItemInWishList(variationId) %}
 {% set itemPrices = itemData.prices %}
 {% set hasRRP = itemPrices.rrp is defined and itemPrices.rrp.price.value != 0 and itemPrices.rrp.price.value > itemPrices.default.unitPrice.value %}

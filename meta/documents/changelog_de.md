@@ -1,5 +1,14 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Globale Suche, frühes Layout und Quickview-Aufbereitung (2026-11-13)
+
+- Verhindere veraltete Autocomplete-Antworten nach Löschen oder erneuter Eingabe; entferne bei kurzem Suchtext die gesamte Ergebniszeile und den Ladezustand. Bestehende Debounce, API-Routen und fünf Sprachen unverändert. Vier Quellen/aktive Min-Dateien konsistent, gezielter Such-Builder und Kennung `search4`; +91 JS-Byte pro Bundle, keine zusätzlichen Requests. 40 neue und 80 bestehende Suchszenarien PASS; 16 ALT-Fehler reproduziert.
+- Überspringe zwei ungenutzte IO-Getter ausschließlich im Quickview-Zweig von `SingleItem`; volle PDP und externe Include-Kontexte behalten die bisherige Datenversorgung. 36 bytegleiche Twig-Rendervergleiche, 120 Vorbereitungskontrakte und vier Trackingfälle PASS. Keine behauptete native PHP-/TTFB-Zeitersparnis; Varianten-, Preis-, Basket- und Bestelllogik unverändert.
+- Ergänze 140 Byte Critical CSS für vorhandene ShopBuilder-Spalten mit durchgehender 50/50-Konfiguration ab 768 px. Acht Breiten ohne Änderung der fertigen Geometrie geprüft. Der native Login-Spaltenwechsel ist im isolierten HTML-/CSS-Vergleich beseitigt; verbleibende Shifts separat dokumentiert.
+- Stabilisiere den gemeinsamen Footer beim Lazy-Laden durch vorhandenen Inlinefluss und echte Logo-Seitenverhältnisse. Haupt-CSS, Min-Datei und Critical-Ausgabe konsistent (`footer1`). Acht gepaarte Layoutprüfungen PASS, fertige Ausgabe und Requests unverändert; kleine Restbewegungen bleiben. Keine pauschalen Höhen, kein Null-CLS- oder Byteeinsparungsversprechen.
+- Prüfe 13 eigene PHP-Dateien und aktualisiere das Inventar aller 172 Twig-Dateien anhand bestehender Audits und aktueller Abhängigkeiten. Keine riskante Altcode-/Facettencontroller-Entfernung; 60 Startseitenartikel bleiben erhalten. 40 native Ausgangsmessungen, lokale Traces und genaue Grenzen im [HTML-Bericht](../../.cache/global-performance-13af2e8-20261113/Pruefbericht.html).
+- Nur lokal auf develop; native Nachher-Abnahme offen, keine Produktionsfreigabe. Kein Commit, Push, Merge, Deployment, Plugin-Sync oder Cache-Purge. B2C und externe Plugins unverändert.
+
 ## Unreleased – Startseiten-Grid und gemeinsame Kartenvorbereitung (2026-11-13)
 
 - Ergänze `LiveShoppingGrid` für die vom Nutzer freigegebenen Slots 1–6 im bestehenden normalen Grid. Erhalte Slotabrufe, Gültigkeit, Artikelreihenfolge und Kartendaten; verwende den vorhandenen Attributbatch statt sechs Einzelaufrufen. Bereite sieben Übersetzungen und Währung einmal vor; kein behaupteter Wegfall von sechs Datenbankabfragen, da IO die Währung bereits im Request cached.

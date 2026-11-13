@@ -651,6 +651,7 @@ this.watchdogInit = function () {
             // Fokusverhalten bleibt gleich
             var currentFocus = -1;
             var useEnglishSearchIndex = activeLang === 'it' || activeLang === 'es';
+            let searchInputVersion = 0;
             $(document).on('focus', '[data-eg-livesearch]', function () {
                 if ($(".row-search-wrap").length > 0) {
                     $(".row-search-wrap").show();
@@ -668,7 +669,7 @@ this.watchdogInit = function () {
             }
 
             // Input-Handler (ausgelagert)
-            function handleLiveSearchInput(event) {
+            function handleLiveSearchInput(event, inputVersion) {
                 const $input = $(event.currentTarget);
                 const query = $.trim($input.val());
 
@@ -688,13 +689,15 @@ this.watchdogInit = function () {
                         ? '/rest/guardiansbasicb2b/item/search/autocomplete/'
                         : '/rest/io/item/search/autocomplete/';
                     eGuardians.apiservice.get(autocompleteUrl, searchParams, function (response) {
+                        // Ignore responses for an older input, including A → B → A changes.
+                        if (inputVersion !== searchInputVersion || query !== $.trim($input.val())) return;
                         renderAutocompleteResults(response, $input);
                     });
 
                 } else {
-                    $('.list-autocomplete').remove();
+                    $('.row-search-wrap').remove();
                     $('.related-search').show();
-                    $('[data-eg-search]').removeClass('search-active-results');
+                    $('[data-eg-search]').removeClass('search-active-results search-loading');
                 }
             }
 
@@ -751,7 +754,7 @@ this.watchdogInit = function () {
             $(_this).on('input', function (event) {
                 currentFocus = -1;
                 $(this).closest('[data-eg-search], .searchbox-404').find('.autocomplete-active').removeClass('autocomplete-active');
-                loadSuggestions.call(this, event);
+                loadSuggestions.call(this, event, ++searchInputVersion);
             });
             
             $(_this).keydown(function(e){

@@ -12791,6 +12791,14 @@ span.cookie-bar__header-title.h2 {
 }
 
 
+/* Keep lazy footer logos in their final row flow before image data arrives. */
+footer img[src=""][data-src] { display: inline-block; }
+footer .footer-logo-focus { aspect-ratio: 324 / 120; }
+footer .footer-logo-sat1 { aspect-ratio: 192 / 120; }
+footer .footer-logo-galileo { aspect-ratio: 1; }
+footer .footer-logo-ntv { aspect-ratio: 192 / 120; }
+footer .footer-logo-omr { aspect-ratio: 170 / 120; }
+
 /* B2B matrix: one row and one set of order fields at every container width. */
 [data-item-variation-select].attribute-box {
   container: eg-matrix / inline-size;

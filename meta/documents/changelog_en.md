@@ -1,5 +1,14 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Global search, early layout and Quickview preparation (2026-11-13)
+
+- Reject stale autocomplete responses after clearing or changing input; remove the full result row and loading state for short queries. Preserve debounce, API routes and all five languages. Four source/active minified bundles remain consistent through a targeted search builder and `search4` marker; +91 JS bytes per bundle, no extra requests. 40 new and 80 existing search scenarios pass; 16 baseline defects reproduced.
+- Skip two unused IO getters only in the Quickview branch of `SingleItem`; retain full PDP data and external include contexts. 36 byte-identical Twig render comparisons, 120 preparation contracts and four tracking cases pass. No claimed native PHP/TTFB saving; variation, pricing, basket and order logic unchanged.
+- Add 140 bytes of critical CSS for existing ShopBuilder columns configured 50/50 across tablet and desktop, from 768 px. Eight widths preserve final geometry. The native login column change is removed in an isolated HTML/CSS comparison; residual shifts remain separately documented.
+- Stabilize shared footer lazy-image layout using the existing inline flow and actual logo aspect ratios. Main CSS, active minified CSS and critical output remain consistent (`footer1`). Eight paired layout checks pass with identical final content and requests; small residual movements remain. No blanket fixed heights, zero-CLS claim or byte-saving claim.
+- Review all 13 own PHP files and reconcile all 172 Twig templates against existing audits and current dependency paths. Do not remove uncertain legacy paths or the facet controller; retain all 60 homepage items. 40 native baseline loads, local traces and exact limitations are documented in the [HTML report](../../.cache/global-performance-13af2e8-20261113/Pruefbericht.html).
+- Local develop only; native post-deployment acceptance remains open, no production approval. No commit, push, merge, deployment, plugin sync or cache purge. B2C and external plugins unchanged.
+
 ## Unreleased – Homepage grid and shared card preparation (2026-11-13)
 
 - Add `LiveShoppingGrid` for user-approved slots 1–6 using the existing normal grid. Preserve slot lookups, validity, item order and card data; reuse the existing attribute batch instead of six individual calls. Prepare seven translations and currency once; do not claim six fewer database queries because IO already caches currency within the request.

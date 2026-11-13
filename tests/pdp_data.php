@@ -2,6 +2,11 @@
 // Compare the real PDP/Quickview preparation block against the pre-change source.
 // php tests/pdp_data.php <Twig autoloader> <before-SingleItem.twig> <report.json>
 require $argv[1];
+class PdpRequestFixture {
+    private $fullPage;
+    public function __construct($fullPage) { $this->fullPage = $fullPage; }
+    public function get($key) { return $key === 'quickViewItem' && !$this->fullPage ? 'true' : null; }
+}
 class PdpDataFixture {
     public $calls = [], $rows, $lang;
     public function __construct($rows, $lang) { $this->rows = $rows; $this->lang = $lang; }
@@ -27,7 +32,7 @@ function preparation($source) {
     $start = strpos($source, '{# === Services & Daten === #}');
     $end = strpos($source, '{% import ', $start);
     if ($start === false || $end === false) { throw new RuntimeException('Preparation block missing'); }
-    return substr($source, $start, $end - $start) . '{{ [detailurl, variationsWithAttributes, basketItems, crossSellingList, enabledRoutes, lang, itemAttributes, isInWishList, itemPrices, hasRRP]|json_encode|raw }}';
+    return substr($source, $start, $end - $start) . '{{ [detailurl, variationsWithAttributes, basketItems, crossSellingList|default(null), enabledRoutes, lang, itemAttributes|default(null), isInWishList, itemPrices, hasRRP]|json_encode|raw }}';
 }
 $old = file_get_contents($argv[2]);
 $new = file_get_contents(__DIR__ . '/../resources/views/Item/SingleItem.twig');
@@ -50,12 +55,22 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
                     $twig->addFunction(new Twig\TwigFunction('getBasePriceList', [$service, 'basePrices']));
                     $twig->addFunction(new Twig\TwigFunction('config', [$service, 'config']));
                     $prices = ['default' => ['unitPrice' => ['value' => $customerFixture ? 4.123456789 : 5.987654321]], 'rrp' => ['price' => ['value' => 9.99]]];
-                    $html = $twig->render('preparation', ['itemId' => 42, 'variationId' => 1001, 'isQuickView' => $fullPage,
+                    $html = $twig->render('preparation', ['itemId' => 42, 'variationId' => 1001, 'isQuickView' => $fullPage, 'request' => new PdpRequestFixture($fullPage),
                         'services' => array_fill_keys(['item','url','basket','localizationRepository','wishList'], $service), 'itemData' => ['prices' => $prices]]);
                     $results[$version] = ['data' => json_decode(trim($html), true, 512, JSON_THROW_ON_ERROR), 'calls' => $service->calls];
                 }
-                $kept = array_values(array_filter($results['old']['calls'], function ($name) { return !in_array($name, ['getVariationList','getBasePriceList'], true); }));
-                if ($results['old']['data'] !== $results['new']['data'] || $kept !== $results['new']['calls'] || count($results['old']['calls']) - count($kept) !== 2) {
+                $removed = ['getVariationList','getBasePriceList'];
+                $expectedData = $results['old']['data'];
+                if (!$fullPage) {
+                    $removed = array_merge($removed, ['getItemCrossSellingList','getAttributeNameMap']);
+                    $expectedData[3] = null;
+                    $expectedData[6] = null;
+                }
+                $kept = array_values(array_filter($results['old']['calls'], function ($name) use ($removed) { return !in_array($name, $removed, true); }));
+                // Both historical (two legacy unused getters) and immediately previous sources are accepted.
+                $legacyRemoved = strpos($old, 'getVariationList(') !== false ? 2 : 0;
+                $expectedRemoved = $legacyRemoved + ($fullPage ? 0 : 2);
+                if ($expectedData !== $results['new']['data'] || $kept !== $results['new']['calls'] || count($results['old']['calls']) - count($kept) !== $expectedRemoved) {
                     throw new RuntimeException('Data or required service sequence changed');
                 }
                 $cases[] = ['lang' => $lang, 'rows' => $count, 'fullPage' => $fullPage, 'customerFixture' => $customerFixture, 'equal' => true,
@@ -65,4 +80,4 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
     }
 }
 file_put_contents($argv[3], json_encode(['twig' => Twig\Environment::VERSION, 'mode' => 'LOCAL_SERVICE_FIXTURES_NOT_CUSTOMER_ACCEPTANCE', 'cases' => $cases], JSON_PRETTY_PRINT));
-echo count($cases) . " preparation comparisons PASS; two unused calls removed; Twig " . Twig\Environment::VERSION . PHP_EOL;
+echo count($cases) . " preparation comparisons PASS; full PDP context retained, two additional getters skipped only for Quickview; Twig " . Twig\Environment::VERSION . PHP_EOL;
