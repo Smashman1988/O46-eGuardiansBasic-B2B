@@ -1,5 +1,14 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – CSS, shop-mode dialog and bounded asset replacement (2026-11-13)
+
+- Remove invalid CSS source syntax and seven already ignored declarations while preserving the effective CSSOM. Checkout minified CSS −219 bytes; main minified CSS unchanged. Twenty local layout/pixel comparisons pass; checkout cache suffix `…-css1`.
+- Fix Escape after Tab in the shop-mode dialog. Release the document handler and opening timer on close; tolerate missing dialog markup. Preserve the delay, cookie and destinations. All 280 local browser cases pass, versus 80 passes/200 failures before; 800 repeated cycles leave no handlers/timers. Each of four existing minified bundles grows by 153 bytes, suffix `…-mode1`; no additional requests. Build only the dialog region.
+- Remove one unused currency getter in the active footer. Fifteen real renders each with Twig 2 and Twig 3 retain byte-identical output; no claimed database or TTFB saving.
+- Bound `build-facet-assets.cjs` replacement by both CSS markers. Preserve all following rules and reject an incomplete block before writing CSS. Six isolated build checks pass; variant matrix and active facet assets unchanged.
+- Document 33 native pagination pairs and separate count contexts. Upstream overlaps and platform totals remain open; no theme-side price/result/sort workaround. [Full report](../../.cache/category-rootcause-1647723-20261113/Pruefbericht.html).
+- Local develop only. Native post-change acceptance in 426 required after deployment; no production approval. No commit, push, merge, deployment, sync or cache purge. B2C, pricing, ordering, variant matrix and external payment SDKs unchanged.
+
 ## Unreleased – Theme audit, card batching and lazy observers (2026-11-13)
 
 - Remove one unused second configuration read and the overwritten first `loginSuccess` property; preserve effective configuration and translated messages.

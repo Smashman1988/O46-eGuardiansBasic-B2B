@@ -1588,23 +1588,36 @@ $(document).ready(function () {
       const pref = getCookie(COOKIE);
       if(pref !== 'b2b'){
         const modal = document.getElementById('shop-mode-modal');
+        const b2b = document.getElementById('smm-b2b');
+        const b2c = document.getElementById('smm-b2c');
+        if (!modal || !b2b || !b2c) return;
 
-        // Popup erst nach 3 Sekunden zeigen
-        setTimeout(() => {
-          modal.classList.remove('smm-hidden'); 
+        // Keep the existing two-second opening delay.
+        const openTimer = setTimeout(() => {
+          modal.classList.remove('smm-hidden');
           modal.setAttribute('aria-hidden','false');
         }, 2000);
 
-        document.getElementById('smm-b2b').addEventListener('click',()=>{
-          setCookie(COOKIE, 'b2b', DAYS, '.outlet46.de');
+        function closeModal() {
+          clearTimeout(openTimer);
+          document.removeEventListener('keydown', onKeydown);
           modal.remove();
+        }
+        function onKeydown(event) {
+          if (event.key === 'Escape') closeModal();
+        }
+
+        b2b.addEventListener('click',()=>{
+          setCookie(COOKIE, 'b2b', DAYS, '.outlet46.de');
+          closeModal();
         });
-        document.getElementById('smm-b2c').addEventListener('click',()=>{
+        b2c.addEventListener('click',()=>{
+          closeModal();
           location.href = URL_B2C;
         });
 
-        modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.remove(); });
-        document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') modal.remove(); },{once:true});
+        modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
+        document.addEventListener('keydown', onKeydown);
       }
     }
 

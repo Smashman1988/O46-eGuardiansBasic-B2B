@@ -12707,8 +12707,7 @@ span.cookie-bar__header-title.h2 {
     }
     .basket-prev-small2 {
     position: fixed;
-    top: 70px;!important
-    right: 0;
+    top: 70px;
     padding: 0;
     border-top: 1px solid #dcdcdc;
     width: 100%;

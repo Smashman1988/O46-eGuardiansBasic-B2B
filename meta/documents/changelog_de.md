@@ -1,5 +1,14 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – CSS, Shop-Auswahldialog und sichere Asset-Ersetzung (2026-11-13)
+
+- Entferne ungültige CSS-Quellsyntax und sieben bereits ignorierte Deklarationen ohne Änderung der wirksamen CSSOM. Checkout-Min-Datei −219 Byte; Haupt-Min-CSS unverändert. 20 lokale Layout-/Pixelvergleiche PASS; neue Checkout-Kennung `…-css1`.
+- Behebe Escape nach vorherigem Tab im Shop-Auswahldialog. Entferne beim Schließen Dokument-Handler und Öffnungstimer; fehlendes Modal bleibt ohne Ausnahme. Verzögerung, Cookie und Ziele erhalten. 280 lokale Browserfälle PASS gegenüber 80 PASS/200 FAIL im Ausgangsstand; 800 Wiederholungszyklen ohne verbliebene Handler/Timer. Vier aktive Min-Bundles jeweils +153 Byte, Kennung `…-mode1`, keine neuen Requests; begrenzter `build-shop-mode-assets.cjs`.
+- Entferne den ungenutzten Währungs-Getter im aktiven Footer. Je 15 Twig-2-/Twig-3-Fälle mit bytegleicher Ausgabe; kein behaupteter Datenbank-/TTFB-Gewinn.
+- Begrenze `build-facet-assets.cjs` auf Start-/Endmarkierung seines CSS-Blocks. Nachfolgende Regeln bleiben erhalten; ein fehlender Abschluss bricht vor der CSS-Schreiboperation ab. Sechs isolierte Build-Prüfungen PASS. Keine Änderung an der Variantenmatrix oder aktiven Facetten-Assets.
+- Dokumentiere 33 native Pagination-Paare und getrennte Zählkontexte. Upstream-Überschneidungen und Plattformzähler bleiben offen; keine Preis-/Ergebnis-/Sortierkorrektur im Theme. [Vollständiger Bericht](../../.cache/category-rootcause-1647723-20261113/Pruefbericht.html).
+- Ausschließlich lokal auf develop. Native Nachher-Abnahme nach Bereitstellung in 426 erforderlich; keine Produktionsfreigabe. Kein Commit, Push, Merge, Deployment, Sync oder Cache-Purge. B2C, Preise, Bestelllogik, Matrix und externe Zahlungs-SDKs unverändert.
+
 ## Unreleased – Theme-Audit, Karten-Batch und Lazy-Observer (2026-11-13)
 
 - Entferne einen ungenutzten zweiten Config-Lesevorgang und den überschriebenen ersten `loginSuccess`-Eintrag; wirksame Konfigurationen und Texte bleiben erhalten.
