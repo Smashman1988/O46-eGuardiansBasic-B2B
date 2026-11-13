@@ -1,13 +1,12 @@
 // Keep the shared product-card separators identical in source, active CSS and
-// all three existing critical-CSS branches. Other CSS remains byte-for-byte.
+// all three existing critical-CSS branches. The full CSS builder owns external assets.
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const postcss = require('postcss');
 const start = '/* B2B card separators */';
 const end = '/* End B2B card separators */';
 
-function cardCss() {
-    const source = fs.readFileSync('resources/css/main.css', 'utf8');
+function cardCss(source = fs.readFileSync('resources/css/main.css', 'utf8')) {
     const from = source.indexOf(start), to = source.indexOf(end, from);
     assert.ok(from >= 0 && to > from, 'One owned card separator source region');
     const root = postcss.parse(source.slice(from + start.length, to));
@@ -26,9 +25,9 @@ function syncRegion(css, region) {
     return from < 0 ? css + region : css.slice(0, from) + region + css.slice(to + end.length);
 }
 
-function syncHead(head) {
+function syncHead(head, source) {
     let blocks = 0;
-    const region = cardCss();
+    const region = cardCss(source);
     const output = head.replace(/<style>(@font-face[\s\S]*?)<\/style>/g, (_, css) => {
         blocks++;
         return '<style>' + syncRegion(css, region) + '</style>';
@@ -38,21 +37,8 @@ function syncHead(head) {
 }
 
 function build(check = false) {
-    const cssFile = 'resources/css/main-211025.min.css';
-    const headFile = 'resources/views/PageDesign/Partials/Head.twig';
-    const originalCss = fs.readFileSync(cssFile, 'utf8');
-    const originalHead = fs.readFileSync(headFile, 'utf8');
-    const css = syncRegion(originalCss, cardCss()), head = syncHead(originalHead);
-    postcss.parse(css);
-    if (check) {
-        assert.equal(css, originalCss, 'Build card CSS before committing');
-        assert.equal(head, originalHead, 'Build critical card CSS before committing');
-    } else {
-        fs.writeFileSync(cssFile, css);
-        fs.writeFileSync(headFile, head);
-    }
-    return {status: 'PASS', check, regionBytes: Buffer.byteLength(cardCss()), criticalBranches: 3};
+    return require('./build-css.cjs').build({check});
 }
 
-if (require.main === module) console.log(JSON.stringify(build(process.argv.includes('--check'))));
 module.exports = {cardCss, syncHead, build};
+if (require.main === module) console.log(JSON.stringify(build(process.argv.includes('--check'))));
