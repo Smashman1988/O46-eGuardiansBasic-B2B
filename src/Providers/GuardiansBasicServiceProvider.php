@@ -288,7 +288,6 @@ class GuardiansBasicServiceProvider extends ServiceProvider
                 return false;
             }, self::PRIORITY);
         }
-        $enabledOverrides = explode(", ", $config->get("GuardiansBasicB2B.templates.override"));
         $resultFieldTemplate = pluginApp(ResultFieldTemplate::class);
         $resultFieldTemplate->setTemplates([
             ResultFieldTemplate::TEMPLATE_LIST_ITEM     => 'GuardiansBasicB2B::ResultFields.ListItem',

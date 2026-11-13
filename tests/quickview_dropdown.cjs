@@ -19,6 +19,8 @@ function quickviewParts(source) {
         }
         if (node.type === 'AssignmentExpression' && node.left.property?.name === 'bindEvents') {
             name = 'bind';
+        } else if (node.type === 'AssignmentExpression' && node.left.property?.name === 'observeLazyImages') {
+            name = 'lazy';
         } else if (node.type === 'CallExpression') {
             const method = node.callee.property?.name;
             if (method === 'on' && node.arguments[1]?.value === '.linkabso') name = 'open';
@@ -30,7 +32,7 @@ function quickviewParts(source) {
         }
         if (name) {
             assert.ok(!parts[name], 'Duplicate ' + name);
-            const fragment = name === 'bind' ? node.right : node;
+            const fragment = ['bind', 'lazy'].includes(name) ? node.right : node;
             parts[name] = source.slice(fragment.start, fragment.end);
         }
         const childDepth = depth + Number(/Function/.test(node.type));
@@ -40,7 +42,7 @@ function quickviewParts(source) {
         }
     }
     visit(acorn.parse(source, { ecmaVersion: 'latest' }));
-    assert.deepEqual(Object.keys(parts).sort(), ['bind', 'open', 'owner', 'register']);
+    assert.deepEqual(Object.keys(parts).sort(), ['bind', 'lazy', 'open', 'owner', 'register']);
     return parts;
 }
 
@@ -66,7 +68,8 @@ async function exercise(browser, asset) {
                 } }
             };
         });
-        await page.addScriptTag({ content: 'eGuardians.events.bindEvents = ((' + parts.owner + ') => (' + parts.bind + '))(eGuardians);' +
+        await page.addScriptTag({ content: 'eGuardians.events.observeLazyImages = ((' + parts.owner + ') => (' + parts.lazy + '))(eGuardians);' +
+            'eGuardians.events.bindEvents = ((' + parts.owner + ') => (' + parts.bind + '))(eGuardians);' +
             parts.register + ';' + parts.open + ';eGuardians.events.bindEvents();' });
         for (let i = 1; i <= 20; i++) {
             const index = i <= 2 ? 0 : i % 2;

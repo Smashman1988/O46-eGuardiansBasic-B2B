@@ -117,11 +117,55 @@ foreach (['category','content','simple'] as $template) {
         }
     }
 }
+// Exercise the actual recommendation selection and card include, without the
+// unrelated product/matrix data loaders. Compare to each card's existing fallback.
+$single = file_get_contents(dirname(__DIR__).'/resources/views/Item/SingleItem.twig');
+check(preg_match('/\{% set currentCategory =.*?(?=\n\s*<\/div>\n\s*<div class="container">)/s', $single, $match) === 1, 'Recommendation region');
+$twig->getLoader()->setTemplate('recommendations', '{% if isQuickView %}'.$match[0].'{% endif %}');
+$recommendations = [];
+foreach (['de','en','fr','it','es'] as $language) {
+    $service->lang = $language;
+    foreach ([[],[100],[100,101,102,103,104],[101,102,103,104,105],[101,101,102,103,104]] as $ids) {
+        foreach ([false,true] as $fullPage) {
+            $documents = array_map(function ($id) { return ['data'=>['item'=>['id'=>$id],
+                'variation'=>['id'=>10000+$id,'itemId'=>$id], 'images'=>['all'=>[]],
+                'prices'=>['default'=>['unitPrice'=>['value'=>5,'formatted'=>'5 EUR']]]]]; }, $ids);
+            $list = new class($documents) {
+                public $calls = [], $documents;
+                function __construct($documents) { $this->documents=$documents; }
+                function getItemList(...$args) { $this->calls[]=$args; return ['documents'=>$this->documents]; }
+            };
+            $categoryService = new class { function getCurrentCategory() { return ['id'=>55]; } };
+            $urlService = new class($language) {
+                public $lang;
+                function __construct($lang) { $this->lang=$lang; }
+                function getCategoryURL($id) { check($id===55,'Category ID'); return $this; }
+                function toAbsoluteUrl($prefix) { return 'https://example.test/'.($prefix?$this->lang.'/':'').'category/'; }
+            };
+            $context = ['isQuickView'=>$fullPage,'lang'=>$language,'itemData'=>['item'=>['id'=>100]],
+                'services'=>['category'=>$categoryService,'itemList'=>$list,'url'=>$urlService]];
+            $visible = $fullPage ? array_slice(array_values(array_filter($ids,function($id){return $id!==100;})),0,4) : [];
+            foreach ([false,true] as $batch) {
+                $service->batches=$service->singles=$list->calls=[];
+                $html=preg_replace('/>\s+</','><',trim($twig->render('recommendations',$context)));
+                check(count($list->calls)===($fullPage?1:0),'Recommendation query count');
+                if ($fullPage) check($list->calls[0]===['category',55,'variation.position_desc',5],'Recommendation query changed');
+                if (!$batch) { $reference=$html; check($service->singles===$visible,'Reference visible cards'); continue; }
+                check($html===$reference,'Recommendation markup changed');
+                check(!$service->singles,'Unexpected per-card attribute call');
+                check($service->batches===($visible?[array_values(array_unique($visible))]:[]),'Batch must cover only visible unique cards');
+                check(substr_count($html,'data-eg-item="')===count($visible),'Recommendation count');
+                $recommendations[]=['lang'=>$language,'fullPage'=>$fullPage,'input'=>$ids,'visible'=>$visible,
+                    'beforeCalls'=>count($visible),'afterCalls'=>count($service->batches),'sha256'=>hash('sha256',$html)];
+            }
+        }
+    }
+}
 $service->lang = 'it';
 check($ext->getCardAttributeMaps([100])[100]['attributes'][1]['values'][0]['name'] === 'it-L-100','Leaked another render language');
 $service->omit = true;
 try { $ext->getCardAttributeMaps([100]); throw new \RuntimeException('Missing map silently accepted'); }
 catch (\UnexpectedValueException $expected) { check(strpos($expected->getMessage(),'100') !== false,'Wrong missing key'); }
-file_put_contents($argv[2],json_encode(['renders'=>$report,'contextIsolation'=>true,'missingResult'=>true],JSON_PRETTY_PRINT));
-echo count($report) . " matching renders, language isolation and missing-result check passed.\n";
+file_put_contents($argv[2],json_encode(['renders'=>$report,'recommendations'=>$recommendations,'contextIsolation'=>true,'missingResult'=>true],JSON_PRETTY_PRINT));
+echo count($report) . " list and ".count($recommendations)." recommendation matching renders, language isolation and missing-result check passed.\n";
 }

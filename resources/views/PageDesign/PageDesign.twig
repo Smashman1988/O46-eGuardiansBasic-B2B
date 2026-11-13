@@ -326,7 +326,6 @@
                 "301": "{{ trans("Ceres::Template.notificationRemoveCouponMinimumOrderValueIsNotReached") }}",
                 "401": "{{ trans("Ceres::Template.notificationsCalculateShippingFailed") }}",
                 "loginSuccessTitle" : "{{ trans("GuardiansBasicB2B::Template.loginSuccessTitle") }}",
-                "loginSuccess" : "{{ trans("GuardiansBasicB2B::Template.loginSuccess") }}",
                 "loginSuccess" : "{{ trans("GuardiansBasicB2B::Template.loginSuccess1") }}",
                 "stockWarn1" : "{{ trans("GuardiansBasicB2B::Template.stockWarn1") }}",
                 "stockWarn2" : "{{ trans("GuardiansBasicB2B::Template.stockWarn2") }}",
@@ -405,24 +404,24 @@
             {% endif %}
             {% if "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or category.id in mainjs  %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-               <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1" defer></script>
+               <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1-lazy1" defer></script>
             {% elseif category.id in vuejs %}
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/vue-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/vue-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1-lazy1" defer></script>
             {% elseif currentTemplate in vuePages|keys %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1-lazy1" defer></script>
             {% elseif category.id in nojs %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1-lazy1" defer></script>
             {% elseif category.id or isSearch %}
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/cat-020726.min.js?v={{ buildHash }}-nl1-seo2-qv1-search3-gallery2-matrix3-language1" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/cat-020726.min.js?v={{ buildHash }}-nl1-seo2-qv1-search3-gallery2-matrix3-language1-history1-lazy1" defer></script>
             {% elseif isItem %} 
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/item-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/item-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1-lazy1" defer></script>
             {% else %} 
                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
-                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1" defer></script>
+                <script type="text/javascript" src="{{ plugin_path('GuardiansBasicB2B') }}/js/main-020726.min.js?v={{ buildHash }}-nl1-qv1-search3-gallery2-matrix3-language1-lazy1" defer></script>
             {% endif %}
             {{ LayoutContainer.show("Ceres::Script.AfterScriptsLoaded") }} 
             {% if isItem %}

@@ -1,5 +1,22 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Theme-Audit, Karten-Batch und Lazy-Observer (2026-11-13)
+
+- Entferne einen ungenutzten zweiten Config-Lesevorgang und den überschriebenen ersten `loginSuccess`-Eintrag; wirksame Konfigurationen und Texte bleiben erhalten.
+- Nutze den vorhandenen Attribut-Batch für maximal vier sichtbare PDP-Empfehlungen. Vier Einzelaufrufe → ein Sammelaufruf mit vier Suchfabriken; keine neue Artikelabfrage oder Änderung der Matrixversorgung.
+- Löse vorherige Lozad-Observer beim erneuten Binden, fasse Lazy-Bilder je Append zusammen und starte InfiniteScroll nur mit Folgelink. Bewahre `pagehide`/BFcache. Betroffene eigene Bundle-Bereiche mit idempotentem `build-lazy-assets.cjs` synchronisiert; Cachezusatz `-lazy1`, Min-Mehrgröße 310 bzw. 207 Byte.
+- Prüfe 24 Bootstrap-Konfigurationen, je Twig 2/3 fünf Meldungsobjekte sowie 36 Listen-/50 Empfehlungskombinationen, 16 Browser-Observer-Fälle und 34 bestehende Regressionstestgruppen nach dokumentierter Quickview-Fixture-Anpassung. Trenne 76 native Ausgangsmessungen, lokale Replays und offene native Nachher-Abnahme.
+- Inventar aller 13 PHP-/171 Twig-Dateien und aktiven Assets. Nicht nachgewiesen aktive Homepage-/Taglisten bleiben unverändert. CSS-Quellfehler, Fremd-SDKs, Kundenkontext und Checkout offen; keine unbelegte LCP-/PHP-Einsparung. [Prüfbericht](../../.cache/theme-performance-final-20261113/Pruefbericht.html).
+- Nur lokal auf develop; vorherige Änderungen erhalten. Kein Commit/Push/Merge/Deployment/Sync/Cache-Purge. B2C, Preise, Bestände und Bestelllogik unverändert.
+
+## Unreleased – InfiniteScroll-Lifecycle und shopweiter Performance-Audit
+
+- Ersetze im Kategorie-Bundle den InfiniteScroll-`unload`-Listener durch `pagehide`; bewahre bei `event.persisted` History und Scrollzustand. Normale Navigation behält Normalisierung und Bereinigung. Quelle/aktive Min-Datei konsistent, Cachekennung `…-language1-history1`, +31 unkomprimierte Min-Byte.
+- Prüfe 60 lokale ALT-/NEU-Historyfälle in fünf Sprachen: BFcache-Rückkehr ALT 0/30, NEU 30/30 im isolierten Modulfixture. Kein belastbarer Zeitgewinn; native Ganzshop-Nachprüfung offen. 33 ausgeführte bestehende Prüfgruppen nach dokumentierten Fixture-Korrekturen PASS.
+- Dokumentiere PageDesign-Ladefolge, LCP-/CLS-Belege, 28 native Zahlungs-Messungen, 65 Sprach-/Seiten-Quelltextprüfungen und 64 Bildfälle. Ein-Bild-eager-Alternative verworfen; keine neue CSS-/Facetten-/Matrixoptimierung.
+- Zahlungs-SDK-Begrenzung weiterhin FAIL: PayPal 6.8.0 startet auch außerhalb des Vue-/Additional-Scripts-Zweigs; selektiver unterstützter Provider-Hook nicht nachgewiesen. Warenkorb 5482/Kasse 5484 bestätigt. Keine Plugin-Konfigurationsänderung oder unsichere HTML-/Scriptfilterung; Supporttext nur lokal vorbereitet. Keine Zahlungsfreigabe und kein behaupteter 429-/CORS-Fix.
+- [Prüfbericht](../../.cache/shop-performance-5f83-20261112/Pruefbericht.html). Nur lokal auf develop; kein Commit/Push/Merge/Deployment/Sync/Cache-Purge. B2C, Preise, Rundung, Bestände und Bestelllogik unverändert.
+
 ## Unreleased – Gemeinsame Head-Routen, kein zusätzlicher PDP-Controller
 
 - Verwende vorhandene IO-/hreflang-Ziele im bestehenden Modalablauf gemeinsam für Kategorien, Suche und PDP. Behalte den konfigurierten ShopBuilder-Dialog; entferne doppelte Sprachrouten-JSON-Ausgabe und Sprach-Observer aus dem Facettencontroller. Redaktionelle/erzwungene Canonicals behalten ihre SEO-Wirkung; die vorhandene Bedienroute wird bei Bedarf im Head separat markiert.

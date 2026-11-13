@@ -1,5 +1,22 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Theme audit, card batching and lazy observers (2026-11-13)
+
+- Remove one unused second configuration read and the overwritten first `loginSuccess` property; preserve effective configuration and translated messages.
+- Reuse the existing attribute batch for up to four visible PDP recommendations. Four single calls become one batch containing four search factories; no additional item query or matrix data changes.
+- Disconnect the previous Lozad observer on rebinding, observe appended images as a group and initialize InfiniteScroll only with a next-page link. Preserve `pagehide`/BFcache. Rebuild only affected owned regions with idempotent `build-lazy-assets.cjs`; append `-lazy1`, increasing minified assets by 310 or 207 bytes.
+- Verify 24 bootstrap configurations, five message objects and 36 list/50 recommendation cases per Twig 2/3, 16 browser-observer cases and all 34 existing regression groups after the documented Quickview fixture update. Distinguish 76 native baseline captures, controlled replays and pending native post-change acceptance.
+- Inventory all 13 owned PHP/171 Twig files, active assets and dynamic entry points. Leave unproven Homepage/tag-list templates unchanged. Legacy CSS source errors, external payment SDKs and customer/checkout contexts remain open; no unsupported LCP/server speed claim. [Audit report](../../.cache/theme-performance-final-20261113/Pruefbericht.html).
+- Local develop only; preserve prior local work. No commit, push, merge, deployment, sync or cache purge. B2C, prices, inventory and order logic unchanged.
+
+## Unreleased – InfiniteScroll lifecycle and whole-shop performance audit
+
+- Replace the category bundle's InfiniteScroll `unload` listener with `pagehide`; preserve history and scroll state when `event.persisted` is true. Normal navigation retains normalization and cleanup. Keep source and active minified asset consistent; cache suffix `…-language1-history1`, +31 uncompressed minified bytes.
+- Pass 60 local before/after history cases across five languages: BFcache restoration changes from 0/30 to 30/30 in the isolated dependency fixture. No demonstrated timing gain; native whole-shop verification remains open. All 33 executed existing check groups pass after documented fixture corrections.
+- Document PageDesign loading order, LCP/CLS evidence, 28 native payment measurements, 65 language/page source checks and 64 image cases. Reject the one-eager-image alternative; retain existing CSS, facets and variant matrix.
+- Payment SDK scoping remains FAIL: PayPal 6.8.0 initializes beyond the Vue/additional-scripts branch; no supported selective provider hook has been established. Basket category 5482 and checkout category 5484 confirmed. No plugin configuration changes or unsafe HTML/script filtering; support draft prepared locally only. No payment acceptance or claimed 429/CORS fix.
+- [Audit report](../../.cache/shop-performance-5f83-20261112/Pruefbericht.html). Local develop only; no commit, push, merge, deployment, sync or cache purge. B2C, prices, rounding, inventory and order logic remain unchanged.
+
 ## Unreleased – Shared head routes without an additional PDP controller
 
 - Reuse existing IO/hreflang targets in the existing modal flow across categories, search and PDPs. Preserve the configured ShopBuilder dialog; remove duplicate route JSON and the language observer from the facet controller. Preserve editorial/forced canonical SEO policy and mark the existing navigation route in the head when needed.

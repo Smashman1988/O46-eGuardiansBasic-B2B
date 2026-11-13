@@ -171,11 +171,18 @@ eGuardians.initialize = function () {
   eGuardians.events = new function() {
         var events = this;
         var timoutSave = null;
+        this.observeLazyImages = function () {
+            if (this.lazyObserver && this.lazyObserver.observer) {
+                this.lazyObserver.observer.disconnect();
+            }
+            // Recreate to apply placeholders to new nodes; release the previous targets.
+            this.lazyObserver = lozad();
+            this.lazyObserver.observe();
+        };
         this.bindEvents = function(bindWrapper){
            
             bindWrapper = bindWrapper || '[data-eg-event]';
-            const observer = lozad(); // lazy loads elements with default selector as '.lozad'
-            observer.observe();
+            eGuardians.events.observeLazyImages();
             
             $(bindWrapper).each(function(){
                 var target = this;
