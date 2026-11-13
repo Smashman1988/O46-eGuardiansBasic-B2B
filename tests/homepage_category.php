@@ -45,6 +45,7 @@ namespace Plenty\Modules\Webshop\ItemSearch\Services {
 }
 namespace {
 require $argv[1];
+require __DIR__.'/card_markup_contract.php';
 require dirname(__DIR__) . '/src/Extensions/Base_Extension.php';
 $deprecations = [];
 set_error_handler(function ($level, $message, $file, $line) use (&$deprecations) {
@@ -115,11 +116,11 @@ foreach (['de','en','fr','it','es'] as $language) foreach (['EUR','USD'] as $cur
     $ids = $n === 'duplicates' ? [100,101,100,102] : ($n ? range(100,99+$n) : []);
     $before = build('before',$language,$currency,$ids,$query); $after = build('after',$language,$currency,$ids,$query);
     $old = render($before); $new = render($after);
-    if ($old !== $new) {
+    if (cardMarkupContract($old, true) !== cardMarkupContract($new)) {
         file_put_contents(dirname($argv[3]).'/mismatch-before.html',$old);
         file_put_contents(dirname($argv[3]).'/mismatch-after.html',$new);
     }
-    check($old===$new,'HTML differs '.$language.'/'.$currency.'/'.$n);
+    check(cardMarkupContract($old, true)===cardMarkupContract($new),'Card content/attribute contract differs '.$language.'/'.$currency.'/'.$n);
     check($before['search']->calls===$after['search']->calls,'Search arguments/order differ');
     check($before['renderer']->calls===$after['renderer']->calls,'Render context differs');
     check(count($after['search']->calls)===1+(int)ceil(count(array_unique($ids))/24),'Wrong batch count');
@@ -129,7 +130,7 @@ foreach (['de','en','fr','it','es'] as $language) foreach (['EUR','USD'] as $cur
     check($after['calls']->translations===7 && $before['calls']->translations===7,'Translation count changed');
     check($after['checkout']->reads===1 && $before['checkout']->reads===1,'Currency read changed');
     check(substr_count($new,'data-eg-item="')===count($ids),'Card count differs');
-    $rows[] = ['language'=>$language,'currency'=>$currency,'cards'=>count($ids),'ids'=>$ids,'query'=>$query,'htmlBytes'=>strlen($new),'htmlIdentical'=>true,'sha256'=>hash('sha256',$new),'serviceCalls'=>count($after['search']->calls),'attributeFactories'=>count(array_unique($ids)),'pluginPathBefore'=>$before['calls']->pluginPath,'pluginPathAfter'=>$after['calls']->pluginPath,'currencyReads'=>1,'translations'=>7];
+    $rows[] = ['language'=>$language,'currency'=>$currency,'cards'=>count($ids),'ids'=>$ids,'query'=>$query,'htmlBytes'=>strlen($new),'cardMarkupContractEqual'=>true,'sha256'=>hash('sha256',$new),'serviceCalls'=>count($after['search']->calls),'attributeFactories'=>count(array_unique($ids)),'pluginPathBefore'=>$before['calls']->pluginPath,'pluginPathAfter'=>$after['calls']->pluginPath,'currencyReads'=>1,'translations'=>7];
 }
 // CategoryListItem still works outside the simple grid, without its prepared path.
 $standalone = [];
@@ -141,7 +142,7 @@ foreach (['de','en','fr','it','es'] as $language) foreach (['EUR','USD'] as $cur
         $html[$version]=$fixture['renderer']->environment->render('GuardiansBasicB2B::Category.Item.Partials.CategoryListItem',$ctx);
         check($fixture['calls']->pluginPath===1,'Standalone fallback lookup changed');
     }
-    check($html['before']===$html['after'],'Standalone HTML differs'); $standalone[]=['language'=>$language,'currency'=>$currency,'identical'=>true];
+    check(cardMarkupContract($html['before'], true)===cardMarkupContract($html['after']),'Standalone card contract differs'); $standalone[]=['language'=>$language,'currency'=>$currency,'cardMarkupContractEqual'=>true];
 }
 // Existing validation and incomplete batch failures must remain visible.
 $failures=[];

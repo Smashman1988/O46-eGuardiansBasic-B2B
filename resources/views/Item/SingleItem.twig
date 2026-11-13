@@ -46,7 +46,7 @@
 {% endif %}
 {% set itemId = itemData.item.id %}
 {% set variationId = itemData.variation.id %}
-{% set mainImg = itemData.images.all | orderByKey('position') | first %}
+{% set sortedItemImages = itemData.images.all | orderByKey('position') %}{% set mainImg = sortedItemImages | first %}
 
 {# === Services & Daten === #}
 {% set detailurl = services.url.getCanonicalURL() %}
@@ -176,7 +176,7 @@
                         {% if itemData.images.all | length>1 %}
                          {% set stepIndex = 0 %}
                         <div class="single-prev-images d-none d-md-block">
-                            {% for prevImg in itemData.images.all  | orderByKey('position') %}
+                            {% for prevImg in sortedItemImages %}
                                 <a href="{{ prevImg.url }}" rel="zoom-id:ItemImgZoom" data-image="{{ prevImg.urlMiddle }}" title="{{ itemData | itemName }}" data-stepindex="{{ stepIndex - 3 }}">
                                     <img src="" data-src="{{ prevImg.urlSecondPreview }}" alt="{{ itemData | itemName }}" title="{{ itemData | itemName }}" class="lozad" width="100%" height="100%"/>
                                 </a>
@@ -450,8 +450,8 @@
         } %}
         {% for column, label in matrixColumns %}
           {% if (column != 'size' or hasSize) and (column != 'color' or hasColor) %}
-            <div data-eg-col="{{ column }}" data-eg-label="{{ trans('GuardiansBasicB2B::Template.' ~ label) | e('html_attr') }}" title="{{ trans('GuardiansBasicB2B::Template.' ~ label) | e('html_attr') }}">
-              <span class="eg-label-full">{{ trans('GuardiansBasicB2B::Template.' ~ label) }}</span>
+            {% set matrixLabel = trans('GuardiansBasicB2B::Template.' ~ label) %}<div data-eg-col="{{ column }}" data-eg-label="{{ matrixLabel | e('html_attr') }}" title="{{ matrixLabel | e('html_attr') }}">
+              <span class="eg-label-full">{{ matrixLabel }}</span>
               <span class="eg-label-short">{{ trans('GuardiansBasicB2B::Template.' ~ label ~ 'Short') }}</span>
             </div>
           {% endif %}
@@ -494,9 +494,9 @@
 {% endif %}
   {{ itemData.texts.description|raw }}
       <div class="property-box">
-{% set orderedKeys = [46, 115, 105, 196, 197, 198, 7, 107, 108, 122, 111, 73, 127, 110, 109, 123, 124, 106, 118, 119, 125, 102, 103, 101, 104] %}
+{% set orderedKeys = [46, 115, 105, 196, 197, 198, 7, 107, 108, 122, 111, 73, 127, 110, 109, 123, 124, 106, 118, 119, 125, 102, 103, 101, 104] %}{% set propertiesById = getItemPropertiesById(itemData.properties) %}
 {% for id in orderedKeys %}
-    {% set property = item.documents[0].data.properties | filter(p => p.property.id == id) | first %}
+    {% set property = propertiesById[id] ?? false %}
     {% if property is defined %}
         {% set label = attributeCache[id] %}
         {% set value = property.texts.value ?? property.selection.name ?? null %}

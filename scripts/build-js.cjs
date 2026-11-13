@@ -18,13 +18,18 @@ async function build({ check = false } = {}) {
     assert.equal(require('terser/package.json').version, '5.44.0', 'Use the pinned Terser version');
     const report = [];
     for (const [source, target] of files) {
-        const sources = source === 'core.js' ? [source, 'zoom-loader.js'] : [source];
+        const sources = source === 'core.js' ? [source, 'search.js', 'zoom-loader.js'] :
+            ['main.js', 'cat.js', 'vue.js'].includes(source) ? ['listing-item.js', source] : [source];
         const input = sources.map(file => fs.readFileSync(path.join(root, 'resources/js', file), 'utf8')).join('\n');
         acorn.parse(input, { ecmaVersion: 'latest' });
         // jQuery is the unchanged, versioned upstream distribution. MagicZoom's
         // packed payload and license are retained; never transform its eval text.
         const output = source.startsWith('vendor/') ? input : (await minify(input, {
-            compress: source === 'facets.js', mangle: source !== 'magiczoom.js',
+            // Preserve public properties, globals and argument arity. Default
+            // safe compression only; no unsafe transforms or property mangling.
+            compress: source === 'magiczoom.js' ? false : source === 'facets.js' ? true :
+                { defaults: true, passes: 2, keep_fargs: true },
+            mangle: source !== 'magiczoom.js',
             format: { comments: source === 'facets.js' ? false : /^!|@license|Copyright|license terms|Version:|Build:/i }
         })).code + '\n';
         acorn.parse(output, { ecmaVersion: 'latest' });
@@ -34,7 +39,7 @@ async function build({ check = false } = {}) {
         report.push({ source: 'resources/js/' + source, sources: sources.map(file => 'resources/js/' + file), target: 'resources/js/' + target,
             sourceSha256: hash(input), sha256: hash(output), bytes: Buffer.byteLength(output) });
     }
-    const manifest = JSON.stringify({ format: 'Terser; compress=false except existing facets=true; mangle=true except packed vendor; jQuery vendor copy',
+    const manifest = JSON.stringify({ format: 'Terser safe compression passes=2, keep_fargs; facets keeps prior defaults; no unsafe/property mangling; packed MagicZoom unchanged; jQuery vendor copy',
         terser: '5.44.0', files: report }, null, 2) + '\n';
     const manifestFile = path.join(root, 'build/js/manifest.json');
     if (check) assert.equal(fs.readFileSync(manifestFile, 'utf8'), manifest, 'Stale JavaScript manifest');

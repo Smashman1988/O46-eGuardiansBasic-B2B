@@ -55,7 +55,7 @@ $report = ['baseline' => BASELINE, 'source' => $baseline ? 'baseline' : 'working
 $syntax = environment();
 // Explicit syntax-only registry: Plenty/IO/Ceres and Base_Extension functions used here.
 // Unknown functions/filters are NOT accepted automatically. These callbacks must never render.
-$functions = ['component','config','csrf_token','getAttributesWithImages','getCardAttributeMaps','getBasePriceList',
+$functions = ['component','config','csrf_token','getAttributesWithImages','getCardAttributeMaps','getBasePriceList','getItemPropertiesById',
     'getFacetsFromCat','getFacetView','getFeedbackItemList','getImageAttributeList','getListFeedbackAverages',
     'getPartial','get_additional_scripts','get_additional_styles','get_consent_scripts',
     'get_filtered_tags','get_json_data','get_shop_builder_scripts','plugin_path','queryString',

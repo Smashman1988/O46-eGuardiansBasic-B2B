@@ -32,9 +32,24 @@ function regions(source) {
             else if (value?.type) visit(value);
         }
     }
-    visit(acorn.parse(source, { ecmaVersion: 'latest' }));
+    const tree = acorn.parse(source, { ecmaVersion: 'latest' });
+    visit(tree);
     if (!found.category && flattenedCategory.length) {
         assert.equal(flattenedCategory.length,1); found.category = flattenedCategory[0];
+    }
+    // The fixture adapter splits top-level compressed sequences back into
+    // statements. Retain the complete, real history/append setup in that shape.
+    if (!found.category) {
+        const start = tree.body.findIndex(node => node.type === 'ExpressionStatement' &&
+            node.expression.type === 'AssignmentExpression' &&
+            source.slice(node.expression.left.start, node.expression.left.end) === 'InfiniteScroll.prototype.updateHistory');
+        if (start >= 0) {
+            const end = tree.body.findIndex((node, index) => index >= start && node.type === 'ExpressionStatement' &&
+                source.slice(node.start, node.end).includes('append.infiniteScroll') &&
+                source.slice(node.start, node.end).includes('pagination__next'));
+            assert.ok(end >= start && end - start <= 4, 'Contiguous actual category lifecycle statements');
+            found.category = { start: tree.body[start].start, end: tree.body[end].end, statementGroup: true };
+        }
     }
     return found;
 }

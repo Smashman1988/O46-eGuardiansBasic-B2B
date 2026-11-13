@@ -418,8 +418,8 @@
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v={{ buildHash }}-core1" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v={{ buildHash }}-zoom1" defer></script>
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}-020726.min.js?v={{ buildHash }}-core1" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v={{ buildHash }}-core2" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v={{ buildHash }}-zoom1" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}-020726.min.js?v={{ buildHash }}-core2" defer></script>
             {% if isItem %}
                 {# After item.js defines mzOptions, before DOMContentLoaded initializes the gallery. #}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v={{ buildHash }}-zoom1" data-eg-magiczoom defer></script>

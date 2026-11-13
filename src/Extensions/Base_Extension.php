@@ -74,6 +74,7 @@ class Base_Extension extends Twig_Extension
             $this->factory->createSimpleFunction('sortSizes', [$this, 'sortSizes']),
             $this->factory->createSimpleFunction('getAttributesWithImages', [$this, 'getAttributesWithImages']),
             $this->factory->createSimpleFunction('getCardAttributeMaps', [$this, 'getCardAttributeMaps']),
+            $this->factory->createSimpleFunction('getItemPropertiesById', [$this, 'getItemPropertiesById']),
         ];
     }
 
@@ -112,6 +113,24 @@ class Base_Extension extends Twig_Extension
 
     public function getAttributesWithImages($itemId){
         return pluginApp(ItemSearchService::class)->getResult($this->cardAttributeFactory($itemId));
+    }
+
+    /** Index the existing item result once; the first property for an ID wins. */
+    public function getItemPropertiesById(iterable $properties): array
+    {
+        $indexed = [];
+        foreach ($properties as $property) {
+            $id = $property['property']['id'] ?? null;
+            // Result-field property IDs are integers; also retain numeric-string IDs.
+            if (!is_int($id) && !is_numeric($id)) {
+                continue;
+            }
+            $key = (int)$id;
+            if ($id == $key && !array_key_exists($key, $indexed)) {
+                $indexed[$key] = $property;
+            }
+        }
+        return $indexed;
     }
 
     private function cardAttributeFactory($itemId)

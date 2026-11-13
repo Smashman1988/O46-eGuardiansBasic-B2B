@@ -11977,6 +11977,9 @@ opacity: 0.7;
 }
 .paddinlr{padding-left:0px;padding-right:0px;}
 .sizebox{font-family: Roboto, sans-serif;font-weight: 700;font-size: 12px;line-height: 18px;letter-spacing: 0.02em;}
+/* B2B card separators */
+.cat-item-sizes{border-top:1px solid #dcdcdc;border-bottom:1px solid #dcdcdc;padding:1px 0;}
+/* End B2B card separators */
 .cat-attr-sizes{display: flex;align-items: center;flex-wrap: wrap;padding: 0px 0 3px 0;justify-content: center;min-height: 80px;}
 .no-cat-at{display: flex;align-items: center;flex-wrap: wrap;padding: 0;justify-content: center;min-height: 75px;}
 .ptpb{padding-top:0px!important;padding-bottom:0px!important;}

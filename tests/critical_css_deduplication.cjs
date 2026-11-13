@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const {chromium} = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
 const {optimizeHead} = require('../scripts/optimize-critical-css.cjs');
+const {syncHead: syncCardCss} = require('../scripts/build-card-css.cjs');
 const headPath = 'resources/views/PageDesign/Partials/Head.twig';
 const newHead = fs.readFileSync(headPath, 'utf8');
 // Git stores LF while this Windows checkout uses CRLF. Match the checkout's
@@ -20,7 +21,7 @@ const fullCss = fs.readFileSync('resources/css/main-211025.min.css', 'utf8');
 fs.mkdirSync(reportDirectory, {recursive: true});
 const sha = value => crypto.createHash('sha256').update(value).digest('hex');
 const optimized = optimizeHead(oldHead);
-assert.equal(optimized.head, newHead, 'Product edit consists exclusively of the reviewed deduplication');
+assert.equal(syncCardCss(optimized.head), newHead, 'Critical CSS contains only the reviewed deduplication and generated card separators');
 assert.equal(optimizeHead(newHead).head, newHead, 'Optimization is idempotent');
 const getStyles = head => [...head.matchAll(/<style([^>]*)>([\s\S]*?)<\/style>/g)].map(m => ({attributes: m[1], css: m[2].replace(/\{\{[\s\S]*?\}\}/g, 'https://local.invalid/theme')}));
 const styles = {before: getStyles(oldHead), after: getStyles(newHead)};

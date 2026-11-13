@@ -175,7 +175,7 @@ namespace {
     function checkThemeAssetOrder($html, $page, $isItem) {
         $base = '/plugins/GuardiansBasicB2B/js/';
         preg_match_all('~<script\s+src="([^"]*/js/(?:core|magiczoom|(?:cat|main|vue|item)-020726)\\.min\\.js\\?[^"]*)"([^>]*)>~', $html, $tags, PREG_SET_ORDER);
-        $expected = [$base . 'core.min.js?v=fixture-core1', $base . $page . '-020726.min.js?v=fixture-core1'];
+        $expected = [$base . 'core.min.js?v=fixture-core2', $base . $page . '-020726.min.js?v=fixture-core2'];
         if ($isItem) { $expected[] = $base . 'magiczoom.min.js?v=fixture-zoom1'; }
         check(array_map(function ($tag) { return html_entity_decode($tag[1], ENT_QUOTES, 'UTF-8'); }, $tags) === $expected,
             'Core/page/MagicZoom script count, URL or execution order changed');
@@ -856,7 +856,7 @@ namespace {
                 preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
                 check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
                 $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
-                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-core1';
+                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-core2';
                 check($url === $expected,'Wrong shipped asset or cache version');
                 checkThemeAssetOrder($html, $asset, false);
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
