@@ -51,6 +51,7 @@ namespace Ceres\Helper {
         const SCOPE_CATEGORY = 'category';
         public static $defaultSize = 24;
         public static $overridePage = null;
+        public static $menuReads = 0;
         public static function validateItemListOptions($options, $scope) {
             if ((int)$options['page'] <= 0) { $options['page'] = 1; }
             if ((int)$options['itemsPerPage'] <= 0) { $options['itemsPerPage'] = self::$defaultSize; }
@@ -59,6 +60,7 @@ namespace Ceres\Helper {
             return $options;
         }
         public static function get($scope) {
+            self::$menuReads++;
             return (object)['defaultSorting' => 'variation.createdAt_desc', 'defaultItemsPerPage' => 24,
                 'sorting' => ['variation.createdAt_desc' => 'Newest', 'texts.name1_asc' => 'Name']];
         }
@@ -79,14 +81,15 @@ namespace Plenty\Modules\Webshop\ItemSearch\Services {
             $this->calls[] = $factories;
             $options = $factories['itemList'];
             $total = $this->totalResolver ? ($this->totalResolver)($options) : $this->total;
-            if ($this->omitDocuments) { return ['facets'=>[], 'itemList'=>['total'=>$total]]; }
+            $result = isset($factories['facets']) ? ['facets'=>[]] : [];
+            if ($this->omitDocuments) { return $result + ['itemList'=>['total'=>$total]]; }
             $first = ((int)$options['page'] - 1) * (int)$options['itemsPerPage'];
             $items = [];
             for ($id = $first + 1; $id <= min($this->documentTotal ?? $total, $first + (int)$options['itemsPerPage']); $id++) {
                 $items[] = ['data' => ['variation' => ['id' => $id], 'images' => ['all' => []],
                     'item' => ['manufacturer' => ['logo' => '']]]];
             }
-            return ['facets' => [], 'itemList' => ['total' => $total, 'documents' => $items]];
+            return $result + ['itemList' => ['total' => $total, 'documents' => $items]];
         }
     }
 }
@@ -500,6 +503,44 @@ namespace {
         check($search->calls[0]['itemList']['sorting'] === 'texts.name1_asc','Search sort changed');
         check(strpos($html,'<span class="sort-val">Name</span>') !== false,'Dropdown displays wrong active sort');
         check(strpos($html,'data-eg-sortval="variation.createdAt_desc"') !== false,'Default sort cannot be selected again');
+    });
+    foreach ([null, '', 'false', 'true'] as $flag) {
+        test('list/fragment-factories-' . json_encode($flag),function () use ($flag,$request,$extension,$renderer,$search) {
+            $request->params = ['page'=>'2','sorting'=>'texts.name1_asc','facets'=>'17,19','priceMin'=>'8','priceMax'=>'21'];
+            if ($flag !== null) { $request->params['quickViewItem'] = $flag; }
+            $search->calls = [];
+            SearchOptions::$menuReads = 0;
+            $html = $extension->getItemsFromCat(200,24,[7]);
+            $fragment = $flag === 'true';
+            $expectedKeys = $fragment ? ['itemList'] : ['facets','itemList'];
+            check(count($search->calls) === 1 && array_keys($search->calls[0]) === $expectedKeys,'Wrong searches for fragment flag');
+            check(SearchOptions::$menuReads === ($fragment ? 0 : 1),'Wrong explicit sort menu preparations');
+            $options = $search->calls[0]['itemList'];
+            check($options === ['page'=>2,'itemsPerPage'=>24,'sorting'=>'texts.name1_asc','facets'=>[7,17,19],'categoryId'=>200,'priceMin'=>8.0,'priceMax'=>21.0],'Changed filtered category request');
+            $fullParams = $renderer->params;
+            // Render the same fragment with the full UI data the old helper always passed.
+            $fullParams['facets'] = [['id'=>3, 'name'=>'Marke', 'values'=>[['id'=>17,'name'=>'A','count'=>5]]]];
+            $fullParams['searchOptions'] = SearchOptions::get(SearchOptions::SCOPE_CATEGORY);
+            if ($fragment) {
+                check($html === $renderer->render('GuardiansBasicB2B::Category.Item.CategoryItemContent',$fullParams),'Fragment output depends on omitted data');
+            }
+            check(strpos($html,'class="item">25</span>') !== false && strpos($html,'class="item">48</span>') !== false,'Wrong fragment cards');
+            check(strpos($html,'class="pagination__next"') !== false,'Lost next page');
+            return ['factoryKeys'=>$expectedKeys,'cards'=>24,'htmlSha256'=>hash('sha256',$html)];
+        });
+    }
+    test('basket/legacy-helper',function () use ($extension,&$services) {
+        $basket = new class {
+            public $reads = 0;
+            public function getBasketForTemplate() { return ['read'=>++$this->reads]; }
+        };
+        $services[IO\Services\BasketService::class] = $basket;
+        try {
+            check($extension->restGetContent('data:,unused') === ['read'=>1], 'Wrong first basket');
+            check($extension->restGetContent('') === ['read'=>2], 'Basket was reused');
+        } finally {
+            unset($services[IO\Services\BasketService::class]);
+        }
     });
     foreach (['1','2','69'] as $page) {
         test('html/baseline-page-' . $page,function () use ($page,$extension,$baselineExtension,$request,$context,$search) {
@@ -990,7 +1031,7 @@ namespace {
     test('compatibility/production-source',function () use ($root) {
         $fragments = ['SeoPage'=>file_get_contents($root . '/src/Helper/SeoPage.php')];
         $lines = file($root . '/src/Extensions/Base_Extension.php');
-        foreach (['getFacetView','createSeoPage','prepareSeoContent','getItemsFromCat','cardAttributeFactory','getCardAttributeMaps'] as $name) {
+        foreach (['getFacetView','createSeoPage','prepareSeoContent','getItemsFromCat','cardAttributeFactory','getCardAttributeMaps','restGetContent'] as $name) {
             $method = new ReflectionMethod(Base_Extension::class,$name);
             $fragments[$name] = "<?php\n" . implode('',array_slice($lines,$method->getStartLine()-1,$method->getEndLine()-$method->getStartLine()+1));
         }

@@ -1,5 +1,11 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Server load on variation matrices and product lists (2026-11-14)
+
+- Product pages and quick views accept slow successful variation batch responses. The batch now passes each variation’s positive maximum order quantity from the search result to the matrix. The existing per-variation fallback handles transport failures and the 30-second timeout. The local 60-variation test uses one request, down from 61. The asset version for `core.min.js` increases to 2.
+- Four tag lists batch card attribute lookups. Embedded category fragments skip one facet aggregation and the sort menu. Product pages reuse the current basket’s wishlist IDs. `restGetContent` no longer sends an outbound HTTP request with cookies.
+- Native post-change TTFB remains unmeasured. [Local report with measurements and limitations](../../.cache/server-phase3-320a901/Pruefbericht.html)
+
 ## Unreleased – Separate numeric asset versions (2026-11-14)
 
 - Based on c112d5c on develop; preserve previous local changes and plugin version 1.0.7. Replace the previously prepared content hashes in all twelve active owned asset URLs with separate numbers, initially ?v=1 each. Preserve the six cleaned filenames and all delivered JS/CSS bodies.

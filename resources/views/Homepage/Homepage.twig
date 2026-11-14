@@ -145,9 +145,12 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="home-slider-items">
-                        {% for item in itemListHomeTopSell %}
+                        {% set tagListAttributeMaps = (cardAttributeMap ?? null) is null
+                            ? getCardAttributeMaps(itemListHomeTopSell|default([])|map(item => item.data.variation.itemId))
+                            : [] %}
+                        {%- for item in itemListHomeTopSell %}
                             <div class="col-12">
-                                {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem" with { 'item': item } %}
+                                {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem" with { 'item': item, 'cardAttributeMap': cardAttributeMap ?? tagListAttributeMaps[item.data.variation.itemId] ?? null } %}
                             </div>
                         {% endfor %}
                         </div>

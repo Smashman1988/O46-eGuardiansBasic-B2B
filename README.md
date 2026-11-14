@@ -10,6 +10,14 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Server-Performance Phase 3 (2026-11-14)
+
+Lokal auf `develop`, Basis `320a901`. Bei einer erfolgreichen Variantenantwort nach 6,573 Sekunden löste die Matrix bisher 60 zusätzliche Einzelabrufe aus. PDP und Quickview warten jetzt den Sammelabruf bis zu seinem Transport-Timeout von 30 Sekunden ab. Im Browsertest sank die Zahl der Anfragen von 61 auf 1. Das betrifft die Zeit nach der ersten HTML-Antwort. Die Asset-Version von `core.min.js` steigt auf 2.
+
+Der Varianten-Endpunkt liefert jetzt eine bereits im Suchergebnis vorhandene positive Höchstbestellmenge an die Matrix. Vier Tag-Listen bündeln ihre Kartenattribute. Das Nachladen eingebetteter Kategorielisten spart die Facettenaggregation und den Aufbau des Sortiermenüs. Die PDP verwendet vorhandene Wunschlisten-IDs aus dem aktuellen Warenkorb. Der öffentliche Helper `restGetContent` gibt weiterhin den Warenkorb zurück und führt den zuvor verworfenen HTTP-Abruf mit Session-Cookies nicht mehr aus.
+
+Für das Startseitengrid bleiben 60 Artikel, eine Kategoriesuche und drei Attribut-Batches belegt. In Pluginset 426 lag die historische Startseiten-TTFB bei 3,58 bis 5,11 Sekunden. Der Anteil von Theme, Plenty-Suche und Infrastruktur sowie die native Nachher-Messung sind offen. [Prüfbericht und Messdaten](.cache/server-phase3-320a901/Pruefbericht.html)
+
 ## Separate Asset-Versionsnummern (2026-11-14)
 
 Basis **c112d5c**, lokal auf **develop**, Version **1.0.7** unverändert. Die vorherige lokale Hash-Versionierung ist auf einfache Zahlen umgestellt; die übrigen lokalen Änderungen bleiben erhalten. [HTML-Prüfbericht mit zwölf Assets, URL-Vergleich, Tests und Cachebelegen](.cache/asset-numeric-c112d5c-20261114/Asset-Versionen-Pruefbericht.html). **Native Abnahme der neuen URLs: NOT_TESTED**, da keine Bereitstellung erfolgt ist.

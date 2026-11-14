@@ -57,7 +57,10 @@
 {% set enabledRoutes = config("IO.routing.enabled_routes") | split(', ') %}
 {% set lang = services.localizationRepository.getLanguage() %}
 {% if request.get('quickViewItem') is empty %}{% set itemAttributes = services.item.getAttributeNameMap(itemId) %}{% endif %}
-{% set isInWishList = services.wishList.isItemInWishList(variationId) %}
+{# IO includes this customer's variation IDs in the basket prepared above. #}
+{% set isInWishList = variationId matches '/^[1-9][0-9]*$/D' and basketItems.itemWishListIds is defined and basketItems.itemWishListIds is iterable
+    ? variationId in basketItems.itemWishListIds
+    : services.wishList.isItemInWishList(variationId) %}
 {% set itemPrices = itemData.prices %}
 {% set hasRRP = itemPrices.rrp is defined and itemPrices.rrp.price.value != 0 and itemPrices.rrp.price.value > itemPrices.default.unitPrice.value %}
  

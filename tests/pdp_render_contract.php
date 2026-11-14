@@ -16,13 +16,14 @@ set_error_handler(function ($level,$message,$file,$line) use (&$notices) {
 class GuardRequest { public $value; function __construct($v){$this->value=$v;} function get($key){return $key==='quickViewItem'?$this->value:null;} function getRequestUri(){return '/product/?quickViewItem='.(is_scalar($this->value)?(string)$this->value:'');} }
 class GuardServices {
     public $calls=[],$lang,$request,$containers=[],$texts=[],$quantity=0,$sorts=0;
+    public $wishListSnapshot = [], $wishListHit = false;
     function __construct($lang,$request){$this->lang=$lang;$this->request=$request;}
     function __call($name,$args){
         $this->calls[]=$name;
         switch($name){
             case 'setType': return null;
             case 'getVariationAttributeMap': return [['variationId'=>1011,'attributes'=>[['attributeId'=>1,'attributeValueId'=>1]]],['variationId'=>1012,'attributes'=>[['attributeId'=>1,'attributeValueId'=>2]]]];
-            case 'getBasketForTemplate': return ['itemQuantity'=>$this->quantity,'currency'=>'EUR'];
+            case 'getBasketForTemplate': return ['itemQuantity'=>$this->quantity,'currency'=>'EUR'] + $this->wishListSnapshot;
             case 'getBasketQuantity': return $this->quantity;
             case 'getURLById': return '/'.$this->lang.'/category-'.$args[0].'/';
             case 'getItemCrossSellingList': return ['documents'=>[['data'=>['item'=>['id'=>99]]]],'contextProbe'=>'cross-'.$this->lang];
@@ -30,7 +31,8 @@ class GuardServices {
             case 'getLanguage': return $this->lang;
             case 'getCurrentTemplate': return 'tpl.item';
             case 'isItem': return true;
-            case 'isCheckout': case 'isCategory': case 'isSearch': case 'isMyAccount': case 'isCheapestSorting': case 'isItemInWishList': return false;
+            case 'isItemInWishList': return $this->wishListHit;
+            case 'isCheckout': case 'isCategory': case 'isSearch': case 'isMyAccount': case 'isCheapestSorting': return false;
             case 'shouldBeCached': return true;
             case 'getCanonicalURL': return '/'.($args[0]??$this->lang).'/product/a-42/';
             case 'getLanguageURLs': return array_combine(['de','en','fr','it','es'],array_map(function($l){return '/'.$l.'/product/a-42/';},['de','en','fr','it','es']));
@@ -87,9 +89,22 @@ foreach(['de','en','fr','it','es'] as $lang)foreach([null,'true'] as $value)fore
 foreach(['',false,0,'0','false',[],['true']] as $value)$cases[]=['lang'=>'de','value'=>$value,'builder'=>false];
 $cases[]=['lang'=>'de','value'=>null,'builder'=>true];
 foreach([null,'true']as$value)$cases[]=['lang'=>'de','value'=>$value,'builder'=>false,'images'=>1];
-$report=['mode'=>'LOCAL_REAL_OWN_TWIG_RENDER_EXPLICIT_PLATFORM_BOUNDARIES_NOT_NATIVE_PHP_TIMING','twig'=>Twig\Environment::VERSION,'cases'=>[],'changedProductSource'=>false,'actualTemplates'=>array_keys($actual),'platformFixtures'=>array_keys($stubs)];
+foreach ([null, 'true'] as $value) {
+    foreach ([
+        [1011, [], false], [1011, [909, '1011'], true], ['1011', [1011], true],
+        [1011, ['10110'], false], [1011, null, true], [1011, '1011', false], [0, [], true]
+    ] as [$variation, $snapshot, $hit]) {
+        $cases[] = ['lang'=>'de', 'value'=>$value, 'builder'=>false, 'variation'=>$variation,
+                    'snapshot'=>$snapshot, 'hit'=>$hit];
+    }
+}
+$report=['mode'=>'LOCAL_REAL_OWN_TWIG_RENDER_EXPLICIT_PLATFORM_BOUNDARIES_NOT_NATIVE_PHP_TIMING','twig'=>Twig\Environment::VERSION,'cases'=>[],'changedProductSource'=>$before !== $after || $headers['before'] !== $headers['after'],'actualTemplates'=>array_keys($actual),'platformFixtures'=>array_keys($stubs)];
 foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as $version=>$source){
     $req=new GuardRequest($case['value']);$svc=new GuardServices($case['lang'],$req);$svc->quantity=$case['quantity']??0;
+    if (array_key_exists('snapshot', $case)) {
+        $svc->wishListSnapshot = ['itemWishListIds' => $case['snapshot']];
+        $svc->wishListHit = $case['hit'];
+    }
     $twig=new Twig\Environment(new Twig\Loader\ArrayLoader(['SingleItem'=>$source,'Header'=>$headers[$version]]+$actual+$stubs+repositoryTemplates($root)),['cache'=>false,'autoescape'=>'html','strict_variables'=>false]);
     foreach(['getPartial'=>'partial','config'=>'config','trans'=>'trans','plugin_path'=>'pluginPath','createSeoPage'=>'seo','get_additional_styles'=>'styles','get_additional_scripts'=>'scripts','component'=>'component','recordContainer'=>'container','getCardAttributeMaps'=>'maps'] as $name=>$method)$twig->addFunction(new Twig\TwigFunction($name,[$svc,$method]));
     $twig->addFunction(new Twig\TwigFunction('getItemPropertiesById',[$propertyExtension,'getItemPropertiesById']));
@@ -98,12 +113,20 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
     $twig->addFilter(new Twig\TwigFilter('orderByKey',[$svc,'sortImages']));
     foreach(['int'=>'integer','itemName'=>'itemName','itemURL'=>'itemURL'] as $name=>$method)$twig->addFilter(new Twig\TwigFilter($name,[$svc,$method]));
     $item=['item'=>['id'=>42,'manufacturer'=>['name'=>'Fixture','externalName'=>'Fixture','logo'=>'','url'=>''],'feedbackCount'=>0,'feedbackDecimal'=>0], 'variation'=>['id'=>1011,'bundleType'=>'','availability'=>['id'=>1]],'images'=>['all'=>[['url'=>'/image.jpg','urlMiddle'=>'/image-middle.jpg','urlPreview'=>'/image-preview.jpg','position'=>0]]],'prices'=>['default'=>['unitPrice'=>['value'=>4.99,'formatted'=>'4.99 EUR'],'currency'=>'EUR'],'rrp'=>['price'=>['value'=>9.99],'unitPrice'=>['value'=>9.99,'formatted'=>'9.99 EUR']]],'texts'=>['name1'=>'Fixture '.$case['lang'],'metaDescription'=>'Description','keywords'=>'Fixture','description'=>'<p>Product</p>','shortDescription'=>'Short','technicalData'=>''],'attributes'=>[],'properties'=>[],'barcodes'=>[['code'=>'123']]];
+    $item['variation']['id'] = $case['variation'] ?? 1011;
     for($image=1;$image<($case['images']??3);$image++)$item['images']['all'][]=['url'=>'/image-'.$image.'.jpg','urlMiddle'=>'/image-middle-'.$image.'.jpg','urlPreview'=>'/image-preview-'.$image.'.jpg','position'=>$image];
     $ctx=['request'=>$req,'item'=>['documents'=>[['data'=>$item]]],'services'=>array_fill_keys(['ItemCrossSellingService','item','url','basket','localizationRepository','wishList','template','checkout','propertyFile','order','country','webstoreConfig','category','itemList'],$svc),'isShopBuilder'=>$case['builder'],'category'=>null,'defaultCategory'=>['details'=>[['name'=>'Category']]],'buildHash'=>'fixture','webstoreConfig'=>['defaultLanguage'=>'de','domainSsl'=>'https://b2b.outlet46.de','name'=>'Fixture','browserLanguage'=>[]],'ceresConfig'=>['global'=>['blockCookies'=>false],'log'=>['performanceLevel'=>'live','checkSyntax'=>false],'header'=>['companyLogo'=>'/logo.png']],'context'=>new class {function renderState(){return '';}},'urls'=>['templateType'=>'item','appendTrailingSlash'=>true,'search'=>'/search/'],'currencyData'=>['symbol'=>'EUR'],'locale'=>$case['lang'],'assetName'=>'ceres-base','showNetPrices'=>true,'notifications'=>[]];
     $html=$twig->render('SingleItem',$ctx);$full=$twig->createTemplate("{{ request.get('quickViewItem') is empty ? 'full' : 'quickview' }}")->render(['request'=>$req]);
     $pair[$version]=['html'=>$html,'sha256'=>hash('sha256',$html),'bytes'=>strlen($html),'texts'=>$svc->texts,'calls'=>$svc->calls,'containers'=>$svc->containers,'sorts'=>$svc->sorts,'fullPage'=>$full==='full','externalStyle'=>substr_count($html,'<style data-probe>'),'externalScript'=>substr_count($html,'<script data-probe>')];
 }
     $full=$pair['before']['fullPage'];$expected=$pair['before']['calls'];
+    $shouldUseSnapshot = is_array($case['snapshot'] ?? null) && $case['variation'] > 0;
+    if ($shouldUseSnapshot) {
+        $expected = array_values(array_filter($expected, fn ($call) => $call !== 'isItemInWishList'));
+    }
+    if (in_array('isItemInWishList', $pair['after']['calls'], true) === $shouldUseSnapshot) {
+        throw new RuntimeException('Unexpected wishlist lookup or missing fallback');
+    }
     if($full){$seen=false;foreach($expected as $index=>$call){if($call==='getBasketForTemplate'){if($seen){unset($expected[$index]);}else{$seen=true;}}}$expected=array_values($expected);}
     $textDelta=count($pair['before']['texts'])-count($pair['after']['texts']);
     $guardAlreadyPresent=strpos($before,'Detail properties and recommendation cards are omitted from Quickview')!==false;

@@ -1,5 +1,5 @@
 <?php
-// php tests/card_attributes.php <Twig autoloader> <report.json>
+// php tests/card_attributes.php <Twig autoloader> <report.json> [before-tag-template-dir]
 namespace Plenty\Plugin\Templates\Extensions { class Twig_Extension {} }
 namespace Plenty\Modules\Webshop\ItemSearch\SearchPresets {
     class VariationAttributeMap {
@@ -163,9 +163,54 @@ foreach (['de','en','fr','it','es'] as $language) {
 }
 $service->lang = 'it';
 check($ext->getCardAttributeMaps([100])[100]['attributes'][1]['values'][0]['name'] === 'it-L-100','Leaked another render language');
+$tagLists = [];
+foreach (['Homepage/Homepage'=>['12',15], 'StaticPages/Topseller'=>['8',50],
+          'StaticPages/Neuheiten'=>['7',50], 'StaticPages/Abverkauf'=>['9',50]] as $path => [$tag, $limit]) {
+    $source = file_get_contents(dirname(__DIR__).'/resources/views/'.$path.'.twig');
+    $beforeTagSource = isset($argv[3]) ? file_get_contents($argv[3].'/'.basename($path).'.twig') : $source;
+    $twig->getLoader()->setTemplate($path, $source);
+    $twig->getLoader()->setTemplate($path.'.before', $beforeTagSource);
+    foreach ([[], range(100, 99+$limit), [100,101,100]] as $ids) {
+        $list = new class {
+            public $documents = [], $calls = [];
+            function getItemList(...$arguments) {
+                $this->calls[] = $arguments;
+                return ['documents' => $this->documents];
+            }
+        };
+        foreach ($ids as $id) {
+            $list->documents[] = ['data'=>['variation'=>['itemId'=>$id], 'item'=>['id'=>$id],
+                'prices'=>['default'=>['unitPrice'=>['value'=>5,'formatted'=>'5 EUR']]]]];
+        }
+        foreach ([false, true] as $inherited) {
+            $context = ['services'=>['itemList'=>$list]];
+            if ($inherited) {
+                $context['cardAttributeMap'] = ['attributes'=>[['type'=>'box',
+                    'values'=>[['position'=>1, 'name'=>'Supplied size']]]]];
+            }
+            foreach ([false, true] as $batch) {
+                $list->calls = $service->batches = $service->singles = [];
+                $html = $twig->render($batch ? $path : $path.'.before', $context);
+                check($list->calls === [['tag_list',$tag,'sorting.price.avg_asc',$limit]], 'Tag query changed');
+                check(substr_count($html, 'data-eg-item="') === count($ids), 'Tag card count changed');
+                if (!$batch) {
+                    $reference = $html;
+                    check($service->singles === ($inherited ? [] : $ids), 'Tag card fallback changed');
+                    continue;
+                }
+                $expectedBatches = $inherited ? [] : array_chunk(array_unique($ids), 24);
+                check($html === $reference && $service->batches === $expectedBatches && !$service->singles,
+                    'Tag batching changed cards or search calls for '.$path);
+                $tagLists[] = ['template'=>$path, 'cards'=>count($ids), 'inheritedMap'=>$inherited,
+                    'callsBefore'=>$inherited ? 0 : count($ids), 'callsAfter'=>count($expectedBatches),
+                    'sha256'=>hash('sha256',$html)];
+            }
+        }
+    }
+}
 $service->omit = true;
 try { $ext->getCardAttributeMaps([100]); throw new \RuntimeException('Missing map silently accepted'); }
 catch (\UnexpectedValueException $expected) { check(strpos($expected->getMessage(),'100') !== false,'Wrong missing key'); }
-file_put_contents($argv[2],json_encode(['renders'=>$report,'recommendations'=>$recommendations,'contextIsolation'=>true,'missingResult'=>true],JSON_PRETTY_PRINT));
-echo count($report) . " list and ".count($recommendations)." recommendation matching renders, language isolation and missing-result check passed.\n";
+file_put_contents($argv[2],json_encode(['renders'=>$report,'recommendations'=>$recommendations,'tagLists'=>$tagLists,'contextIsolation'=>true,'missingResult'=>true],JSON_PRETTY_PRINT));
+echo count($report)." list, ".count($recommendations)." recommendation and ".count($tagLists)." tag-list matching renders, language isolation and missing-result check passed.\n";
 }

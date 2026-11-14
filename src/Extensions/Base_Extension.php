@@ -276,40 +276,10 @@ class Base_Extension extends Twig_Extension
         return $response;
     }
 
-    public function restGetContent($query_url){
-
-        $CookiesPlentyId = $_COOKIE['plentyID'];
-        $post = "";
-        $headers = array();
-
-        $headers[] = "User-Agent: Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1";
-        $headers[] = 'Accept: application/json, text/javascript, */*; q=0.01';
-        $headers[] = 'Accept-Language: de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7';
-        $headers[] = 'Cache-Control: no-cache';
-        $headers[] = 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8';
-        $headers[] = 'Pragma: no-cache';
-        $headers[] = 'Cookie:'.json_encode($_COOKIE);
-        $headers[] = 'Referer: https://b2b.outlet46.de/';
-        $headers[] = 'X-Requested-With: XMLHttpRequest';
-
-        $options = array(
-            CURLOPT_URL => $query_url,
-            CURLOPT_HEADER => 0,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 4,
-            CURLOPT_HTTPHEADER => $headers
-        );
-        /** @var BasketService $basketService */
-        $basketService = pluginApp(BasketService::class);
-
-        $ch = curl_init();
-        foreach($options as $option => $value)
-        {
-            curl_setopt($ch, $option, $value);
-        }
-        $content = curl_exec($ch);
-        curl_close($ch);
-        return $basketService->getBasketForTemplate();
+    /** Kept for stored Twig callers. Its result is always the current basket. */
+    public function restGetContent($query_url)
+    {
+        return pluginApp(BasketService::class)->getBasketForTemplate();
     }
 
     public function sortCatByKey($array, $sortKey)
@@ -459,10 +429,13 @@ class Base_Extension extends Twig_Extension
         $itemListOptions['page'] = $effectivePage;
         $itemListOptions['itemsPerPage'] = $effectiveSize;
 
-        $searchParams = [
-            'facets'   => Facets::getSearchFactory( $itemListOptions ),
-            'itemList' => CategoryItems::getSearchFactory( $itemListOptions )
-        ];
+        // The infinite-scroll fragment renders cards and pagination without filter controls.
+        $listFragment = $this->req->get('quickViewItem') === 'true';
+        $searchParams = [];
+        if (!$listFragment) {
+            $searchParams['facets'] = Facets::getSearchFactory($itemListOptions);
+        }
+        $searchParams['itemList'] = CategoryItems::getSearchFactory($itemListOptions);
         /** @var ItemSearchService $itemSearchService */
         $itemSearchService = pluginApp( ItemSearchService::class );
 
@@ -485,8 +458,9 @@ class Base_Extension extends Twig_Extension
         $resultItems['pageLimit'] = $resultItems['pageMax'];
         $resultItems['categoryId'] = $categoryId;
         $resultItems['category'] = $activeCategory;
-        $defaultSortingOptions = SearchOptions::get(SearchOptions::SCOPE_CATEGORY);
-        $resultItems['searchOptions'] = $defaultSortingOptions;
+        if (!$listFragment) {
+            $resultItems['searchOptions'] = SearchOptions::get(SearchOptions::SCOPE_CATEGORY);
+        }
         $resultItems['itemSorting'] = $this->req->get( 'sorting', '' );
         $resultItems['query'] = ['items' => $effectiveSize, 'sorting' => $itemListOptions['sorting']];
         $resultItems['selectedFacets'] = $ownFacets;

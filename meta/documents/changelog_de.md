@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Serverlast bei Varianten und Produktlisten (2026-11-14)
+
+- PDP und Quickview verarbeiten auch langsame, erfolgreiche Varianten-Sammelantworten. Der Batch gibt die im Suchergebnis vorhandene positive Höchstbestellmenge an die Matrix weiter. Bei Transportfehlern oder einem Timeout nach 30 Sekunden greift der bestehende Einzelabruf. Im lokalen 60-Varianten-Test sinkt die Zahl der Abrufe von 61 auf 1. `core.min.js` erhält die Asset-Version 2.
+- Vier Tag-Listen bündeln die Kartenattribute. Eingebettete Kategoriefragmente sparen eine Facettenaggregation und den Aufbau des Sortiermenüs. Die PDP verwendet die Wunschlisten-IDs des aktuellen Warenkorbs. `restGetContent` führt keinen ausgehenden HTTP-Abruf mit Cookies mehr aus.
+- Die native Nachher-TTFB ist offen. [Lokaler Prüfbericht mit Messwerten und Grenzen](../../.cache/server-phase3-320a901/Pruefbericht.html)
+
 ## Unreleased – Separate Asset-Versionsnummern (2026-11-14)
 
 - Basis c112d5c auf develop; bestehende lokale Änderungen erhalten, Plugin-Version 1.0.7 unverändert. Ersetze die zuvor lokal eingeführten Inhalts-Hashes in allen zwölf aktiven eigenen Asset-URLs durch separate Zahlen, zunächst jeweils ?v=1. Die sechs bereinigten Dateinamen und alle ausgelieferten JS-/CSS-Inhalte bleiben erhalten.

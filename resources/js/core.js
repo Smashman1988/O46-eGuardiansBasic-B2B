@@ -36,11 +36,12 @@ O46Core.apiservice = O46Core.apiservice || function () {
          * @param {function} callback
          */
 
-        var callApi = function(url, method, params, callback, dataType){
+        var callApi = function(url, method, params, callback, dataType, timeoutMs){
             dataType = dataType || "json";
             $.ajax({
                 url: url,
                 method: method,
+                timeout: timeoutMs,
                 data: params,
                 dataType: dataType,
                 contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -133,13 +134,13 @@ O46Core.apiservice = O46Core.apiservice || function () {
                 }
             }, dataType);
           };   
-			this.get = function( url, data, callback, dataType){
+			this.get = function( url, data, callback, dataType, timeoutMs){
             dataType = dataType || "json"; 
             callApi(url,'GET',data,function(response){
                 if(typeof callback === 'function') {
                     callback(response);
                 }
-            },dataType);
+            },dataType,timeoutMs);
           };
           this.put = function(url, data){
             this.callApi(url,'PUT',data);
@@ -716,7 +717,9 @@ O46Core.matrix = O46Core.matrix || function () {
 (function () {
   // === SETTINGS ===
   var STOCK_CAP = 200;                  // Anzeige + Kauf/Clamp Maximum
-  var FETCH_TIMEOUT_MS = 6000;          // Ausfallsicher: wenn API hängt (Batch + Fallback)
+  var FETCH_TIMEOUT_MS = 6000;          // Fallback for one variation
+  var BATCH_TIMEOUT_MS = 30000;         // Transport timeout for the more expensive multi-search
+  var BATCH_MAX_IDS = 300;              // VariationBatchResource limit per request
   var CONCURRENCY = 6;                  // nur für Fallback-Einzelcalls bei Varianten-Daten
 
   // Add-to-basket: EIN Batch-POST statt mehrere Einzel-POSTs
@@ -1575,8 +1578,7 @@ O46Core.matrix = O46Core.matrix || function () {
   function fetchVariationsBatch(variationIds, cb) {
     cb = cb || function () {};
 
-    variationIds = (variationIds || []).map(toInt).filter(Boolean);
-    if (!variationIds.length) return cb();
+    variationIds = Array.from(new Set((variationIds || []).map(toInt).filter(Boolean)));
 
     var missingIds = [];
 
@@ -1594,39 +1596,22 @@ O46Core.matrix = O46Core.matrix || function () {
       return a - b;
     });
 
-    var key = missingIds.join(",");
+    if (!window.eGuardians || !eGuardians.apiservice || !eGuardians.apiservice.get) return cb();
 
+    // Mirror the endpoint's limit. Remaining rows need their existing single-item data.
+    var key = missingIds.slice(0, BATCH_MAX_IDS).join(",");
     if (vBatchInflight[key]) {
-      vBatchInflight[key].callbacks.push(cb);
+      vBatchInflight[key].push(cb);
       return;
     }
 
-    vBatchInflight[key] = {
-      callbacks: [cb],
-      timer: null
-    };
+    var callbacks = [cb];
+    vBatchInflight[key] = callbacks;
 
-    if (!window.eGuardians || !eGuardians.apiservice || !eGuardians.apiservice.get) {
-      var list0 = vBatchInflight[key].callbacks || [];
-      delete vBatchInflight[key];
-
-      for (var k0 = 0; k0 < list0.length; k0++) list0[k0]();
-      return;
-    }
-
-    vBatchInflight[key].timer = setTimeout(function () {
-      if (!vBatchInflight[key]) return;
-
-      var listT = vBatchInflight[key].callbacks || [];
-      delete vBatchInflight[key];
-
-      for (var kT = 0; kT < listT.length; kT++) listT[kT]();
-    }, FETCH_TIMEOUT_MS);
-
+    // Success and transport errors both complete this request. Starting the
+    // single-row fallback from a separate timer races a still-running batch.
     eGuardians.apiservice.get("/rest/io/variations/batch", { ids: key }, function (response) {
-      if (!vBatchInflight[key]) return;
-
-      clearTimeout(vBatchInflight[key].timer);
+      if (vBatchInflight[key] !== callbacks) return;
 
       try {
         var top = response && response.data ? response.data : null;
@@ -1659,11 +1644,10 @@ O46Core.matrix = O46Core.matrix || function () {
         }
       } catch (e) {}
 
-      var list = vBatchInflight[key].callbacks || [];
       delete vBatchInflight[key];
 
-      for (var x = 0; x < list.length; x++) list[x]();
-    });
+      for (var x = 0; x < callbacks.length; x++) callbacks[x]();
+    }, "json", BATCH_TIMEOUT_MS);
   }
 
   function fetchVariationDetailsSingle(variationId, cb) {
@@ -1691,30 +1675,11 @@ O46Core.matrix = O46Core.matrix || function () {
       return;
     }
 
-    var finished = false;
-
-    var timer = setTimeout(function () {
-      if (finished) return;
-
-      finished = true;
-      vCache[variationId] = null;
-
-      var listT = vInflight[variationId] || [];
-      delete vInflight[variationId];
-
-      for (var kT = 0; kT < listT.length; kT++) listT[kT](null);
-    }, FETCH_TIMEOUT_MS);
-
     var params = {
       template: encodeURI("Ceres::Item.SingleItem")
     };
 
     eGuardians.apiservice.get("/rest/io/variations/" + variationId, params, function (response) {
-      if (finished) return;
-
-      finished = true;
-      clearTimeout(timer);
-
       var out = null;
 
       try {
@@ -1748,7 +1713,7 @@ O46Core.matrix = O46Core.matrix || function () {
       delete vInflight[variationId];
 
       for (var k = 0; k < list.length; k++) list[k](out);
-    });
+    }, "json", FETCH_TIMEOUT_MS);
   }
 
   function fetchVariationDetails(variationId, cb) {

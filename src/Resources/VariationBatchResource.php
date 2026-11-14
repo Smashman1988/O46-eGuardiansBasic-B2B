@@ -167,6 +167,10 @@ class VariationBatchResource extends ApiResource
                 'ean'    => $ean,
                 'images' => $images
             ];
+            $orderMax = $doc['variation']['maximumOrderQuantity'] ?? null;
+            if (is_numeric($orderMax) && $orderMax > 0) {
+                $items[(string)$id]['orderMax'] = $orderMax;
+            }
         }
 
         return $this->response->create([
