@@ -34,15 +34,16 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
         for ($i = 0; $i < $rowCount; $i++) { $variations[] = ['variationId' => 1001 + $i]; }
         // Match buildRows: incomplete entries must not inflate the reserved table.
         $variations[] = []; $variations[] = ['variationId' => 0];
-        $html = $twig->render('matrix', ['mode' => $mode, 'hasSize' => $hasSize, 'hasColor' => $hasColor,
+        $context = ['mode' => $mode, 'hasSize' => $hasSize, 'hasColor' => $hasColor,
             'variationsWithAttributes' => $variations,
             'sizeAttr' => ['attributeId' => 1, 'values' => $sizes], 'colorAttr' => ['attributeId' => 2, 'values' => $colors],
-            'itemData' => ['variation' => ['id' => 1001]]]);
+            'itemData' => ['variation' => ['id' => 1001]]];
+        $html = $twig->render('matrix', $context);
         if (substr_count($html, 'data-eg-matrix-add') !== 1 || substr_count($html, 'data-eg-total-sum') !== 1 ||
             substr_count($html, 'class="eg-size-matrix-table" aria-busy="true"') !== 1 ||
-            !str_contains($html, 'role="status" aria-atomic="true" data-eg-matrix-status') ||
-            !str_contains($html, '>' . $translations['matrixLoading'] . '</div>') ||
-            !str_contains($html, 'data-fallback="' . $translations['matrixFallback'] . '"') ||
+            substr_count($html, 'role="status" aria-atomic="true" data-eg-matrix-status') !== 1 ||
+            !preg_match('/<div[^>]*\bdata-eg-matrix-status\b[^>]*><\/div>/', $html) ||
+            str_contains($html, 'data-fallback=') ||
             !str_contains($html, 'data-partial="' . $translations['matrixPartial'] . '"') ||
             !str_contains($html, 'data-unavailable="' . $translations['matrixUnavailable'] . '"') ||
             !preg_match('/class="eg-size-matrix-body"><\/div>\s*<\/div>\s*<div class="eg-size-matrix-footer"/', $html) ||
@@ -55,6 +56,26 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
         $out[$lang][$mode] = ['html' => $html, 'head' => '<div class="eg-size-matrix-head">' . $head[1],
             'footer' => '<div class="eg-size-matrix-footer">' . $footer[1] . '</div>'];
     }
+    // One row needs text measurement. The other uses a short size and an image.
+    $context['sizeAttr']['values'] = [['id'=>1,'name'=>'One size'], ['id'=>2,'name'=>'M']];
+    $context['colorAttr']['values'] = [['id'=>101,'name'=>'Bleu marine & blanc'], ['id'=>102,'name'=>'Blue','imageUrl'=>'/blue.jpg']];
+    $context['variationsWithAttributes'] = [
+        ['variationId'=>1,'attributes'=>[['attributeId'=>1,'attributeValueId'=>1], ['attributeId'=>2,'attributeValueId'=>101]]],
+        ['variationId'=>2,'attributes'=>[['attributeId'=>1,'attributeValueId'=>2], ['attributeId'=>2,'attributeValueId'=>102]]],
+        ['variationId'=>0,'attributes'=>[['attributeId'=>2,'attributeValueId'=>101]]]
+    ];
+    $doc = new DOMDocument();
+    $doc->loadHTML($twig->render('matrix', $context), LIBXML_NOERROR | LIBXML_NOWARNING);
+    $xpath = new DOMXPath($doc);
+    $body = '//div[@class="eg-size-matrix-body"]';
+    $measure = $body.'/div[contains(concat(" ", normalize-space(@class), " "), " eg-matrix-measure ") and contains(concat(" ", normalize-space(@class), " "), " col-12 ") and @aria-hidden="true"]';
+    if ($xpath->query($body.'/*')->length !== 2 || $xpath->query($measure)->length !== 1 ||
+        $xpath->evaluate('string('.$measure.'/div[@data-eg-col="size"])') !== 'One size' ||
+        $xpath->evaluate('string('.$measure.'/div[@data-eg-col="color"])') !== 'Bleu marine & blanc' ||
+        $xpath->query($body.'/div[@class="eg-matrix-base-rows" and @aria-hidden="true" and @style="--eg-matrix-row-count: 1"]')->length !== 1 ||
+        $xpath->query($body.'//*[self::button or self::a or self::input or self::img or @tabindex or @data-eg-variation-id]')->length !== 0) {
+        throw new RuntimeException('Unexpected long-label measurement content: '.$lang);
+    }
 }
 file_put_contents($argv[2], json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-echo '20 actual Twig matrix render cases PASS, Twig ' . Twig\Environment::VERSION . PHP_EOL;
+echo '20 matrix renders and 5 long-label measurement cases PASS, Twig ' . Twig\Environment::VERSION . PHP_EOL;

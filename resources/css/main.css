@@ -12623,6 +12623,7 @@ footer .footer-logo-omr { aspect-ratio: 170 / 120; }
 }
 .eg-size-matrix {
   --eg-matrix-line: #b8b8b8;
+  --eg-matrix-row-height: 47px; /* 36px input, 10px padding and row border. */
   --eg-columns: minmax(3rem,1fr) minmax(4.5rem,1.3fr) minmax(8rem,1.8fr) minmax(4.5rem,1.3fr) 3.5rem;
   --eg-areas: "stock price ean sub qty";
   background: #fff;
@@ -12643,7 +12644,8 @@ footer .footer-logo-omr { aspect-ratio: 170 / 120; }
   --eg-areas: "size color stock price ean sub qty";
 }
 .eg-size-matrix .eg-size-matrix-head,
-.eg-size-matrix .eg-row {
+.eg-size-matrix .eg-row,
+.eg-size-matrix .eg-matrix-measure {
   display: grid;
   grid-template-columns: var(--eg-columns);
   grid-template-areas: var(--eg-areas);
@@ -12683,18 +12685,19 @@ footer .footer-logo-omr { aspect-ratio: 170 / 120; }
 .eg-size-matrix [data-eg-col="ean"] { grid-area: ean; gap: 4px; font-size: .75rem; }
 .eg-size-matrix [data-eg-col="sub"] { grid-area: sub; }
 .eg-size-matrix [data-eg-col="qty"] { grid-area: qty; border-right: 0; }
-.eg-size-matrix .eg-row { border-bottom: 1px solid var(--eg-matrix-line); font-size: .8125rem; }
+.eg-size-matrix .eg-row,
+.eg-size-matrix .eg-matrix-measure {
+  box-sizing: border-box;
+  min-height: var(--eg-matrix-row-height);
+  border-bottom: 1px solid var(--eg-matrix-line);
+  font-size: .8125rem;
+}
 .eg-size-matrix .eg-row:nth-child(even) { background: #f3f4f3; }
 .eg-size-matrix .eg-row:hover { background: #edf1e8; }
 .eg-size-matrix .eg-row.eg-active { background: #e6f1d9; box-shadow: inset 3px 0 #6b9f01; }
-/* Reserve one minimum input row until the existing JS inserts the variants. */
-.eg-size-matrix-body:empty { min-height: 47px; }
-/* The existing row has a 36px quantity input, 10px cell padding and 1px border.
-   Reserve only the full table layout; populated rows keep their natural height. */
-@container eg-matrix (min-width: 36rem) {
-  .eg-size-matrix-body:empty {
-    min-height: calc(max(1, var(--eg-matrix-row-count, 1)) * (36px + 10px + 1px));
-  }
+.eg-size-matrix-body:empty,
+.eg-matrix-base-rows {
+  min-height: calc(var(--eg-matrix-row-count, 1) * var(--eg-matrix-row-height));
 }
 .eg-size-matrix .eg-row-details { display: contents; }
 .eg-size-matrix [data-eg-ean] { user-select: text; -webkit-user-select: text; overflow-wrap: anywhere; }
@@ -12763,7 +12766,9 @@ footer .footer-logo-omr { aspect-ratio: 170 / 120; }
 .modal-cross [data-item-variation] > .padding-10-0 { padding: 0; }
 /* Mobile table: original EAN and subtotal nodes form one shallow details row. */
 @container eg-matrix (max-width: 35.99rem) {
-  .eg-size-matrix { --eg-columns: minmax(3rem,1fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "stock price qty" "details details details"; }
+  .eg-size-matrix { --eg-matrix-row-height: 72px; --eg-columns: minmax(3rem,1fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "stock price qty" "details details details"; }
+  /* The native details row has a 28px cell and a 1px top border. */
+  .eg-size-matrix .eg-matrix-measure { grid-template-rows: auto minmax(29px, auto); }
   .eg-size-matrix[data-eg-mode="size"] { --eg-columns: minmax(2.5rem,1fr) minmax(2.5rem,.8fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "size stock price qty" "details details details details"; }
   .eg-size-matrix[data-eg-mode="color"] { --eg-columns: 3rem minmax(2.5rem,.8fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "color stock price qty" "details details details details"; }
   .eg-size-matrix[data-eg-mode="size_color"] { --eg-columns: minmax(2.5rem,1fr) 3rem minmax(2.5rem,.8fr) minmax(4.5rem,1.4fr) 3.25rem; --eg-areas: "size color stock price qty" "details details details details details"; }
@@ -12783,19 +12788,32 @@ footer .footer-logo-omr { aspect-ratio: 170 / 120; }
 }
 /* Only genuinely narrow containers switch to compact labelled cards. */
 @container eg-matrix (max-width: 20.49rem) {
-  .eg-size-matrix { --eg-columns: minmax(0,1fr) minmax(0,1.25fr) 3.25rem; --eg-areas: "stock price qty" "details details details"; }
+  /* Stacked labels scale with the shop font; longer values may still grow. */
+  .eg-size-matrix { --eg-matrix-row-height: calc(79px + 1rem); --eg-columns: minmax(0,1fr) minmax(0,1.25fr) 3.25rem; --eg-areas: "stock price qty" "details details details"; }
   .eg-size-matrix[data-eg-mode="size"] { --eg-areas: "size size qty" "stock price qty" "details details details"; }
   .eg-size-matrix[data-eg-mode="color"] { --eg-areas: "color color qty" "stock price qty" "details details details"; }
   .eg-size-matrix[data-eg-mode="size_color"] { --eg-areas: "size color qty" "stock price qty" "details details details"; }
   .eg-size-matrix[data-eg-mode] { --eg-columns: minmax(0,1fr) minmax(0,1.25fr) 3.25rem; }
   .eg-size-matrix .eg-size-matrix-head { display: none; }
-  .eg-size-matrix .eg-row { padding-top: 3px; }
+  .eg-size-matrix .eg-row,
+  .eg-size-matrix .eg-matrix-measure { padding-top: 3px; }
+  .eg-size-matrix .eg-matrix-measure { grid-template-rows: auto minmax(calc(8px + .9375rem), auto) minmax(29px, auto); }
   .eg-size-matrix .eg-row > [data-eg-col="stock"],
   .eg-size-matrix .eg-row > [data-eg-col="price"] { gap: 3px; flex-wrap: wrap; padding-block: 4px; font-size: .75rem; }
   .eg-size-matrix .eg-row > [data-eg-col="stock"]::before,
   .eg-size-matrix .eg-row > [data-eg-col="price"]::before { content: attr(data-eg-label) ":"; font-size: .6875rem; }
   .eg-size-matrix .eg-row > [data-eg-col="qty"] { flex-direction: column; gap: 3px; }
   .eg-size-matrix .eg-row > [data-eg-col="qty"]::before { content: attr(data-eg-label); font-size: .6875rem; }
+}
+/* At very narrow text widths, the price no longer fits alongside its label. */
+@container eg-matrix (max-width: 15rem) {
+  .eg-size-matrix .eg-row > [data-eg-col="stock"],
+  .eg-size-matrix .eg-row > [data-eg-col="price"] { flex-direction: column; flex-wrap: nowrap; }
+  .eg-size-matrix:not([data-eg-mode="none"]) {
+    --eg-matrix-value-height: calc(11px + (.6875rem + .75rem) * 1.25); /* Padding, gap and both line heights. */
+    --eg-matrix-row-height: calc(33px + max(38px, 6px + .8125rem * 1.25) + var(--eg-matrix-value-height));
+  }
+  .eg-size-matrix .eg-matrix-measure { grid-template-rows: minmax(38px, auto) var(--eg-matrix-value-height) minmax(29px, auto); }
 }
 /* In the stacked PDP layout only the existing main image determines height.
    A long thumbnail rail scrolls inside that height instead of pushing the matrix

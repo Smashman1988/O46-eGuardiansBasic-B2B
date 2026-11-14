@@ -20,7 +20,7 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
             const ids = Array.from({ length: count }, (_, i) => ({ variationId: i + 1 }));
             root.dataset.egVariations = JSON.stringify([...ids, ids[0]]);
             root.innerHTML = ('<div data-eg-size-matrix data-eg-mode="color"><div role="status" data-eg-matrix-status ' +
-                'data-fallback="Fallback" data-partial="Partial" data-unavailable="Unavailable">Loading</div>' +
+                'data-partial="Partial" data-unavailable="Unavailable"></div>' +
                 '<div class="eg-size-matrix-table" aria-busy="true"><div class="eg-size-matrix-body"></div></div></div>').repeat(copies);
             window.statuses = [];
             root.querySelectorAll('[data-eg-matrix-status]').forEach(status => {
@@ -90,16 +90,33 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
             return initial;
         });
         if (!baseline) {
-            assert.deepEqual(initial, { text:'Loading', busy:'true' });
+            assert.deepEqual(initial, { text:'', busy:'true' });
         }
         if (mode === 'slow') {
             await page.clock.runFor(6100);
-            if (!baseline) assert.equal(await page.evaluate(() => calls.singles.length), 0);
+            if (!baseline) {
+                assert.equal(await page.evaluate(() => calls.singles.length), 0);
+                const pending = await page.locator('[data-eg-size-matrix]').evaluateAll(matrices => matrices.map(matrix => ({
+                    text: matrix.querySelector('[data-eg-matrix-status]').textContent,
+                    busy: matrix.querySelector('.eg-size-matrix-table').getAttribute('aria-busy')
+                })));
+                assert.deepEqual(pending, Array.from({length: copies}, () => ({text:'', busy:'true'})),
+                    'A pending batch keeps each matrix busy with no visible loading text');
+            }
             await page.clock.fastForward(1000);
         } else if (mode === 'timeout') {
             const timeout = await page.evaluate(() => calls.batches[0].timeout);
             assert.ok(timeout > 6573 && timeout <= 30000);
             await page.clock.fastForward(timeout);
+        }
+        if (!baseline && mode === 'error') {
+            await page.clock.runFor(6); // Batch fails at 5 ms, single requests complete 10 ms later.
+            const pending = await page.evaluate(() => ({active: calls.openSingles,
+                text: document.querySelector('[data-eg-matrix-status]').textContent,
+                busy: document.querySelector('.eg-size-matrix-table').getAttribute('aria-busy')}));
+            assert.ok(pending.active > 0);
+            assert.equal(pending.busy, 'true');
+            assert.equal(pending.text, '', 'The normal fallback request must not insert a loading line');
         }
         if (!baseline && mode === 'slow' && count === 60) {
             // A failed map in a newly opened Quickview must never borrow the host product's IDs.
@@ -150,8 +167,8 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
         assert.ok(result.maxSingles <= 6 && result.openSingles === 0);
         assert.equal(result.overlap, lateFallback);
         if (!baseline) {
-            const fallbackMessage = result.statuses.some(s => s.text === 'Fallback' && s.busy === 'true');
-            assert.equal(fallbackMessage, expectedSingles.length > 0);
+            assert.ok(result.statuses.every(s => s.busy !== 'true' || s.text === ''),
+                'Waiting for batch or single responses must not add a loading message');
             const message = mode === 'partial' ? 'Partial' : mode === 'allFailed' ? 'Unavailable' : '';
             assert.deepEqual(result.final, Array.from({ length:copies }, () => ({ text:message, busy:'false' })));
         }

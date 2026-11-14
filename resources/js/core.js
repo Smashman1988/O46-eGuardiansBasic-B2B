@@ -2815,10 +2815,6 @@ O46Core.matrix = O46Core.matrix || function () {
         })(rows[r]);
       }
 
-      if (tasks.length && status) {
-        status.textContent = status.dataset.fallback;
-      }
-
       runQueue(tasks, CONCURRENCY, function () {
         recalcMatrixTotals(matrix);
         if (table) table.setAttribute("aria-busy", "false");

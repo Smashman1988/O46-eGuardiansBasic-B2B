@@ -431,9 +431,8 @@
          data-eg-base-variation-id="{{ itemData.variation.id }}">
 
       <div role="status" aria-atomic="true" data-eg-matrix-status
-           data-fallback="{{ trans('GuardiansBasicB2B::Template.matrixFallback') }}"
            data-partial="{{ trans('GuardiansBasicB2B::Template.matrixPartial') }}"
-           data-unavailable="{{ trans('GuardiansBasicB2B::Template.matrixUnavailable') }}">{{ trans('GuardiansBasicB2B::Template.matrixLoading') }}</div>
+           data-unavailable="{{ trans('GuardiansBasicB2B::Template.matrixUnavailable') }}"></div>
       <div class="eg-size-matrix-table" aria-busy="true">
       <div class="eg-size-matrix-head">
         {% set matrixColumns = {
@@ -450,8 +449,50 @@
         {% endfor %}
       </div>
 
-      {# Body bleibt leer -> JS baut IMMER korrekt (keine Doppel-Render / keine kaputten Zeilen) #}
-      <div class="eg-size-matrix-body"></div>
+      {# Only text that can outgrow a normal row needs its actual wrapping width before JS. #}
+      {% set sizeText = {} %}
+      {% for value in (hasSize ? sizeAttr.values : []) %}
+        {% if value.name|default('')|length > 3 %}
+          {% set sizeText = sizeText|merge({('v' ~ (value.attributeValueId ?? value.id)): value.name}) %}
+        {% endif %}
+      {% endfor %}
+      {% set colorText = {} %}
+      {% for value in (hasColor ? colorAttr.values : []) %}
+        {% if value.imageUrl|default('')|trim == '' and value.name|default('')|length > 3 %}
+          {% set colorText = colorText|merge({('v' ~ (value.attributeValueId ?? value.id)): value.name}) %}
+        {% endif %}
+      {% endfor %}
+      <div class="eg-size-matrix-body">
+        {%- if sizeText or colorText -%}
+          {%- set normalRows = 0 -%}
+          {%- set hasMeasuredRows = false -%}
+          {%- for variation in variationsWithAttributes|default([]) -%}
+            {%- if variation.variationId|default(0) -%}
+              {%- set sizeLabel = '' -%}
+              {%- set colorLabel = '' -%}
+              {%- for attr in variation.attributes|default([]) -%}
+                {%- if hasSize and attr.attributeId == sizeAttr.attributeId -%}
+                  {%- set sizeLabel = sizeText['v' ~ attr.attributeValueId]|default('') -%}
+                {%- elseif hasColor and attr.attributeId == colorAttr.attributeId -%}
+                  {%- set colorLabel = colorText['v' ~ attr.attributeValueId]|default('') -%}
+                {%- endif -%}
+              {%- endfor -%}
+              {%- if sizeLabel or colorLabel -%}
+                {%- set hasMeasuredRows = true -%}
+                <div class="col-12 eg-matrix-measure" aria-hidden="true" style="visibility:hidden">
+                  {%- if sizeLabel -%}<div data-eg-col="size">{{ sizeLabel }}</div>{%- endif -%}
+                  {%- if colorLabel -%}<div data-eg-col="color"><span class="eg-color-link">{{ colorLabel }}</span></div>{%- endif -%}
+                </div>
+              {%- else -%}
+                {%- set normalRows = normalRows + 1 -%}
+              {%- endif -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {%- if hasMeasuredRows and normalRows -%}
+            <div class="eg-matrix-base-rows" style="--eg-matrix-row-count: {{ normalRows }}" aria-hidden="true"></div>
+          {%- endif -%}
+        {%- endif -%}
+      </div>
       </div>
 
       <div class="eg-size-matrix-footer">

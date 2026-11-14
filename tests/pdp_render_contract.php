@@ -71,6 +71,15 @@ function normalizedHeaderIndent($html) {
     return preg_replace('/\s+(?=<div class="container nopadding">|<nav class="d-print-none">|<\/header>)/', "\n", $html);
 }
 function comparableProductHtml($html, $legacy) {
+    // Building the measurement maps changes Twig indentation before this div.
+    // Its content, including the empty body for this fixture, is compared verbatim.
+    $html = preg_replace('~[ \t]+(?=<div class="eg-size-matrix-body">)~', '', $html);
+    if ($legacy) {
+        // Retire only the two pending-state markers from the historical matrix.
+        // Preserve both error labels, the live region and its exact position.
+        $html = preg_replace('~(data-eg-matrix-status)\s+data-fallback="[a-z]{2}:GuardiansBasicB2B::Template\.matrixFallback"~', '$1', $html);
+        $html = preg_replace('~(data-unavailable="[a-z]{2}:GuardiansBasicB2B::Template\.matrixUnavailable">)[a-z]{2}:GuardiansBasicB2B::Template\.matrixLoading(</div>)~', '$1$2', $html);
+    }
     $html = preg_replace_callback('~(<script type="application/ld\+json">)(.*?)(</script>)~s',function ($m) use ($legacy) {
         $data=json_decode(trim($m[2]),true,512,JSON_THROW_ON_ERROR);
         if (($data['@type']??null)!=='Product') return $m[0];
@@ -177,7 +186,12 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
     $textDelta=count($pair['before']['texts'])-count($pair['after']['texts']);
     $guardAlreadyPresent=strpos($before,'Detail properties and recommendation cards are omitted from Quickview')!==false;
     $matrixReuseAlreadyPresent=strpos($before,'set matrixLabel =')!==false;
-    if($textDelta!==(($full||$guardAlreadyPresent?0:32)+($matrixReuseAlreadyPresent?0:10)))throw new RuntimeException('Unexpected translation call change');
+    $retired = ['GuardiansBasicB2B::Template.matrixFallback', 'GuardiansBasicB2B::Template.matrixLoading'];
+    $priorLoadingCalls = array_intersect($pair['before']['texts'], $retired);
+    if (array_intersect($pair['after']['texts'], $retired) ||
+        $textDelta !== (($full || $guardAlreadyPresent ? 0 : 32) + ($matrixReuseAlreadyPresent ? 0 : 10) + count($priorLoadingCalls))) {
+        throw new RuntimeException('Unexpected translation call change');
+    }
     $imageSortReuseAlreadyPresent=strpos($before,'for prevImg in sortedItemImages')!==false;
     $expectedBeforeSorts=$full&&($case['images']??3)>1&&!$imageSortReuseAlreadyPresent?2:1;
     if($pair['before']['sorts']!==$expectedBeforeSorts||$pair['after']['sorts']!==1)throw new RuntimeException('Unexpected image sorting count');
@@ -219,7 +233,7 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
             $report['comparisonPrices'][]=['fullPage'=>$full,'price'=>$price,'rrp'=>$rrp,'special'=>$special];
         }
     }
-    $report['cases'][]=$case+['status'=>'PASS','fullPage'=>$full,'htmlBytes'=>$pair['after']['bytes'],'sha256'=>$pair['after']['sha256'],'identicalHtml'=>$pair['before']['html']===$pair['after']['html'],'equalExceptDocumentedHeaderPriceAndSchemaChanges'=>true,'beforeCalls'=>$pair['before']['calls'],'afterCalls'=>$pair['after']['calls'],'translationCallsBefore'=>count($pair['before']['texts']),'translationCallsAfter'=>count($pair['after']['texts']),'imageSortsBefore'=>$pair['before']['sorts'],'imageSortsAfter'=>$pair['after']['sorts'],'removedCalls'=>count($pair['before']['calls'])-count($pair['after']['calls']),'externalStyles'=>$pair['after']['externalStyle'],'externalScripts'=>$pair['after']['externalScript']];
+    $report['cases'][]=$case+['status'=>'PASS','fullPage'=>$full,'htmlBytes'=>$pair['after']['bytes'],'sha256'=>$pair['after']['sha256'],'identicalHtml'=>$pair['before']['html']===$pair['after']['html'],'equalExceptDocumentedChanges'=>true,'removedMatrixLoadingTranslations'=>array_values($priorLoadingCalls),'beforeCalls'=>$pair['before']['calls'],'afterCalls'=>$pair['after']['calls'],'translationCallsBefore'=>count($pair['before']['texts']),'translationCallsAfter'=>count($pair['after']['texts']),'imageSortsBefore'=>$pair['before']['sorts'],'imageSortsAfter'=>$pair['after']['sorts'],'removedCalls'=>count($pair['before']['calls'])-count($pair['after']['calls']),'externalStyles'=>$pair['after']['externalStyle'],'externalScripts'=>$pair['after']['externalScript']];
 }
 // Header alone: retain full basket preparation and the existing PDP snapshot.
 foreach(['de','en','fr','it','es']as$lang)foreach([0,9,9.5,10,25]as$quantity)foreach([false,true]as$snapshot){$pair=[];foreach(['before','after']as$version){

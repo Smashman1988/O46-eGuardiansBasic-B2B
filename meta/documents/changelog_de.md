@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Layout der Variantenmatrix
+
+- Auf der Produktseite und im Quickview entfällt die sichtbare Ladezeile für Preise und Bestände. Die Matrix reserviert den Platz für ihre Varianten passend zur Containerbreite. Fehler beim Laden bleiben sichtbar.
+
 ## Unreleased – Warenkorb, Varianten und Rendering (2026-11-14)
 
 - Der verknüpfte Kategorie-Warenkorb nutzt die vorhandene Mengensynchronisierung. Beim Hinzufügen bestätigt die Matrix ausschließlich den erfolgreichen IO-Schreibvorgang. Unklare Antworten lösen keine zweite Buchung aus.

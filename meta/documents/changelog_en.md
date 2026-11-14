@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Variation matrix layout
+
+- Product pages and quick views reserve space for the variation rows at the current container width. Prices and stock fill their cells without a separate visible loading message. Loading errors remain visible.
+
 ## Unreleased – Basket, variations and rendering (2026-11-14)
 
 - The linked basket category uses the existing quantity synchronisation. The matrix confirms additions only on a successful IO write; an ambiguous response can no longer trigger a second write.
