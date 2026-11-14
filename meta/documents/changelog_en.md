@@ -1,5 +1,14 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Phase 4: response handling, metadata and language routes (2026-11-14)
+
+- Based on `aaa638f`, local `develop` changes only. Four login/logout handlers now use the existing shared user service, including Vue's cache invalidation. Missing or inconsistent replies no longer announce success or redirect; loaders finish and authentication writes are never retried automatically. Escape contact first names before HTML output. In the same 76 local cases, 28 exceptions/stuck loaders and twelve false logout confirmations fall to zero; sources and generated assets each pass 76 cases.
+- Escape direct category titles before title/social metadata output, without double-encoding rendered block titles. For each Twig version, five truncated social titles and five additional script tags in 30 cases fall to zero.
+- Move the existing input guard before the own autocomplete adapter's language delegation. Ten malformed requests now produce ten HTTP 400 responses instead of six exceptions and four HTTP 400 responses. Preserve valid parent paths and search data; the separate native IO endpoint is unchanged.
+- Registration now receives the supplied localized IO account route as an encoded String instead of `:backlink="/mein-konto/"`. Both Twig versions cover five language routes and special characters; account creation and checkout business rules are unchanged.
+- Increment only Core 7 → 8 and Main/Category/Item/Vue 3 → 4. Seven other active assets and all CSS remain unchanged. Reproducible combined build and version checks pass. The uncompressed Core plus page bundle grows by 592 bytes, or 363 bytes with Vue; no loading-time or TTFB gain is claimed.
+- Targeted search/facet, Twig 2/3, SEO, data-contract, header/tab, matrix and complete-bundle/Quickview checks pass. Technical test interruptions and NOT_TESTED boundaries are documented in the [Phase 4 report](../../.cache/phase4-aaa638f/Pruefbericht.html). Grade **B**, suitable for a local commit; native accounts/customer classes/checkout and enforcement of the €199 net minimum remain open. No commit, push, merge, deployment, sync, cache purge or B2C changes.
+
 ## Unreleased – Earlier image discovery in category and search lists (2026-11-14)
 
 - Based on `13f3d021`, local `develop` changes only. Further images in the first desktop card row waited for `window.load` and Lozad. Cards 3/4 now expose responsive AVIF/original sources from 768 px, cards 5/6 from 1200 px, with `loading="lazy"` and existing Lozad fallbacks retained. This also applies to subsequent pages and list fragments. The first two cards retain their previous mode, including delayed loading on subsequent pages; logos and cards 7 onwards are unchanged.

@@ -1,5 +1,14 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Phase 4: Fehlerbehandlung, Metadaten und Sprachrouten (2026-11-14)
+
+- Basis `aaa638f`, ausschließlich lokal auf `develop`. Die vier Login-/Logout-Handler verwenden den bestehenden gemeinsamen User-Service; Vue nutzt denselben Cachewechsel. Fehlende oder widersprüchliche Antworten erzeugen keine Erfolgsmeldung oder Weiterleitung, Loader werden abgeschlossen, Auth-Schreibvorgänge nicht automatisch wiederholt. Kontaktvornamen werden vor der HTML-Ausgabe escaped. Identische lokale 76-Fälle-Probe: 28 Exceptions/Loaderhänger und zwölf falsche Logout-Erfolge sinken auf null; Quellen und Min-Dateien jeweils 76 PASS.
+- Direkte Kategorie-Titel werden vor Title-/Social-Metadaten-Ausgabe escaped; bereits gerenderte Blocktitel werden nicht doppelt kodiert. Je Twig 2/3: fünf abgeschnittene Social-Titel und fünf zusätzliche Script-Tags in 30 Fällen nach der Korrektur null.
+- Vorhandene Eingabeprüfung des eigenen Autocomplete-Adapters vor die Sprachdelegation verschoben. Zehn ungültige Anfragen ergeben jetzt zehn HTTP 400 statt sechs Exceptions und vier HTTP 400; gültige Parentpfade und Suchdaten bleiben erhalten. Der separate native IO-Endpunkt ist nicht geändert.
+- Registrierung verwendet die gelieferte sprachabhängige IO-Kontoroute als kodierten String statt `:backlink="/mein-konto/"`. Fünf Sprachrouten sowie Sonderzeichen sind mit beiden Twig-Versionen abgesichert; keine Änderung an Kontoerstellung oder Checkout-Geschäftslogik.
+- Nur Core 7 → 8 und Main/Kategorie/Produkt/Vue 3 → 4 erhöht; sieben andere aktive Assets und sämtliches CSS bleiben gleich. Reproduzierbarer Gesamtbuild und Versionsprüfung PASS. Core plus Seitenbundle wächst unkomprimiert um 592 Byte, mit Vue um 363 Byte; kein Ladezeit- oder TTFB-Gewinn behauptet.
+- Such-/Facetten-, Twig-2/3-, SEO-, Datenvertrags-, Header-/Tab-, Matrix- und Bundle-/Quickview-Prüfungen bestanden. Technische Testabbrüche und `NOT_TESTED`-Grenzen stehen im [Phase-4-Bericht](../../.cache/phase4-aaa638f/Pruefbericht.html). Bewertung **B**, lokal für Commit geeignet; native Konten/Kundenklassen/Checkout und serverseitige 199-€-Nettogrenze offen. Kein Commit, Push, Merge, Deployment, Sync, Cache-Purge oder B2C-Eingriff.
+
 ## Unreleased – Frühere Bildentdeckung in Kategorie und Suche (2026-11-14)
 
 - Basis `13f3d021`, nur lokal auf `develop`. Weitere Bilder der ersten Desktop-Kartenreihe warteten auf `window.load` und Lozad. Karte 3/4 erhält ab 768 px, Karte 5/6 ab 1200 px responsive AVIF-/Originalquellen und `loading="lazy"`; bestehende Lozad-Fallbacks bleiben erhalten. Dies gilt auch für Folgeseiten und Listenfragmente. Erste zwei Karten behalten ihren bisherigen, auf Folgeseiten weiterhin verzögerten Modus; Logos und Karten ab Position 7 bleiben unverändert.

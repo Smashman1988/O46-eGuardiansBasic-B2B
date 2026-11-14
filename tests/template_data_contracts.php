@@ -5,6 +5,7 @@ error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 $views = dirname(__DIR__).'/resources/views/';
 $templates = [
     'checkout'=>file_get_contents($views.'Checkout/CheckoutView.twig'),
+    'register'=>file_get_contents($views.'Customer/Register.twig'),
     'feedback'=>file_get_contents($views.'DynamicContent/DynamicFeedbacks.twig'),
     'all-items'=>file_get_contents($views.'Category/Item/Partials/AllItemsLink.twig'),
     'name'=>'{% macro get(name,bundle) %}{{ name }}{% endmacro %}',
@@ -33,6 +34,17 @@ foreach (['de','en','fr','it','es'] as $language) {
         $expected = $entry[1].($currency === 'EUR' ? '' : '?currency='.$currency);
         $html = $twig->render('all-items', compact('language','currency'));
         checkTemplate(strpos($html,'href="'.$expected.'"')!==false, 'All-items link differs from '.$language.' menu');
+    }
+}
+// Ceres Registration expects a string and decodes its backlink after success.
+// Use the supplied IO route in every language, preserving encoded special characters.
+foreach (['de'=>'/mein-konto/', 'en'=>'/en/my-account/', 'fr'=>'/fr/mon-compte/',
+    'it'=>'/it/il-mio-account/', 'es'=>'/es/mi-cuenta/'] as $language=>$accountRoute) {
+    foreach ([$accountRoute, $accountRoute.'?return=été & "special"/100%#section'] as $route) {
+        $registration = $twig->render('register', ['urls'=>['myAccount'=>$route]]);
+        checkTemplate(preg_match('/<registration\\b[^>]*\\sbacklink="([^"]*)"/', $registration, $match), 'Registration backlink must be a string attribute');
+        checkTemplate(strpos($registration, ':backlink=') === false, 'Registration backlink is a JavaScript expression');
+        checkTemplate($match[1] === rawurlencode($route) && rawurldecode($match[1]) === $route, 'Registration changed the supplied '.$language.' account route');
     }
 }
 $addresses = [];
@@ -99,4 +111,4 @@ foreach ([true,false] as $hasPrice) {
     checkTemplate($hasPrice ? $product['offers']['price'] === '4.99' : !isset($product['offers']['price']), 'Product schema default price');
     checkTemplate($product['offers']['priceSpecification']['price'] === '1.25', 'Valid base price changed');
 }
-echo '10 list-end links, 8 checkout field groups, 2 review authors including visibility order, 2 product JSON-LD cases PASS, Twig '.Twig\Environment::VERSION.PHP_EOL;
+echo '10 list-end links, 10 registration backlink routes, 8 checkout field groups, 2 review authors including visibility order, 2 product JSON-LD cases PASS, Twig '.Twig\Environment::VERSION.PHP_EOL;

@@ -55,7 +55,7 @@
                             :shown-fields="{{ optionalInvoiceAddressFields | json_encode }}"
                             :required-fields="{{ requiredInvoiceAddressFields | json_encode }}">
                         </registration>#}
-                        <registration template="#vue-registration" :is-simple-registration="true" modal-element="simple-registration-modal-wrapper" :backlink="/mein-konto/"></registration>
+                        <registration template="#vue-registration" :is-simple-registration="true" modal-element="simple-registration-modal-wrapper" backlink="{{ urls.myAccount | url_encode }}"></registration>
                     </div>
                 </div>
             </div>

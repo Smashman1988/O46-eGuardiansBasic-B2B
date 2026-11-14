@@ -555,29 +555,84 @@ O46Core.user = O46Core.user || function () {
     if (O46Core.installed.user) return;
 (function () {
     eGuardians.user = new function () {
+       const loginConfirmed = (response, status) => status === 200 &&
+            response?.events?.AfterAccountAuthentication?.isSuccess === true;
+       // CustomerLogoutResource returns create(ResponseCode::OK); event metadata is optional.
+       const logoutConfirmed = (response, status) => status === 200 && response?.data === 200;
+       const escapeText = value => String(value ?? '').replace(/[&<>"']/g, character =>
+            ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[character]));
+
        this.login = function(userMail, userPassword, callback){
             var loginParams = {
                 email: userMail,
                 password: userPassword
             };
 
-            eGuardians.apiservice.post('/rest/io/customer/login/', loginParams, function(response) {
-                if (response?.events?.AfterAccountAuthentication?.isSuccess) {
+            eGuardians.apiservice.post('/rest/io/customer/login/', loginParams, function(response, status) {
+                if (loginConfirmed(response, status)) {
                     O46Core.basketHeader.invalidate();
                 }
 
                 if (typeof callback === 'function') {
-                    callback(response);
+                    callback(response, status);
                 }
             });
         };
 
         this.logout = function(callback){
-            eGuardians.apiservice.post('/rest/io/customer/logout/', '', function(response) {
-                O46Core.basketHeader.invalidate();
+            eGuardians.apiservice.post('/rest/io/customer/logout/', '', function(response, status) {
+                if (logoutConfirmed(response, status)) O46Core.basketHeader.invalidate();
 
                 if (typeof callback === 'function') {
-                    callback(response);
+                    callback(response, status);
+                }
+            });
+        };
+
+        this.loginUser = function(button) {
+            if (!eGuardians.validator.checkInputs($('.login-form input'))) return;
+            eGuardians.helper.btnShowLoader(button);
+            this.login($('#login-mail').val(), $('#login-password').val(), function(response, status) {
+                try {
+                    if (loginConfirmed(response, status)) {
+                        eGuardians.ui.message.success.show({
+                            message: messageServiceTranslations.login1 + ' ' +
+                                escapeText(response.events.AfterAccountAuthentication.accountContact?.firstName) + ' ' +
+                                messageServiceTranslations.login2,
+                            insertElement: '.login-form-action', customClass: 'alert-login'
+                        });
+                        setTimeout(function() { document.location.reload(); }, 3000);
+                    } else {
+                        const rejected = status === 401 || response?.events?.AfterAccountAuthentication?.isSuccess === false;
+                        const message = rejected ? (response?.error?.message === 'user is blocked'
+                            ? messageServiceTranslations.banneduser : messageServiceTranslations.wronguserlogindata)
+                            : messageServiceTranslations[0];
+                        eGuardians.ui.message.error.show({
+                            message, insertElement: '.login-form-action', customClass: 'alert-login'
+                        });
+                    }
+                } finally {
+                    eGuardians.helper.btnHideLoader(button);
+                }
+            });
+        };
+        this.logoutUser = function(button, reloadImmediately) {
+            eGuardians.helper.btnShowLoader(button);
+            this.logout(function(response, status) {
+                try {
+                    if (!logoutConfirmed(response, status)) {
+                        eGuardians.ui.message.error.show({
+                            message: messageServiceTranslations[0], insertElement: '.loginpreview-register'
+                        });
+                        return;
+                    }
+                    eGuardians.ui.message.success.show({
+                        message: messageServiceTranslations.successlogout, insertElement: '.loginpreview-register'
+                    });
+                    if (reloadImmediately) document.location.reload();
+                    else setTimeout(function() { document.location.href = 'https://b2b.outlet46.de'; }, 3000);
+                } finally {
+                    eGuardians.helper.btnHideLoader(button);
                 }
             });
         };

@@ -246,55 +246,8 @@ this.addItemToBasket = function (_this) {
                     });
 
             }
-            this.loginUser = function(_this){
-
-                var loginMail = $('#login-mail').val();
-                var loginPassword = $('#login-password').val();
-                if(eGuardians.validator.checkInputs($('.login-form input'))){
-                    eGuardians.helper.btnShowLoader(_this);
-                    eGuardians.user.login(loginMail, loginPassword,function(response){
-                        if(response.events.AfterAccountAuthentication.isSuccess){ 
-
-                            eGuardians.ui.message.success.show({
-                                'message'        : messageServiceTranslations["login1"]+' '+response.events.AfterAccountAuthentication.accountContact.firstName+' '+messageServiceTranslations["login2"],
-                                'insertElement'  : '.login-form-action',
-                                'customClass'    : 'alert-login'
-                            })
-                            setTimeout(function(){ 
-                                document.location.reload();
-                            }, 3000);
-
-                        }else{
-                            var errormsg = "";
-                            if(response.error.message=="user is blocked"){
-                                errormsg = messageServiceTranslations["banneduser"];
-                            }else{
-                                errormsg = messageServiceTranslations["wronguserlogindata"];
-                            }
-                            eGuardians.ui.message.error.show({
-                                'message'        : errormsg,
-                                'insertElement'  : '.login-form-action',
-                                'customClass'    : 'alert-login'
-                            })
-                        }
-                        eGuardians.helper.btnHideLoader(_this);
-                    });
-                }
-            }
-            this.logoutUser = function(_this){
-
-                eGuardians.helper.btnShowLoader(_this);
-
-                eGuardians.user.logout(function(){
-                    eGuardians.helper.btnHideLoader(_this);
-                    eGuardians.ui.message.success.show({
-                        'message'        : messageServiceTranslations["successlogout"],
-                        'insertElement'  : '.loginpreview-register'
-                    });
-                    $(_this).removeClass('btn-load');
-                    document.location.reload();
-                });
-            }
+            this.loginUser = function(button) { return eGuardians.user.loginUser(button); }
+            this.logoutUser = function(button) { return eGuardians.user.logoutUser(button, true); }
             this.pwdResetUser = function(_this){
                 var searchParams = {
                     email: $('#pwd-reset-mail').val()
@@ -376,32 +329,7 @@ O46Core.item.call(window);
     /**
      * @module User
      */
-    (function () {
-        eGuardians.user = new function () {
-            this.login = function(userMail, userPassword, callback){
-                var loginParams = {
-                    email: userMail,
-                    password : userPassword
-                }
-                eGuardians.apiservice.post('/rest/io/customer/login/', loginParams , function(response){
-                    if(typeof callback === 'function') {
-                        callback(response);
-                    }
-                });
-
-            }
-            this.logout = function(callback){
-                ///rest/io/customer/login   
-                eGuardians.apiservice.post('/rest/io/customer/logout/', '' , function(response){
-
-                    if(typeof callback === 'function') {
-                        callback(response);
-                    }
-                });
-
-            }
-        }
-    })(eGuardians);
+    O46Core.user.call(window);
     /**
      * @module Validator
      */

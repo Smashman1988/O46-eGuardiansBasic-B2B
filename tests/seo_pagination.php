@@ -253,6 +253,7 @@ namespace {
         'layout'=>readView('PageDesign/PageDesign'),
         'head'=>readView('PageDesign/Partials/Head'),
         'metadata'=>readView('PageDesign/Partials/PageMetadata'),
+        'metadata-block-title'=>'{% embed "metadata" %}{% block title fixtureTitle %}{% endembed %}',
         'content'=>readView('Category/Content/CategoryContent'),
         'GuardiansBasicB2B::Category.Content.PreparedShopBuilder'=>readView('Category/Content/PreparedShopBuilder'),
         'GuardiansBasicB2B::Category.Item.CategoryItemContent'=>readView('Category/Item/CategoryItemContent'),
@@ -1072,6 +1073,32 @@ namespace {
         // do not label unrelated legacy functions as Plenty build findings.
         return ['helper'=>$helper['issues'],'extension'=>array_values(array_filter($extension['issues'],function ($issue) { return $issue['kind'] === 'restricted-construct'; }))];
     });
+    foreach (['de','en','fr','it','es'] as $language) {
+        foreach (['ampersand'=>'Hemd & Hose', 'quotes'=>'Hemd "Sommer"',
+            'tag-delimiters'=>'</title><script data-phase4-probe>void 0</script><title>'] as $kind=>$title) {
+            foreach (['category','block'] as $source) {
+                test('metadata/title-escaping/'.$language.'/'.$kind.'/'.$source, function () use ($language,$kind,$title,$source,$twig,$base) {
+                    $ctx = localizedContext($base,$language);
+                    $ctx['seoPage'] = new SeoPage([], 'tpl.category.item', 1, 1, 1);
+                    $ctx['isQuickView'] = true;
+                    $ctx['fixtureTitle'] = $title;
+                    // An empty metaTitle must use the category name with the same safety contract.
+                    $ctx['category']['details'][0]['metaTitle'] = $kind === 'ampersand' ? '' : $title;
+                    $ctx['category']['details'][0]['name'] = $title;
+                    $html = $twig->render($source === 'category' ? 'metadata' : 'metadata-block-title', $ctx);
+                    check(strpos($html, '<script data-phase4-probe>') === false, 'Catalog title opened a script element');
+                    check(substr_count($html, '<title>') === 1, 'Catalog title escaped its text element');
+                    check(preg_match('~<title>(.*?)</title>~s', $html, $titleMatch) === 1, 'Title missing');
+                    check(html_entity_decode($titleMatch[1], ENT_QUOTES|ENT_HTML5, 'UTF-8') === $title, 'Title changed or was double escaped');
+                    foreach (['property'=>'og:title', 'name'=>'twitter:title'] as $attribute=>$name) {
+                        check(preg_match('~<meta '.$attribute.'="'.$name.'" content="([^"]*)"~', $html, $match) === 1, 'Social title missing');
+                        check(html_entity_decode($match[1], ENT_QUOTES|ENT_HTML5, 'UTF-8') === $title, 'Social title truncated or double escaped');
+                    }
+                    return ['source'=>$source,'language'=>$language,'kind'=>$kind,'textPreserved'=>true,'escaped'=>true];
+                });
+            }
+        }
+    }
     $report['comparison'] = 'NOT_RUN';
     if (isset($argv[3])) {
         test('compatibility/before-fix-comparison',function () use (&$report,$argv) {

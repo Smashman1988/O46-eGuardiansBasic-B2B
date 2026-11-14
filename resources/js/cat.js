@@ -390,57 +390,8 @@ this.facetFilter = debounce(function (_this) {
   });
 }, facetDebounceDelay);
 
-        this.loginUser = function(_this){
-            
-            var loginMail = $('#login-mail').val();
-            var loginPassword = $('#login-password').val();
-            if(eGuardians.validator.checkInputs($('.login-form input'))){
-                eGuardians.helper.btnShowLoader(_this);
-                eGuardians.user.login(loginMail, loginPassword,function(response){
-                    if(response.events.AfterAccountAuthentication.isSuccess){ 
-                        
-                        eGuardians.ui.message.success.show({
-                            'message'        : messageServiceTranslations["login1"]+' '+response.events.AfterAccountAuthentication.accountContact.firstName+' '+messageServiceTranslations["login2"],
-                            'insertElement'  : '.login-form-action',
-                            'customClass'    : 'alert-login'
-                        })
-                        setTimeout(function(){ 
-                            document.location.reload();
-                        }, 3000);
-                        
-                    }else{
-                        var errormsg = "";
-                        if(response.error.message=="user is blocked"){
-                            errormsg = messageServiceTranslations["banneduser"];
-                        }else{
-                            errormsg = messageServiceTranslations["wronguserlogindata"];
-                        }
-                        eGuardians.ui.message.error.show({
-                            'message'        : errormsg,
-                            'insertElement'  : '.login-form-action',
-                            'customClass'    : 'alert-login'
-                        })
-                    }
-                    eGuardians.helper.btnHideLoader(_this);
-                });
-            }
-        }
-        this.logoutUser = function(_this){
-            
-            eGuardians.helper.btnShowLoader(_this);
-
-            eGuardians.user.logout(function(){
-                eGuardians.helper.btnHideLoader(_this);
-                eGuardians.ui.message.success.show({
-                    'message'        : messageServiceTranslations["successlogout"],
-                    'insertElement'  : '.loginpreview-register'
-                });
-                $(_this).removeClass('btn-load');
-                setTimeout(function(){ 
-                            document.location.href = "https://b2b.outlet46.de";
-                }, 3000);
-            });
-        }
+        this.loginUser = function(button) { return eGuardians.user.loginUser(button); }
+        this.logoutUser = function(button) { return eGuardians.user.logoutUser(button); }
         this.pwdResetUser = function(_this){
             var searchParams = {
                 email: $('#pwd-reset-mail').val()

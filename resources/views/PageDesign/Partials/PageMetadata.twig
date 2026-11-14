@@ -55,7 +55,8 @@
 {% if block('title') is defined %}
     {% set title = block('title') %}
 {% elseif details is not null %}
-    {% set title = details.metaTitle | default(details.name) %}
+    {# Block titles are already rendered HTML; direct catalog text needs the same escaping. #}
+    {% set title = details.metaTitle | default(details.name) | escape %}
 {% endif %}
 {% set title = title | trim %}
 {% set metadataUrl = block('url') is defined ? block('url') : '' %}

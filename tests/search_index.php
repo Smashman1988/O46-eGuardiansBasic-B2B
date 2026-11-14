@@ -257,7 +257,7 @@ namespace {
     $engine->next=[['items'=>['documents'=>[]]]]; $engine->calls=[];
     $req->data=['query'=>'0002','types'=>['item']]; $only=$suggestRoute->index();
     check(array_keys($engine->calls[0])===['items'] && !$engine->calls[0]['items']->categories && $only->body['suggestion']===[],'optional suggestions');
-    foreach (['it','es'] as $language) {
+    foreach (['de','en','fr','it','es'] as $language) {
         $locale->lang=$language;
         foreach ([['query'=>['nike']], ['query'=>false], ['query'=>new \stdClass()],
                   ['query'=>'nike','types'=>'item'], ['query'=>'nike','types'=>new \stdClass()]] as $invalid) {
@@ -265,8 +265,20 @@ namespace {
             check($suggestRoute->index()->status===400 && !$engine->calls,'invalid autocomplete types rejected before search');
         }
         $req->data=['query'=>2351296,'types'=>['item']]; $engine->calls=[];
-        $engine->next=[['items'=>['documents'=>[]]]];
-        check($suggestRoute->index()->status===200 && $engine->calls[0]['items']->text[0]==='2351296','numeric search text preserved');
+        $engine->next=[['items'=>['documents'=>[], 'categories.all'=>[]], 'suggestions'=>['searchSuggestions'=>[]]]];
+        $response=$suggestRoute->index();
+        $factory=$engine->calls[0]['items'];
+        $numericQuery=in_array($language,['it','es'],true) ? $factory->text[0] : $factory->options['query'];
+        check($response->status===200 && count($engine->calls)===1 &&
+            $numericQuery===(in_array($language,['it','es'],true) ? '2351296' : 2351296),
+            'numeric search text and existing parent path preserved for '.$language);
+        $req->data=['query'=>'0002','types'=>[]]; $engine->calls=[];
+        $engine->next=[['items'=>['documents'=>[], 'categories.all'=>[]], 'suggestions'=>['searchSuggestions'=>[]]]];
+        $response=$suggestRoute->index();
+        $factory=$engine->calls[0]['items'];
+        $stringQuery=in_array($language,['it','es'],true) ? $factory->text[0] : $factory->options['query'];
+        check($response->status===200 && count($engine->calls)===1 && $stringQuery==='0002' &&
+            array_keys($engine->calls[0])===['items'], 'leading zero query and optional types preserved for '.$language);
     }
     if (isset($argv[3])) file_put_contents($argv[3],json_encode($browserFixture,JSON_THROW_ON_ERROR));
     echo "$assertions assertions passed; 35 language / query combinations. Native engine not executed.\n";
