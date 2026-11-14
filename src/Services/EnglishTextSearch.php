@@ -32,11 +32,16 @@ class EnglishTextSearch
         return SearchItems::getSearchFactory($options);
     }
 
-    private function listResults(array $options)
+    private function listResults(array $options, bool $countsOnly = false)
     {
         $items = $this->applyText($this->storefrontItems($options), $options);
         if ($options['query'] !== '') {
             $items->withDidYouMeanSuggestions($options['query']);
+        }
+        if ($countsOnly) {
+            // Apply after Ceres validation/preset creation: validation replaces
+            // a zero page size with the configured storefront default.
+            $items->setPage(1, 0);
         }
 
         $facetOptions = $options;
@@ -50,16 +55,16 @@ class EnglishTextSearch
         return pluginApp(ItemSearchService::class)->getResults(['itemList' => $items, 'facets' => $facets]);
     }
 
-    public function getPage(array $options): array
+    public function getPage(array $options, bool $countsOnly = false): array
     {
-        $result = $this->listResults($options);
+        $result = $this->listResults($options, $countsOnly);
         if ((int)$result['itemList']['total'] === 0 && !empty($result['itemList']['suggestions']['didYouMean'])) {
             $corrected = pluginApp(ItemSearchAutocompleteService::class)->getDidYouMeanSuggestionSearchString(
                 $options['query'], $result['itemList']['suggestions']
             );
             if ($corrected !== '' && $corrected !== $options['query']) {
                 $options['query'] = $corrected;
-                $result = $this->listResults($options);
+                $result = $this->listResults($options, $countsOnly);
                 $result['suggestionString'] = $corrected;
             }
         }

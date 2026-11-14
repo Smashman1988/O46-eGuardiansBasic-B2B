@@ -113,12 +113,17 @@
 
                 {% set attributeMapsByItem = getCardAttributeMaps(itemList|default([])|map(item => item.data.variation.itemId)) %}
                 {% for item in itemList %}
-                    {% if loop.index <= 2 and currentPage == 1 %}
-                        {{ _self.categoryItem(item, 1, currencycheck, isShoeCategory, translations, transLabels, attributeMapsByItem[item.data.variation.itemId] ?? null) }}
-                    {% else %}
-                        {{ _self.categoryItem(item, 2, currencycheck, isShoeCategory, translations, transLabels, attributeMapsByItem[item.data.variation.itemId] ?? null) }}
-                    {% endif %}
-                {% endfor %}        
+                    <article class="post col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">
+                        {% include (loop.index <= 2 and currentPage == 1) ? 'GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2' : 'GuardiansBasicB2B::Category.Item.Partials.CategoryListItem' with {
+                            'item': item,
+                            'currencycheck': currencycheck,
+                            'isShoeCategory': isShoeCategory,
+                            'translations': translations,
+                            'transLabels': transLabels,
+                            'cardAttributeMap': attributeMapsByItem[item.data.variation.itemId] ?? null
+                        } only %}
+                    </article>
+                {% endfor %}
                 </div>
                 <div class="scroller-status"><div class="loader-wheel infinite-scroll-request"><i><i><i><i><i><i><i><i><i><i><i><i></i></i></i></i></i></i></i></i></i></i></i></i></div>
                     <p class="infinite-scroll-last tcenter">{{ trans("GuardiansBasicB2B::Template.iscrollinfo1") }} {{ itemCountTotal }} {% if isSearch %} "{{ searchString }}"{% else %} {{ trans("GuardiansBasicB2B::Template.items") }} {{ trans("GuardiansBasicB2B::Template.iscrollinfo2") }}{% endif %} {{ trans("GuardiansBasicB2B::Template.iscrollinfo3") }}

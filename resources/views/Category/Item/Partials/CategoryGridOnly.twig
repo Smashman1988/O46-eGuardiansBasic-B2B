@@ -24,8 +24,11 @@
         'cardVendorLogoBase': cardVendorLogoBase,
         'cardPriorityImage': prioritizeFirstCardImage|default(false) and loop.first,
         'translations': translations,
-        'transLabels': transLabels
-      } %}
+        'transLabels': transLabels,
+        'cardEagerImages': cardEagerImages|default(false),
+        'dezimalcount': dezimalcount is defined ? dezimalcount : null,
+        'percent': percent is defined ? percent : null
+      } only %}
     </div>
   {% endfor %}
 </div>

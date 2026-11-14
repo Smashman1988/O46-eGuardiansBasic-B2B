@@ -109,7 +109,9 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
     $guardAlreadyPresent=strpos($before,'Detail properties and recommendation cards are omitted from Quickview')!==false;
     $matrixReuseAlreadyPresent=strpos($before,'set matrixLabel =')!==false;
     if($textDelta!==(($full||$guardAlreadyPresent?0:32)+($matrixReuseAlreadyPresent?0:10)))throw new RuntimeException('Unexpected translation call change');
-    if($pair['before']['sorts']-$pair['after']['sorts']!==($full&&($case['images']??3)>1?1:0))throw new RuntimeException('Unexpected image sorting count');
+    $imageSortReuseAlreadyPresent=strpos($before,'for prevImg in sortedItemImages')!==false;
+    $expectedBeforeSorts=$full&&($case['images']??3)>1&&!$imageSortReuseAlreadyPresent?2:1;
+    if($pair['before']['sorts']!==$expectedBeforeSorts||$pair['after']['sorts']!==1)throw new RuntimeException('Unexpected image sorting count');
     if($pair['before']['html']!==$pair['after']['html']||$pair['after']['calls']!==$expected||$pair['before']['containers']!==$pair['after']['containers']){file_put_contents($argv[2].'.failure.json',json_encode(['case'=>$case,'pair'=>$pair],JSON_PRETTY_PRINT));throw new RuntimeException('Render or retained service sequence changed');}
     if(!$full&&($pair['after']['externalStyle']||$pair['after']['externalScript']||$pair['after']['containers']))throw new RuntimeException('Quickview reached external include/container');
     if($full&&$pair['after']['externalStyle']!==1)throw new RuntimeException('Full page inherited external context probe missing');

@@ -127,13 +127,25 @@ foreach ($breadcrumbCases as $name => [$items, $expected]) {
 foreach ([[], [$category(1)], [$category(1, false), $category(2), $category(3, false), $category(4)],
     [4 => $category(9), 8 => $category(7)], [$category(1, false)]] as $case => $children) {
     test('brands/' . $case, function () use ($views, $children) {
-        $loop = loopSource(source($views . 'Category/Item/CategoryItemBrands.twig'), 'children');
+        // Observe the actual brand links on both historical and current sources.
+        // The former translatedChildren pre-pass had no output consumer.
+        foreach ($children as &$child) {
+            if (!empty($child['details'][0])) {
+                $child['details'][0] += ['nameUrl' => 'brand-' . $child['id'], 'metaTitle' => 'Brand', 'image2Path' => ''];
+                $child['itemCount'] = [['count' => 1]];
+            }
+        }
+        unset($child);
+        $loop = loopSource(source($views . 'Category/Item/CategoryItemBrands.twig'), 'child');
         ensure(strpos($loop, 'loop.') === false, 'New loop-variable dependency requires review');
-        $loop = instrument($loop, '{% set translatedChildren', 'children.id'); $trace = [];
-        $result = trim(renderCase('{% set translatedChildren = 0 %}' . $loop . '{{ translatedChildren }}', ['category' => ['children' => $children]], $trace));
+        $loop = instrument($loop, '<a href="{{ currentScopeUrl }}', 'child.id'); $trace = [];
+        $result = renderCase($loop, ['category' => ['children' => $children], 'firstSign' => '', 'renderedBrands' => 0,
+            'currentScopeUrl' => '/brands', 'currencycheck' => 'EUR', 'urls' => ['trailingSlashSuffix' => '/']],
+            $trace, [], ['plugin_path' => function () { return '/plugin'; }]);
         $expected = array_values(array_map(function ($v) { return $v['id']; }, array_filter($children, function ($v) { return !empty($v['details'][0]); })));
-        ensure($trace === $expected && (int)$result === count($expected), 'Brand selection/count changed');
-        return ['selected' => $trace, 'count' => (int)$result];
+        preg_match_all('~href="/brands/brand-(\d+)/"~', $result, $links);
+        ensure($trace === $expected && array_map('intval', $links[1]) === $expected, 'Rendered brand selection/links/order changed');
+        return ['selected' => $trace, 'count' => count($links[1])];
     });
 }
 

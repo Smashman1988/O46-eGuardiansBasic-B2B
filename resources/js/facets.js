@@ -131,7 +131,7 @@
         state.timer = null;
         const target = urlFor(root, location.href, false);
         const params = new URLSearchParams({query: root.dataset.egSearchstring || '', facets: [...state.selected].join(','),
-            priceMin: target.searchParams.get('priceMin') || '', priceMax: target.searchParams.get('priceMax') || '', categoryId: root.dataset.egCatid || ''});
+            priceMin: target.searchParams.get('priceMin') || '', priceMax: target.searchParams.get('priceMax') || '', categoryId: root.dataset.egCatid || '', countsOnly: '1'});
         const controller = new AbortController(); state.controller = controller;
         try {
             const response = await fetch('/rest/io/facet/?' + params, {credentials: 'same-origin', signal: controller.signal, headers: {Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest'}});

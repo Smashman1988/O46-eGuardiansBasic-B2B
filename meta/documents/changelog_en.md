@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Server preparation and Twig rendering (2026-11-14)
+
+- Based on `debbeda`, local `develop` only, version 1.0.7 unchanged. Review all 13 own PHP files and 173 Twig templates. [Report](../../.cache/server-optimization-debbeda-20261114/Server-Performance-Pruefbericht.html); these changes have not been deployed or accepted natively.
+- Add explicit `countsOnly=1` to the existing facet endpoint and active filter client. Request zero instead of up to 50 unused item documents while preserving facets, totals, customer/price restrictions and IT/ES DidYouMean behavior. Calls without the opt-in retain their full response. Search-call and factory counts remain unchanged; no new cache. Hit fixture: 7,899 → 125 JSON bytes, not native transfer measurement. Facet minified JS grows by 15 bytes, with the complete reproducible build and `facets4` cache suffix.
+- Render cards directly in owned category/search/content list loops with explicit include contexts. Remove 60 extra macro calls/output buffers per 60 cards; preserve public macros and the eager adapter. German fixture: 7,980/7,989 fewer HTML bytes from inter-tag indentation, identical card/DOM semantics. The homepage grid stays byte-identical with 60 items, one category lookup and three attribute batches. Remove the unused child-category traversal from the brand overview.
+- Targeted checks pass: PHP 13/13; each Twig 2/3 run covers 173 syntax, 38 render, 585 SEO, 50 PDP, 50 header, 20 matrix, 120 list, ten macro/standalone and 40 brand cases. Existing attribute/homepage/LiveShopping/card regressions, 758 search assertions plus 60 facet cases/276 assertions, 33 local browser cases, builds and diff check pass. Technical interruptions and historical test assumptions are documented separately; no full-suite claim.
+- Native PHP/SQL/TTFB timing, authenticated customer classes and real checkout remain `NOT_TESTED`. No shared customer cache or price/order logic change. No commit, push, merge, deployment, sync, cache purge or B2C changes.
+
 ## Unreleased – Complete CSS build and safe cleanup (2026-11-13)
 
 - Based on `6e18519`, local `develop` changes only, version 1.0.7 unchanged; preserve the preceding Phase 2 work. [CSS report](../../.cache/css-cleanup-phase2-20261113/CSS-Pruefbericht.html). Native after-deployment acceptance remains `NOT_TESTED`.

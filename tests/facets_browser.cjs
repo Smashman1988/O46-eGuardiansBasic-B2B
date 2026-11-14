@@ -44,6 +44,7 @@ const server = http.createServer((req,res) => {
         if (url.pathname.startsWith('/rest/io/facet/')) {
             const params=Object.fromEntries(url.searchParams), serial=++responseSerial;
             requests.push({serial,params});
+            assert.equal(params.countsOnly, '1', 'Facet refresh must opt into totals without unused product documents');
             if(responseMode==='error') return send(res,JSON.stringify({error:'controlled IO failure'}),'application/json',503);
             const kind=Object.keys(fixtures).find(k=>String(fixtures[k].categoryId)===params.categoryId)||'search';
             const groups=structuredClone(fixtures[kind].groups);
@@ -59,6 +60,7 @@ const server = http.createServer((req,res) => {
             if(new URL(target).pathname===url.pathname && k!=='filtered') {kind=k;lang=l;}
         }
         if (kind === null) return send(res,'Unknown localized route','text/plain',404);
+        assert.equal(url.searchParams.has('countsOnly'), false, 'API projection must not leak into storefront or language URLs');
         const params=Object.fromEntries(url.searchParams), languages=Object.fromEntries(langs.map(l=>[l,route(kind,l)]));
         if(params.__missingLanguage) delete languages[params.__missingLanguage];
         const zero=params.__zero==='1'||String(params.query||'').startsWith('no-match-')||Number(params.priceMin)>=999999;

@@ -45,6 +45,9 @@ class FacetResource extends ApiResource
     {
         $categoryId   = (int)$this->request->get('categoryId', 0);
         $searchString = $this->request->get('query', '');
+        // The theme's facet controls need only buckets and the result count.
+        // Keep complete documents for all callers that do not explicitly opt in.
+        $countsOnly = in_array($this->request->get('countsOnly'), ['1', 1], true);
         if (is_numeric($searchString)) {
             $searchString = (string)$searchString;
         }
@@ -75,7 +78,7 @@ class FacetResource extends ApiResource
                 $config = pluginApp(WebstoreConfigurationRepositoryContract::class)->getWebstoreConfiguration();
                 $itemListOptions['searchOperator'] = $config->itemSearchOperator;
                 $options = SearchOptions::validateItemListOptions($itemListOptions, SearchOptions::SCOPE_SEARCH);
-                $response = pluginApp(EnglishTextSearch::class)->getPage($options);
+                $response = pluginApp(EnglishTextSearch::class)->getPage($options, $countsOnly);
                 return $this->response->create([
                     'facets' => $response['facets'],
                     'itemList' => $response['itemList']
@@ -86,6 +89,9 @@ class FacetResource extends ApiResource
                 'facets'   => Facets::getSearchFactory( $itemListOptions ),
                 'itemList' => $categoryId > 0 ? CategoryItems::getSearchFactory( $itemListOptions ) : SearchItems::getSearchFactory( $itemListOptions )
             ];
+            if ($countsOnly) {
+                $searchParams['itemList']->setPage(1, 0);
+            }
 
             /** @var ItemSearchService $itemSearchService */
             $itemSearchService = pluginApp( ItemSearchService::class );

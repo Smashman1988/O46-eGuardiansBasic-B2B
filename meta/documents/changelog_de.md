@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Serverseitige Aufbereitung und Twig-Rendering (2026-11-14)
+
+- Basis `debbeda`, lokal auf `develop`, Version 1.0.7 unverändert. Alle 13 eigenen PHP-Dateien und 173 Twig-Templates abgeglichen. [Prüfbericht](../../.cache/server-optimization-debbeda-20261114/Server-Performance-Pruefbericht.html); keine Bereitstellung oder native Nachher-Abnahme dieser Änderungen.
+- Ergänze `countsOnly=1` am bestehenden Facetten-Endpunkt und im aktiven Filterclient. Fordere null statt bis zu 50 ungenutzte Artikeldokumente an; erhalte Facetten, Gesamtzahl, Kunden-/Preisrestriktionen sowie IT-/ES-DidYouMean. Ohne ausdrückliches Opt-in bleibt die Vollantwort erhalten. Suchaufrufe und Factories unverändert; kein neuer Cache. Treffer-Fixture: 7.899 → 125 JSON-Byte, keine native Transfermessung. Facetten-Min-JS +15 Byte, vollständiger reproduzierbarer Build, Cachekennung `facets4`.
+- Rendere Karten in eigenen Kategorie-/Such-/Inhaltslisten direkt mit begrenztem Include-Kontext. Bei 60 Karten entfallen 60 zusätzliche Makroaufrufe/Ausgabepuffer; öffentliche Makros und Eager-Adapter bleiben erhalten. DE-Fixture: −7.980/−7.989 HTML-Byte durch entfallene Einrückung, identische Karten-/DOM-Semantik. Startseitengrid bytegleich, weiterhin 60 Artikel, ein Kategorieabruf und drei Attribut-Batches. Entferne den ungenutzten Kindkategorien-Durchlauf in der Markenübersicht.
+- Gezielte Prüfungen PASS: PHP 13/13; je Twig 2/3 173 Syntax-, 38 Render-, 585 SEO-, 50 PDP-, 50 Header-, 20 Matrix-, 120 Listen-, zehn Makro-/Standalone- und 40 Markenfälle. Bestehende Attribute-/Startseiten-/LiveShopping-/Kartenregressionen, 758 Suchassertions plus 60 Facettenfälle/276 Assertions, 33 lokale Browserfälle, Builds und Diffcheck bestehen. Abbrüche und historische Testannahmen separat dokumentiert; keine Gesamtsuitebehauptung.
+- Native PHP-/SQL-/TTFB-Zeiten, Kundenklassen und echter Checkout `NOT_TESTED`. Keine neue globale Cache-Schicht oder Preis-/Bestelländerung. Kein Commit, Push, Merge, Deployment, Sync, Cache-Purge oder B2C-Eingriff.
+
 ## Unreleased – Vollständiger CSS-Build und sichere Bereinigung (2026-11-13)
 
 - Basis `6e18519`, ausschließlich lokal auf `develop`, Version 1.0.7 unverändert; vorherige Phase 2 erhalten. [CSS-Prüfbericht](../../.cache/css-cleanup-phase2-20261113/CSS-Pruefbericht.html). Native Nachher-Abnahme `NOT_TESTED`.

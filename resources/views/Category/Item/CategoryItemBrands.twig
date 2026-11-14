@@ -9,8 +9,6 @@
                         <div class="widget widget-step-by-step-navigation widget-none brandTiles">
                 <div class="widget-inner">
                     <div class="row">
-                            {% import _self as navbar %}
-                {% set counter = 0 %}
                 {% set megaMenuLevels = megaMenuLevels | default(1) %}
                 {% set firstSign = "" %}
                 {% for category in categories %}
@@ -22,14 +20,6 @@
                         {% else %}
                             {% set currentScopeUrl = "/" ~ category.details[0].nameUrl %}
                         {% endif %}
-                        {% set translatedChildren = 0 %}
-                        {% for children in category.children %}
-                            {% if children.details[0] %}
-                                {% set translatedChildren = translatedChildren + 1 %}
-                            {% endif %}
-                        {% endfor %}
-
-                        {% set counter = counter + 1 %}
                         {% if megaMenuLevels == 1 %}
                             {% set renderedBrands = 0 %}
                             {% for child in category.children %}

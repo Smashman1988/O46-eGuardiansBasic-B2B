@@ -894,7 +894,7 @@ namespace {
                     $expected = in_array($type,['tpl.search','tpl.category.item'],true);
                     check(count($scripts[1]) === ($expected ? 1 : 0),'Wrong number of facet controller inclusions');
                     if ($expected) {
-                        check(strpos($scripts[1][0],'-facets3') !== false,'Stale facet cache identifier');
+                        check(strpos($scripts[1][0],'-facets4') !== false,'Stale facet cache identifier');
                         check(strpos($scripts[2][0],'defer') !== false,'Facet controller lost defer');
                     }
                     return ['itemContext'=>$type === 'tpl.item','facetScript'=>$expected];
