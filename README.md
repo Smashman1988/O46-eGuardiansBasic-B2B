@@ -10,6 +10,14 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Warenkorbsummen und Ladeanzeige der Variantenmatrix (2026-11-14)
+
+Auf dem bereitgestellten Stand `ffb0e90` aktualisierte Ceres bei einer Mengenänderung zuerst die Position und übernahm die neuen Summen mit der PUT-Antwort von PlentyONE. Die Mindestbestellwertanzeige wartete auf einen weiteren Sessionabruf. In der Vorschau stimmten Position, Warenwert und Mindestbestellwert bei beiden Wechseln zwischen 1 und 40 Stück spätestens beim Messpunkt nach 2,51 Sekunden überein. Ein Neuladen war in diesem Lauf entbehrlich. [Zeitverlauf in Pluginset 426](.cache/basket-matrix-sync-ffb0e90/native/timeline.json)
+
+Der Warenkorb sendet Mengenänderungen nacheinander und zeigt einen Ladehinweis, bis PlentyONE Zeilen, Warenwert und den Stand zur 199-€-Grenze bestätigt hat. Der Header verwendet auf Startseite, Kategorie, Produktseite und Vue-Seiten denselben kompakten Anzeigedatensatz. Ein normaler Seitenwechsel im bereits bestätigten Tab braucht bei gültigen Daten keinen zusätzlichen Headerabruf. Auf Vue-Seiten dient der vorhandene Ceres-Startabruf als Quelle. [Datenfluss, Cookie- und Cacheprüfung, Vorher-/Nachher-Vergleich und Testgrenzen](meta/documents/warenkorb-synchronisierung.md)
+
+Die Variantenmatrix zeigt bis zur Sammelantwort einen Ladehinweis. Beim Einzelabruf nach einem Fehler wechselt der Text. Nach Erfolg verschwindet er. Fehlen Daten, benennt die Meldung einen teilweisen oder vollständigen Ausfall. Die Statusanzeige gilt für Produktseite und Quickview in allen fünf Shopsprachen. [Kompakter HTML-Prüfbericht mit Browsertest und Screenshot](.cache/basket-matrix-sync-ffb0e90/Pruefbericht.html)
+
 ## Server-Performance Phase 3 (2026-11-14)
 
 Lokal auf `develop`, Basis `320a901`. Bei einer erfolgreichen Variantenantwort nach 6,573 Sekunden löste die Matrix bisher 60 zusätzliche Einzelabrufe aus. PDP und Quickview warten jetzt den Sammelabruf bis zu seinem Transport-Timeout von 30 Sekunden ab. Im Browsertest sank die Zahl der Anfragen von 61 auf 1. Das betrifft die Zeit nach der ersten HTML-Antwort. Die Asset-Version von `core.min.js` steigt auf 2.

@@ -89,11 +89,6 @@
   var WAIT_FOR_FOREIGN_SESSION = true;
   var sawForeignSession = false;
 
-  if (!window.__O46_FETCH_ORIG__)   window.__O46_FETCH_ORIG__   = window.fetch.bind(window);
-  if (!window.__O46_XHROPEN_ORIG__) window.__O46_XHROPEN_ORIG__ = XMLHttpRequest.prototype.open;
-  var origFetch = window.__O46_FETCH_ORIG__;
-  var origOpen  = window.__O46_XHROPEN_ORIG__;
-
   var PAGE_VISIBLE = !document.hidden;
   document.addEventListener('visibilitychange', function(){ PAGE_VISIBLE = !document.hidden; }, {passive:true});
 
@@ -367,12 +362,13 @@
       var txt = money(total, cur);
 
       var job = function(){
+        if (items !== LAST_ITEMS) return;
         if (el.textContent !== txt) el.textContent = txt;
 
         // ✅ Gesamtgewicht nur in vorhandenes Markup schreiben (ShopBuilder)
         updateTotalWeight(totalG);
 
-        runIdle(function(){ renderPerItemExtras(items, cur); }, 300);
+        runIdle(function(){ if (items === LAST_ITEMS) renderPerItemExtras(items, cur); }, 300);
       };
       if (typeof requestAnimationFrame==='function') requestAnimationFrame(job); else job();
     });
@@ -384,6 +380,24 @@
     clearTimeout(maxTimer);
     maxTimer = setTimeout(performUpdate, MAX_WAIT);
   }
+
+  if (document.body.hasAttribute('data-o46-basket-sync')) {
+    window.addEventListener('o46:basket-updated', function (event) {
+      if (!event.detail || !Array.isArray(event.detail.items)) return;
+      LAST_ITEMS = event.detail.items;
+      performUpdate();
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && LAST_ITEMS) performUpdate();
+    });
+    window.o46UpdateNow = performUpdate;
+    return;
+  }
+
+  if (!window.__O46_FETCH_ORIG__) window.__O46_FETCH_ORIG__ = window.fetch.bind(window);
+  if (!window.__O46_XHROPEN_ORIG__) window.__O46_XHROPEN_ORIG__ = XMLHttpRequest.prototype.open;
+  var origFetch = window.__O46_FETCH_ORIG__;
+  var origOpen = window.__O46_XHROPEN_ORIG__;
 
   window.fetch = function(input, init){
     var p = origFetch(input, init);

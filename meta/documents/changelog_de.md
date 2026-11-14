@@ -1,5 +1,10 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Warenkorbsummen und Variantenmatrix (2026-11-14)
+
+- Mengenänderungen werden nacheinander mit PlentyONE abgeglichen. Warenkorb und 199-€-Anzeige übernehmen den bestätigten Nettowarenwert. Der gemeinsame Headercache aktualisiert andere Tabs nach einer Änderung und erspart bei gültigen Daten zusätzliche Abrufe auf Folgeseiten. Die Bestätigung beim Hinzufügen verwendet das bereits gelieferte Sprachtemplate. [Prüfbericht](warenkorb-synchronisierung.md)
+- Die Variantenmatrix meldet auf Produktseite und im Quickview den laufenden Sammelabruf, den Einzelabruf nach Fehlern und fehlende Ergebnisse in allen fünf Sprachen. Die Meldungen verwenden den bestehenden Anfrageablauf. Asset-Versionen für Core, Startseite, Kategorie, Produktseite und Vue sind erhöht.
+
 ## Unreleased – Serverlast bei Varianten und Produktlisten (2026-11-14)
 
 - PDP und Quickview verarbeiten auch langsame, erfolgreiche Varianten-Sammelantworten. Der Batch gibt die im Suchergebnis vorhandene positive Höchstbestellmenge an die Matrix weiter. Bei Transportfehlern oder einem Timeout nach 30 Sekunden greift der bestehende Einzelabruf. Im lokalen 60-Varianten-Test sinkt die Zahl der Abrufe von 61 auf 1. `core.min.js` erhält die Asset-Version 2.

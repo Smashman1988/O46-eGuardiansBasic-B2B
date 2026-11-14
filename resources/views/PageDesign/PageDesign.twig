@@ -101,7 +101,7 @@
         <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/contact-widget.css?v=1">
         {% endif %}
     </head>
-    <body class="hold-transition{% if isQuickView %} o46-b2b-contact-page{% endif %}" {% if isVueView %}id="isVueView"{% endif %}>
+    <body class="hold-transition{% if isQuickView %} o46-b2b-contact-page{% endif %}" {% if isVueView %}id="isVueView"{% endif %}{% if currentTemplate == 'tpl.basket' %} data-o46-basket-sync{% endif %}>
         {% if isQuickView %}
         {{ context.renderState() }}
         <!-- SSR:app() -->
@@ -144,6 +144,7 @@
             {% include getPartial('footer') %}
         </div>
         <!-- /SSR -->
+        <template id="o46-basket-toast">{% include "GuardiansBasicB2B::DynamicContent.DynamicBasketPreviewSmall" %}</template>
         <div class="modal fade dynamicModal" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -270,6 +271,9 @@
             {% if assetName is defined and assetName == 'ceres-checkout' %}
                 {{ LayoutContainer.show("Ceres::Checkout.AfterScriptsLoaded") }}
             {% endif %}                    
+            {% if currentTemplate == 'tpl.basket' %}
+                {% include "GuardiansBasicB2B::Basket.Partials.QuantitySync" %}
+            {% endif %}
             <!-- SSR:on() -->
             <script>
                 window.createApp("#vue-app");
@@ -404,22 +408,22 @@
             {% endif %}
             {# Keep the existing page selection and Ceres-owned jQuery exception. #}
             {# Asset URLs are generated from asset-versions.json by npm run build. #}
-            {% set themePageScript = 'main.min.js?v=1' %}
+            {% set themePageScript = 'main.min.js?v=2' %}
             {% set themeNeedsJquery = true %}
             {% if "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or category.id in mainjs %}
             {% elseif category.id in vuejs %}
-                {% set themePageScript = 'vue.min.js?v=1' %}
+                {% set themePageScript = 'vue.min.js?v=2' %}
                 {% set themeNeedsJquery = false %}
             {% elseif currentTemplate in vuePages|keys or category.id in nojs %}
             {% elseif category.id or isSearch %}
-                {% set themePageScript = 'cat.min.js?v=1' %}
+                {% set themePageScript = 'cat.min.js?v=2' %}
             {% elseif isItem %}
-                {% set themePageScript = 'item.min.js?v=1' %}
+                {% set themePageScript = 'item.min.js?v=2' %}
             {% endif %}
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=2" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=4" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" defer></script>
             <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}" defer></script>
             {% if isItem %}
                 {# After item.js defines mzOptions, before DOMContentLoaded initializes the gallery. #}

@@ -1,0 +1,220 @@
+<style>
+    .o46-basket-updating .cmp-totals dl,
+    .o46-basket-updating #o46-min-order,
+    .o46-basket-updating .item-total-price,
+    .o46-basket-updating .you-save-total { visibility: hidden; }
+    .o46-basket-unconfirmed .cmp-totals dl,
+    .o46-basket-unconfirmed #o46-min-order,
+    .o46-basket-unconfirmed .item-total-price,
+    .o46-basket-unconfirmed .you-save-total { visibility: hidden; }
+</style>
+<p data-o46-basket-status role="status" aria-live="polite" hidden
+   data-loading="{{ trans('GuardiansBasicB2B::Template.loadinginfo') }}"
+   data-error="{{ trans('GuardiansBasicB2B::Template.basketQuantityError') }}"></p>
+<script>
+(function () {
+    var store = window.ceresStore;
+    if (!store || !window.Vue) return;
+
+    var pending = new Map();
+    var running = false;
+    var basketReceived = false;
+    var snapshotVersion = 0;
+    var invalidationVersion = 0;
+    var needsRead = false;
+    var uncertain = false;
+    var publishScheduled = false;
+    var status = document.querySelector('[data-o46-basket-status]');
+    var root = document.documentElement;
+
+    function setStatus(busy, uncertain, message) {
+        root.classList.toggle('o46-basket-updating', busy);
+        root.classList.toggle('o46-basket-unconfirmed', uncertain);
+        var totals = document.querySelector('.cmp-totals');
+        if (totals) {
+            totals.setAttribute('aria-busy', String(busy));
+            if (status.nextElementSibling !== totals) totals.before(status);
+        }
+        status.textContent = message;
+        status.hidden = !message;
+    }
+
+    function publish() {
+        var basket = store.state.basket;
+        window.dispatchEvent(new CustomEvent('o46:basket-updated', {
+            detail: { items: basket.items, session: { data: { basket: basket.data, basketItems: basket.items } } }
+        }));
+    }
+
+    function isSnapshot(basket, items) {
+        return basket && typeof basket.currency === 'string' && basket.currency.length > 0 &&
+            basket.itemSumNet != null && basket.itemSumNet !== '' && Number.isFinite(Number(basket.itemSumNet)) &&
+            Array.isArray(items);
+    }
+
+    // Ceres commits the basket and its rows synchronously from the same IO event.
+    store.subscribe(function (mutation, state) {
+        if (mutation.type === 'setIsBasketLoading' && mutation.payload) invalidationVersion++;
+        if (mutation.type === 'setBasket') basketReceived = true;
+        if (basketReceived && (mutation.type === 'updateBasketItems' || mutation.type === 'setBasketItems')) {
+            basketReceived = false;
+            if (isSnapshot(state.basket.data, mutation.payload)) {
+                snapshotVersion++;
+                if (!running && !publishScheduled) {
+                    // AfterBasketItemAdd/Update can complete the rows later in this same Ceres callback.
+                    publishScheduled = true;
+                    Promise.resolve().then(function () {
+                        publishScheduled = false;
+                        if (!running && !needsRead && !pending.size) {
+                            uncertain = false;
+                            setStatus(false, false, '');
+                            publish();
+                        }
+                    });
+                }
+            }
+        }
+        if (!running && (pending.size || needsRead) && !state.basket.isBasketLoading && state.basket.isBasketInitiallyLoaded) {
+            Promise.resolve().then(drain);
+        }
+    });
+
+    async function readSession() {
+        var version = snapshotVersion;
+        var invalidation = invalidationVersion;
+        needsRead = false;
+        var response = await window.fetch('/rest/io/session?templateType=basket&template=Ceres%3A%3ABasket.Basket', {
+            credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) throw new Error();
+        var json = await response.json();
+        if (snapshotVersion !== version) return;
+        if (invalidationVersion !== invalidation) {
+            needsRead = true;
+            return;
+        }
+        var data = json.data;
+        if (!data || !isSnapshot(data.basket, data.basketItems)) throw new Error();
+        store.commit('setBasket', data.basket);
+        store.commit('setBasketItems', data.basketItems);
+        var changed = json.events && json.events.AfterBasketChanged;
+        if (changed && isSnapshot(changed.basket, changed.basketItems)) {
+            store.commit('setBasket', changed.basket);
+            if (typeof changed.showNetPrices === 'boolean') store.commit('setShowNetPrices', changed.showNetPrices);
+            store.commit('updateBasketItems', changed.basketItems);
+        }
+    }
+
+    function row(id) {
+        return store.state.basket.items.find(function (item) { return item.id === id; });
+    }
+
+    async function drain() {
+        if (running || (!pending.size && !needsRead) || store.state.basket.isBasketLoading || store.state.basket.isBasketInitiallyLoaded === false) return;
+        running = true;
+        var message = '';
+        setStatus(true, false, status.dataset.loading);
+        try {
+            while ((pending.size || needsRead) && !store.state.basket.isBasketLoading) {
+                if (!pending.size) {
+                    var readVersion = snapshotVersion;
+                    try {
+                        await readSession();
+                        uncertain = false;
+                    } catch (error) {
+                        uncertain = readVersion === snapshotVersion && !needsRead;
+                        if (uncertain) message = status.dataset.error;
+                    }
+                    continue;
+                }
+                var edit = pending.values().next().value;
+                pending.delete(edit.id);
+                var item = row(edit.id);
+                if (!item || (!uncertain && item.quantity === edit.quantity)) continue;
+                var previous = item.quantity;
+                var version = snapshotVersion;
+                var failed = false;
+                try {
+                    await store.dispatch('updateBasketItemQuantity', edit);
+                } catch (error) {
+                    failed = true;
+                    message = status.dataset.error;
+                    var details = error && error.data;
+                    if (details && details.exceptionCode && window.NotificationService) {
+                        window.NotificationService.error({
+                            code: details.exceptionCode, placeholder: details.placeholder, message: message
+                        }).closeAfter(5000);
+                    }
+                }
+
+                // Missing event or ambiguous write failure: read back once before any further PUT.
+                if (snapshotVersion === version) {
+                    try {
+                        await readSession();
+                        uncertain = false;
+                    } catch (error) {
+                        uncertain = snapshotVersion === version;
+                        if (uncertain) {
+                            message = status.dataset.error;
+                            if (row(edit.id)) store.commit('updateBasketItemQuantity', { id: edit.id, quantity: previous });
+                        }
+                    }
+                } else {
+                    uncertain = false;
+                }
+                var saved = row(edit.id);
+                if (!failed && !uncertain && saved && saved.quantity === edit.quantity) {
+                    document.dispatchEvent(new CustomEvent('afterBasketItemQuantityUpdated', { detail: saved }));
+                } else {
+                    message = status.dataset.error;
+                }
+            }
+        } finally {
+            running = false;
+            if (!needsRead && !pending.size) {
+                setStatus(false, uncertain, message);
+                if (!uncertain) publish();
+            }
+        }
+    }
+
+    window.addEventListener('o46:basket-invalidated', function () {
+        invalidationVersion++;
+        needsRead = true;
+        drain();
+    });
+
+    window.Vue.mixin({
+        beforeCreate: function () {
+            if (this.$options.name === 'quantity-input' && this.$parent && this.$parent.$options.name === 'basket-list-item') {
+                // Ceres calls setValue for both prop changes and user edits. Its debounced
+                // callback reads compValue at delivery time, so a store echo can replace a later edit.
+                var editing = false;
+                this.$options.watch = Object.assign({}, this.$options.watch, {
+                    value: function (quantity) {
+                        if (!editing) this.compValue = quantity;
+                    }
+                });
+                this.$once('hook:created', function () {
+                    var notify = this.onValueChanged;
+                    this.onValueChanged = function () {
+                        editing = true;
+                        notify();
+                    };
+                    this.$on('quantity-change', function () { editing = false; });
+                });
+                return;
+            }
+            if (this.$options.name !== 'basket-list-item') return;
+            this.$options.methods = Object.assign({}, this.$options.methods, {
+                updateQuantity: function (quantity) {
+                    var item = this.basketItem;
+                    if (!uncertain && !running && !pending.size && item.quantity === quantity) return;
+                    pending.set(item.id, { id: item.id, variationId: item.variation.id, quantity: quantity });
+                    return drain();
+                }
+            });
+        }
+    });
+})();
+</script>

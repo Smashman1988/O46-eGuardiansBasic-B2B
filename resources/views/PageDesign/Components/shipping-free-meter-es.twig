@@ -39,44 +39,20 @@
     }
   }
 
-  function unitPrice(it){
-    if (it && it.price != null && it.price !== 'N / A') return n(it.price);  // NETO
-    if (it && it.amount && it.amount.priceNet != null && it.amount.priceNet !== 'N / A') return n(it.amount.priceNet);
-    return 0;
-  }
-
-  function basketNet(items){
-    var sum = 0;
-    for (var it of (items || [])){
-      var qty  = n(it.quantity || 1);
-      var unit = unitPrice(it);
-      sum += unit * qty; // NETO
-    }
-    return sum;
-  }
-
   function updateFrom(items, session){
       var box = $('#o46-min-order');
       if (!box) return;
 
-      // --- La moneda debe ser EUR (igual que en el antiguo shipping-free-meter) ---
-      var curFromSession = null;
-      try{
-        curFromSession = session && session.data && session.data.basket && session.data.basket.currency;
-      }catch(_){}
-      var curAttr = box.getAttribute('data-cur') || 'EUR';
-      var isEUR   = curFromSession ? (curFromSession === 'EUR') : (curAttr === 'EUR');
-
-      if (!Array.isArray(items) || !items.length || !isEUR){
+      var basket = session && session.data && session.data.basket;
+      var net = basket && basket.itemSumNet;
+      if (!Array.isArray(items) || !items.length || !basket || basket.currency !== 'EUR' ||
+          net == null || net === '' || !Number.isFinite(Number(net))){
         box.classList.add('is-hidden');
         return;
       }
-      // ---------------------------------------------------------------------------
-
-      var cur   = 'EUR';
+      var cur = 'EUR';
       var limit = n(box.getAttribute('data-limit')) || 199;
-
-      var net   = basketNet(items);
+      net = Number(net);
       var remaining = Math.max(0, limit - net);
       var percent   = net >= limit ? 100 : (100 * net / limit);
       percent = clamp(percent, 0, 100);

@@ -1,5 +1,10 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Basket totals and variation matrix (2026-11-14)
+
+- Quantity changes are sent in order. Basket totals and the €199 minimum use the confirmed PlentyONE basket. The shared header cache updates other tabs after a change and avoids extra requests on subsequent pages while its data is valid. The add-to-basket confirmation uses the translated template already included in the page. [Acceptance report in German](warenkorb-synchronisierung.md)
+- Product pages and quick views show the variation matrix loading state in all five shop languages. The status follows the existing batch and fallback requests and identifies partial or complete failure. Asset versions increase for the core, main, category, item and Vue bundles.
+
 ## Unreleased – Server load on variation matrices and product lists (2026-11-14)
 
 - Product pages and quick views accept slow successful variation batch responses. The batch now passes each variation’s positive maximum order quantity from the search result to the matrix. The existing per-variation fallback handles transport failures and the 30-second timeout. The local 60-variation test uses one request, down from 61. The asset version for `core.min.js` increases to 2.

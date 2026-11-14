@@ -31,7 +31,7 @@
         </div>
 </div>
 {#{% endcacheblock %}#}
-<header class="main-header stickyhead" id="page-header">
+<header class="main-header stickyhead" id="page-header" data-eg-basket-currency="{{ currencycheck }}"{% if not services.template.shouldBeCached() and basketItems.shippingCountryId is defined %} data-eg-basket-country="{{ basketItems.shippingCountryId }}"{% endif %}>
     <div class="eg-backdrop eg-backdrop-basket-prev transition" data-eg-handler="closeBackdrop" data-eg-event="click touchend"></div>
     <div class="header-wrap">
         <div class="container">
@@ -87,9 +87,9 @@
                        <div class="btn-unstyled btn-mobile-nav">
                            <a href="{{ basketUrl }}{{ currencyParam }}" class="text-black">
 						   {% if basketItems.itemQuantity < 10 %}
-						   <span class="header-quant-info"></span>
+						   <span data-eg-basket-quantity class="header-quant-info"></span>
 						   {% else %}
-						   <span class="header-quant-info2"></span>
+						   <span data-eg-basket-quantity class="header-quant-info2"></span>
 						   {% endif %}
                            <span class="icon-online-shopping-cart fs35 icon-head-menu"></span>
 							

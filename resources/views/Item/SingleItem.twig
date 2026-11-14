@@ -445,7 +445,11 @@
          data-eg-color-values="{{ hasColor ? (colorAttr.values | json_encode | e('html_attr')) : '[]' }}"
          data-eg-base-variation-id="{{ itemData.variation.id }}">
 
-      <div class="eg-size-matrix-table">
+      <div role="status" aria-atomic="true" data-eg-matrix-status
+           data-fallback="{{ trans('GuardiansBasicB2B::Template.matrixFallback') }}"
+           data-partial="{{ trans('GuardiansBasicB2B::Template.matrixPartial') }}"
+           data-unavailable="{{ trans('GuardiansBasicB2B::Template.matrixUnavailable') }}">{{ trans('GuardiansBasicB2B::Template.matrixLoading') }}</div>
+      <div class="eg-size-matrix-table" aria-busy="true">
       <div class="eg-size-matrix-head">
         {% set matrixColumns = {
           'size': 'sizematrix', 'color': 'colormatrix', 'stock': 'stockmatrix',

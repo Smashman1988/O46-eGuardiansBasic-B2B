@@ -7,65 +7,11 @@
       function eGuardians() {
         this.initialize();
       }
-(function () {
-  function updateBasketFromCache() {
-    try {
-      const basket = JSON.parse(localStorage.getItem('basketCache'))?.data?.basket;
-      if (!basket) return;
-
-      const elQuantity = document.querySelector('[data-eg-basket-quantity]');
-      const elSum = document.querySelector('[data-basket-sum]');
-
-      if (elQuantity) {
-        elQuantity.setAttribute('data-eg-basket-quantity', basket.itemQuantity);
-        elQuantity.innerHTML = basket.itemQuantity;
-      }
-
-      if (elSum) {
-        elSum.innerHTML = basket.itemSum.toFixed(2).replace('.', ',');
-      }
-
-      if (basket.itemWishListIds?.length > 0) {
-        document.querySelector('.wishlist-link')?.classList.remove('noWishListItems');
-      }
-    } catch (e) {
-      // optional: Fehler ignorieren oder Monitoring
-    }
-  }
-
-  window.addEventListener('pageshow', function () {
-    setTimeout(updateBasketFromCache, 100);
-  });
-
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') {
-      setTimeout(updateBasketFromCache, 100);
-    }
-  });
-})();
-
-
 eGuardians.initialize = function () {
     this.events.bindEvents();
-
-    Object.keys(localStorage).forEach(function (key) {
-        if (key.startsWith('basketCache_')) {
-            localStorage.removeItem(key);
-        }
-    });
-
-    localStorage.removeItem('basketCache');
 };
 
-
-
-
-
-
-
-
-
-      eGuardians.events = new function() {
+  eGuardians.events = new function() {
             var events = this;
             var timoutSave = null;
             this.observeLazyImages = function () {
@@ -138,22 +84,6 @@ this.addItemToBasket = function (_this) {
             });
             eGuardians.helper.btnHideLoader(_this);
             return;
-        }
-
-        const basket = response?.events?.AfterBasketChanged?.basket;
-
-        if (basket) {
-            const $basketQty = $('[data-eg-basket-quantity]');
-            const $basketSum = $('[data-basket-sum]');
-            const formattedSum = basket.itemSum.toFixed(2).replace('.', ',');
-
-            if ($basketQty.text() !== String(basket.itemQuantity)) {
-                $basketQty.attr('data-eg-basket-quantity', basket.itemQuantity).html(basket.itemQuantity);
-            }
-
-            if ($basketSum.text() !== formattedSum) {
-                $basketSum.html(formattedSum);
-            }
         }
 
         const $modal = $('.modal-cross');
@@ -230,16 +160,8 @@ this.addItemToBasket = function (_this) {
                 eGuardians.basket.closeBasketPreview();
 
             }
-            this.initShopData = function(){
-                var templateData = JSON.parse(document.getElementById('app-data-custom').textContent)
-
-                var searchParams = {
-                    templateType: templateData.templateType,
-                    _: Math.floor(Date.now() / 1000)
-
-                }
-            }
-            this.initCustomerLoggedStatus = function(){
+            this.initShopData = function () { return O46Core.basketHeader.start(); };
+        this.initCustomerLoggedStatus = function(){
                 eGuardians.apiservice.get('/rest/io/customer/', '', function(response){
                     if(response.data!="null" && response.data!=null){
                        $('.btn-login-open').addClass('isLoggedIn')

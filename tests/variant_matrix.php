@@ -39,7 +39,12 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
             'sizeAttr' => ['attributeId' => 1, 'values' => $sizes], 'colorAttr' => ['attributeId' => 2, 'values' => $colors],
             'itemData' => ['variation' => ['id' => 1001]]]);
         if (substr_count($html, 'data-eg-matrix-add') !== 1 || substr_count($html, 'data-eg-total-sum') !== 1 ||
-            substr_count($html, 'class="eg-size-matrix-table"') !== 1 ||
+            substr_count($html, 'class="eg-size-matrix-table" aria-busy="true"') !== 1 ||
+            !str_contains($html, 'role="status" aria-atomic="true" data-eg-matrix-status') ||
+            !str_contains($html, '>' . $translations['matrixLoading'] . '</div>') ||
+            !str_contains($html, 'data-fallback="' . $translations['matrixFallback'] . '"') ||
+            !str_contains($html, 'data-partial="' . $translations['matrixPartial'] . '"') ||
+            !str_contains($html, 'data-unavailable="' . $translations['matrixUnavailable'] . '"') ||
             !preg_match('/class="eg-size-matrix-body"><\/div>\s*<\/div>\s*<div class="eg-size-matrix-footer"/', $html) ||
             substr_count($html, 'data-eg-col="ean"') !== 1 || str_contains($html, 'style="display:flex') ||
             !str_contains($html, 'style="--eg-matrix-row-count: ' . $rowCount . '"')) {

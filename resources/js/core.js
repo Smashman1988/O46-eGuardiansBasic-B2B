@@ -327,6 +327,211 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
     O46Core.installed.ui = true;
 };
 
+/* Only the header summary travels between tabs. Ceres owns the basket and checkout. */
+O46Core.basketHeader = O46Core.basketHeader || (function () {
+    const key = 'basketCache_header_v2';
+    const scopeKey = 'o46-basket-scope';
+    const ttl = 30 * 60 * 1000;
+    let started = false, generation = 0, request = null, scope = '', change = '';
+    let lastIdentity = '', hashPromise = null, current = null, initialCeres = false;
+    let rejectedRecord, writeVersion = 0, invalidating = false;
+    const published = new WeakSet();
+
+    function storage(name, method, ...args) {
+        try { return window[name][method](...args); } catch (_) { return null; }
+    }
+    function compact(basket) {
+        if (!basket || !Number.isFinite(basket.itemQuantity) || basket.itemQuantity < 0 ||
+            !Number.isFinite(basket.itemSum) || !/^[A-Z]{3}$/.test(basket.currency) ||
+            !Number.isSafeInteger(basket.shippingCountryId) || basket.shippingCountryId < 0 ||
+            !Array.isArray(basket.itemWishListIds)) return null;
+        return { itemQuantity: basket.itemQuantity, itemSum: basket.itemSum, currency: basket.currency,
+            shippingCountryId: basket.shippingCountryId, itemWishListIds: basket.itemWishListIds.filter(id => /^\d+$/.test(id)) };
+    }
+    function record() {
+        try { return JSON.parse(storage('localStorage', 'getItem', key)); } catch (_) { return null; }
+    }
+    function matchesContext(basket) {
+        const header = document.getElementById('page-header')?.dataset;
+        return (!header?.egBasketCurrency || header.egBasketCurrency === basket.currency) &&
+            (!header?.egBasketCountry || header.egBasketCountry === String(basket.shippingCountryId));
+    }
+    function valid(entry) {
+        return entry && scope && entry.scope === scope && typeof entry.change === 'string' &&
+            Number.isFinite(entry.timestamp) && entry.timestamp <= Date.now() && entry.timestamp > Date.now() - ttl;
+    }
+    function render(basket) {
+        current = basket;
+        window.egSessionData = { basket };
+        document.querySelectorAll('[data-eg-basket-quantity]').forEach(el => {
+            el.textContent = String(basket.itemQuantity);
+            el.dataset.egBasketQuantity = el.textContent;
+            if (el.matches('.header-quant-info,.header-quant-info2')) {
+                el.classList.toggle('header-quant-info', basket.itemQuantity < 10);
+                el.classList.toggle('header-quant-info2', basket.itemQuantity >= 10);
+            }
+        });
+        document.querySelectorAll('[data-basket-sum]').forEach(el => { el.textContent = basket.itemSum.toFixed(2).replace('.', ','); });
+        document.querySelectorAll('.wishlist-link').forEach(el => el.classList.toggle('noWishListItems', !basket.itemWishListIds.length));
+        document.querySelectorAll('.single[data-item]').forEach(el => {
+            const selected = basket.itemWishListIds.some(id => String(id) === el.dataset.egActiveVariation);
+            el.querySelectorAll('.btn-watch').forEach(btn => btn.classList.toggle('item-in-wishlist', selected));
+        });
+    }
+    function identity(basket) {
+        if (!basket.sessionId || !window.crypto?.subtle) return '';
+        const input = JSON.stringify([String(basket.sessionId), String(basket.customerId || 0)]);
+        if (lastIdentity !== input) {
+            lastIdentity = input;
+            hashPromise = crypto.subtle.digest('SHA-256', new TextEncoder().encode(input))
+                .then(hash => Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, '0')).join(''))
+                .catch(() => '');
+        }
+        return hashPromise;
+    }
+    async function accept(basket, changed = true) {
+        const summary = compact(basket);
+        if (!summary) return false;
+        if (changed && published.has(basket)) return true;
+        if (changed) published.add(basket);
+        const ticket = ++generation;
+        // A digest lets another verified tab recognise the session without persisting a session or contact ID.
+        const verified = await identity(basket);
+        if (ticket !== generation) return true;
+        scope = verified;
+        render(summary);
+        if (!scope) {
+            lastIdentity = '';
+            hashPromise = null;
+            storage('sessionStorage', 'removeItem', scopeKey);
+            return true;
+        }
+        const prior = record();
+        storage('sessionStorage', 'setItem', scopeKey, scope);
+        // Only confirmed writes signal peers. A read must never echo their write back to them.
+        change = changed ? Date.now() + '-' + Math.random().toString(36).slice(2) : (prior?.scope === scope && prior.change || '');
+        const next = { scope, change, timestamp: Date.now(), basket: summary };
+        storage('localStorage', 'setItem', key, JSON.stringify(next));
+        return true;
+    }
+    function refresh() {
+        if (request) return request;
+        const ticket = generation;
+        const write = writeVersion;
+        const pending = fetch('/rest/io/basket/', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } })
+            .then(response => response.ok ? response.json() : null)
+            .then(json => {
+                if (ticket !== generation) return false;
+                return accept(json?.data, write !== 0);
+            })
+            .catch(() => false)
+            .finally(() => {
+                if (request === pending) request = null;
+                if (writeVersion === write) writeVersion = 0;
+            });
+        request = pending;
+        return pending;
+    }
+    function refreshAfterWrite() {
+        generation++;
+        writeVersion = generation;
+        return request ? request.then(() => writeVersion && refresh()) : refresh();
+    }
+    function invalidate() {
+        if (invalidating) return request;
+        invalidating = true;
+        generation++;
+        scope = ''; change = ''; current = null; writeVersion = 0; lastIdentity = ''; hashPromise = null;
+        storage('sessionStorage', 'removeItem', scopeKey);
+        storage('localStorage', 'removeItem', key);
+        const pending = request ? request.then(refresh) : refresh();
+        return pending.finally(() => { invalidating = false; });
+    }
+    function receive(entry, notify) {
+        if (!valid(entry)) return false;
+        const summary = compact(entry.basket);
+        if (!summary || !matchesContext(summary)) return false;
+        const modified = change !== entry.change;
+        if (modified) {
+            generation++;
+            writeVersion = 0;
+        }
+        change = entry.change;
+        render(summary);
+        if (notify && modified) window.dispatchEvent(new Event('o46:basket-invalidated'));
+        return true;
+    }
+    function check() {
+        if (initialCeres) return;
+        if (!receive(record(), true)) {
+            if (document.body.hasAttribute('data-o46-basket-sync')) {
+                window.dispatchEvent(new Event('o46:basket-invalidated'));
+            } else {
+                return refresh();
+            }
+        }
+    }
+    function start() {
+        if (started) return;
+        started = true;
+        scope = storage('sessionStorage', 'getItem', scopeKey) || '';
+        // Retire old full-basket records once, including their raw session identifiers.
+        try {
+            Object.keys(localStorage).filter(k => (k.startsWith('basketCache_') && k !== key) || k === 'basketCache')
+                .forEach(k => localStorage.removeItem(k));
+        } catch (_) {}
+        window.addEventListener('storage', event => {
+            if (event.key !== key && event.key !== null) return;
+            if (invalidating || initialCeres || !scope) return;
+            const entry = record();
+            if (receive(entry, true)) {
+                rejectedRecord = undefined;
+                return;
+            }
+            // A read by a different verified session/currency/country is not a notification for this tab.
+            if (entry && (entry.scope !== scope || (compact(entry.basket) && !matchesContext(entry.basket)))) return;
+            const raw = storage('localStorage', 'getItem', key);
+            if (rejectedRecord === raw) return;
+            rejectedRecord = raw;
+            if (document.body.hasAttribute('data-o46-basket-sync')) window.dispatchEvent(new Event('o46:basket-invalidated'));
+            else refresh();
+        });
+        window.addEventListener('pageshow', event => { if (event.persisted) check(); });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+        const store = window.ceresStore;
+        if (store && store.state.basket) {
+            // Ceres already reads the session on every Vue bootstrap.
+            initialCeres = !store.state.basket.isBasketInitiallyLoaded;
+            store.subscribe((mutation, state) => {
+                if (mutation.type === 'setBasket' && !initialCeres) accept(state.basket.data, false);
+                if (mutation.type === 'setIsBasketInitiallyLoaded') {
+                    initialCeres = false;
+                    accept(state.basket.data, false);
+                }
+            });
+            if (!initialCeres) accept(store.state.basket.data, false);
+            // Ceres commits the IO event synchronously in its ajaxComplete callback.
+            // A GET (including a peer's reconciliation) must never be published as a write.
+            if (window.jQuery) window.jQuery(document).on('ajaxComplete.o46BasketHeader', (event, xhr, settings) => {
+                if (!/^(POST|PUT|PATCH|DELETE)$/i.test(settings.type) || xhr.status < 200 || xhr.status >= 300) return;
+                const url = new URL(settings.url, location.href);
+                const changed = xhr.responseJSON?.events?.AfterBasketChanged?.basket;
+                if (url.origin !== location.origin || !url.pathname.startsWith('/rest/io/') || !changed) return;
+                if (published.has(changed)) return;
+                // ApiService parses its own copy of xhr.responseJSON in the same completion cycle.
+                if (changed !== store.state.basket.data && store.state.basket.data) published.add(store.state.basket.data);
+                accept(changed);
+            });
+            for (const name of ['afterBasketItemQuantityUpdated', 'afterBasketItemRemoved', 'afterBasketItemAdded']) {
+                document.addEventListener(name, () => accept(store.state.basket.data));
+            }
+            return;
+        }
+        if (!receive(record(), false)) return refresh();
+    }
+    return { start, accept, refresh, refreshAfterWrite, invalidate };
+})();
+
 /* basket: shared by main, cat, item, vue. */
 O46Core.basket = O46Core.basket || function () {
     if (O46Core.installed.basket) return;
@@ -344,27 +549,8 @@ this.addItem = function(variationId, quantity, callback) {
     eGuardians.apiservice.post('/rest/io/basket/items/', data, function(response) {
         const basket = response?.events?.AfterBasketChanged?.basket;
 
-        if (basket) {
-            // Vorher alte basketCache_ Einträge löschen
-            Object.keys(localStorage).forEach(function (key) {
-                if (key.startsWith('basketCache_')) {
-                    localStorage.removeItem(key);
-                }
-            });
-
-            // Dynamisch CacheKey direkt aus aktuellem Basket berechnen
-            const lang = $('html').attr('lang') || 'de';
-            const currency = basket.currency || 'EUR';
-            const shippingCountryId = basket.shippingCountryId || 1;
-            const customerId = basket.customerId > 0 ? basket.customerId : 'guest';
-            const dynamicCacheKey = `${lang}_${currency}_${shippingCountryId}_${customerId}`;
-
-            // Neuen Cache schreiben
-            localStorage.setItem('basketCache_' + dynamicCacheKey, JSON.stringify({
-                timestamp: Date.now(),
-                data: { basket }
-            }));
-        }
+        if (basket) O46Core.basketHeader.accept(basket);
+        else if (!response?.data?.exceptionCode) O46Core.basketHeader.refreshAfterWrite();
 
         if (typeof callback === 'function') {
             callback(response);
@@ -372,41 +558,13 @@ this.addItem = function(variationId, quantity, callback) {
     });
 };
         this.openBasketPreviewSmall = function(callback) {
-            const version = 'v2'; // <<< Bei Template-Änderung erhöhen
-            const lang = activeLang2;
-            const storageKey = `basketPreviewSmall:${lang}:${version}`;
-
-            // Alte Versionen löschen
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith(`basketPreviewSmall:${lang}:`) && key !== storageKey) {
-                    localStorage.removeItem(key);
-                }
-            });
-
-            const handleResponse = (data) => {
-                $('.basket-prev-small-data').html(data);
-                eGuardians.events.bindEvents('.basket-prev-small [data-eg-event]');
-
-                // >>> Auto-Hide des Toasts nach 3 Sekunden
-                setTimeout(() => {
-                    $('#wkb-toast').removeClass('show'); // oder: .fadeOut(), .addClass('hide') etc.
-                }, 3000);
-            };
-
-            const cachedData = localStorage.getItem(storageKey);
-            if (cachedData) {
-                handleResponse(cachedData);
-                if (typeof callback === 'function') callback({ data: cachedData });
-                return;
-            }
-
-            const url = `${lang}/basketPreviewSmall/`;
-
-            eGuardians.apiservice.get(url, '', response => {
-                localStorage.setItem(storageKey, response.data);
-                handleResponse(response.data);
-                if (typeof callback === 'function') callback(response);
-            });
+            const target = document.querySelector('.basket-prev-small-data');
+            const template = document.getElementById('o46-basket-toast');
+            if (!target || !template) return;
+            target.replaceChildren(template.content.cloneNode(true));
+            const toast = target.querySelector('#wkb-toast');
+            setTimeout(() => toast?.classList.remove('show'), 3000);
+            if (typeof callback === 'function') callback({ data: target.innerHTML });
         };
         this.closeBasketPreview = function(){
             $('.loading-basket-prev-wrap').show();
@@ -433,13 +591,7 @@ O46Core.user = O46Core.user || function () {
 
             eGuardians.apiservice.post('/rest/io/customer/login/', loginParams, function(response) {
                 if (response?.events?.AfterAccountAuthentication?.isSuccess) {
-                    // 🧹 Cache löschen, Basket neu laden
-                    Object.keys(localStorage).forEach(function (key) {
-                        if (key.startsWith('basketCache_')) {
-                            localStorage.removeItem(key);
-                        }
-                    });
-                    eGuardians.events.initShopData();
+                    O46Core.basketHeader.invalidate();
                 }
 
                 if (typeof callback === 'function') {
@@ -450,13 +602,7 @@ O46Core.user = O46Core.user || function () {
 
         this.logout = function(callback){
             eGuardians.apiservice.post('/rest/io/customer/logout/', '', function(response) {
-                // 🧹 Cache löschen, Basket neu laden
-                Object.keys(localStorage).forEach(function (key) {
-                    if (key.startsWith('basketCache_')) {
-                        localStorage.removeItem(key);
-                    }
-                });
-                eGuardians.events.initShopData();
+                O46Core.basketHeader.invalidate();
 
                 if (typeof callback === 'function') {
                     callback(response);
@@ -1023,10 +1169,8 @@ O46Core.matrix = O46Core.matrix || function () {
     });
   }
 
-  function getVariationsJson(root) {
-    root = root || document;
-
-    var wrap = root.querySelector("[data-item-variation][data-eg-variations]");
+  function getVariationsJson(matrix) {
+    var wrap = matrix.closest("[data-item-variation][data-eg-variations]");
     if (!wrap) return null;
 
     var raw = wrap.getAttribute("data-eg-variations");
@@ -2035,216 +2179,6 @@ O46Core.matrix = O46Core.matrix || function () {
   }
 
   // === BASKET UI ===
-  function renderHeaderBasketFromValues(quantity, itemSum) {
-    var qty = toInt(quantity);
-    var sumNum = parseFloat(itemSum || 0);
-    if (!isFinite(sumNum)) sumNum = 0;
-
-    var formattedSum = sumNum.toFixed(2).replace(".", ",");
-
-    var $jq = window.jQuery || window.$;
-
-    if ($jq) {
-      var $basketQty = $jq("[data-eg-basket-quantity]");
-      var $basketSum = $jq("[data-basket-sum]");
-
-      if ($basketQty.length) {
-        $basketQty.attr("data-eg-basket-quantity", qty).html(qty);
-      }
-
-      if ($basketSum.length) {
-        $basketSum.html(formattedSum);
-      }
-    } else {
-      var qtyEls = document.querySelectorAll("[data-eg-basket-quantity]");
-      var sumEls = document.querySelectorAll("[data-basket-sum]");
-
-      for (var qi = 0; qi < qtyEls.length; qi++) {
-        qtyEls[qi].setAttribute("data-eg-basket-quantity", String(qty));
-        qtyEls[qi].innerHTML = String(qty);
-      }
-
-      for (var si = 0; si < sumEls.length; si++) {
-        sumEls[si].innerHTML = formattedSum;
-      }
-    }
-  }
-
-  function renderHeaderBasketFromBasket(basket) {
-    if (!basket) return;
-
-    var qty = basket.itemQuantity != null ? basket.itemQuantity : 0;
-    var sum = basket.itemSum != null ? basket.itemSum : 0;
-
-    renderHeaderBasketFromValues(qty, sum);
-
-    try {
-      if (basket.itemWishListIds && basket.itemWishListIds.length > 0) {
-        var wl = document.querySelector(".wishlist-link");
-        if (wl) wl.classList.remove("noWishListItems");
-      }
-    } catch (e) {}
-  }
-
-  function writeBasketCacheFromBasket(basket) {
-    if (!basket) return;
-
-    try {
-      var cacheKeyPrefix = "basketCache_";
-
-      Object.keys(localStorage).forEach(function (key) {
-        if (key.indexOf(cacheKeyPrefix) === 0) {
-          localStorage.removeItem(key);
-        }
-      });
-
-      var lang = document.documentElement.getAttribute("lang") || "de";
-      var currency = basket.currency || "EUR";
-      var shippingCountryId = basket.shippingCountryId || 1;
-      var customerId = basket.customerId > 0 ? basket.customerId : "guest";
-      var dynamicCacheKey = lang + "_" + currency + "_" + shippingCountryId + "_" + customerId;
-
-      window.egSessionData = {
-        basket: {
-          itemQuantity: basket.itemQuantity,
-          itemSum: basket.itemSum,
-          currency: basket.currency,
-          itemWishListIds: basket.itemWishListIds,
-          shippingCountryId: basket.shippingCountryId,
-          customerId: basket.customerId
-        }
-      };
-
-      localStorage.setItem("basketCache_" + dynamicCacheKey, JSON.stringify({
-        timestamp: Date.now(),
-        data: {
-          basket: window.egSessionData.basket
-        }
-      }));
-    } catch (e) {}
-  }
-
-  function updateBasketUiFromBasketItems(items) {
-    if (!items || !items.length) return;
-
-    var totalQty = 0;
-    var totalSum = 0;
-
-    for (var i = 0; i < items.length; i++) {
-      var it = items[i];
-      if (!it) continue;
-
-      var q = toInt(it.quantity);
-      var p = parseFloat(it.price || 0);
-      if (!isFinite(p)) p = 0;
-
-      totalQty += q;
-      totalSum += q * p;
-    }
-
-    renderHeaderBasketFromValues(totalQty, totalSum);
-  }
-
-  function extractBasketFromSessionResponse(response) {
-    try {
-      if (response && response.data && response.data.basket) return response.data.basket;
-      if (response && response.basket) return response.basket;
-      if (response && response.data && response.data.data && response.data.data.basket) return response.data.data.basket;
-    } catch (e) {}
-
-    return null;
-  }
-
-  function updateBasketUiFromResponse(response) {
-    try {
-      var basket = response && response.events && response.events.AfterBasketChanged && response.events.AfterBasketChanged.basket;
-
-      if (basket) {
-        renderHeaderBasketFromBasket(basket);
-        writeBasketCacheFromBasket(basket);
-        return;
-      }
-
-      basket = extractBasketFromSessionResponse(response);
-
-      if (basket) {
-        renderHeaderBasketFromBasket(basket);
-        writeBasketCacheFromBasket(basket);
-        return;
-      }
-
-      if (response && response.data && Array.isArray(response.data)) {
-        updateBasketUiFromBasketItems(response.data);
-      }
-    } catch (e) {}
-  }
-
-  function refreshBasketHeaderFromSession() {
-    return new Promise(function (resolve) {
-      var searchParams = {
-        _: Math.floor(Date.now() / 1000)
-      };
-
-      try {
-        var appDataEl = document.getElementById("app-data-custom");
-        if (appDataEl && appDataEl.textContent) {
-          var templateData = JSON.parse(appDataEl.textContent);
-          if (templateData && templateData.templateType) {
-            searchParams.templateType = templateData.templateType;
-          }
-        }
-      } catch (e0) {}
-
-      function finish(response) {
-        try {
-          var basket = extractBasketFromSessionResponse(response);
-
-          if (basket) {
-            renderHeaderBasketFromBasket(basket);
-            writeBasketCacheFromBasket(basket);
-          }
-        } catch (e1) {}
-
-        resolve(response || null);
-      }
-
-      try {
-        if (window.eGuardians && eGuardians.apiservice && typeof eGuardians.apiservice.get === "function") {
-          eGuardians.apiservice.get("/rest/io/session/", searchParams, function (response) {
-            finish(response);
-          });
-          return;
-        }
-
-        if (window.fetch) {
-          var qs = "?_=" + encodeURIComponent(String(searchParams._));
-
-          if (searchParams.templateType) {
-            qs += "&templateType=" + encodeURIComponent(String(searchParams.templateType));
-          }
-
-          fetch("/rest/io/session/" + qs, {
-            credentials: "same-origin"
-          })
-            .then(function (r) {
-              if (!r || !r.ok) throw new Error("session_http_" + (r ? r.status : "0"));
-              return r.json();
-            })
-            .then(function (json) {
-              finish(json);
-            })
-            .catch(function () {
-              resolve(null);
-            });
-
-          return;
-        }
-      } catch (e2) {}
-
-      resolve(null);
-    });
-  }
-
   function extractAddErrorCode(response) {
     try {
       if (response && response.data && response.data.exceptionCode) return String(response.data.exceptionCode);
@@ -3034,13 +2968,22 @@ O46Core.matrix = O46Core.matrix || function () {
   }
 
   // === INIT ===
-  function initMatrix(matrix, variations) {
+  function initMatrix(matrix) {
     if (matrix) initMatrixHeadingLabels(matrix);
     if (!matrix || matrix.getAttribute("data-eg-matrix-initialized") === "1") return;
 
     matrix.setAttribute("data-eg-matrix-initialized", "1");
 
-    var rows = buildRows(matrix, variations);
+    var variations = getVariationsJson(matrix);
+    var rows = buildRows(matrix, Array.isArray(variations) ? variations : []);
+    var status = matrix.querySelector("[data-eg-matrix-status]");
+    var table = matrix.querySelector(".eg-size-matrix-table");
+    if (!rows.length) {
+      if (table) table.setAttribute("aria-busy", "false");
+      if (status) status.textContent = status.dataset.unavailable;
+      return;
+    }
+    var unavailableRows = 0;
 
     var ids = [];
 
@@ -3060,6 +3003,7 @@ O46Core.matrix = O46Core.matrix || function () {
 
           function apply(v2) {
             if (!v2) {
+              unavailableRows++;
               if (priceEl2) {
                 priceEl2.textContent = "–";
                 priceEl2.setAttribute("data-eg-price-value", "0");
@@ -3143,17 +3087,17 @@ O46Core.matrix = O46Core.matrix || function () {
         })(rows[r]);
       }
 
-      if (!tasks.length) {
-        recalcMatrixTotals(matrix);
-
-        var firstRow2 = matrix.querySelector(".eg-row");
-        if (firstRow2) setActiveRow(matrix, firstRow2);
-
-        return;
+      if (tasks.length && status) {
+        status.textContent = status.dataset.fallback;
       }
 
       runQueue(tasks, CONCURRENCY, function () {
         recalcMatrixTotals(matrix);
+        if (table) table.setAttribute("aria-busy", "false");
+        if (status) {
+          status.textContent = unavailableRows === 0 ? "" :
+            unavailableRows === rows.length ? status.dataset.unavailable : status.dataset.partial;
+        }
 
         var firstRow = matrix.querySelector(".eg-row");
         if (firstRow) setActiveRow(matrix, firstRow);
@@ -3299,8 +3243,8 @@ O46Core.matrix = O46Core.matrix || function () {
           // Normalfall: genau EIN Batch-POST.
           var response = await addItemsToBasketBatch(items, "[data-eg-size-matrix]", { silent: true });
 
-          updateBasketUiFromResponse(response);
-          await refreshBasketHeaderFromSession();
+          var basket = response?.events?.AfterBasketChanged?.basket || response?.data?.basket;
+          if (!await O46Core.basketHeader.accept(basket)) await O46Core.basketHeader.refreshAfterWrite();
 
           var qInputs = matrix.querySelectorAll("[data-eg-qty]");
           for (var j = 0; j < qInputs.length; j++) {
@@ -3387,7 +3331,7 @@ O46Core.matrix = O46Core.matrix || function () {
             applyResultToInputs(matrix, wantedMap, resultFirst);
             recalcMatrixTotals(matrix);
 
-            await refreshBasketHeaderFromSession();
+            await O46Core.basketHeader.refreshAfterWrite();
 
             if (hadAdjustments) {
               showInfoToast(t("info_some_limited"), "[data-eg-size-matrix]", 1);
@@ -3456,7 +3400,7 @@ O46Core.matrix = O46Core.matrix || function () {
           recalcMatrixTotals(matrix);
 
           if (resultFinal.okCount > 0) {
-            await refreshBasketHeaderFromSession();
+            await O46Core.basketHeader.refreshAfterWrite();
           }
 
           var somethingAdded = resultFinal.okCount > 0;
@@ -3498,14 +3442,11 @@ O46Core.matrix = O46Core.matrix || function () {
   window.egInitSizeMatrices = function (root) {
     root = root || document;
 
-    var variations = getVariationsJson(root) || getVariationsJson(document);
-    if (!variations) return;
-
-    var matrices = root.querySelectorAll("[data-eg-size-matrix]");
+    var matrices = root.matches && root.matches("[data-eg-size-matrix]") ? [root] : root.querySelectorAll("[data-eg-size-matrix]");
     if (!matrices || !matrices.length) return;
 
     for (var i = 0; i < matrices.length; i++) {
-      initMatrix(matrices[i], variations);
+      initMatrix(matrices[i]);
     }
   };
 
