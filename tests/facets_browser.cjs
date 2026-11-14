@@ -12,7 +12,7 @@ const fixtures = require('./fixtures/facets.json'), langs = ['de','en','fr','it'
 const php = path.resolve('.cache/php-runtime/php-8.4.23/php.exe');
 const autoload = path.resolve('.cache/contact-widget/autoload3.php');
 const crypto = require('node:crypto');
-const hashes = () => Object.fromEntries(['resources/js/facets.min.js','resources/css/main-211025.min.css','resources/views/Category/Item/Partials/FacetFilter2.twig','src/Extensions/Base_Extension.php'].map(p=>[p,crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')]));
+const hashes = () => Object.fromEntries(['resources/js/facets.min.js','resources/css/main.min.css','resources/views/Category/Item/Partials/FacetFilter2.twig','src/Extensions/Base_Extension.php'].map(p=>[p,crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')]));
 const startHashes = hashes();
 const records = [], requests = [], errors = [], consoleErrors = [], responses = [];
 let origin, responseMode = 'normal', responseSerial = 0;
@@ -36,9 +36,9 @@ function send(res, body, type='text/html', status=200) {
 const server = http.createServer((req,res) => {
     const url = new URL(req.url,origin || 'http://localhost');
     try {
-        if (url.pathname === '/language-module.js') return send(res,moduleCode('resources/js/cat-020726.min.js'),'text/javascript');
+        if (url.pathname === '/language-module.js') return send(res,moduleCode('resources/js/cat.min.js'),'text/javascript');
         if (url.pathname === '/facets.js') return send(res,file('resources/js/facets.min.js'),'text/javascript');
-        if (url.pathname === '/main.css') return send(res,file('resources/css/main-211025.min.css'),'text/css');
+        if (url.pathname === '/main.css') return send(res,file('resources/css/main.min.css'),'text/css');
         if (url.pathname === '/jquery.js') return send(res,file('resources/js/jquery-3.7.1.min.js'),'text/javascript');
         if (url.pathname === '/favicon.ico') {res.writeHead(204);return res.end();}
         if (url.pathname.startsWith('/rest/io/facet/')) {

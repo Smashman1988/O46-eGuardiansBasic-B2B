@@ -7,14 +7,15 @@ const postcss = require('postcss');
 const CleanCSS = require('clean-css');
 const {deriveCriticalCss} = require('./build-matrix-assets.cjs');
 const {syncHead} = require('./build-card-css.cjs');
-const files = [['main.css', 'main-211025.min.css'], ['checkout.css', 'checkout-120525.min.css']];
+const versions = require('./asset-versioning.cjs');
+const files = versions.cssFiles;
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 
 function prepare({root = path.resolve(__dirname, '..')} = {}) {
     assert.equal(require('clean-css/package.json').version, '5.3.3', 'Use the pinned clean-css version');
     const outputs = [], sources = {}, assets = [];
     for (const [sourceName, targetName] of files) {
-        const source = fs.readFileSync(path.join(root, 'resources/css', sourceName), 'utf8');
+        const source = versions.lf(fs.readFileSync(path.join(root, 'resources/css', sourceName)));
         postcss.parse(source, {from: sourceName});
         const result = new CleanCSS({level: {1: {all: true}, 2: {all: true}}, rebase: false}).minify(source);
         assert.equal(result.errors.length, 0, result.errors.join('\n'));
@@ -42,17 +43,7 @@ function prepare({root = path.resolve(__dirname, '..')} = {}) {
 }
 
 function publish(prepared, {check = false} = {}) {
-    const changed = prepared.outputs.filter(output => {
-        const file = path.join(prepared.root, output.file);
-        return !fs.existsSync(file) || !fs.readFileSync(file).equals(Buffer.from(output.content));
-    });
-    if (check) assert.equal(changed.length, 0, 'CSS build is stale: ' + changed.map(output => output.file).join(', '));
-    else for (const output of changed) {
-        const file = path.join(prepared.root, output.file);
-        fs.mkdirSync(path.dirname(file), {recursive: true});
-        fs.writeFileSync(file, output.content);
-    }
-    return {status: 'PASS', check, changed: changed.map(output => output.file), ...prepared.report};
+    return {...versions.publish(versions.prepare(prepared), {check}), ...prepared.report};
 }
 
 function build(options = {}) { return publish(prepare(options), options); }

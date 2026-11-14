@@ -5,7 +5,7 @@ const {chromium}=require(process.env.O46_PLAYWRIGHT_MODULE||'playwright');
 // An optional archived template permits a failing pre-fix control without editing sources.
 const head=fs.readFileSync(process.env.O46_HEAD_TEMPLATE||'resources/views/PageDesign/Partials/Head.twig','utf8');
 const critical=[...head.matchAll(/<style data-eg-(?:pdp-layout|first-paint)-critical>([\s\S]*?)<\/style>/g)].map(x=>x[1]).join('');
-const full=fs.readFileSync('resources/css/main-211025.min.css','utf8');
+const full=fs.readFileSync('resources/css/main.min.css','utf8');
 const images=[['https://www.outlet46.de/documents/category/31/lager.jpg',2500,800],
  ...['outlet46-lager-jeans','pakete-packen-outlet46','mitarbeiter-outlet46-kleidung','originalware-outlet46'].map(n=>['https://www.outlet46.de/documents/category/31/'+n+'.jpg',1000,643]),
  ...['paypal','sepa','kreditkarte','vorkasse','amazon-payv2'].map(n=>['https://cdn02.outlet46.de/frontend/page/bilder/Footer/'+n+'.png',120,50])];

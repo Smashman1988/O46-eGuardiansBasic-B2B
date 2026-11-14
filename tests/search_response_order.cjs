@@ -58,7 +58,7 @@ async function scenario(browser,file,code,lang){
     const browser=await chromium.launch({headless:true,executablePath:process.env.O46_BROWSER_EXECUTABLE});
     try{
         const tasks=[];
-        for(const name of ['main','cat','item','vue'])for(const suffix of ['.js','-020726.min.js']){
+        for(const name of ['main','cat','item','vue'])for(const suffix of ['.js','.min.js']){
             const file=name+suffix,code=handlers(file);
             for(const lang of ['de','en','fr','it','es'])tasks.push(()=>scenario(browser,file,code,lang));
         }

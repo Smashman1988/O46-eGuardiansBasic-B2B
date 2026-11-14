@@ -6,8 +6,9 @@ const {chromium}=require(process.env.O46_PLAYWRIGHT_MODULE||'playwright');
 const D=path.resolve(process.argv[2]),B=path.resolve(process.argv[3]||'.cache/native-acceptance-543ee87-20261112');
 fs.mkdirSync(D,{recursive:true});
 const kinds=['few','women','all','children','search','filtered'],sources={},sizes={},measurements=[],requests=[];
-const oldCss=execFileSync('git',['show','HEAD:resources/css/main-211025.min.css'],{maxBuffer:8e6}).toString();
-const newCss=fs.readFileSync('resources/css/main-211025.min.css','utf8');
+const {readRevisionAsset}=require('./theme_assets.cjs');
+const oldCss=readRevisionAsset('HEAD','resources/css/main.min.css');
+const newCss=fs.readFileSync('resources/css/main.min.css','utf8');
 const runtime=fs.readFileSync('resources/js/facets.min.js','utf8');
 function facetRange(html){
     const from=html.indexOf('<section data-eg-target=".facet-item-value-chk"'),sectionEnd=html.indexOf('</section>',from)+10;
@@ -28,7 +29,7 @@ for(const kind of kinds){
 function replay(html,mode){
     // Keep source scripts as inert nodes/data (including JSON) to preserve parser/DOM work.
     html=html.replace(/<script\b/g,'<script type="application/x-audit-inert"');
-    html=html.replace(/href="[^"]*\/css\/main-211025\.min\.css[^\"]*"/g,`href="/main-${mode}.css"`);
+    html=html.replace(/href="[^"]*\/css\/main(?:-211025)?\.min\.css[^\"]*"/g,`href="/main-${mode}.css"`);
     const oldRuntime=`document.querySelectorAll('.cat-facet-name').forEach(e=>e.addEventListener('click',()=>e.closest('.eg-dropdown').classList.toggle('isOpen')));`;
     return html.replace('</body>',`<script>${mode==='old'?oldRuntime:''}document.querySelector('[aria-label="Filter öffnen"]')?.addEventListener('click',()=>document.documentElement.classList.toggle('filter-open'));</script>${mode==='new'?'<script src="/facets.js"></script>':''}</body>`);
 }

@@ -98,7 +98,7 @@
         {% if isItem %}
             {{ LayoutContainer.show("Ceres::SingleItem.Styles") }}
         {% endif %}
-        <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/contact-widget.css?v={{ buildHash }}-contact2">
+        <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/contact-widget.css?v=1">
         {% endif %}
     </head>
     <body class="hold-transition{% if isQuickView %} o46-b2b-contact-page{% endif %}" {% if isVueView %}id="isVueView"{% endif %}>
@@ -400,29 +400,30 @@
     </div>
 </div>    
             {% if (category.id or isSearch) and not isItem %}
-                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/facets.min.js?v={{ buildHash }}-facets4" defer></script>
+                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/facets.min.js?v=1" defer></script>
             {% endif %}
             {# Keep the existing page selection and Ceres-owned jQuery exception. #}
-            {% set themePageScript = 'main' %}
+            {# Asset URLs are generated from asset-versions.json by npm run build. #}
+            {% set themePageScript = 'main.min.js?v=1' %}
             {% set themeNeedsJquery = true %}
             {% if "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or category.id in mainjs %}
             {% elseif category.id in vuejs %}
-                {% set themePageScript = 'vue' %}
+                {% set themePageScript = 'vue.min.js?v=1' %}
                 {% set themeNeedsJquery = false %}
             {% elseif currentTemplate in vuePages|keys or category.id in nojs %}
             {% elseif category.id or isSearch %}
-                {% set themePageScript = 'cat' %}
+                {% set themePageScript = 'cat.min.js?v=1' %}
             {% elseif isItem %}
-                {% set themePageScript = 'item' %}
+                {% set themePageScript = 'item.min.js?v=1' %}
             {% endif %}
             {% if themeNeedsJquery %}
-                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js"></script>
+                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v={{ buildHash }}-core2" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v={{ buildHash }}-zoom1" defer></script>
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}-020726.min.js?v={{ buildHash }}-core2" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=1" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}" defer></script>
             {% if isItem %}
                 {# After item.js defines mzOptions, before DOMContentLoaded initializes the gallery. #}
-                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v={{ buildHash }}-zoom1" data-eg-magiczoom defer></script>
+                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-magiczoom defer></script>
             {% endif %}
             {{ LayoutContainer.show("Ceres::Script.AfterScriptsLoaded") }} 
             {% if isItem %}
@@ -440,7 +441,7 @@
             {% endif %}
             <div class="ccklayer"></div> 
              {% include "GuardiansBasicB2B::PageDesign.Components.ContactWidget" %}
-             <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/contact-widget.js?v={{ buildHash }}-contact3" defer></script>
+             <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/contact-widget.js?v=1" defer></script>
             {% if showNewsletter %}
                 {% include "GuardiansBasicB2B::PageDesign.Components.NewsletterPopup" with {
                     newsletterUrl: 'https://b2b.outlet46.de/' ~ newsletterPaths[lang] ~ '/',

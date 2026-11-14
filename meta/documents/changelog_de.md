@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Separate Asset-Versionsnummern (2026-11-14)
+
+- Basis c112d5c auf develop; bestehende lokale Änderungen erhalten, Plugin-Version 1.0.7 unverändert. Ersetze die zuvor lokal eingeführten Inhalts-Hashes in allen zwölf aktiven eigenen Asset-URLs durch separate Zahlen, zunächst jeweils ?v=1. Die sechs bereinigten Dateinamen und alle ausgelieferten JS-/CSS-Inhalte bleiben erhalten.
+- Verwende resources/asset-versions.json als einzige manuelle Versionsquelle. Der bestehende Build schreibt die Zahlen automatisch in PageDesign.twig und Head.twig. Das generierte asset-manifest.json enthält nur Schema, zuletzt akzeptierte Nummer und interne SHA-256-Prüfsumme je Datei; entferne die früheren algorithm-/bytes-Felder. Kein Manifestzugriff, Dateisystem-I/O oder Hash pro Shopaufruf.
+- Verlange bei veränderten fertigen Bytes genau den nächsten Versionsschritt. Fehlende Erhöhungen, Rückschritte, Sprünge und Erhöhungen ohne Inhaltsänderung brechen vor Schreibzugriffen ab. Identische Builds und anderer Plenty-buildHash behalten die Nummern. Bestehende Minifizierer, Bundle-Auswahl, plugin_path(), Ladefolge und Fremdplugin-Versionierung bleiben bestehen.
+- Numerische Chrome-Cacheprobe: ?v=1 kalt 6.716 Byte, warm 0 Byte, ?v=2 erneut 6.716 Byte; gleiche korrekte Bodies. Dies ist keine Messung über ein echtes Deployment. Gezielte PHP-/Twig-/Build-/CSS-/Browserprüfungen und Grenzen: [HTML-Bericht](../../.cache/asset-numeric-c112d5c-20261114/Asset-Versionen-Pruefbericht.html). Native neue URLs und neue Pluginset-Bereitstellung NOT_TESTED. Keine pauschalen Performancegewinne, kein Commit/Push/Merge/Deployment/Sync/Cache-Purge oder B2C-/Preis-/Bestelländerung.
+
 ## Unreleased – Serverseitige Aufbereitung und Twig-Rendering (2026-11-14)
 
 - Basis `debbeda`, lokal auf `develop`, Version 1.0.7 unverändert. Alle 13 eigenen PHP-Dateien und 173 Twig-Templates abgeglichen. [Prüfbericht](../../.cache/server-optimization-debbeda-20261114/Server-Performance-Pruefbericht.html); keine Bereitstellung oder native Nachher-Abnahme dieser Änderungen.

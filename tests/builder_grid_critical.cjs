@@ -5,7 +5,7 @@ const head=fs.readFileSync('resources/views/PageDesign/Partials/Head.twig','utf8
 const candidate=head.match(/<style data-eg-builder-half-grid-critical>([\s\S]*?)<\/style>/)?.[1];
 assert.ok(candidate,'Active shared critical block');postcss.parse(candidate);
 const critical=[...head.matchAll(/<style>(@font-face[\s\S]*?)<\/style>/g)].at(2)[1].replace(/\{\{[\s\S]*?\}\}/g,'/local-theme');
-const main=fs.readFileSync('resources/css/main-211025.min.css','utf8');
+const main=fs.readFileSync('resources/css/main.min.css','utf8');
 const configs=['col-md-6 col-lg-6 col-xl-6','col-md-6 col-lg-12 col-xl-12','col-md-12 col-lg-6 col-xl-6','col-md-6 col-lg-6 col-xl-12'];
 const rows=[];
 const snap=page=>page.evaluate(()=>[...document.querySelectorAll('[data-test-col]')].map(e=>({id:e.dataset.testCol,x:e.getBoundingClientRect().x,width:e.getBoundingClientRect().width,flex:getComputedStyle(e).flex,maxWidth:getComputedStyle(e).maxWidth,matched:e.matches(':where(#page-body .widget-two-col)>.col-md-6:where(.col-lg-6.col-xl-6)')})));

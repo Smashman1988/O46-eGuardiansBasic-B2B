@@ -2,6 +2,9 @@
   "name": "outlet46-b2b-theme-assets",
   "private": true,
   "scripts": {
+    "build": "node scripts/build-matrix-assets.cjs",
+    "check:assets": "node scripts/build-matrix-assets.cjs --check",
+    "test:asset-versioning": "node tests/asset_versioning.cjs",
     "build:css": "node scripts/build-css.cjs",
     "check:css": "node scripts/build-css.cjs --check",
     "test:css-build": "node tests/css_build.cjs",

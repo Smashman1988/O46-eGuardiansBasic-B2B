@@ -19,9 +19,9 @@ function products(params){const ids=(params.facets||'').split(',').filter(Boolea
 const server=http.createServer((req,res)=>{const u=new URL(req.url,origin);out.requests.push({path:u.pathname,query:u.search,method:req.method});const send=(body,type='text/html',status=200)=>{res.writeHead(status,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-store'});res.end(body)};
 try{
  if(u.pathname==='/jquery.js')return send(fs.readFileSync('resources/js/jquery-3.7.1.min.js'),'text/javascript');
- if(u.pathname==='/language-module.js')return send(moduleCode('resources/js/cat-020726.min.js'),'text/javascript');
+ if(u.pathname==='/language-module.js')return send(moduleCode('resources/js/cat.min.js'),'text/javascript');
  if(u.pathname==='/facets.js')return send(fs.readFileSync('resources/js/facets.min.js'),'text/javascript');
- if(u.pathname==='/main.css')return send(fs.readFileSync('resources/css/main-211025.min.css'),'text/css');
+ if(u.pathname==='/main.css')return send(fs.readFileSync('resources/css/main.min.css'),'text/css');
  if(u.pathname==='/favicon.ico'){res.writeHead(204);return res.end()}
  let kind=null,lang=null;for(const k of ['women','search','all'])for(const l of langs)if(new URL(fixtures[k].languages[l]).pathname===u.pathname){kind=k;lang=l}
  if(!kind){out.responses.push({url:u.href,status:404});return send('Unknown localized route','text/plain',404)}

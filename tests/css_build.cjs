@@ -7,24 +7,27 @@ const assert = require('node:assert/strict');
 const builder = require('../scripts/build-css.cjs');
 const project = path.resolve(__dirname, '..');
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
-const generated = ['resources/css/main-211025.min.css', 'resources/css/checkout-120525.min.css',
-    'build/css/main-211025.min.css', 'build/css/checkout-120525.min.css', 'build/css/manifest.json',
-    'resources/views/PageDesign/Partials/Head.twig'];
+const generated = ['resources/css/main.min.css', 'resources/css/checkout.min.css',
+    'build/css/main.min.css', 'build/css/checkout.min.css', 'build/css/manifest.json',
+    'resources/views/PageDesign/Partials/Head.twig', 'resources/asset-manifest.json',
+    'resources/views/PageDesign/PageDesign.twig'];
 
 function fixture(output) {
     fs.mkdirSync(path.dirname(output), {recursive: true});
     const root = fs.mkdtempSync(path.join(path.dirname(output), 'css-build-'));
     for (const file of [...generated, 'resources/css/main.css', 'resources/css/checkout.css',
         'resources/views/PageDesign/Partials/Footer.twig', 'build/js/manifest.json',
+        'scripts/asset-versioning.cjs', 'resources/asset-versions.json',
         ...['css', 'matrix-assets', 'facet-assets', 'card-css', 'js'].map(name => 'scripts/build-' + name + '.cjs')]) {
         fs.mkdirSync(path.dirname(path.join(root, file)), {recursive: true});
         fs.copyFileSync(path.join(project, file), path.join(root, file));
     }
     fs.cpSync(path.join(project, 'resources/js'), path.join(root, 'resources/js'), {recursive: true});
+    fs.copyFileSync(path.join(project, 'resources/css/contact-widget.css'), path.join(root, 'resources/css/contact-widget.css'));
     return root;
 }
 function snapshot(root) {
-    const files = [...generated, 'build/js/manifest.json'];
+    const files = [...generated, 'build/js/manifest.json', 'resources/asset-versions.json'];
     function collect(dir) { for (const entry of fs.readdirSync(path.join(root, dir), {withFileTypes: true})) {
         const file = dir + '/' + entry.name;
         if (entry.isDirectory()) collect(file); else files.push(file);
@@ -36,16 +39,26 @@ function cli(root, file, args = [], extraEnv = {}) {
     return cp.spawnSync(process.execPath, [file, ...args], {cwd: root, encoding: 'utf8', windowsHide: true,
         env: {...process.env, NODE_PATH: [path.join(project, 'node_modules'), process.env.NODE_PATH].filter(Boolean).join(path.delimiter), ...extraEnv}});
 }
+function bump(root, assets) {
+    const file = path.join(root, 'resources/asset-versions.json');
+    const versions = JSON.parse(fs.readFileSync(file, 'utf8'));
+    for (const asset of assets) {
+        assert.ok(Number.isSafeInteger(versions[asset]) && versions[asset] > 0, asset);
+        versions[asset]++;
+    }
+    fs.writeFileSync(file, JSON.stringify(versions, null, 2) + '\n');
+}
 async function run(output = path.join(project, '.cache/css-build.json')) {
     const root = fixture(output), rows = [], original = snapshot(root);
     const check = (name, fn) => { fn(); rows.push({name, status: 'PASS'}); };
     let prepared;
-    check('prepare calculates all six outputs without writes', () => {
+    check('prepare calculates all six CSS outputs without writes', () => {
         prepared = builder.prepare({root}); assert.equal(prepared.outputs.length, 6); assert.deepEqual(snapshot(root), original);
     });
     check('stale --check rejects without CSS, Head or JS writes', () => {
         fs.appendFileSync(path.join(root, generated[0]), '\n.stale-output{color:red}');
-        const before = snapshot(root); assert.throws(() => builder.build({root, check: true}), /CSS build is stale/);
+        const before = snapshot(root);
+        assert.throws(() => builder.build({root, check: true}), /Asset build is stale: resources\/css\/main\.min\.css/);
         assert.deepEqual(snapshot(root), before);
     });
     check('invalid checkout source fails before any output write', () => {
@@ -63,7 +76,7 @@ async function run(output = path.join(project, '.cache/css-build.json')) {
     });
     check('complete build replaces stale output and keeps mirrors identical', () => {
         builder.build({root});
-        for (const name of ['main-211025.min.css', 'checkout-120525.min.css']) {
+        for (const name of ['main.min.css', 'checkout.min.css']) {
             assert.deepEqual(fs.readFileSync(path.join(root, 'resources/css', name)), fs.readFileSync(path.join(root, 'build/css', name)));
         }
         assert.ok(!fs.readFileSync(path.join(root, generated[0]), 'utf8').includes('stale-output'));
@@ -80,9 +93,10 @@ async function run(output = path.join(project, '.cache/css-build.json')) {
     });
     check('new source rule reaches both complete assets', () => {
         const file = path.join(root, 'resources/css/checkout.css'), source = fs.readFileSync(file, 'utf8');
-        fs.writeFileSync(file, source + '\n.fixture-owned-source{color:#123456}'); builder.build({root});
+        fs.writeFileSync(file, source + '\n.fixture-owned-source{color:#123456}');
+        bump(root, ['css/checkout.min.css']); builder.build({root});
         assert.ok(fs.readFileSync(path.join(root, generated[1]), 'utf8').includes('.fixture-owned-source'));
-        fs.writeFileSync(file, source); builder.build({root});
+        fs.writeFileSync(file, source); bump(root, ['css/checkout.min.css']); builder.build({root});
     });
     check('one trailing license-comment byte is normalized without source mutation', () => {
         const file = path.join(root, 'resources/css/checkout.css'), source = fs.readFileSync(file, 'utf8');
@@ -126,11 +140,19 @@ async function run(output = path.join(project, '.cache/css-build.json')) {
     });
     check('legacy facet source changes remain rebuildable; stale check never writes', () => {
         fs.appendFileSync(path.join(root, 'resources/js/facets.js'), '\nwindow.__fixtureFacetBuild = 1;');
+        bump(root, ['js/facets.min.js']);
         const before = snapshot(root), checked = cli(root, 'scripts/build-facet-assets.cjs', ['--check']);
         assert.notEqual(checked.status, 0); assert.deepEqual(snapshot(root), before);
         const built = cli(root, 'scripts/build-facet-assets.cjs'); assert.equal(built.status, 0, built.stderr);
         assert.ok(fs.readFileSync(path.join(root, 'resources/js/facets.min.js'), 'utf8').includes('__fixtureFacetBuild'));
-        for (const file of generated) assert.equal(snapshot(root)[file], before[file], file);
+        // The complete legacy entry also updates its JS manifest and the generated
+        // asset URLs. CSS output/critical rules must still remain byte-identical.
+        for (const file of generated.slice(0, 6)) assert.equal(snapshot(root)[file], before[file], file);
+        const manifest = JSON.parse(fs.readFileSync(path.join(root, 'resources/asset-manifest.json'), 'utf8'));
+        assert.equal(manifest.assets['js/facets.min.js'].sha256,
+            hash(fs.readFileSync(path.join(root, 'resources/js/facets.min.js'))));
+        assert.ok(fs.readFileSync(path.join(root, 'resources/views/PageDesign/PageDesign.twig'), 'utf8')
+            .includes('facets.min.js?v=' + manifest.assets['js/facets.min.js'].version));
     });
     check('absolute facet CLI from another checkout only reads and writes its own repository', () => {
         const foreign = fs.mkdtempSync(path.join(path.dirname(root), 'foreign-facet-cwd-'));
@@ -141,6 +163,7 @@ async function run(output = path.join(project, '.cache/css-build.json')) {
         fs.writeFileSync(foreignOutput, 'KEEP_FOREIGN_OUTPUT\n');
         const foreignBefore = [foreignSource, foreignOutput].map(file => hash(fs.readFileSync(file)));
         fs.appendFileSync(path.join(root, 'resources/js/facets.js'), '\nwindow.__intendedFacetRoot = 1;');
+        bump(root, ['js/facets.min.js']);
         fs.appendFileSync(path.join(root, generated[0]), '\n.stale-intended-output{color:red}');
         const before = snapshot(root), absoluteScript = path.join(root, 'scripts/build-facet-assets.cjs');
         const checked = cli(foreign, absoluteScript, ['--check']);
@@ -159,5 +182,5 @@ async function run(output = path.join(project, '.cache/css-build.json')) {
     const result = {status: 'PASS', mode: 'ISOLATED_COMPLETE_CSS_BUILD', root, rows, javascriptFilesUnchanged: Object.keys(original).filter(x => x.startsWith('resources/js/')).length};
     fs.writeFileSync(output, JSON.stringify(result, null, 2)); console.log(rows.length + ' complete CSS build checks PASS'); return result;
 }
-module.exports = {run, fixture, snapshot, cli, generated};
+module.exports = {run, fixture, snapshot, cli, generated, bump};
 if (require.main === module) run(process.argv[2] && path.resolve(process.argv[2])).catch(error => {console.error(error); process.exitCode = 1;});

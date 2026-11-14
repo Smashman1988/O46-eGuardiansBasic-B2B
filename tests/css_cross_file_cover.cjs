@@ -45,8 +45,8 @@ const blocks = [...head.matchAll(/<style([^>]*)>([\s\S]*?)<\/style>/g)].map(matc
 const primary = blocks.filter(block => block.css.startsWith('@font-face'));
 assert.equal(primary.length, 3, 'All three page-type Critical CSS branches are required');
 const source = rows(fs.readFileSync('resources/css/checkout.css', 'utf8'));
-const checkout = rows(fs.readFileSync('resources/css/checkout-120525.min.css', 'utf8'));
-const main = rows(fs.readFileSync('resources/css/main-211025.min.css', 'utf8'));
+const checkout = rows(fs.readFileSync('resources/css/checkout.min.css', 'utf8'));
+const main = rows(fs.readFileSync('resources/css/main.min.css', 'utf8'));
 function matching(data, selector, property, value) {
     return data.filter(row => row.context.length === 0 && row.selectors.includes(selector) && row.property === property && row.value === value && !row.important);
 }

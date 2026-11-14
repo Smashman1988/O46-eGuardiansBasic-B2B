@@ -6,7 +6,7 @@ const acorn = require('acorn');
 const {chromium} = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
 const root = path.resolve(__dirname, '..'), artifacts = path.resolve(process.argv[2]), reportPath = path.resolve(process.argv[3]);
 const sources = {de:'home-de-390-r0-cold', en:'all-en-1440-r0-cold', fr:'category-few-fr-375-r0-cold', it:'search-it-428-r0-cold', es:'error404-es-390-r0-cold'};
-const css = fs.readFileSync(path.join(root, 'resources/css/main-211025.min.css'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'resources/css/main.min.css'), 'utf8');
 const head = fs.readFileSync(path.join(root, 'resources/views/PageDesign/Partials/Head.twig'), 'utf8');
 const fontCss = [...head.match(/<style>([\s\S]*?)<\/style>/)[1].replaceAll("{{ plugin_path('GuardiansBasicB2B') }}", '/plugins/GuardiansBasicB2B').matchAll(/@font-face\{[^}]+\}/g)].map(m=>m[0]).join('');
 assert.ok(fontCss.includes('icomoon.woff2') && fontCss.includes('open-sans-v17-latin-regular.woff2'), 'Use the actual local header fonts');

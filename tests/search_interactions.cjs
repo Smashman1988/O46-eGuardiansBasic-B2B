@@ -271,7 +271,7 @@ async function scenario(browser, asset, code, l, width, full) {
     const browser=await chromium.launch({headless:true,executablePath:process.env.O46_BROWSER_EXECUTABLE});
     try{
         const tasks=[];
-        for(const n of ['cat','item','main','vue'])for(const end of ['.js','-020726.min.js']){
+        for(const n of ['cat','item','main','vue'])for(const end of ['.js','.min.js']){
             const asset=n+end,code=handlers(asset);
             for(const l of langs)for(const w of [1440,390])tasks.push(()=>scenario(browser,asset,code,l,w,n==='cat'&&end!=='.js'));
         }

@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Separate numeric asset versions (2026-11-14)
+
+- Based on c112d5c on develop; preserve previous local changes and plugin version 1.0.7. Replace the previously prepared content hashes in all twelve active owned asset URLs with separate numbers, initially ?v=1 each. Preserve the six cleaned filenames and all delivered JS/CSS bodies.
+- Use resources/asset-versions.json as the single manually maintained version source. The existing build emits the numbers in PageDesign.twig and Head.twig automatically. Generated asset-manifest.json retains only its schema and each file's last accepted number and internal SHA-256 checksum; remove the previous algorithm/bytes fields. No manifest lookup, file I/O or hash calculation during shop requests.
+- Require exactly the next version number when final bytes change. Missing increments, decreases, skipped numbers and increments without changed content fail before output writes. Identical builds and different Plenty buildHash values preserve the numbers. Keep existing minifiers, bundle selection, plugin_path(), loading order and third-party versioning.
+- Numeric Chrome cache probe: ?v=1 cold 6,716 bytes, warm 0 bytes, ?v=2 another 6,716 bytes; identical correct bodies. This is not a cross-deployment measurement. Targeted PHP/Twig/build/CSS/browser results and limits: [HTML report](../../.cache/asset-numeric-c112d5c-20261114/Asset-Versionen-Pruefbericht.html). Native new URLs and a new pluginset deployment remain NOT_TESTED. No blanket performance claim, commit, push, merge, deployment, sync, cache purge or B2C/price/order changes.
+
 ## Unreleased – Server preparation and Twig rendering (2026-11-14)
 
 - Based on `debbeda`, local `develop` only, version 1.0.7 unchanged. Review all 13 own PHP files and 173 Twig templates. [Report](../../.cache/server-optimization-debbeda-20261114/Server-Performance-Pruefbericht.html); these changes have not been deployed or accepted natively.

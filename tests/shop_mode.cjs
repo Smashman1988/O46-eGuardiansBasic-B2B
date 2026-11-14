@@ -13,7 +13,7 @@ const fixture = '<style>.smm-hidden{display:none}#shop-mode-modal{padding:16px}<
 async function run() {
     const browser = await chromium.launch({executablePath: process.env.O46_BROWSER_EXECUTABLE});
     try {
-        for (const name of ['main', 'cat', 'item', 'vue']) for (const suffix of ['.js', '-020726.min.js']) {
+        for (const name of ['main', 'cat', 'item', 'vue']) for (const suffix of ['.js', '.min.js']) {
             const file = `resources/js/${name}${suffix}`;
             const source = revision ? cp.execFileSync('git', ['show', revision + ':' + file], {encoding: 'utf8'}) : readAsset(file, 'utf8');
             const part = region(source), script = '(' + source.slice(part.callee.start, part.callee.end) + ')()';

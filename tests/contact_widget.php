@@ -9,6 +9,7 @@ set_error_handler(function ($level, $message) use (&$notices) {
 });
 require $argv[1];
 require __DIR__ . '/../src/Helper/SeoPage.php';
+require __DIR__ . '/asset_manifest.php';
 $root = dirname(__DIR__);
 $output = $argv[2];
 if (!is_dir($output) && !mkdir($output, 0777, true)) { throw new RuntimeException('Cannot create output directory'); }
@@ -72,7 +73,8 @@ twigFunction($twig, 'createSeoPage', function ($template, $pageMax = null, $curr
     return new GuardiansBasicB2B\Helper\SeoPage([], $template, $pageMax, $currentPage, $total);
 });
 twigFunction($twig, 'config', function () { return ''; });
-twigFunction($twig, 'plugin_path', function ($plugin) { return '/fixture-plugins/' . $plugin; });
+$assetPluginBase = '/fixture-plugins/';
+twigFunction($twig, 'plugin_path', function ($plugin) use (&$assetPluginBase) { return $assetPluginBase . $plugin; });
 $twig->addFilter(new Twig\TwigFilter('filterFields', [new ContactCallback(function ($value) { return $value; }), 'invoke']));
 $translations = [];
 twigFunction($twig, 'trans', function ($key) use (&$translations) {
@@ -90,6 +92,11 @@ $newsletterPaths = [
 ];
 $newsletterBundles = ['home' => 'main', 'category.item' => 'cat', 'item' => 'item', 'vue-category' => 'vue'];
 $cases = [];
+$assetCacheContracts = [];
+function ownThemeAssetUrls($html, $pluginBase) {
+    preg_match_all('~(?:src|href|data-eg-magiczoom-src)="(' . preg_quote($pluginBase . 'GuardiansBasicB2B/', '~') . '(?:js|css)/[^"]+)"~', $html, $matches);
+    return array_map(function ($url) { return html_entity_decode($url, ENT_QUOTES, 'UTF-8'); }, $matches[1]);
+}
 $keySet = null;
 $head = file_get_contents($root . '/resources/views/PageDesign/Partials/Head.twig');
 preg_match_all('~<style[^>]*>(.*?)</style>~s', $head, $criticalStyles);
@@ -118,8 +125,8 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
     foreach ($modes as $mode) {
         $criticalIndex = $mode === 'item' ? 0 : ($mode === 'category' ? 1 : 2);
         $themeCss = $mode === 'isolated' ? '' : '<style>' . $criticalStyles[1][$criticalIndex] . '</style>';
-        if ($mode === 'checkout') { $themeCss .= '<link rel="stylesheet" href="' . $resources . '/css/checkout-120525.min.css">'; }
-        if ($mode !== 'isolated') { $themeCss .= '<link rel="stylesheet" href="' . $resources . '/css/main-211025.min.css">'; }
+        if ($mode === 'checkout') { $themeCss .= '<link rel="stylesheet" href="' . $resources . '/css/checkout.min.css">'; }
+        if ($mode !== 'isolated') { $themeCss .= '<link rel="stylesheet" href="' . $resources . '/css/main.min.css">'; }
         $preview = '<!doctype html><html lang="' . $language . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' . $themeCss
             . '<style>body{margin:0;font:16px Arial,sans-serif;background:#f6f7f3;color:#20251b}#contact-fixture-shop{padding:32px;max-width:960px}#contact-fixture-shop h1{font-size:28px}#contact-fixture-shop p{max-width:580px}#contact-fixture-outside{padding:12px}#totop{display:block;position:fixed;right:15px;bottom:3.3rem;height:44px;width:44px;z-index:101}#contact-fixture-overlay{display:none;position:fixed;inset:0;z-index:1050;background:white}</style>'
             . '<link rel="stylesheet" href="' . $resources . '/css/contact-widget.css"></head><body class="o46-b2b-contact-page"><main id="contact-fixture-shop"><p>Outlet46 B2B · Lokale Komponentenvorschau</p><h1>Kontakt &amp; Beratung</h1><p>Isolierte Vorschau mit lokalen Theme-Ressourcen. Kein PlentyONE-Shop und keine echte Bestellung.</p><button id="contact-fixture-outside" type="button">Shop-Aktion</button></main><button id="totop" type="button" aria-label="Nach oben">↑</button>'
@@ -151,14 +158,37 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
         check(substr_count($rendered, 'id="o46-b2b-contact-widget"') === $expected, 'Wrong widget count: ' . $page);
         check(substr_count($rendered, 'id="o46-b2b-newsletter"') === $expectedNewsletter, 'Wrong newsletter count: ' . $page);
         check(substr_count($rendered, 'href="https://b2b.outlet46.de' . $newsletterPaths[$language] . '"') === $expectedNewsletter, 'Wrong newsletter URL: ' . $page);
-        preg_match_all('~/js/(main|cat|item|vue)-020726\.min\.js\?v=([^"]+)"~', $rendered, $bundles);
+        preg_match_all('~/js/(main|cat|item|vue)\.min\.js\?v=([^"]+)"~', $rendered, $bundles);
         check(count($bundles[1]) === $expected, 'Wrong newsletter bundle count: ' . $page);
         foreach ($bundles[1] as $index=>$bundle) {
-            check($bundles[2][$index] === 'local-review-nl1' . ($bundle === 'cat' ? '-seo2' : '') . '-qv1-search3-gallery2-matrix3-language1' . ($bundle === 'cat' ? '-history1' : '') . '-lazy1-mode1','Wrong bundle cache version: ' . $page);
+            check('js/' . $bundle . '.min.js?v=' . $bundles[2][$index] === verifiedThemeAssetPath('js/' . $bundle . '.min.js'), 'Wrong bundle numeric asset version: ' . $page);
         }
         if (isset($newsletterBundles[$page])) { check($bundles[1][0] === $newsletterBundles[$page], 'Wrong bundle: ' . $page); }
         foreach (['css/contact-widget.css', 'js/contact-widget.js'] as $resource) {
-            check(substr_count($rendered, '/fixture-plugins/GuardiansBasicB2B/' . $resource . '?v=local-review') === $expected, 'Wrong dynamic asset inclusion: ' . $page);
+            check(substr_count($rendered, '/fixture-plugins/GuardiansBasicB2B/' . verifiedThemeAssetPath($resource) . '"') === $expected, 'Wrong dynamic asset inclusion: ' . $page);
+        }
+        if ($language === 'de' && isset($newsletterBundles[$page])) {
+            $originalUrls = ownThemeAssetUrls($rendered, $assetPluginBase);
+            check(count($originalUrls) > 0, 'Missing own asset URLs for cache contract');
+            foreach ($originalUrls as $url) {
+                $relative = substr($url, strlen($assetPluginBase . 'GuardiansBasicB2B/'));
+                $asset = explode('?', $relative, 2)[0];
+                check($relative === verifiedThemeAssetPath($asset), 'Own asset URL differs from its verified numeric version');
+            }
+            $otherBuild = $twig->render('layout', array_replace($context, ['buildHash' => 'unrelated-platform-build']));
+            check(ownThemeAssetUrls($otherBuild, $assetPluginBase) === $originalUrls, 'Platform buildHash changed own asset URLs: ' . $page);
+            $originalBase = $assetPluginBase;
+            try {
+                $assetPluginBase = '/other-plugin-build/';
+                $otherPath = $twig->render('layout', $context);
+                $expectedUrls = array_map(function ($url) use ($originalBase, $assetPluginBase) {
+                    return $assetPluginBase . substr($url, strlen($originalBase));
+                }, $originalUrls);
+                check(ownThemeAssetUrls($otherPath, $assetPluginBase) === $expectedUrls, 'Plugin path failed to change independently of content versions: ' . $page);
+                check(ownThemeAssetUrls($otherPath, $originalBase) === [], 'Old plugin base remains in own asset URLs');
+            } finally { $assetPluginBase = $originalBase; }
+            $assetCacheContracts[] = ['page'=>$page, 'bundle'=>$newsletterBundles[$page], 'ownAssetUrlOccurrences'=>count($originalUrls),
+                'buildHashIndependent'=>true, 'pluginPathMovedWithoutVersionChange'=>true];
         }
         if (!$request->quick) {
             $dom = new DOMDocument();
@@ -186,6 +216,7 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
     }
 }
 $report = ['twig' => Twig\Environment::VERSION, 'layoutCases' => count($cases), 'cases' => $cases,
+    'assetCacheComparisons' => count($assetCacheContracts) * 2, 'assetCacheContracts' => $assetCacheContracts,
     'languages' => 5, 'widgetKeysPerLanguage' => 9, 'previewFiles' => count($modes) * 5, 'deprecations' => array_keys($notices),
     'plentyONE' => 'NOT_RUN: local service/template fixtures only'];
 file_put_contents($output . '/render-report.json', json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));

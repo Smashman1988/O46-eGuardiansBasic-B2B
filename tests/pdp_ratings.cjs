@@ -7,7 +7,7 @@ const start=source.indexOf('<div class="item-ratings-top '),end=source.indexOf('
 assert.ok(start>0&&end>start);
 const fragment=source.slice(start,end);
 assert.equal((fragment.match(/{% for i in 1\.\.5 %}/g)||[]).length,2);
-const full=fs.readFileSync('resources/css/main-211025.min.css','utf8');
+const full=fs.readFileSync('resources/css/main.min.css','utf8');
 // Pin the pre-fix reference: HEAD also contains the fix after it is committed.
 const before=cp.execFileSync('git',['show','731e00a6c98380e86f50fa7c5beb42d3fbda95ea:resources/css/main-211025.min.css'],{encoding:'utf8',maxBuffer:4000000});
 const head=fs.readFileSync('resources/views/PageDesign/Partials/Head.twig','utf8');

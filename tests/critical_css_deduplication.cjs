@@ -17,7 +17,7 @@ const newHead = fs.readFileSync(headPath, 'utf8');
 const oldHead = cp.execFileSync('git', ['show', '96e50ee:' + headPath], {encoding: 'utf8'}).replace(/\r?\n/g, newHead.includes('\r\n') ? '\r\n' : '\n');
 const reportDirectory = path.resolve(process.argv[2] || '.cache/critical-css-deduplication');
 const capturedDirectory = path.resolve(process.argv[3] || '.cache/global-performance-13af2e8-20261113');
-const fullCss = fs.readFileSync('resources/css/main-211025.min.css', 'utf8');
+const fullCss = fs.readFileSync('resources/css/main.min.css', 'utf8');
 fs.mkdirSync(reportDirectory, {recursive: true});
 const sha = value => crypto.createHash('sha256').update(value).digest('hex');
 const optimized = optimizeHead(oldHead);

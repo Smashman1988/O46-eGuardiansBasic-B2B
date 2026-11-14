@@ -4,7 +4,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.O46_PLAYWRIGHT_MODULE||'playwright');
 const head=fs.readFileSync('resources/views/PageDesign/Partials/Head.twig','utf8');
 const early=head.match(/<style data-eg-pdp-layout-critical>([\s\S]*?)<\/style>/)[1];
-const full=fs.readFileSync('resources/css/main-211025.min.css','utf8');
+const full=fs.readFileSync('resources/css/main.min.css','utf8');
 (async()=>{const b=await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE}),out=[];try{for(const width of [320,375,390,430,768,1024,1440])for(const [iw,ih]of [[600,900],[800,800],[1200,600]]){const p=await b.newPage({viewport:{width,height:900}});try{const image='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${iw}" height="${ih}"><rect width="100%" height="100%" fill="#ddd"/></svg>`);
 await p.setContent(`<style>${early}</style><div id="unrelated"><figure><img width="30" height="30" src="${image}"></figure></div><a id="ItemImgZoom"><figure class="mz-figure"><img src="${image}" style="width:150px;height:auto"><div class="mz-lens"><img src="${image}"></div></figure></a><div id="below">Following content</div>`);
 await p.waitForFunction(()=>[...document.images].every(e=>e.complete&&e.naturalWidth));

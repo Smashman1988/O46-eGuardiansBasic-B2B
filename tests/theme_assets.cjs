@@ -4,9 +4,32 @@ const fs = require('node:fs');
 const path = require('node:path');
 const acorn = require('acorn');
 const assert = require('node:assert/strict');
+const cp = require('node:child_process');
+// Historical comparison fixtures can predate the stable production filenames.
+// Current production reads remain strict; only explicit baseline callers use this.
+function legacyAssetPath(file) {
+    return file.replace(/([/\\]|^)(main|cat|item|vue)\.min\.js$/, '$1$2-020726.min.js')
+        .replace(/([/\\]|^)main\.min\.css$/, '$1main-211025.min.css')
+        .replace(/([/\\]|^)checkout\.min\.css$/, '$1checkout-120525.min.css');
+}
+function historicalAssetFile(file) {
+    if (fs.existsSync(file)) return file;
+    const legacy = legacyAssetPath(file);
+    assert.ok(legacy !== file && fs.existsSync(legacy), 'Missing historical asset: ' + file);
+    return legacy;
+}
+function readRevisionAsset(revision, file) {
+    // Reject invalid revisions separately instead of disguising them as a rename.
+    cp.execFileSync('git', ['rev-parse', '--verify', revision + '^{commit}'], {stdio: 'pipe'});
+    for (const candidate of [...new Set([file, legacyAssetPath(file)])]) {
+        const exists = cp.spawnSync('git', ['cat-file', '-e', revision + ':' + candidate], {stdio: 'pipe'});
+        if (exists.status === 0) return cp.execFileSync('git', ['show', revision + ':' + candidate], {encoding: 'utf8', maxBuffer: 8e6});
+    }
+    throw new Error('Missing historical asset at ' + revision + ': ' + file);
+}
 function readAsset(file, encoding = 'utf8') {
     let source = fs.readFileSync(file, encoding);
-    if (!/^(main|cat|item|vue)(-020726\.min)?\.js$/.test(path.basename(file)) || !source.includes('O46Core.')) return source;
+    if (!/^(main|cat|item|vue)((-020726)?\.min)?\.js$/.test(path.basename(file)) || !source.includes('O46Core.')) return source;
     // Safe compression may join independent top-level expression statements.
     // Their result is unused; split only that exact top-level sequence shape so
     // isolated module extractors see the original execution boundaries again.
@@ -132,4 +155,4 @@ function sharedModule(file, key) {
     assert.equal(found.length, 1, 'Exactly one actual shared module ' + key);
     return 'window.O46Core=window.O46Core||{installed:{}};(' + source.slice(found[0].start, found[0].end) + ').call(window);';
 }
-module.exports = { readAsset, eventsOwner, sharedModule };
+module.exports = { readAsset, eventsOwner, sharedModule, historicalAssetFile, readRevisionAsset };

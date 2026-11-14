@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
+const { historicalAssetFile } = require('./theme_assets.cjs');
 const assert = require('node:assert/strict');
 const { chromium } = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
 const output = path.resolve(process.argv[2] || '.cache/systematic-optimization-96e50ee-20261113/js/browser');
@@ -12,6 +13,7 @@ let origin;
 const gallery = id => `<article class="single"><h2>Product ${id}</h2><a class="MagicZoom" id="ItemImgZoom${id === 'pdp' ? '' : '2'}" href="/image.svg?large=${id}" data-options="zoomMode: off; hint: off;"><img width="320" height="240" src="/image.svg?small=${id}"></a><div class="single-prev-images"></div><button data-eg-event="click" data-eg-handler="testVariant">Size</button></article>`;
 function html(bundle, lang, before, hasGallery = false) {
     const url = before ? '/before/' : '/assets/';
+    const asset = before ? path.basename(historicalAssetFile(path.resolve(output, '../before', bundle + '.min.js'))) : bundle + '.min.js';
     return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><title>Local bundle contract</title></head><body>
     <header><h1>Theme fixture</h1><span data-eg-basket-quantity>0</span><span data-basket-sum>0</span><a class="wishlist-link"></a></header>
     <script id="app-data-custom" type="application/json">{"templateType":"category"}</script>
@@ -21,7 +23,7 @@ function html(bundle, lang, before, hasGallery = false) {
     <script>window.activeLang='${lang}';window.messageServiceTranslations={searchexample:'Search'};window.addEventListener('load',function(){eGuardians.initialize();eGuardians.events.testVariant=function(){window.variantClicks=(window.variantClicks||0)+1};window.fixtureReady=true});</script>
     <script src="/assets/jquery-3.7.1.min.js"></script>
     ${before ? '' : '<script src="/assets/core.min.js" data-eg-magiczoom-src="/assets/magiczoom.min.js" defer></script>'}
-    <script src="${url}${bundle}-020726.min.js" defer></script>
+    <script src="${url}${asset}" defer></script>
     ${!before && bundle === 'item' ? '<script src="/assets/magiczoom.min.js" data-eg-magiczoom defer></script>' : ''}
     </body></html>`;
 }
@@ -35,7 +37,7 @@ const server = http.createServer((req, res) => {
         res.setHeader('Cache-Control', 'public, max-age=3600');
         return res.end(fs.readFileSync(file));
     }
-    if (u.pathname === '/style.css') { res.setHeader('Content-Type', 'text/css'); return res.end(fs.readFileSync('resources/css/main-211025.min.css')); }
+    if (u.pathname === '/style.css') { res.setHeader('Content-Type', 'text/css'); return res.end(fs.readFileSync('resources/css/main.min.css')); }
     if (u.pathname === '/image.svg') { res.setHeader('Content-Type', 'image/svg+xml'); return res.end('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="#76ae00"/><circle cx="320" cy="240" r="100" fill="white"/></svg>'); }
     if (u.pathname === '/rest/io/session/') {
         res.setHeader('Content-Type', 'application/json');

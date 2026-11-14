@@ -91,6 +91,7 @@ namespace Plenty\Modules\Webshop\ItemSearch\Services {
     }
 }
 namespace {
+    require __DIR__ . '/asset_manifest.php';
     use GuardiansBasicB2B\Helper\SeoPage;
     use GuardiansBasicB2B\Extensions\Base_Extension;
     use Ceres\Helper\SearchOptions;
@@ -173,14 +174,14 @@ namespace {
     }
     function compactHtml($html) { return preg_replace('/>\s+</', '><', trim($html)); }
     function checkThemeAssetOrder($html, $page, $isItem) {
-        $base = '/plugins/GuardiansBasicB2B/js/';
-        preg_match_all('~<script\s+src="([^"]*/js/(?:core|magiczoom|(?:cat|main|vue|item)-020726)\\.min\\.js\\?[^"]*)"([^>]*)>~', $html, $tags, PREG_SET_ORDER);
-        $expected = [$base . 'core.min.js?v=fixture-core2', $base . $page . '-020726.min.js?v=fixture-core2'];
-        if ($isItem) { $expected[] = $base . 'magiczoom.min.js?v=fixture-zoom1'; }
+        $base = '/plugins/GuardiansBasicB2B/';
+        preg_match_all('~<script\s+src="([^"]*/js/(?:core|magiczoom|cat|main|vue|item)\\.min\\.js\\?[^"]*)"([^>]*)>~', $html, $tags, PREG_SET_ORDER);
+        $expected = [$base . verifiedThemeAssetPath('js/core.min.js'), $base . verifiedThemeAssetPath('js/' . $page . '.min.js')];
+        if ($isItem) { $expected[] = $base . verifiedThemeAssetPath('js/magiczoom.min.js'); }
         check(array_map(function ($tag) { return html_entity_decode($tag[1], ENT_QUOTES, 'UTF-8'); }, $tags) === $expected,
             'Core/page/MagicZoom script count, URL or execution order changed');
         foreach ($tags as $tag) { check(strpos($tag[2], 'defer') !== false, 'Theme script lost defer'); }
-        check(strpos($tags[0][2], 'data-eg-magiczoom-src="' . $base . 'magiczoom.min.js?v=fixture-zoom1"') !== false,
+        check(strpos($tags[0][2], 'data-eg-magiczoom-src="' . $base . verifiedThemeAssetPath('js/magiczoom.min.js') . '"') !== false,
             'Core lost the versioned on-demand MagicZoom URL');
     }
     // Targeted source guard, NOT the PlentyONE compiler/validator. Native names
@@ -818,7 +819,7 @@ namespace {
                         check(strpos($html,'rel="next"') === false && strpos($html,'rel="prev"') === false,'Directory exposes a pager');
                         check(strpos($html,'brandTiles') !== false && strpos($html,'/alpha') !== false && strpos($html,'/beta') !== false,'Actual brand list missing');
                         check(strpos($html,'.brandTiles .col-xl-3 {') !== false,'Directory critical grid CSS missing');
-                        check(strpos($html,'main-211025.min.css?v=fixture-nl3-matrix4-logo1-gallery3-perf1-facets1-footer1-cssclean1" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
+                        check(strpos($html,verifiedThemeAssetPath('css/main.min.css') . '" media="print"') > strpos($html,'.brandTiles .col-xl-3 {'),'Directory stylesheet order or loading mode changed');
                         check(count($search->calls) === $calls,'Directory issued an embedded item query');
                     } finally { $urls->base = $oldBase; $templateService->template = $oldTemplate; }
                 });
@@ -853,10 +854,10 @@ namespace {
             $category = $base['category']; $category['id'] = $categoryId;
             try {
                 $html = $twig->render($view,array_replace($base,['category'=>$category,'pageMax'=>69,'currentPage'=>2,'itemCountTotal'=>1654]));
-                preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)-020726\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
+                preg_match_all('~<script[^>]*src="([^"]*/js/(?:cat|main|vue|item)\\.min\\.js\\?[^"]*)"[^>]*>~',$html,$scripts);
                 check(count($scripts[1]) === 1,'Expected exactly one theme page bundle');
                 $url = html_entity_decode($scripts[1][0],ENT_QUOTES,'UTF-8');
-                $expected = '/plugins/GuardiansBasicB2B/js/' . $asset . '-020726.min.js?v=fixture-core2';
+                $expected = '/plugins/GuardiansBasicB2B/' . verifiedThemeAssetPath('js/' . $asset . '.min.js');
                 check($url === $expected,'Wrong shipped asset or cache version');
                 checkThemeAssetOrder($html, $asset, false);
                 check(strpos($scripts[0][0],' defer') !== false,'Page bundle lost defer');
@@ -894,7 +895,7 @@ namespace {
                     $expected = in_array($type,['tpl.search','tpl.category.item'],true);
                     check(count($scripts[1]) === ($expected ? 1 : 0),'Wrong number of facet controller inclusions');
                     if ($expected) {
-                        check(strpos($scripts[1][0],'-facets4') !== false,'Stale facet cache identifier');
+                        check(html_entity_decode($scripts[1][0], ENT_QUOTES, 'UTF-8') === '/plugins/GuardiansBasicB2B/' . verifiedThemeAssetPath('js/facets.min.js'), 'Wrong facet asset URL or numeric version');
                         check(strpos($scripts[2][0],'defer') !== false,'Facet controller lost defer');
                     }
                     return ['itemContext'=>$type === 'tpl.item','facetScript'=>$expected];

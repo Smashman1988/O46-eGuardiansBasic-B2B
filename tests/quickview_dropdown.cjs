@@ -103,7 +103,7 @@ async function exercise(browser, asset) {
     const browser = await chromium.launch({ headless: true, executablePath: process.env.O46_BROWSER_EXECUTABLE });
     try {
         for (const name of ['cat', 'item', 'main', 'vue']) {
-            for (const suffix of ['.js', '-020726.min.js']) {
+            for (const suffix of ['.js', '.min.js']) {
                 await exercise(browser, name + suffix);
                 console.log(name + suffix + ': 20/20 PASS');
             }

@@ -167,11 +167,13 @@ function deriveCriticalCss(source, head, compiledCss, footerMarkup) {
     return {head, report};
 }
 
-async function build({check = false} = {}) {
+async function build({check = false, root = require('node:path').resolve(__dirname, '..')} = {}) {
     const cssBuilder = require('./build-css.cjs');
-    const prepared = cssBuilder.prepare();
-    const javascript = await require('./build-js.cjs').build({check});
-    return {javascript, css: cssBuilder.publish(prepared, {check})};
+    const css = cssBuilder.prepare({root});
+    const javascript = await require('./build-js.cjs').prepare({root});
+    const versions = require('./asset-versioning.cjs');
+    const result = versions.publish(versions.prepare({root, outputs: [...css.outputs, ...javascript.outputs]}), {check});
+    return {...result, javascript: javascript.report, css: css.report};
 }
 module.exports = {deriveCriticalCss, build};
 if (require.main === module) build({check: process.argv.includes('--check')})
