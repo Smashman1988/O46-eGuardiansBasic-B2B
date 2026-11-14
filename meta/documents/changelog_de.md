@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Frühere Bildentdeckung in Kategorie und Suche (2026-11-14)
+
+- Basis `13f3d021`, nur lokal auf `develop`. Weitere Bilder der ersten Desktop-Kartenreihe warteten auf `window.load` und Lozad. Karte 3/4 erhält ab 768 px, Karte 5/6 ab 1200 px responsive AVIF-/Originalquellen und `loading="lazy"`; bestehende Lozad-Fallbacks bleiben erhalten. Dies gilt auch für Folgeseiten und Listenfragmente. Erste zwei Karten behalten ihren bisherigen, auf Folgeseiten weiterhin verzögerten Modus; Logos und Karten ab Position 7 bleiben unverändert.
+- Die lokale Komponentenprobe behält bei 390/768/1440 px 2/4/6 Produktbildanfragen bei. Das dritte Bild startet in den einzelnen Tablet-/Desktop-Vergleichen 40,6/66,0 ms früher, ohne die Bedienprobe oder `window.load` bis zur künstlich verzögerten Bildantwort aufzuhalten. Synthetische Bilder und einzelne Vergleichsläufe belegen keinen nativen LCP-Gewinn. Der pauschale Sechs-Bilder-Versuch wurde wegen zusätzlicher mobiler Anfragen verworfen.
+- Twig 2/3: insgesamt 150 Renderfälle PASS mit fünf Sprachen, Seite 1/2 und fehlenden Bildern; Startseitengrid mit 60 Artikeln bytegleich. Preise, Reihenfolge, Verfügbarkeit und abgeschlossene Matrix-Abnahme unverändert. Keine CSS-/JS-Assetänderung oder Asset-Versionserhöhung. [Prüfbericht und Grenzen](../../.cache/global-rendering-13f3d02/Pruefbericht.html).
+- Bewertungswidget: separater Einbaukandidat mit internem Scrollen für Kategorie 5153 / Beschreibung 2 / Deutsch vorbereitet, nicht angewandt. Bestehender Theme-Include erhalten; Darstellung und PlentyONE-Inhalt brauchen gesonderte Freigabe. Kein Commit, Push, Deployment oder Sync; native Nachher-Abnahme `NOT_TESTED`.
+
 ## Unreleased – Layout der Variantenmatrix
 
 - Auf der Produktseite und im Quickview entfällt die sichtbare Ladezeile für Preise und Bestände. Die Matrix reserviert den Platz für ihre Varianten passend zur Containerbreite. Fehler beim Laden bleiben sichtbar.

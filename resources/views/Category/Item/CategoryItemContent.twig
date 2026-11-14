@@ -120,6 +120,7 @@
                             'isShoeCategory': isShoeCategory,
                             'translations': translations,
                             'transLabels': transLabels,
+                            'cardImageMinViewport': loop.index in [3, 4] ? 768 : (loop.index in [5, 6] ? 1200 : null),
                             'cardAttributeMap': attributeMapsByItem[item.data.variation.itemId] ?? null
                         } only %}
                     </article>

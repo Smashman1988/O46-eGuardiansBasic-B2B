@@ -10,6 +10,16 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Frühere Bildentdeckung in Kategorie und Suche (2026-11-14)
+
+Lokal auf `develop`, Basis `13f3d021`. Weitere Bilder der ersten Desktop-Kartenreihe warteten bisher auf `window.load` und Lozad. Die gemeinsamen Listen geben jetzt für Karte 3/4 ab 768 px und Karte 5/6 ab 1200 px passende `<picture>`-Quellen mit AVIF und Originalformat aus. `loading="lazy"` hält diese Bilder aus der Ladebedingung von `window.load`; die vorhandenen Lozad-Quellen bleiben als Fallback erhalten. Die Regel gilt auch für Folgeseiten und nachgeladene Listenfragmente. Erste zwei Karten, Herstellerlogos und Karten ab Position 7 behalten ihren bisherigen Modus; die ersten zwei Karten auf Folgeseiten bleiben daher Lozad-geladen.
+
+Die lokale Komponentenprobe mit synthetischen Bildern fordert bei 390/768/1440 px weiterhin 2/4/6 Produktbilder an. Das dritte Bild startet in den einzelnen Tablet-/Desktop-Vergleichen 40,6/66,0 ms früher; Bedienprobe und `window.load` warten nicht auf dessen künstliche Verzögerung von 1.400 ms. Das sind beschreibende Fixture-Ergebnisse, **kein nachgewiesener nativer LCP-Gewinn**. Der zunächst geprüfte pauschale Sechs-Bilder-Modus wurde wegen vier zusätzlicher mobiler Requests verworfen. Die neue Variante behält die Anfragezahl in den geprüften Ansichten bei; andere vertikale Layouts und native Nachherwerte bleiben offen.
+
+Twig 2/3: zusammen **150 Renderfälle PASS**, einschließlich aller fünf Sprachen, Seite 1/2, fehlender Bilder und bytegleicher Startseitengrid-Ausgabe mit 60 Artikeln. Preise, Reihenfolge, Verfügbarkeit und bestehende Matrix-Abnahme bleiben unverändert. Keine CSS-/JS-Assetänderung und keine Erhöhung der Asset-Versionen. [Prüfbericht mit Quellen, Vergleich und Abnahmegrenzen](.cache/global-rendering-13f3d02/Pruefbericht.html)
+
+Für das externe Bewertungswidget liegt lediglich ein separater Einbaukandidat für PlentyONE-Kategorie **5153 / Beschreibung 2 / Deutsch** vor. Er reserviert einen Bereich mit internem Scrollen und verändert damit die Darstellung; er wurde **nicht angewandt**. Der bestehende Theme-Include bleibt erhalten. Kein Commit, Push, Deployment oder Sync; native Nachher-Abnahme `NOT_TESTED`.
+
 ## Globaler B2B-Audit vom 14.11.2026
 
 In Vorschau 426 entsprachen alle zwölf ausgelieferten JS-/CSS-Dateien dem Commit `8ef56a5`. Die Mengensynchronisierung fehlte dort auf der als Inhaltskategorie ausgelieferten Warenkorbseite. Beide Tabs zeigten im Gasttest am Ende die richtigen Werte; während der Änderung fehlte der Ladezustand. [Warenkorbablauf, lokaler Fix und Abnahmegrenzen](meta/documents/warenkorb-synchronisierung.md)

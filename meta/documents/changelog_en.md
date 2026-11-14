@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Earlier image discovery in category and search lists (2026-11-14)
+
+- Based on `13f3d021`, local `develop` changes only. Further images in the first desktop card row waited for `window.load` and Lozad. Cards 3/4 now expose responsive AVIF/original sources from 768 px, cards 5/6 from 1200 px, with `loading="lazy"` and existing Lozad fallbacks retained. This also applies to subsequent pages and list fragments. The first two cards retain their previous mode, including delayed loading on subsequent pages; logos and cards 7 onwards are unchanged.
+- The local component fixture retains 2/4/6 product-image requests at 390/768/1440 px. Image 3 starts 40.6/66.0 ms earlier in the individual tablet/desktop comparisons without holding the control probe or `window.load` until the artificially delayed image response. Synthetic images and single comparison runs do not establish a native LCP improvement. The unconditional six-image experiment was rejected because it added mobile requests.
+- Twig 2/3: 150 render cases PASS across five languages, pages 1/2 and missing images; the 60-item homepage grid remains byte-identical. Prices, order, availability and completed matrix acceptance are unchanged. No CSS/JS asset changes or asset-version increments. [Report and limitations](../../.cache/global-rendering-13f3d02/Pruefbericht.html).
+- Review widget: a separate candidate with an inner scroll area is prepared for category 5153 / description 2 / German, but has not been applied. The existing theme include is retained; presentation and PlentyONE content changes require separate approval. No commit, push, deployment or sync; native post-change acceptance remains `NOT_TESTED`.
+
 ## Unreleased – Variation matrix layout
 
 - Product pages and quick views reserve space for the variation rows at the current container width. Prices and stock fill their cells without a separate visible loading message. Loading errors remain visible.
