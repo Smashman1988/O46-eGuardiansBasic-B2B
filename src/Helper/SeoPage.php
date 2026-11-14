@@ -18,15 +18,19 @@ class SeoPage
         $this->categoryPagination = ['pageMax' => $pageMax, 'currentPage' => $currentPage, 'total' => $total];
     }
 
-    public static function positiveInteger($value)
+    public static function positiveInteger($value, bool $allowPadding = false)
     {
         if (!is_int($value) && !is_string($value)) {
             return null;
         }
-        if (!preg_match('/^[1-9][0-9]*$/D', (string)$value)) {
+        // Request IDs can be zero-padded. Pagination and callers using the
+        // default continue to require a canonical positive integer.
+        $text = $allowPadding ? trim((string)$value) : (string)$value;
+        $pattern = $allowPadding ? '/^0*([1-9][0-9]*)$/D' : '/^([1-9][0-9]*)$/D';
+        if (!preg_match($pattern, $text, $matches)) {
             return null;
         }
-        $integer = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $integer = filter_var($matches[1], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         return $integer === false ? null : $integer;
     }
 

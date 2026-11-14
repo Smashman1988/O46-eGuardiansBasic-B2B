@@ -1,5 +1,14 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Warenkorb, Varianten und Rendering (2026-11-14)
+
+- Der verknüpfte Kategorie-Warenkorb nutzt die vorhandene Mengensynchronisierung. Beim Hinzufügen bestätigt die Matrix ausschließlich den erfolgreichen IO-Schreibvorgang. Unklare Antworten lösen keine zweite Buchung aus.
+- Matrizen mit mehr als 300 Varianten laden weitere Pakete über denselben Batch-Endpunkt. Mengenlimit, Barcode-Typ und Bildreihenfolge sind jetzt im Feldsatz deklariert. Ungültige IDs, Filter und Sortierparameter werden nicht als andere Werte verarbeitet. Die Suche setzt den Ladezustand auch bei einer fehlerhaften Antwort zurück.
+- Produktkarten und PDP vermeiden Division durch null bei fehlender oder nullwertiger UVP. Die PDP lädt das tatsächlich angezeigte Galeriebild vor. Bewertungen verwenden gültiges JSON und denselben gekürzten Namen wie die sichtbare Anzeige. GB-Lieferadressen verwenden ihre eigenen Pflichtfelder; die vier optionalen Rechtsseiten-Overrides verweisen auf vorhandene Ceres-Templates. Die Listenendlinks berücksichtigen alle fünf Sprachen; der Header spart wiederholte Serviceaufrufe.
+- Eine bestätigte Buchung entsperrt die Matrix auch bei langsamem Headerabruf. Während der Buchung bleibt die Auswahl gegen Änderungen gesperrt. Plenty-Meldungen zu Bestand oder Mengenlimits bleiben sichtbar. Bei mehreren Barcodes erkennen Sammel- und Einzelabruf die GTIN-Typen von Plenty und erhalten führende Nullen.
+- Strukturierte Preisparameter und verschachtelte Facetten führen zu HTTP 400. Produktkarten und Variantenwechsel zeigen die Ersparnis nur bei gültigem Vergleichspreis oberhalb des Verkaufspreises. Produkt-JSON-LD kodiert Katalogtexte sicher. Die erste sichtbare Bewertung erhält ihre strukturierten Daten auch nach einer ausgeblendeten Bewertung.
+- Der Core wird als Version 5 ausgeliefert, Main, Kategorie, Produkt und Vue als Version 3. [Warenkorbprüfung und Abnahmegrenzen](warenkorb-synchronisierung.md)
+
 ## Unreleased – Warenkorbsummen und Variantenmatrix (2026-11-14)
 
 - Mengenänderungen werden nacheinander mit PlentyONE abgeglichen. Warenkorb und 199-€-Anzeige übernehmen den bestätigten Nettowarenwert. Der gemeinsame Headercache aktualisiert andere Tabs nach einer Änderung und erspart bei gültigen Daten zusätzliche Abrufe auf Folgeseiten. Die Bestätigung beim Hinzufügen verwendet das bereits gelieferte Sprachtemplate. [Prüfbericht](warenkorb-synchronisierung.md)

@@ -2,6 +2,7 @@
 
 namespace GuardiansBasicB2B\Resources;
 
+use GuardiansBasicB2B\Helper\SeoPage;
 use IO\Api\ApiResource;
 use IO\Api\ApiResponse;
 use IO\Api\ResponseCode;
@@ -13,6 +14,8 @@ use Plenty\Modules\Webshop\ItemSearch\SearchPresets\SingleItem;
 
 class VariationBatchResource extends ApiResource
 {
+    private const GTIN_TYPES = ['gtin_8', 'gtin_13', 'gtin_14', 'gtin_128'];
+
     public function __construct(Request $request, ApiResponse $response)
     {
         parent::__construct($request, $response);
@@ -20,24 +23,28 @@ class VariationBatchResource extends ApiResource
 
     public function index(): Response
     {
-        // ids kann sein:
-        // - ids=1,2,3
-        // - ids[]=1&ids[]=2
         $idsParam = $this->request->get('ids', '');
-        $ids = [];
-
-        if (is_array($idsParam)) {
-            $ids = $idsParam;
+        if (is_string($idsParam)) {
+            $ids = preg_split('/[,\s]+/', $idsParam, -1, PREG_SPLIT_NO_EMPTY);
         } else {
-            $ids = preg_split('/[,\s]+/', (string)$idsParam, -1, PREG_SPLIT_NO_EMPTY);
+            $ids = is_array($idsParam) ? $idsParam : [$idsParam];
         }
 
-        $ids = array_values(array_unique(array_filter(array_map(function ($v) {
-            $n = (int)$v;
-            return $n > 0 ? $n : null;
-        }, $ids))));
+        $uniqueIds = [];
+        foreach ($ids as $value) {
+            // Numeric IDs may be padded by clients. Reject prefixes, overflow
+            // and nested values before they can become unrelated variation IDs.
+            $id = SeoPage::positiveInteger($value, true);
+            if ($id !== null) {
+                $uniqueIds[$id] = $id;
+                if (count($uniqueIds) === 300) {
+                    break;
+                }
+            }
+        }
+        $template = $this->request->get('template', '');
 
-        if (!count($ids)) {
+        if (!$uniqueIds || !is_string($template)) {
             return $this->response->create([
                 'items'   => (object)[],
                 'missing' => [],
@@ -45,13 +52,6 @@ class VariationBatchResource extends ApiResource
             ], ResponseCode::BAD_REQUEST);
         }
 
-        // optional: Hard-Limit gegen Abuse
-        if (count($ids) > 300) {
-            $ids = array_slice($ids, 0, 300);
-        }
-
-        // wichtig: template (ResultFields) vom Request übernehmen, sonst fehlen häufig stock/images/barcodes
-        $template = (string)$this->request->get('template', '');
         $template = trim($template);
 
         /** @var ItemSearchService $itemSearchService */
@@ -60,7 +60,7 @@ class VariationBatchResource extends ApiResource
         // Viele Variationen in EINEM Server-Call abfragen (getResults)
         $searches = [];
 
-        foreach ($ids as $id) {
+        foreach ($uniqueIds as $id) {
             $options = [
                 'variationId' => (int)$id,
                 'setCategory' => false
@@ -80,7 +80,7 @@ class VariationBatchResource extends ApiResource
         $items = [];
         $missing = [];
 
-        foreach ($ids as $id) {
+        foreach ($uniqueIds as $id) {
             $key = 'v' . $id;
             $res = $results[$key] ?? null;
 
@@ -115,13 +115,11 @@ class VariationBatchResource extends ApiResource
                     $code = $b['code'] ?? null;
                     if (!$code) continue;
 
-                    $t = strtolower(
-                        (string)($b['type'] ?? '') . ' ' .
-                        (string)($b['barcodeType'] ?? '') . ' ' .
-                        (string)($b['name'] ?? '')
-                    );
-
-                    if (strpos($t, 'ean') !== false) {
+                    $type = strtolower(trim((string)($b['type'] ?? '')));
+                    $barcodeType = strtolower(trim((string)($b['barcodeType'] ?? '')));
+                    $label = $type . ' ' . $barcodeType . ' ' . strtolower((string)($b['name'] ?? ''));
+                    if (strpos($label, 'ean') !== false || in_array($type, self::GTIN_TYPES, true)
+                        || in_array($barcodeType, self::GTIN_TYPES, true)) {
                         $ean = (string)$code;
                         break;
                     }

@@ -58,7 +58,7 @@ $view = dirname(__DIR__) . '/resources/views/Category/Item/';
 $prefix = 'GuardiansBasicB2B::Category.Item.Partials.';
 $templates = ['layout'=>'{% block PageBody %}{% endblock %}', 'category'=>file_get_contents($view.'CategoryItem.twig'),
     'content'=>file_get_contents($view.'CategoryItemContent.twig'), 'simple'=>file_get_contents($view.'Partials/CategoryGridOnly.twig')];
-foreach (['CategoryListItem','CategoryListItem2','CategoryAttributes'] as $name) {
+foreach (['CategoryListItem','CategoryListItem2','CategoryAttributes','AllItemsLink'] as $name) {
     $templates[$prefix.$name] = file_get_contents($view.'Partials/'.$name.'.twig');
 }
 foreach (['Ceres::PageDesign.Macros.LayoutContainer','Ceres::PageDesign.Macros.ItemName',

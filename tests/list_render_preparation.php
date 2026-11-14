@@ -1,6 +1,7 @@
 <?php
 // php tests/list_render_preparation.php <Twig autoload> <baseline resources/views> <report.json>
 require $argv[1];
+require __DIR__.'/card_markup_contract.php';
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 function listCheck($ok, $message) { if (!$ok) throw new RuntimeException($message); }
 function blockWhitespace($html) { return preg_replace('/(?<=>)[\t ]*(?:\r?\n[\t ]*)+(?=<)/','',$html); }
@@ -34,6 +35,7 @@ function preparationEnvironment($base,$fixture,$globals) {
     $files=['Category.Item.CategoryItem','Category.Item.CategoryItemContent','Category.Item.Partials.CategoryGridOnly','Category.Item.Partials.CategoryListItem','Category.Item.Partials.CategoryListItem2','Category.Item.Partials.CategoryAttributes','Category.Macros.render-rating'];$templates=['layout'=>'{% block PageBody %}{% endblock %}'];
     foreach($files as $name){$source=file_get_contents($base.'/'.str_replace('.','/',$name).'.twig');if(in_array($name,['Category.Item.Partials.CategoryListItem','Category.Item.Partials.CategoryAttributes'],true))$source="{% do preparation_probe('".$name."') %}".$source;$templates['GuardiansBasicB2B::'.$name]=$source;}
     foreach(['Pagination','FacetFilter2','FacetFilter3'] as $name)$templates['GuardiansBasicB2B::Category.Item.Partials.'.$name]='';
+    $templates['GuardiansBasicB2B::Category.Item.Partials.AllItemsLink'] = file_get_contents(__DIR__.'/../resources/views/Category/Item/Partials/AllItemsLink.twig');
     foreach(['Ceres::PageDesign.Macros.LayoutContainer','Ceres::PageDesign.Macros.ItemName'] as $name)$templates[$name]='';
     $twig=new Twig\Environment(new Twig\Loader\ArrayLoader($templates));
     foreach(['trans'=>'trans','plugin_path'=>'path','getAttributesWithImages'=>'attributes','getCardAttributeMaps'=>'batch','config'=>'config','getPartial'=>'partial','queryString'=>'noop','createSeoPage'=>'noop'] as $name=>$method)$twig->addFunction(new Twig\TwigFunction($name,[$fixture,$method]));
@@ -50,19 +52,33 @@ $scenarios=[['normal',[],[]],['empty',[],[]],['outer-contaminated',[],['cardEage
 foreach(['de','en','fr','it','es'] as $lang)foreach(['category'=>'Category.Item.CategoryItem','content'=>'Category.Item.CategoryItemContent','grid'=>'Category.Item.Partials.CategoryGridOnly'] as $kind=>$name)foreach([1,2] as $page)foreach($scenarios as [$scenario,$globals,$outer]){
     $n=$scenario==='normal'?60:($scenario==='empty'?0:12);$ctx=$outer+['itemList'=>fixtureItems($n,$lang),'services'=>new ListPreparationServices($lang),'category'=>['id'=>44,'parentCategoryId'=>0,'details'=>[['name'=>'Category']]],'currentPage'=>$page,'pageMax'=>3,'itemCountTotal'=>$n,'request'=>new class {function get($key){return null;}},'prioritizeFirstCardImage'=>true];
     // Representative surrounding request payload; only top-level key counts are asserted.
+    $ctx['lang'] = $lang; // Ceres GlobalContext supplies this to standalone content lists, too.
     for($i=0;$i<80;$i++)$ctx['unrelatedContext'.$i]=['payload'=>str_repeat('x',50)];
     $result=[];
     foreach(['before'=>$argv[2],'after'=>$root] as $version=>$base){$f=new ListPreparationFixture($lang);[$twig,$profile]=preparationEnvironment($base,$f,$globals);$html=$twig->render('GuardiansBasicB2B::'.$name,$ctx);$counts=[];profileCounts($profile,$counts);$result[$version]=['html'=>$html,'calls'=>$f->calls,'contexts'=>$f->contexts,'profile'=>$counts];}
-    listCheck(blockWhitespace($result['before']['html'])===blockWhitespace($result['after']['html']),'Difference beyond inter-tag newline indentation '.$lang.'/'.$kind.'/'.$page.'/'.$scenario);
-    listCheck($result['before']['calls']===$result['after']['calls'],'Service/helper calls differ');
+    $expectedHtml = withoutInvalidCardComparisons($result['before']['html'], range(100,159,11));
+    if ($kind !== 'grid') {
+        $paths = ['de'=>'/alle-artikel/', 'en'=>'/en/All-Articles/', 'fr'=>'/fr/tous-les-articles/',
+                  'it'=>'/it/tutti-gli-articoli/', 'es'=>'/es/todos-los-articulos/'];
+        $oldPath = in_array($lang, ['en','fr'], true) ? $paths[$lang] : $paths['de'];
+        $expectedHtml = preg_replace('~(<a href=")'.preg_quote($oldPath,'~').'(") title="[^"]*"(?=>)~',
+            '$1'.$paths[$lang].'$2', $expectedHtml, 1, $changed);
+        listCheck($changed === 1, 'Missing original localized list-end link');
+    }
+    listCheck(blockWhitespace($expectedHtml)===blockWhitespace($result['after']['html']),'Unexpected list markup difference '.$lang.'/'.$kind.'/'.$page.'/'.$scenario);
+    $expectedCalls = $result['before']['calls'];
+    if ($kind === 'grid') $expectedCalls['trans'] -= 2; // No lookup of unused labels in the isolated grid.
+    if ($kind !== 'grid') $expectedCalls['itemName']--; // Removed unrelated product title from the list-end link.
+    if (($expectedCalls['itemName'] ?? null) === 0) unset($expectedCalls['itemName']);
+    listCheck($expectedCalls===$result['after']['calls'],'Service/helper calls differ');
     listCheck(substr_count($result['after']['html'],'data-eg-item="')===$n,'Card count');
     $counts=[];foreach(['before','after'] as $version){$counts[$version]=['macroCalls'=>$result[$version]['profile']['macro:categoryItem']??0,'cardContextKeys'=>array_map('count',$result[$version]['contexts']['Category.Item.Partials.CategoryListItem']??[]),'attributeContextKeys'=>array_map('count',$result[$version]['contexts']['Category.Item.Partials.CategoryAttributes']??[])];}
     if($kind!=='grid'){listCheck($counts['before']['macroCalls']===$n,'Baseline macro count');listCheck($counts['after']['macroCalls']===0,'Internal macro calls removed');}
     foreach($result['after']['contexts'] as $contexts)foreach($contexts as $keys){listCheck(!in_array('unrelatedContext0',$keys,true),'Request context leaked into card/attributes');if($scenario==='true-globals')listCheck(in_array('globalSentinel',$keys,true),'Real Twig global disappeared');}
-    $rows[]=['language'=>$lang,'entry'=>$kind,'page'=>$page,'scenario'=>$scenario,'cards'=>$n,'beforeBytes'=>strlen($result['before']['html']),'afterBytes'=>strlen($result['after']['html']),'sha256'=>hash('sha256',$result['after']['html']),'calls'=>$result['after']['calls'],'technicalCounts'=>$counts,'byteEqual'=>$result['before']['html']===$result['after']['html'],'equalExceptInterTagNewlineIndentation'=>true];
+    $rows[]=['language'=>$lang,'entry'=>$kind,'page'=>$page,'scenario'=>$scenario,'cards'=>$n,'beforeBytes'=>strlen($result['before']['html']),'afterBytes'=>strlen($result['after']['html']),'sha256'=>hash('sha256',$result['after']['html']),'calls'=>$result['after']['calls'],'technicalCounts'=>$counts,'byteEqual'=>$result['before']['html']===$result['after']['html'],'equalAfterListLinkAndIndentationComparison'=>true];
 }
 // Public macro import and standalone card entry points retain their old context boundary.
 $compatibility=[];
-foreach(['de','en','fr','it','es'] as $lang)foreach([1,2] as $variant){$globals=['dezimalcount'=>2,'percent'=>33,'cardPriorityImage'=>true];$ctx=['item'=>fixtureItems(1,$lang)[0],'variant'=>$variant,'currencycheck'=>'USD','isShoeCategory'=>true,'translations'=>['tAvailSizes'=>'Sizes','tInBasket'=>'Buy'],'transLabels'=>['availsizeonesize'=>'One'],'cardAttributeMap'=>null,'dezimalcount'=>4,'cardEagerImages'=>false,'percent'=>55];$html=[];foreach(['before'=>$argv[2],'after'=>$root]as$v=>$base){$f=new ListPreparationFixture($lang);[$twig]=$pair=preparationEnvironment($base,$f,$globals);$twig->getLoader()->setTemplate('macro',"{% import 'GuardiansBasicB2B::Category.Item.CategoryItem' as c %}{{ c.categoryItem(item,variant,currencycheck,isShoeCategory,translations,transLabels,cardAttributeMap) }}");foreach(['macro','GuardiansBasicB2B::Category.Item.Partials.CategoryListItem','GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2']as$name)$html[$v][$name]=$twig->render($name,$ctx);}listCheck($html['before']===$html['after'],'Public/standalone context difference');$compatibility[]=['language'=>$lang,'variant'=>$variant,'byteEqual'=>true,'entries'=>3];}
+foreach(['de','en','fr','it','es'] as $lang)foreach([1,2] as $variant){$globals=['dezimalcount'=>2,'percent'=>33,'cardPriorityImage'=>true];$ctx=['item'=>fixtureItems(1,$lang)[0],'variant'=>$variant,'currencycheck'=>'USD','isShoeCategory'=>true,'translations'=>['tAvailSizes'=>'Sizes','tInBasket'=>'Buy'],'transLabels'=>['availsizeonesize'=>'One'],'cardAttributeMap'=>null,'dezimalcount'=>4,'cardEagerImages'=>false,'percent'=>55];$html=[];foreach(['before'=>$argv[2],'after'=>$root]as$v=>$base){$f=new ListPreparationFixture($lang);[$twig]=$pair=preparationEnvironment($base,$f,$globals);$twig->getLoader()->setTemplate('macro',"{% import 'GuardiansBasicB2B::Category.Item.CategoryItem' as c %}{{ c.categoryItem(item,variant,currencycheck,isShoeCategory,translations,transLabels,cardAttributeMap) }}");foreach(['macro','GuardiansBasicB2B::Category.Item.Partials.CategoryListItem','GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2']as$name)$html[$v][$name]=$twig->render($name,$ctx);}foreach ($html['before'] as $entry=>$output) listCheck(withoutInvalidCardComparisons($output,[100])===$html['after'][$entry],'Unexpected public/standalone difference outside invalid comparison price');$compatibility[]=['language'=>$lang,'variant'=>$variant,'equalExceptInvalidComparisonPrice'=>true,'entries'=>3];}
 file_put_contents($argv[3],json_encode(['status'=>'PASS','twig'=>Twig\Environment::VERSION,'renders'=>$rows,'compatibility'=>$compatibility,'limits'=>['Profiler counts and explicit context widths use real Twig 2/3 with deterministic service fixtures. They are not native PHP/IO timings.','No customer-specific price, stock, tax or basket transformation changed.']],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
-echo count($rows).' list comparisons (equal except inter-tag newline indentation) and '.count($compatibility).' byte-identical public/standalone comparisons PASS, Twig '.Twig\Environment::VERSION.PHP_EOL;
+echo count($rows).' list comparisons including the intended list-end link change and '.count($compatibility).' public/standalone price and context comparisons PASS, Twig '.Twig\Environment::VERSION.PHP_EOL;

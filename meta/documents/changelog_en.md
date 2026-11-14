@@ -1,5 +1,14 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Basket, variations and rendering (2026-11-14)
+
+- The linked basket category uses the existing quantity synchronisation. The matrix confirms additions only on a successful IO write; an ambiguous response can no longer trigger a second write.
+- Matrices over 300 variations request subsequent groups through the same batch endpoint. The field set now requests the order limit, barcode metadata and image ordering. Invalid IDs, filters and sort parameters are no longer coerced to other values. Failed autocomplete responses clear the loading state.
+- Cards and product pages handle missing or zero reference prices. Product pages preload the gallery image they actually show. Review JSON uses the same abbreviated author as the visible review. GB shipping addresses use their own required fields; four optional legal-page overrides now reference existing Ceres templates. End-of-list links support all five languages; the header avoids repeated service calls.
+- A confirmed basket addition releases the matrix even when a header refresh is slow. Quantities are locked while the write is pending. Stock and quantity-limit messages from Plenty remain visible. Batch and single-variation reads recognise Plenty GTIN types among multiple barcodes and preserve leading zeros.
+- Array-valued price filters and nested facet selections return HTTP 400. Cards and variation changes show savings only when a valid reference price exceeds the selling price. Product JSON-LD safely encodes catalog text. The first visible review produces structured data even when a hidden review precedes it.
+- The core asset uses version 5. Main, category, item and Vue use version 3. [Basket checks and acceptance scope in German](warenkorb-synchronisierung.md)
+
 ## Unreleased – Basket totals and variation matrix (2026-11-14)
 
 - Quantity changes are sent in order. Basket totals and the €199 minimum use the confirmed PlentyONE basket. The shared header cache updates other tabs after a change and avoids extra requests on subsequent pages while its data is valid. The add-to-basket confirmation uses the translated template already included in the page. [Acceptance report in German](warenkorb-synchronisierung.md)

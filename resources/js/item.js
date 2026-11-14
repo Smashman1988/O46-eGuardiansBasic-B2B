@@ -77,10 +77,10 @@ this.addItemToBasket = function (_this) {
 
     eGuardians.helper.btnShowLoader(_this);
 
-    eGuardians.basket.addItem(variationId, quantity, function (response) {
-        if (response?.data?.exceptionCode) {
+    eGuardians.basket.addItem(variationId, quantity, function (response, errorCode) {
+        if (errorCode != null) {
             eGuardians.ui.message.error.show({
-                message: messageServiceTranslations[response.data.exceptionCode],
+                message: messageServiceTranslations[errorCode] || messageServiceTranslations[0],
                 insertElement: '.item-actions-wrap'
             });
             eGuardians.helper.btnHideLoader(_this);
@@ -547,24 +547,7 @@ O46Core.apiservice.call(window);
                                  MagicZoom.start(zoomid);
                             }, 50);
                         }
-                        const pricenumber = variationData.prices.default.unitPrice.value;
-                        const uvpnumber = variationData.prices.rrp.unitPrice.value;
-
-                        $itemElement.find('[data-eg-item-price]').html(
-                            new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(pricenumber)
-                        );
-
-                        if(variationData.prices.rrp != null){
-                            $itemElement.find('[data-eg-item-rrp]').html(
-                                new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(uvpnumber)
-                            );
-                            var rrppercent = (1 - variationData.prices.default.unitPrice.value / variationData.prices.rrp.unitPrice.value ) * -100;
-                            $itemElement.find('[data-eg-item-rrp-percent]').html(Math.round(rrppercent).toFixed(0));
-                            var rrpspar = ( variationData.prices.rrp.unitPrice.value - variationData.prices.default.unitPrice.value );
-                            $itemElement.find('[data-eg-item-rrp-spar]').html(
-                                new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rrpspar)
-                            );
-                        }
+                        O46Core.updateVariationPrices($itemElement, variationData.prices);
 
                         
                         

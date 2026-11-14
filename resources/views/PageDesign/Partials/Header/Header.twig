@@ -14,11 +14,8 @@
   {% import "GuardiansBasicB2B::Category.Macros.CategoryTree.twig" as Tree %}
 {% endif %}
 {% set basketItems = pdpBasketForHeader is defined ? pdpBasketForHeader : services.basket.getBasketForTemplate() %}
-    {% set isVueView = false %}
-{% if services.template.getCurrentTemplate() == "tpl.basket" or services.template.getCurrentTemplate() == "tpl.login" or services.template.isCheckout() or services.template.getCurrentTemplate() == "tpl.register" %}
-    {% set isVueView = false %}
-{% endif %}
-{% set currencycheck = services.checkout.getCurrencyData.name %}
+{% set headerCurrency = services.checkout.getCurrencyData() %}
+{% set currencycheck = headerCurrency.name %}
 {% set currencyParam = currencycheck != "EUR" ? '?currency=' ~ currencycheck : '' %}
 
 
@@ -26,7 +23,7 @@
 <div class="container nopadding">
         <div class="col-12 text-right lang-switcher nopadding">
            <span class="f-size16"><a href="{{ googlereviewlink }}">{{ trans("GuardiansBasicB2B::Template.trustpilotinfo") }} <img fetchpriority="low" src="{{ plugin_path('GuardiansBasicB2B') }}/images/g-Logo.svg" alt="Outlet46.de" class="margin-right-10" style="vertical-align: middle;max-height: 25px;max-width: 80px;"></a></span>
-            <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5638" data-eg-title="Currency">{{ services.checkout.getCurrencyData()['symbol'] }}</button>
+            <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5638" data-eg-title="Currency">{{ headerCurrency.symbol }}</button>
             <button href="#" class="btn-small margin-right7-5 text-black" data-eg-handler="modalContent" data-eg-type="modal-lg" data-eg-event="click" data-eg-language-switch data-eg-language-unavailable="{{ trans('GuardiansBasicB2B::Template.facetLanguageUnavailable') }}" data-eg-href="{{ langSlug }}/getShopBuilderContent/?categoryId=5640" data-eg-title="{{ trans('GuardiansBasicB2B::Template.langchange') }}" aria-label="{{ trans('GuardiansBasicB2B::Template.langchange') }}"><img fetchpriority="low" src="{{ plugin_path('Ceres') }}/images/flags/4x3/{{ flags[lang]|default('de') }}.svg" class="flag-icon" alt="flag-{{ flags[lang]|default('de') }}"></button>
         </div>
 </div>
@@ -104,7 +101,7 @@
 						   <span data-eg-basket-quantity class="header-quant-info2">0</span>
 						   {% endif %}
                            <span class="icon-online-shopping-cart fs35 icon-head-menu"></span>
-				<span class="mobile-btn-txt d-sm-block d-lg-inline-block d-xxl-inline-block header-sum-info"> <span data-basket-sum="" class="d-sm-inline-block padding-l-10" v-basket-item-sum="$store.state.basket.data.itemSum">0,00</span><span data-currency-symbol>{{ services.checkout.getCurrencyData.symbol }}</span></span>
+				<span class="mobile-btn-txt d-sm-block d-lg-inline-block d-xxl-inline-block header-sum-info"> <span data-basket-sum="" class="d-sm-inline-block padding-l-10" v-basket-item-sum="$store.state.basket.data.itemSum">0,00</span><span data-currency-symbol>{{ headerCurrency.symbol }}</span></span>
                            </a>
 
                         </div>   
@@ -119,35 +116,6 @@
     </div>
 </header>
             <header class="main-header headpadding" id="page-header2">
-    {% if isVueView %}     
-        <div class="cat-subcats chechout-title-wrap header2-info">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-5 cat-undercats-wrap">
-                        {% set checkoutTitle = "" %}
-                        {% if services.template.getCurrentTemplate() == "tpl.basket" %}
-                            {% set checkoutTitle = "Warenkorb" %}
-                        {% endif %}     
-                        {% if services.template.getCurrentTemplate() == "tpl.login" %} 
-                            {% set checkoutTitle = "Login" %}
-                        {% endif %}     
-                        {% if services.template.isCheckout() %}    
-                            {% set checkoutTitle = "Kasse" %}
-                        {% endif %}     
-                        {% if  services.template.getCurrentTemplate() == "tpl.register" %}
-                            {% set checkoutTitle = "Registrierung" %}
-                        {% endif %}     
-                        <div>
-                            <h1 class="category-title">{{ checkoutTitle }}</h1>
-                        </div>
-                    </div>
-                    <div class="col-md-7">
-                        <span class="bg-eck"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% else %}    
     {#{% cacheblock use "nav.categories." ~ lang ~ "." ~ currencycheck %}#}
     <nav class="d-print-none">
         <div class="container">
@@ -169,7 +137,6 @@
         </div> 
     </nav>
     {#{% endcacheblock %}#}
-    {% endif %}
 </header>
 {#{% cacheblock use "trustbar." ~ lang ~ "." ~ currencycheck %}#}
     <div class="top-top-bar">

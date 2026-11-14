@@ -62,17 +62,26 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
             const autocompleteUrl = useEnglishSearchIndex
                 ? '/rest/guardiansbasicb2b/item/search/autocomplete/'
                 : '/rest/io/item/search/autocomplete/';
-            eGuardians.apiservice.get(autocompleteUrl, searchParams, function (response) {
+            eGuardians.apiservice.get(autocompleteUrl, searchParams, function (response, status) {
                 // Ignore responses for an older input, including A → B → A changes.
                 if (inputVersion !== searchInputVersion || query !== $.trim($input.val())) return;
+                if ((status != null && (status < 200 || status >= 300)) ||
+                    (!Array.isArray(response?.data?.suggestion) && !Array.isArray(response?.data?.item))) {
+                    clearAutocompleteResults();
+                    return;
+                }
                 renderAutocompleteResults(response, $input);
             });
 
         } else {
-            $('.row-search-wrap').remove();
-            $('.related-search').show();
-            $('[data-eg-search]').removeClass('search-active-results search-loading');
+            clearAutocompleteResults();
         }
+    }
+
+    function clearAutocompleteResults() {
+        $('.row-search-wrap').remove();
+        $('.related-search').show();
+        $('[data-eg-search]').removeClass('search-active-results search-loading');
     }
 
     // Rendering-Funktion (ausgelagert für Performance & Klarheit)

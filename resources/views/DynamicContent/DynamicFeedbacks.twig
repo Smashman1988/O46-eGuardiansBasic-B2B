@@ -1,6 +1,7 @@
 {% import "GuardiansBasicB2B::Category.Macros.render-rating" as Rating %}
 
 {% set itemFeedbacks = feedbackItems %}
+{% set reviewSchemaEmitted = false %}
 
 <div class="row">
     {% for feedbackEntrie in itemFeedbacks.entries %}
@@ -22,11 +23,8 @@
                             <strong>
                                 <span>
                                     {% set customerNameFeedback = feedbackEntrie.sourceRelation[0].sourceRelationLabel | split(' ', 2) %}
-                                    {% if customerNameFeedback[1] %}
-                                        {{ customerNameFeedback[0] ~ ' ' ~ customerNameFeedback[1]|first ~ '.' }}
-                                    {% else %}
-                                        {{ customerNameFeedback[0] }}
-                                    {% endif %}
+                                    {% set publicAuthor = customerNameFeedback[1]|default('') ? customerNameFeedback[0] ~ ' ' ~ customerNameFeedback[1]|first ~ '.' : customerNameFeedback[0] %}
+                                    {{ publicAuthor }}
                                     {% if feedbackEntrie.feedbackComment.comment.message %}
                                         {{ trans("GuardiansBasicB2B::Template.says") }}:
                                     {% endif %}
@@ -69,27 +67,28 @@
             </div>
 
             {# ✅ JSON-LD structured data: NUR EINMAL für die erste Bewertung #}
-            {% if loop.first %}
+            {% if not reviewSchemaEmitted %}
+                {% set reviewSchemaEmitted = true %}
                 <script type="application/ld+json">
-                {
+                {{ {
                     "@context": "http://schema.org/",
                     "@type": "Product",
-                    "@id": "{{ itemData.variation.id | default('') }}",
+                    "@id": itemData.variation.id | default('') ~ '',
                     "review": [{
                         "@type": "Review",
                         "author": {
                             "@type": "Person",
-                            "name": "{{ customerNameFeedback[0] }} {{ customerNameFeedback[1]|default('') }}"
+                            "name": publicAuthor
                         },
-                        "datePublished": "{{ feedbackEntrie.createdAt }}",
-                        "reviewBody": "{{ feedbackEntrie.feedbackComment.comment.message }}",
-                        "name": "{{ feedbackEntrie.title }}",
+                        "datePublished": feedbackEntrie.createdAt ~ '',
+                        "reviewBody": feedbackEntrie.feedbackComment.comment.message ~ '',
+                        "name": feedbackEntrie.title ~ '',
                         "reviewRating": {
                             "@type": "Rating",
-                            "ratingValue": "{{ feedbackEntrie.feedbackRating.rating.ratingValue }}"
+                            "ratingValue": feedbackEntrie.feedbackRating.rating.ratingValue ~ ''
                         }
                     }]
-                }
+                }|json_encode(15)|raw }}
                 </script>
             {% endif %}
         {% endif %}

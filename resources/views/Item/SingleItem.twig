@@ -62,12 +62,18 @@
     ? variationId in basketItems.itemWishListIds
     : services.wishList.isItemInWishList(variationId) %}
 {% set itemPrices = itemData.prices %}
-{% set hasRRP = itemPrices.rrp is defined and itemPrices.rrp.price.value != 0 and itemPrices.rrp.price.value > itemPrices.default.unitPrice.value %}
+{% set unitPriceValue = itemPrices.default.unitPrice.value ?? '' %}
+{% set rrpUnitValue = itemPrices.rrp.unitPrice.value ?? '' %}
+{% set pricePattern = '/^[0-9]+(?:[.][0-9]+)?(?:e[+-]?[0-9]+)?$/iD' %}
+{% set hasUnitPrice = unitPriceValue matches pricePattern %}
+{% set hasRRP = hasUnitPrice and rrpUnitValue matches pricePattern and rrpUnitValue > unitPriceValue %}
  
 {% import "Ceres::PageDesign.Macros.ItemName" as ItemName %}
 {% block PartialHead %}
 {% if isQuickView %}
-    <link rel="preload" href="{{ itemData.images.all[0].urlMiddle }}" as="image">
+{% if mainImg.urlMiddle is not empty %}
+    <link rel="preload" href="{{ mainImg.urlMiddle }}" as="image">
+{% endif %}
 {% set vendorlogo = itemData.item.manufacturer.logo | replace({'https://cdn02.outlet46.de/frontend/vendor/': plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'}) %}
 {% if vendorlogo and itemData.item.manufacturer.url is not empty %}
 <link rel="preload" href="{{ vendorlogo }}" as="image">    
@@ -80,76 +86,62 @@
         {% block keywords       itemData.texts.keywords %}
         {% block image          itemData.images.all[0].url %}
         {% block schemaOrg %}
-            {
-                "@context"      : "http://schema.org/",
-                "@type"         : "Product",
-                "@id"           : "{{ itemData.variation.id }}",
-                "name"          : "{{ ItemName.get(itemData | itemName, itemData.variation.bundleType) | trim }}",
-                "category"      : "{{ defaultCategory.details[0].name | raw  }}",
-                "releaseDate"   : "{{ itemData.variation.releasedAt }}",
-                "image"         : "{{ itemData.images.all[0].urlMiddle }}",
-                "identifier"    : "{{ itemData.variation.id }}",
-                "description"   : "{{ itemData.texts.description | striptags | filterTabs }}",
-                "disambiguatingDescription" : "{{ itemData.texts.shortDescription }}",
-                "brand"         : {
-                    "@type"         : "Brand",
-                    "name"          : "{{ itemData.item.manufacturer.externalName }}"
-                },
-                "manufacturer"  : {
-                    "@type"         : "Organization",
-                    "name"          : "{{ itemData.item.manufacturer.externalName }}"
-                },
-                "sku"           : "{{ itemData.variation.number }}",
-                "gtin13"          : "{{ itemData.barcodes[0].code }}",
-                "offers": {
-                    "@type"         : "Offer",
-                    "priceCurrency" : "{{ itemData.prices.default.currency }}",
-                    "price"         : "{{ itemData.prices.default.unitPrice.value | number_format(2, '.', '') }}",
-                    "priceValidUntil": "2040-11-20",
-                    "url"           : "{{ detailurl }}",
-                    {% if itemData.prices.default.baseLot > 0 %}
-                    "priceSpecification": {
-                        "@type": "UnitPriceSpecification",
-                        "price": "{{ item.documents[0].data.prices.default.baseSinglePrice | number_format(2, '.', '') }}",
-                        "priceCurrency": "{{ item.documents[0].data.prices.default.currency }}",
-                        "priceValidUntil": "2040-11-20",
-                        "referenceQuantity": {
-                            "@type": "QuantitativeValue",
-                            "value": "{{ item.documents[0].data.prices.default.baseLot }}",
-                            "unitCode": "{{ item.documents[0].data.prices.default.baseUnit }}"
-                        }
-                    },
+            {% set offer = {
+                '@type': 'Offer', 'priceCurrency': itemData.prices.default.currency ~ '',
+                'priceValidUntil': '2040-11-20', 'url': detailurl ~ '',
+                'availability': itemData.variation.availability.mappedAvailability ~ '',
+                'itemCondition': conditionOfItem ~ '', 'serialNumber': itemData.variation.number ~ ''
+            } %}
+            {% if hasUnitPrice %}
+                {% set offer = offer|merge({'price': unitPriceValue|number_format(2, '.', '')}) %}
+            {% endif %}
+            {% set basePrice = itemData.prices.default.baseSinglePrice ?? null %}
+            {% if itemData.prices.default.baseLot > 0 and basePrice matches pricePattern %}
+                {% set offer = offer|merge({'priceSpecification': {
+                    '@type': 'UnitPriceSpecification', 'price': basePrice|number_format(2, '.', ''),
+                    'priceCurrency': offer.priceCurrency, 'priceValidUntil': offer.priceValidUntil,
+                    'referenceQuantity': {'@type': 'QuantitativeValue', 'value': itemData.prices.default.baseLot ~ '',
+                        'unitCode': itemData.prices.default.baseUnit ~ ''}
+                }}) %}
+            {% endif %}
+            {# The Ceres macro renders an HTML label. JSON-LD needs its text content. #}
+            {% set schemaName = ItemName.get(itemData|itemName, itemData.variation.bundleType)|trim|replace({'&lt;':'<', '&gt;':'>', '&quot;':'"', '&#039;':"'", '&amp;':'&'}) %}
+            {% set product = {
+                '@context': 'http://schema.org/', '@type': 'Product', '@id': itemData.variation.id ~ '',
+                'name': schemaName,
+                'category': defaultCategory.details[0].name ~ '', 'releaseDate': itemData.variation.releasedAt ~ '',
+                'image': itemData.images.all[0].urlMiddle ~ '', 'identifier': itemData.variation.id ~ '',
+                'description': itemData.texts.description|default('')|striptags|filterTabs,
+                'disambiguatingDescription': itemData.texts.shortDescription ~ '',
+                'brand': {'@type': 'Brand', 'name': itemData.item.manufacturer.externalName ~ ''},
+                'manufacturer': {'@type': 'Organization', 'name': itemData.item.manufacturer.externalName ~ ''},
+                'sku': itemData.variation.number ~ '', 'offers': offer,
+                'depth': {'@type': 'QuantitativeValue', 'value': '0'},
+                'width': {'@type': 'QuantitativeValue', 'value': '0'},
+                'height': {'@type': 'QuantitativeValue', 'value': '0'},
+                'weight': {'@type': 'QuantitativeValue', 'value': itemData.variation.weightG ~ ''}
+            } %}
+            {% set untypedGtin = '' %}
+            {% for barcode in itemData.barcodes|default([]) %}
+                {% set type = barcode.type|default(barcode.barcodeType|default(''))|trim|upper %}
+                {% if product.gtin13 is not defined and barcode.code matches '/^[0-9]{13}$/D' %}
+                    {% if type in ['GTIN_13', 'EAN_13', 'EAN13', 'EAN'] %}
+                        {% set product = product|merge({'gtin13': barcode.code ~ ''}) %}
+                    {% elseif type == '' and untypedGtin == '' %}
+                        {% set untypedGtin = barcode.code ~ '' %}
                     {% endif %}
-                    "availability"  : "{{ itemData.variation.availability.mappedAvailability }}",
-                    "itemCondition" : "{{ conditionOfItem }}",
-                    "serialNumber"  : "{{ itemData.variation.number }}"
-                },
-                "depth": {
-                    "@type"         : "QuantitativeValue",
-                    "value"         : "0"
-                },
-                "width": {
-                    "@type"         : "QuantitativeValue",
-                    "value"         : "0"
-                },
-                "height": {
-                    "@type"         : "QuantitativeValue",
-                    "value"         : "0"
-                },
-                "weight": {
-                    "@type"         : "QuantitativeValue",
-                    "value"         : "{{ itemData.variation.weightG }}"
-                }
-                {% if itemData.item.feedbackCount > 0 %}
-                    ,"aggregateRating": {
-                      "@type": "AggregateRating",
-                      "ratingValue": "{{ itemData.item.feedbackDecimal }}",
-                      "ratingCount": "{{ itemData.item.feedbackCount }}",
-                      "bestRating": "5",
-                      "worstRating": "1"
-                    }
                 {% endif %}
-            }
+            {% endfor %}
+            {% if product.gtin13 is not defined and untypedGtin != '' %}
+                {% set product = product|merge({'gtin13': untypedGtin}) %}
+            {% endif %}
+            {% if itemData.item.feedbackCount > 0 %}
+                {% set product = product|merge({'aggregateRating': {
+                    '@type': 'AggregateRating', 'ratingValue': itemData.item.feedbackDecimal ~ '',
+                    'ratingCount': itemData.item.feedbackCount ~ '', 'bestRating': '5', 'worstRating': '1'
+                }}) %}
+            {% endif %}
+            {{ product|json_encode(15)|raw }}
         {% endblock %}
     {% endembed %}
 {% endblock %}
@@ -193,7 +185,7 @@
                         <div class="relative">
                             {% set storeSpecialClass = '' %}
                             {% set storeSpecialTxt = '' %}
-                            {% if  item.data.item.storeSpecial.id == 2 %}
+                            {% if itemData.item.storeSpecial.id == 2 %}
                                 {% set storeSpecialClass = 'i-action-top' %}
                                 {% set storeSpecialTxt = 'Top' %}
                             {% endif %}
@@ -201,17 +193,10 @@
                                 {% set storeSpecialClass = 'i-action-new' %}
                                 {% set storeSpecialTxt = 'Neu' %}
                             {% endif %}
-							{% if hasRRP %}
-                            {% set percent = (1 - itemPrices.default.unitPrice.value / itemPrices.rrp.unitPrice.value ) * -100 %}
-                            {% set percent = percent | number_format(dezimalcount, ',', '.') %}
-							{% set storeSpecialClass = 'i-action-sale' %}
-							{% set storeSpecialTxt = '' %}
-							{% endif %}
-							{% if storeSpecialClass is not empty %}
-							<span class="item-action {{ storeSpecialClass }}">
-                                                            {{ storeSpecialTxt }}<span data-eg-item-rrp-percent>{{ percent }}</span>%
-							</span>  
-							{% endif %}
+                            {% if storeSpecialClass is not empty %}
+                            <span data-eg-item-special class="item-action {{ storeSpecialClass }}{% if hasRRP %} d-none{% endif %}">{{ storeSpecialTxt }}</span>
+                            {% endif %}
+                            <span data-eg-item-discount class="item-action i-action-sale{% if not hasRRP %} d-none{% endif %}"><span data-eg-item-rrp-percent>{{ hasRRP ? ((1 - unitPriceValue / rrpUnitValue) * -100)|number_format(dezimalcount, ',', '.') : '' }}</span>%</span>
                                                         {% for tag in itemData.tags %}
                                                         {% if tag.id == 284 %}
                                                         <span class="item-action i-action-nachhaltig-item">{{ trans("GuardiansBasicB2B::Template.sustainability") }}</span>
@@ -319,25 +304,25 @@
                         {% endif %}
                     {% endif %}
                     <div class="col-7 padding-10-0{% if itemData.prices.graduatedPrices|length>1 %}hasGruadetPrices{% endif %}">
-                    <span class="bold single-item-price">
+                    <span class="bold single-item-price{% if not hasUnitPrice %} d-none{% endif %}">
                       <span data-eg-item-price class="bold single-item-price">
-                        {{ (itemPrices.default.unitPrice.value ?? 0)|number_format(2, ',', '.') }}
+                        {{ hasUnitPrice ? unitPriceValue|number_format(2, ',', '.') : '' }}
                       </span>
                       {{ currencyData[currencyFormat] }} <span class="mwstinfo">{{ trans("GuardiansBasicB2B::Template.exklmwst") }}</span>
                     </span>
 
-                    {% set rabatt = ((itemPrices.rrp.unitPrice.value ?? 0) - (itemPrices.default.unitPrice.value ?? 0))|number_format(2, ',', '.') %}
+                    {% set rabatt = hasRRP ? (rrpUnitValue - unitPriceValue)|number_format(2, ',', '.') : '' %}
 
-                    <div class="cat-rrp-item">
+                    <div data-eg-item-discount class="cat-rrp-item{% if not hasRRP %} d-none{% endif %}">
                       <span class="cat-rrp-item-price">
                         {{ trans("GuardiansBasicB2B::Template.statt") }}
                         <span data-eg-item-rrp class="cat-rrp-item-price">
-                          {{ (itemPrices.rrp.unitPrice.value ?? 0)|number_format(2, ',', '.') }}
+                          {{ hasRRP ? rrpUnitValue|number_format(2, ',', '.') : '' }}
                         </span>
                         {{ currencyData[currencyFormat] }}
                       </span>*</div>
 
-                    <div class="cat-rrp-item">
+                    <div data-eg-item-discount class="cat-rrp-item{% if not hasRRP %} d-none{% endif %}">
                       <span class="single-item-rabatt">
                         {{ trans("GuardiansBasicB2B::Template.Dusparst") }}
                         <span data-eg-item-rrp-spar class="single-item-rabatt">{{ rabatt }}</span>

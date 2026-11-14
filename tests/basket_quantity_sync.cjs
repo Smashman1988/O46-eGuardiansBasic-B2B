@@ -40,6 +40,35 @@ function renderTemplates() {
             return $GLOBALS['labels'][$name] ?? throw new Exception('Missing translation '.$key);
         }
         $twig->addFunction(new Twig\TwigFunction('trans', 'basketTestTranslation'));
+        $page = file_get_contents($argv[2].'/resources/views/PageDesign/PageDesign.twig');
+        if (!preg_match('/({% set isBasketCategory = .*?%}\s*{% set isBasketPage = .*?%})/s', $page, $guard)) {
+            throw new Exception('Missing shared basket route condition');
+        }
+        function basketTestConfig($key) {
+            if ($key !== 'IO.routing.category_basket') throw new Exception('Unexpected configuration key');
+            return $GLOBALS['linked'];
+        }
+        $twig->addFunction(new Twig\TwigFunction('config', 'basketTestConfig'));
+        $route = $twig->createTemplate($guard[1].'{{ isBasketPage ? 1 : 0 }}');
+        foreach ([['tpl.basket',null,0,1], ['tpl.category.content',5482,'5482',1],
+                  ['tpl.category.content',321,321,1], ['tpl.category.content',5482,321,0],
+                  ['tpl.category.content',null,0,0], ['tpl.category.item',321,321,0],
+                  ['tpl.checkout',5484,5482,0], ['tpl.category.content',321,5482,1,['category-basket']],
+                  ['tpl.category.content',5482,5482,0,['page-category','category-checkout']]] as $case) {
+            [$template,$id,$linked,$expected] = $case;
+            $context = ['currentTemplate'=>$template,'category'=>['id'=>$id]];
+            if (isset($case[4])) $context['bodyClasses'] = $case[4];
+            if ((int)$route->render($context) !== $expected)
+                throw new Exception('Wrong basket route: '.$template.' / '.$id.' / '.$linked);
+        }
+        if (!preg_match('/({% set themePageScript = .*?{% endif %})/s', $page, $bundle)) throw new Exception('Missing bundle selector');
+        $selectBundle = $twig->createTemplate($bundle[1].'{{ themePageScript }}:{{ themeNeedsJquery ? 1 : 0 }}');
+        foreach ([true,false] as $isCart) {
+            $choice = trim($selectBundle->render(['currentRequestUri'=>'/content/', 'category'=>['id'=>5497],
+                'mainjs'=>[5497],'vuejs'=>[5482],'vuePages'=>[],'nojs'=>[],'isBasketCategory'=>$isCart]));
+            if (!preg_match($isCart ? '/^vue\.min\.js\?v=\d+:0$/' : '/^main\.min\.js\?v=\d+:1$/', $choice))
+                throw new Exception('Merchant-linked cart bundle priority: '.$choice);
+        }
         $views = [];
         foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
             $GLOBALS['labels'] = [];
@@ -376,8 +405,8 @@ async function invalidation(page, mode) {
 
 async function main() {
     const pageDesign = fs.readFileSync(path.join(root, 'resources/views/PageDesign/PageDesign.twig'), 'utf8');
-    assert.match(pageDesign, /if currentTemplate == 'tpl\.basket' %} data-o46-basket-sync/);
-    assert.match(pageDesign, /if currentTemplate == 'tpl\.basket' %}\s*{% include "GuardiansBasicB2B::Basket.Partials.QuantitySync" %}[\s\S]*?window\.createApp\(/);
+    assert.match(pageDesign, /if isBasketPage %} data-o46-basket-sync/);
+    assert.match(pageDesign, /if isBasketPage %}\s*{% include "GuardiansBasicB2B::Basket.Partials.QuantitySync" %}[\s\S]*?window\.createApp\(/);
     const views = renderTemplates();
     const browser = await chromium.launch({ executablePath: process.env.O46_BROWSER_EXECUTABLE });
     try {

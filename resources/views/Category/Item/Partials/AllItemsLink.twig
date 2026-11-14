@@ -1,0 +1,5 @@
+{%- set paths = {
+    de: '/alle-artikel/', en: '/en/All-Articles/', fr: '/fr/tous-les-articles/',
+    it: '/it/tutti-gli-articoli/', es: '/es/todos-los-articulos/'
+} -%}
+<a href="{{ paths[language]|default(paths.de) }}{% if currency != 'EUR' %}?currency={{ currency }}{% endif %}">{{ trans("GuardiansBasicB2B::Template.iscrollinfo6") }}</a>

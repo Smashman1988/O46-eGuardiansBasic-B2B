@@ -10,6 +10,14 @@ Das getrennte B2C-Plugin heißt weiterhin `GuardiansBasic`. Das GitHub-Repositor
 bleibt [O46-eGuardiansBasic-B2B](https://github.com/Smashman1988/O46-eGuardiansBasic-B2B).
 B2C wurde nur als technische Referenz gelesen; keine B2C-Dateien wurden übernommen.
 
+## Globaler B2B-Audit vom 14.11.2026
+
+In Vorschau 426 entsprachen alle zwölf ausgelieferten JS-/CSS-Dateien dem Commit `8ef56a5`. Die Mengensynchronisierung fehlte dort auf der als Inhaltskategorie ausgelieferten Warenkorbseite. Beide Tabs zeigten im Gasttest am Ende die richtigen Werte; während der Änderung fehlte der Ladezustand. [Warenkorbablauf, lokaler Fix und Abnahmegrenzen](meta/documents/warenkorb-synchronisierung.md)
+
+Lokal sendet die Variantenmatrix je Klick genau einen Warenkorb-POST. Nur die erfolgreiche IO-Bestätigung leert die Eingaben. Bei einer unklaren oder teilweise wirksamen Antwort wird der Header aktualisiert und der Nutzer zur Warenkorbprüfung aufgefordert. Große Matrizen verteilen ihre Varianten auf Sammelabrufe mit höchstens 300 IDs. Weitere Korrekturen betreffen ungültige Filterparameter, fehlende UVP, das vorgeladene Galeriebild, die GB-Lieferadresskonfiguration und den öffentlich sichtbaren Autor in den Bewertungsdaten.
+
+Die Abschlussprüfung hat zusätzlich das Verhalten bei einem langsamen Headerabruf, die Auswahl von GTIN bei mehreren Barcodes, fehlende Vergleichspreise und das Escaping der Produktdaten korrigiert. Die neuen Asset-Versionen sind Core 5 sowie Main, Kategorie, Produkt und Vue 3. Die Vorschau lief beim Audit auf dem Ausgangsstand. [Änderungen am B2B-Theme](meta/documents/changelog_de.md)
+
 ## Warenkorbsummen und Ladeanzeige der Variantenmatrix (2026-11-14)
 
 Auf dem bereitgestellten Stand `ffb0e90` aktualisierte Ceres bei einer Mengenänderung zuerst die Position und übernahm die neuen Summen mit der PUT-Antwort von PlentyONE. Die Mindestbestellwertanzeige wartete auf einen weiteren Sessionabruf. In der Vorschau stimmten Position, Warenwert und Mindestbestellwert bei beiden Wechseln zwischen 1 und 40 Stück spätestens beim Messpunkt nach 2,51 Sekunden überein. Ein Neuladen war in diesem Lauf entbehrlich. [Zeitverlauf in Pluginset 426](.cache/basket-matrix-sync-ffb0e90/native/timeline.json)

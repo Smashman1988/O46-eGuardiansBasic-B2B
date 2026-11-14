@@ -60,12 +60,49 @@ class GuardServices {
     function seo($template,$max=null,$page=null,$total=null){return new \GuardiansBasicB2B\Helper\SeoPage([], $template,$max,$page,$total);}
     function maps($ids){if($ids)throw new RuntimeException('Unexpected recommendations query');return [];}
     function identity($v){return $v;}
-    function sortImages($v){$this->sorts++;return $v;}
+    function sortImages($v){$this->sorts++;usort($v, fn($a,$b)=>$a['position']<=>$b['position']);return $v;}
     function integer($v){return (int)$v;}
     function itemName($v){return $v['texts']['name1']??'Product';}
     function itemURL($v){return '/product/a-42/';}
 }
 function repositoryTemplates($root){$result=[];foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root.'/resources/views')) as $file){if($file->getExtension()!=='twig')continue;$relative=substr(str_replace(DIRECTORY_SEPARATOR,'/',$file->getPathname()),strlen(str_replace(DIRECTORY_SEPARATOR,'/',$root.'/resources/views/')));$name='GuardiansBasicB2B::'.str_replace('/','.',substr($relative,0,-5));$result[$name]=file_get_contents($file->getPathname());$result[$name.'.twig']=$result[$name];}return $result;}
+// Only two indentation gaps change when removing the unreachable header branch.
+function normalizedHeaderIndent($html) {
+    return preg_replace('/\s+(?=<div class="container nopadding">|<nav class="d-print-none">|<\/header>)/', "\n", $html);
+}
+function comparableProductHtml($html, $legacy) {
+    $html = preg_replace_callback('~(<script type="application/ld\+json">)(.*?)(</script>)~s',function ($m) use ($legacy) {
+        $data=json_decode(trim($m[2]),true,512,JSON_THROW_ON_ERROR);
+        if (($data['@type']??null)!=='Product') return $m[0];
+        if ($legacy && ($data['gtin13']??null)==='123') unset($data['gtin13']); // Deliberately invalid fixture barcode.
+        $sort=function (&$object) use (&$sort) { if(!is_array($object))return; ksort($object); foreach($object as &$value)$sort($value); };
+        $sort($data); return $m[1].json_encode($data,JSON_THROW_ON_ERROR).$m[3];
+    },$html);
+    // All normal controls are discounted. Markers scope the variant callback;
+    // indentation before the sale value is the only text whitespace change.
+    $html=str_replace(' data-eg-item-discount class=', ' class=', $html);
+    return normalizedHeaderIndent(preg_replace('~\s*(<span class="item-action i-action-sale">)\s*(<span data-eg-item-rrp-percent>[^<]+</span>%)\s*(</span>)\s*~','$1$2$3',$html));
+}
+function assertPriceUi($html,$full,$price,$rrp,$special) {
+    $dom = new DOMDocument(); $dom->loadHTML($html,LIBXML_NOERROR|LIBXML_NOWARNING); $xpath=new DOMXPath($dom);
+    $root='//article[@data-mainitemid="42"]';
+    $q=function($attr)use($xpath,$root){return $xpath->query($root.'//*[@'.$attr.']');};
+    $groups=$q('data-eg-item-discount'); $hasPrice=is_numeric($price)&&$price>=0;
+    $sale=$hasPrice && is_numeric($rrp) && $rrp>$price;
+    if ($groups->length!==($full?3:0)) throw new RuntimeException('Expected 3 PDP sale sections and no Quickview sale block');
+    if (!$full) return;
+    foreach ($groups as $el) if ((strpos(' '.$el->getAttribute('class').' ',' d-none ')===false)!==$sale) throw new RuntimeException('Invalid visible sale UI');
+    $specialNodes=$q('data-eg-item-special');
+    if($specialNodes->length!==($special?1:0) || ($special && (trim($specialNodes[0]->textContent)!==$special || (strpos($specialNodes[0]->getAttribute('class'),'d-none')!==false)!==$sale))) throw new RuntimeException('Special badge corrupted');
+    foreach (['data-eg-item-price'=>$hasPrice?number_format($price,2,',','.'):'',
+              'data-eg-item-rrp'=>$sale?number_format($rrp,2,',','.'):'',
+              'data-eg-item-rrp-spar'=>$sale?number_format($rrp-$price,2,',','.'):'',
+              'data-eg-item-rrp-percent'=>$sale?number_format((1-$price/$rrp)*-100,0,',','.'):''] as $attr=>$expected) {
+        $nodes=$q($attr);
+        if ($nodes->length!==1 || trim($nodes[0]->textContent)!==$expected) throw new RuntimeException('Unexpected '.$attr.' for '.json_encode([$price,$rrp]));
+        if ($attr==='data-eg-item-price' && (strpos($nodes[0]->parentNode->getAttribute('class'),'d-none')===false)!==$hasPrice) throw new RuntimeException('Invalid default price visibility');
+    }
+}
 $before=file_get_contents($argv[3].'/SingleItem.twig');
 $after=file_get_contents($root.'/resources/views/Item/SingleItem.twig');
 $headers=['before'=>file_get_contents($argv[3].'/Header.twig'),'after'=>file_get_contents($root.'/resources/views/PageDesign/Partials/Header/Header.twig')];
@@ -128,6 +165,15 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
         throw new RuntimeException('Unexpected wishlist lookup or missing fallback');
     }
     if($full){$seen=false;foreach($expected as $index=>$call){if($call==='getBasketForTemplate'){if($seen){unset($expected[$index]);}else{$seen=true;}}}$expected=array_values($expected);}
+    if ($full && strpos($headers['before'], '{% if isVueView %}') !== false) {
+        $old = ['getCurrentTemplate','getCurrentTemplate','isCheckout','getCurrentTemplate','getCurrencyData','getCurrencyData','shouldBeCached','getURLById','getCurrencyData'];
+        $at = null;
+        for ($i = 0; $i < count($expected); $i++) {
+            if (array_slice($expected,$i,count($old)) === $old) { $at=$i; break; }
+        }
+        if ($at === null) throw new RuntimeException('Baseline header read sequence missing');
+        array_splice($expected,$at,count($old),['getCurrencyData','shouldBeCached','getURLById']);
+    }
     $textDelta=count($pair['before']['texts'])-count($pair['after']['texts']);
     $guardAlreadyPresent=strpos($before,'Detail properties and recommendation cards are omitted from Quickview')!==false;
     $matrixReuseAlreadyPresent=strpos($before,'set matrixLabel =')!==false;
@@ -135,11 +181,45 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
     $imageSortReuseAlreadyPresent=strpos($before,'for prevImg in sortedItemImages')!==false;
     $expectedBeforeSorts=$full&&($case['images']??3)>1&&!$imageSortReuseAlreadyPresent?2:1;
     if($pair['before']['sorts']!==$expectedBeforeSorts||$pair['after']['sorts']!==1)throw new RuntimeException('Unexpected image sorting count');
-    if($pair['before']['html']!==$pair['after']['html']||$pair['after']['calls']!==$expected||$pair['before']['containers']!==$pair['after']['containers']){file_put_contents($argv[2].'.failure.json',json_encode(['case'=>$case,'pair'=>$pair],JSON_PRETTY_PRINT));throw new RuntimeException('Render or retained service sequence changed');}
+    if(comparableProductHtml($pair['before']['html'],true)!==comparableProductHtml($pair['after']['html'],false)||$pair['after']['calls']!==$expected||$pair['before']['containers']!==$pair['after']['containers']){file_put_contents($argv[2].'.failure.json',json_encode(['case'=>$case,'pair'=>$pair],JSON_PRETTY_PRINT));throw new RuntimeException('Render or retained service sequence changed');}
     if(!$full&&($pair['after']['externalStyle']||$pair['after']['externalScript']||$pair['after']['containers']))throw new RuntimeException('Quickview reached external include/container');
     if($full&&$pair['after']['externalStyle']!==1)throw new RuntimeException('Full page inherited external context probe missing');
     if($case['builder']&&$pair['after']['externalScript']!==1)throw new RuntimeException('Builder full-page script context probe missing');
-    $report['cases'][]=$case+['status'=>'PASS','fullPage'=>$full,'htmlBytes'=>$pair['after']['bytes'],'sha256'=>$pair['after']['sha256'],'identicalHtml'=>true,'beforeCalls'=>$pair['before']['calls'],'afterCalls'=>$pair['after']['calls'],'translationCallsBefore'=>count($pair['before']['texts']),'translationCallsAfter'=>count($pair['after']['texts']),'imageSortsBefore'=>$pair['before']['sorts'],'imageSortsAfter'=>$pair['after']['sorts'],'removedCalls'=>count($pair['before']['calls'])-count($pair['after']['calls']),'externalStyles'=>$pair['after']['externalStyle'],'externalScripts'=>$pair['after']['externalScript']];
+    if ($case['lang'] === 'de' && $full && ($case['quantity'] ?? -1) === 0) {
+        $imageContext = $ctx;
+        $imageContext['item']['documents'][0]['data']['images']['all'] = array_reverse($item['images']['all']);
+        $imageHtml = $twig->render('SingleItem', $imageContext);
+        if (strpos($imageHtml, '<link rel="preload" href="/image-middle.jpg" as="image">') === false ||
+            strpos($imageHtml, '<img fetchpriority="high" src="/image-middle.jpg"') === false ||
+            strpos($imageHtml, '<link rel="preload" href="/image-middle-2.jpg"') !== false) {
+            throw new RuntimeException('PDP preload and main gallery must select the same sorted image');
+        }
+        $imageContext['item']['documents'][0]['data']['images']['all'] = [];
+        $imageHtml = $twig->render('SingleItem', $imageContext);
+        if (strpos($imageHtml, '<link rel="preload" href="" as="image">') !== false) {
+            throw new RuntimeException('PDP must omit empty image preload');
+        }
+        $report['imagePreload'] = ['unsortedImages'=>'PASS', 'emptyGallery'=>'PASS'];
+    }
+    if ($case['lang'] === 'de' && ($case['quantity'] ?? -1) === 0) {
+        foreach ([0, 0.0, '0', '0.00', null] as $unitRrp) {
+            $edgeContext = $ctx;
+            $edgeContext['item']['documents'][0]['data']['prices']['rrp']['unitPrice']['value'] = $unitRrp;
+            $edgeHtml = $twig->render('SingleItem', $edgeContext);
+            assertPriceUi($edgeHtml,$full,4.99,$unitRrp,'');
+            $report['zeroUnitRrp'][] = ['fullPage'=>$full, 'value'=>$unitRrp];
+        }
+        foreach ([[4.99,null,'Neu'],[4.99,2.5,'Top'],[4.99,4.99,''],[4.99,'N / A','Top'],
+                  ['N / A',9.99,'Neu'],[null,null,''],['4.99','9.99','Top'],[0,9.99,'Neu']] as [$price,$rrp,$special]) {
+            $edgeContext=$ctx; $data=&$edgeContext['item']['documents'][0]['data'];
+            if ($rrp===null) unset($data['prices']['rrp']); else $data['prices']['rrp']['unitPrice']['value']=$rrp;
+            $data['prices']['default']['unitPrice']['value']=$price;
+            $data['item']['storeSpecial']=['id'=>$special==='Top'?2:($special==='Neu'?3:0)];
+            assertPriceUi($twig->render('SingleItem',$edgeContext),$full,$price,$rrp,$special); unset($data);
+            $report['comparisonPrices'][]=['fullPage'=>$full,'price'=>$price,'rrp'=>$rrp,'special'=>$special];
+        }
+    }
+    $report['cases'][]=$case+['status'=>'PASS','fullPage'=>$full,'htmlBytes'=>$pair['after']['bytes'],'sha256'=>$pair['after']['sha256'],'identicalHtml'=>$pair['before']['html']===$pair['after']['html'],'equalExceptDocumentedHeaderPriceAndSchemaChanges'=>true,'beforeCalls'=>$pair['before']['calls'],'afterCalls'=>$pair['after']['calls'],'translationCallsBefore'=>count($pair['before']['texts']),'translationCallsAfter'=>count($pair['after']['texts']),'imageSortsBefore'=>$pair['before']['sorts'],'imageSortsAfter'=>$pair['after']['sorts'],'removedCalls'=>count($pair['before']['calls'])-count($pair['after']['calls']),'externalStyles'=>$pair['after']['externalStyle'],'externalScripts'=>$pair['after']['externalScript']];
 }
 // Header alone: retain full basket preparation and the existing PDP snapshot.
 foreach(['de','en','fr','it','es']as$lang)foreach([0,9,9.5,10,25]as$quantity)foreach([false,true]as$snapshot){$pair=[];foreach(['before','after']as$version){
@@ -149,9 +229,9 @@ foreach(['de','en','fr','it','es']as$lang)foreach([0,9,9.5,10,25]as$quantity)for
     $hc=$ctx;$hc['services']=array_fill_keys(array_keys($ctx['services']),$svc);$hc['category']=null;
     if($snapshot)$hc['pdpBasketForHeader']=['itemQuantity'=>$quantity,'currency'=>'EUR'];
     $pair[$version]=['html'=>$twig->render('Header',$hc),'calls'=>$svc->calls];
-}if($pair['before']['html']!==$pair['after']['html'])throw new RuntimeException('Header quantity output changed');
+}if(normalizedHeaderIndent($pair['before']['html'])!==normalizedHeaderIndent($pair['after']['html']))throw new RuntimeException('Header quantity output changed');
  $beforeBasket=array_values(array_filter($pair['before']['calls'],fn($x)=>strpos($x,'getBasket')===0));$afterBasket=array_values(array_filter($pair['after']['calls'],fn($x)=>strpos($x,'getBasket')===0));
  if($beforeBasket!==($snapshot?[]:['getBasketForTemplate'])||$afterBasket!==($snapshot?[]:['getBasketForTemplate']))throw new RuntimeException('Header getter side effects changed');
- $report['headers'][]=['lang'=>$lang,'quantity'=>$quantity,'pdpSnapshot'=>$snapshot,'identicalHtml'=>true,'beforeBasketCalls'=>$beforeBasket,'afterBasketCalls'=>$afterBasket];
+ $report['headers'][]=['lang'=>$lang,'quantity'=>$quantity,'pdpSnapshot'=>$snapshot,'identicalHtml'=>$pair['before']['html']===$pair['after']['html'],'equalExceptHeaderIndent'=>true,'beforeBasketCalls'=>$beforeBasket,'afterBasketCalls'=>$afterBasket];
 }
 $report['status']='PASS';$report['dependencyDeprecations']=$notices;file_put_contents($argv[2],json_encode($report,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));echo count($report['cases']).' actual-own-template ALT/NEU renders PASS, Twig '.Twig\Environment::VERSION.PHP_EOL;

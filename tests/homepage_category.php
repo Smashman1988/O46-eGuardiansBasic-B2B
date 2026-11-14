@@ -127,10 +127,10 @@ foreach (['de','en','fr','it','es'] as $language) foreach (['EUR','USD'] as $cur
     check($after['search']->calls[0]['itemList']['category'] === ['page'=>1,'itemsPerPage'=>60,'sorting'=>'variation.createdAt_desc','facets'=>[8855],'categoryId'=>60,'priceMin'=>$query?2.0:0.0,'priceMax'=>$query?9.0:0.0],'Parameter contract changed');
     check($before['calls']->pluginPath===count($ids),'Wrong baseline plugin path count');
     check($after['calls']->pluginPath===($ids?1:0),'Wrong reused plugin path count');
-    check($after['calls']->translations===7 && $before['calls']->translations===7,'Translation count changed');
+    check($after['calls']->translations===5 && $before['calls']->translations===7,'Unexpected card translation preparation');
     check($after['checkout']->reads===1 && $before['checkout']->reads===1,'Currency read changed');
     check(substr_count($new,'data-eg-item="')===count($ids),'Card count differs');
-    $rows[] = ['language'=>$language,'currency'=>$currency,'cards'=>count($ids),'ids'=>$ids,'query'=>$query,'htmlBytes'=>strlen($new),'cardMarkupContractEqual'=>true,'sha256'=>hash('sha256',$new),'serviceCalls'=>count($after['search']->calls),'attributeFactories'=>count(array_unique($ids)),'pluginPathBefore'=>$before['calls']->pluginPath,'pluginPathAfter'=>$after['calls']->pluginPath,'currencyReads'=>1,'translations'=>7];
+    $rows[] = ['language'=>$language,'currency'=>$currency,'cards'=>count($ids),'ids'=>$ids,'query'=>$query,'htmlBytes'=>strlen($new),'cardMarkupContractEqual'=>true,'sha256'=>hash('sha256',$new),'serviceCalls'=>count($after['search']->calls),'attributeFactories'=>count(array_unique($ids)),'pluginPathBefore'=>$before['calls']->pluginPath,'pluginPathAfter'=>$after['calls']->pluginPath,'currencyReads'=>1,'translations'=>$after['calls']->translations];
 }
 // CategoryListItem still works outside the simple grid, without its prepared path.
 $standalone = [];

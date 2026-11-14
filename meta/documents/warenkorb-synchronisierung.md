@@ -1,5 +1,21 @@
 # Warenkorb, Header und Tab-Synchronisierung
 
+## Native Abnahme von 8ef56a5 und lokale Routenkorrektur
+
+Pluginset 426 lieferte alle zwölf Theme-Assets bytegleich zu `8ef56a5`. Der verknüpfte Warenkorb ist dort eine Inhaltskategorie: Plenty kennzeichnete die Seite als Warenkorb, doch der bisherige Twig-Guard für `tpl.basket` schloss sie vom Sync-Partial aus. Im unveränderten Shop stimmten beide Header nach Hinzufügen, den Mengenwechseln 1 → 40 → 1, schnellen Änderungen und dem Entfernen. Der warme zweite Tab benötigte keinen zusätzlichen Headerabruf. Der Ladehinweis fehlte bei allen drei bearbeiteten Mengenzuständen.
+
+Das Layout berücksichtigt jetzt auch die von Ceres als Warenkorb aufgelöste Inhaltskategorie. Nur wenn der Kontext keine Ceres-Seitenklassen liefert, verwendet es die positive, in IO konfigurierte Kategorie-ID. Dieselbe Entscheidung steuert die Kennzeichnung im Body und die bestehende Synchronisierung vor dem Vue-Mount. Sie hängt weder von Sprache und URL noch von einer festen Kategorienummer ab.
+
+Beim Test mit ausschließlich im Browser eingefügtem korrigierten Markup war der Ladezustand bei allen drei Änderungen sichtbar. Die bestätigten Nettowarenwerte für beide Positionen waren 204,59 €, 9,98 € und 29,94 €. Anschließend war der isolierte Gastwarenkorb leer. Der Fehlercheck des Gesamtlaufs meldete gesperrte PayPal-Anfragen. Die lesende Gegenprobe belegte den Ursprung. Der lokale Auditbericht liegt unter `.cache/global-audit-20261114/Pruefbericht.html`.
+
+### Schreibbestätigung der Variantenmatrix
+
+IO 5.0.86 gibt auf eine erfolgreiche Einzel- oder Sammelbuchung HTTP 201 und das JSON-Feld `data: true` zurück. Im lokalen Test verarbeitete der unveränderte jQuery-Parser die von den IO-Klassen erzeugte Antwort auch mit dem in der Vorschau beobachteten Content-Type `text/html`. Bei einem Timeout, einer Teilbuchung oder einer unklaren Antwort bleiben die Mengen zur Kontrolle erhalten. Der Shop sendet für diese Aktion keinen weiteren POST.
+
+Die Matrix sperrt die Mengeneingaben, während die Auswahl mit Plenty abgeglichen und gebucht wird. Eine bestätigte Buchung gibt die Bedienung unmittelbar wieder frei. Ein nachlaufender Headerabruf kann keine neue Mengeneingabe löschen. Zwei Browser-Tabs, schnelle Mengenwechsel, der Sessionwechsel und die Anzeige des Mindestbestellwerts von 199 € netto wurden lokal mit kontrollierten Antworten geprüft. Die native Abnahme dieses Änderungspakets in einem bereitgestellten Pluginset steht aus.
+
+Die folgenden Abschnitte beschreiben den früheren Vergleich.
+
 Stand der Untersuchung ist der 14. November 2026. Der native Vorher-Lauf verwendete die Gast-Preview von Outlet46 B2B, Pluginset 426, EUR und Lieferland Deutschland. Vier Dokumentabrufe lieferten HTTP 200 und vier Prüfungen des ausgelieferten Core-Bundles bestätigten den Inhalt von `ffb0e90`. Die Quellenvergleiche beziehen sich auf diesen Commit. Der lokale Änderungsstand und die Reichweite seiner Tests sind weiter unten angegeben.
 
 ## Wie der Unterschied von 199,60 € zu 4,99 € entstand

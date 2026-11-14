@@ -256,6 +256,7 @@ namespace {
         'content'=>readView('Category/Content/CategoryContent'),
         'GuardiansBasicB2B::Category.Content.PreparedShopBuilder'=>readView('Category/Content/PreparedShopBuilder'),
         'GuardiansBasicB2B::Category.Item.CategoryItemContent'=>readView('Category/Item/CategoryItemContent'),
+        'GuardiansBasicB2B::Category.Item.Partials.AllItemsLink'=>readView('Category/Item/Partials/AllItemsLink'),
         'GuardiansBasicB2B::Category.Item.Partials.CategoryGridOnly'=>'<div class="simple">{% for item in itemList %}{{ item.data.variation.id }},{% endfor %}</div>',
         'GuardiansBasicB2B::Category.Item.Partials.CategoryListItem'=>'<span class="item">{{ item.data.variation.id }}</span>',
         'GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2'=>'<span class="item-first">{{ item.data.variation.id }}</span>',
@@ -503,6 +504,25 @@ namespace {
         check($search->calls[0]['itemList']['sorting'] === 'texts.name1_asc','Search sort changed');
         check(strpos($html,'<span class="sort-val">Name</span>') !== false,'Dropdown displays wrong active sort');
         check(strpos($html,'data-eg-sortval="variation.createdAt_desc"') !== false,'Default sort cannot be selected again');
+    });
+    foreach (['17,19x,0,17,19', ['17',['8'],'19x',17,19], []] as $rawFacets) {
+        test('list/facet-input-' . json_encode($rawFacets), function () use ($rawFacets,$request,$extension,$search) {
+            $request->params = ['facets'=>$rawFacets];
+            $search->calls = [];
+            $extension->getItemsFromCat(200, 24, [7]);
+            $expected = $rawFacets === [] ? [7] : [7,17,19];
+            check(count($search->calls) === 1 && $search->calls[0]['itemList']['facets'] === $expected, 'Incorrect IDs sent to category search');
+            $visible = $extension->getFacetView([], [7])['selected'];
+            check($visible === ($rawFacets === [] ? ['7'] : ['17','19','7']), 'Active facet IDs disagree with search');
+        });
+    }
+    test('list/structured-sort-uses-configured-default', function () use ($request,$extension,$renderer,$search) {
+        $request->params = ['sorting'=>['price']];
+        $search->calls = [];
+        $extension->getItemsFromCat(200, 24, []);
+        check(count($search->calls) === 1 && $search->calls[0]['itemList']['sorting'] === 'variation.createdAt_desc',
+            'A structured sort key reached the Ceres validator');
+        check($renderer->params['itemSorting'] === '', 'Structured sort data leaked into the render context');
     });
     foreach ([null, '', 'false', 'true'] as $flag) {
         test('list/fragment-factories-' . json_encode($flag),function () use ($flag,$request,$extension,$renderer,$search) {
@@ -1031,7 +1051,7 @@ namespace {
     test('compatibility/production-source',function () use ($root) {
         $fragments = ['SeoPage'=>file_get_contents($root . '/src/Helper/SeoPage.php')];
         $lines = file($root . '/src/Extensions/Base_Extension.php');
-        foreach (['getFacetView','createSeoPage','prepareSeoContent','getItemsFromCat','cardAttributeFactory','getCardAttributeMaps','restGetContent'] as $name) {
+        foreach (['requestedFacetIds','getFacetView','createSeoPage','prepareSeoContent','getItemsFromCat','cardAttributeFactory','getCardAttributeMaps','restGetContent'] as $name) {
             $method = new ReflectionMethod(Base_Extension::class,$name);
             $fragments[$name] = "<?php\n" . implode('',array_slice($lines,$method->getStartLine()-1,$method->getEndLine()-$method->getStartLine()+1));
         }

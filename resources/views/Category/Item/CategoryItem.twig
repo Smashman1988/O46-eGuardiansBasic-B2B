@@ -206,7 +206,7 @@
                 <div class="scroller-status"><div class="loader-wheel infinite-scroll-request"><i><i><i><i><i><i><i><i><i><i><i><i></i></i></i></i></i></i></i></i></i></i></i></i></div>
                     <p class="infinite-scroll-last tcenter">{{ trans("GuardiansBasicB2B::Template.iscrollinfo1") }} {{ itemCountTotal }} {% if isSearch %} "{{ searchString }}"{% else %} {{ trans("GuardiansBasicB2B::Template.items") }} {{ trans("GuardiansBasicB2B::Template.iscrollinfo2") }} {{ catDetails.name }}{% endif %} {{ trans("GuardiansBasicB2B::Template.iscrollinfo3") }}
                         <br><br>{{ trans("GuardiansBasicB2B::Template.iscrollinfo4") }}
-                        <br><br>{{ trans("GuardiansBasicB2B::Template.iscrollinfo5") }} <a href="{% if lang=="en" %}/en/All-Articles/{% elseif lang=="fr" %}/fr/tous-les-articles/{% else %}/alle-artikel/{% endif %}{% if currencycheck != "EUR" %}?currency={{ currencycheck }}{% endif %}" title="{{ item.data | itemName }}">{{ trans("GuardiansBasicB2B::Template.iscrollinfo6") }}</a></p>
+                        <br><br>{{ trans("GuardiansBasicB2B::Template.iscrollinfo5") }} {% include 'GuardiansBasicB2B::Category.Item.Partials.AllItemsLink' with {'language': lang, 'currency': currencycheck} only %}</p>
                     <p class="infinite-scroll-error tcenter">{{ trans("GuardiansBasicB2B::Template.iscrollinfo7") }}</p>
                 </div>
         </div>     

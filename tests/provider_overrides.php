@@ -22,6 +22,12 @@ $old=str_replace('class GuardiansBasicServiceProvider extends','class BeforeProv
 eval(substr($old,5));
 $keys=['head','header','page_design','footer','homepage','category_content','category_item','basket','checkout','order_confirmation','login','register','item','category_view','my_account','cancellation_rights','legal_disclosure','privacy_policy','terms_conditions','item_not_found','page_not_found'];
 $configs=array_merge(['','all','unknown','all, item','item, head, header','item,head','all, all',implode(', ',$keys)],$keys);
+$legalTemplates = [
+    'IO.tpl.cancellation-rights' => 'StaticPages.CancellationRights',
+    'IO.tpl.legal-disclosure' => 'StaticPages.LegalDisclosure',
+    'IO.tpl.privacy-policy' => 'StaticPages.PrivacyPolicy',
+    'IO.tpl.terms-conditions' => 'StaticPages.TermsAndConditions',
+];
 $cases=[];
 foreach($configs as $config)foreach([false,true]as$search){$pair=[];foreach(['before'=>'BeforeProvider','after'=>'GuardiansBasicServiceProvider']as$v=>$class){
     $GLOBALS['providerApp']=new class {public $calls=[];function register($x){$this->calls[]=$x;}};
@@ -30,6 +36,15 @@ foreach($configs as $config)foreach([false,true]as$search){$pair=[];foreach(['be
     $fq='GuardiansBasicB2B\\Providers\\'.$class;$p=new $fq();$p->register();$t=new \Plenty\Plugin\Templates\Twig();$d=new \Plenty\Plugin\Events\Dispatcher();$p->boot($t,$d,new \Plenty\Plugin\ConfigRepository($config));
     $events=[];foreach($d->listeners as[$event,$fn,$priority]){$c=$event==='IO.init.templates'?new \IO\Extensions\Functions\Partial():new \IO\Helper\TemplateContainer();$ret=$fn($c);$events[]=['event'=>$event,'priority'=>$priority,'return'=>$ret,'data'=>$c->data];}
     $pair[$v]=['registration'=>$GLOBALS['providerApp']->calls,'extensions'=>$t->extensions,'events'=>$events,'consents'=>$GLOBALS['providerServices'][\Plenty\Modules\Webshop\Consent\Contracts\ConsentRepositoryContract::class]->calls,'resultFields'=>$GLOBALS['providerServices'][\Plenty\Modules\Webshop\ItemSearch\Helpers\ResultFieldTemplate::class]->data];
-}if($pair['before']!==$pair['after'])throw new \RuntimeException('Changed configured provider behavior: '.$config);$cases[]=['config'=>$config,'searchAdapter'=>$search,'listeners'=>count($pair['after']['events']),'status'=>'PASS'];}
+}
+foreach ($pair['before']['events'] as &$event) {
+    $legalTemplate = $legalTemplates[$event['event']] ?? null;
+    if ($legalTemplate !== null && $event['data']['template'] === 'GuardiansBasicB2B::' . $legalTemplate) {
+        // Only the four previously non-existent targets have a replacement.
+        $event['data']['template'] = 'Ceres::' . $legalTemplate;
+    }
+}
+unset($event);
+if($pair['before']!==$pair['after'])throw new \RuntimeException('Changed or missing configured provider target: '.$config);$cases[]=['config'=>$config,'searchAdapter'=>$search,'listeners'=>count($pair['after']['events']),'status'=>'PASS'];}
 file_put_contents($argv[2],json_encode(['status'=>'PASS','cases'=>$cases],JSON_PRETTY_PRINT));echo count($cases)." provider configuration/event-order comparisons PASS\n";
 }

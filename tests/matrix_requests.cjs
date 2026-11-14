@@ -50,7 +50,7 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
                             if (mode === 'timeout') return;
                             timer = setTimeout(() => {
                                 openBatches--;
-                                if (mode === 'error' || mode === 'allFailed') complete(503, 'Unavailable');
+                                if (mode === 'error' || mode === 'allFailed' || (mode === 'overflowError' && batchIds[0] > 300)) complete(503, 'Unavailable');
                                 else complete(200, 'OK', { text: JSON.stringify({ data: {
                                     items, missing: mode === 'partial' ? [3] : []
                                 } }) });
@@ -65,7 +65,8 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
                                 if (mode === 'allFailed') { complete(503, 'Unavailable'); return; }
                                 const doc = projection ? projection.docs[id] : {
                                     stock: { net: 11 }, prices: { default: { unitPrice: { value: 2.5 } } },
-                                    barcodes: [{ code: '001' + id }], variation: { maximumOrderQuantity: 3 },
+                                    barcodes: [{ type:'CODE_128', name:'kein GTIN', code:'internal-' + id },
+                                        { barcodeType:'GTIN_13', code:'001' + id }], variation: { maximumOrderQuantity: 3 },
                                     images: { variation: [{ url: '#single-' + id, position: 1 }] }
                                 };
                                 complete(200, 'OK', { text: JSON.stringify({ data: { documents: [{ data: doc }] } }) });
@@ -118,7 +119,7 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
             assert.deepEqual(empty, ['Unavailable', 'false', 0]);
         }
         // Allow transport completion and the bounded fallback queue to finish.
-        for (let i = 0; i < 5; i++) await page.clock.fastForward(20);
+        for (let i = 0; i < 8; i++) await page.clock.fastForward(20);
         const result = await page.evaluate(({ count, allImages }) => {
             const samples = allImages ? Array.from({ length: count }, (_, i) => i + 1) : [...new Set([1, Math.min(count, 300), count])];
             const images = samples.map(id => {
@@ -137,11 +138,13 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
         }, { count, allImages: !!projection });
         const requestedIds = result.batches.flatMap(batch => batch.ids);
         const allIds = Array.from({ length: count }, (_, i) => i + 1);
-        assert.deepEqual(baseline ? [...new Set(requestedIds)] : requestedIds, baseline ? allIds : allIds.slice(0, 300));
-        assert.equal(result.batches.length, 1);
+        assert.deepEqual(baseline ? [...new Set(requestedIds)] : requestedIds, allIds);
+        assert.equal(result.batches.length, baseline ? 1 : Math.ceil(count / 300));
+        if (!baseline) assert.ok(result.batches.every(batch => batch.ids.length <= 300));
         const lateFallback = baseline && mode === 'slow';
         const allFallback = lateFallback || mode === 'error' || mode === 'timeout' || mode === 'allFailed';
-        const expectedSingles = allFallback ? allIds : mode === 'partial' ? [2] : allIds.slice(300);
+        const expectedSingles = allFallback ? allIds : mode === 'partial' ? [2] :
+            (baseline || mode === 'overflowError') ? allIds.slice(300) : [];
         assert.deepEqual(result.singles, expectedSingles);
         assert.equal(result.aborted, mode === 'timeout' ? 1 : 0);
         assert.ok(result.maxSingles <= 6 && result.openSingles === 0);
@@ -196,7 +199,7 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
             }
         }
         for (const entry of ['resources/js/item.js', 'resources/js/item.min.js']) {
-            for (const args of [['slow', 60, 2], ['error', 14], ['timeout', 14], ['partial', 5], ['allFailed', 5], ['ok', 300, 2], ['overflow', 312, 2]]) {
+            for (const args of [['slow', 60, 2], ['error', 14], ['timeout', 14], ['partial', 5], ['allFailed', 5], ['ok', 300, 2], ['overflow', 312, 2], ['overflowError', 312, 2]]) {
                 const result = await scenario(browser, entry, ...args);
                 console.log(JSON.stringify({ entry, ...result }));
             }

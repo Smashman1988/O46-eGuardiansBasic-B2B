@@ -78,13 +78,25 @@ class Base_Extension extends Twig_Extension
         ];
     }
 
+    private function requestedFacetIds(): array
+    {
+        $raw = $this->req->get('facets');
+        $values = is_string($raw) ? explode(',', $raw) : (is_array($raw) ? $raw : [$raw]);
+        $ids = [];
+        foreach ($values as $value) {
+            $id = SeoPage::positiveInteger($value, true);
+            if ($id !== null) {
+                $ids[$id] = $id;
+            }
+        }
+        return array_values($ids);
+    }
+
     /** Presentation only: reuse this request's IO result, without another search or cache. */
     public function getFacetView(array $facets, array $selectedFacets = []): array
     {
-        $raw = $this->req->get('facets');
-        $requested = is_string($raw) ? explode(',', $raw) : [];
         $selected = [];
-        foreach (array_merge($requested, $selectedFacets) as $value) {
+        foreach (array_merge($this->requestedFacetIds(), $selectedFacets) as $value) {
             $id = SeoPage::positiveInteger($value);
             if ($id !== null && !in_array((string)$id, $selected, true)) {
                 $selected[] = (string)$id;
@@ -393,16 +405,9 @@ class Base_Extension extends Twig_Extension
         // The source category belongs to the list only. Never re-initialize the
         // routed page's shared CategoryContext (metadata, assets, notifications).
 
-        $filterFacets = $this->req->get( 'facets', '' );
-        $facets = $ownFacets ?: [];
-        if($filterFacets!=""){
-            $filterFacetsSplitted = explode(',',$filterFacets);
-            foreach ($filterFacetsSplitted as $facetId) {
-                if ($facetId !== '') {
-                    $facets[] = intval($facetId);
-                }
-            }
-        }
+        $facets = array_values(array_unique(array_merge($ownFacets ?: [], $this->requestedFacetIds())));
+        $sorting = $this->req->get('sorting', '');
+        $sorting = is_string($sorting) ? $sorting : '';
 
         // --- NEU: Preisspanne flexibel auflösen (URL > Param > 0/0)
         [$priceMin, $priceMax] = $this->resolvePriceRange($priceFilter);
@@ -410,7 +415,7 @@ class Base_Extension extends Twig_Extension
         $itemListOptions = [
             'page'          => SeoPage::positiveInteger($this->req->get('page', 1)) ?? 1,
             'itemsPerPage'  => $maxItemsPerPage,
-            'sorting'       => $this->req->get( 'sorting', '' ),
+            'sorting'       => $sorting,
             'facets'        => $facets,
             'categoryId'    => $categoryId,
             'priceMin'      => $priceMin,
@@ -461,7 +466,7 @@ class Base_Extension extends Twig_Extension
         if (!$listFragment) {
             $resultItems['searchOptions'] = SearchOptions::get(SearchOptions::SCOPE_CATEGORY);
         }
-        $resultItems['itemSorting'] = $this->req->get( 'sorting', '' );
+        $resultItems['itemSorting'] = $sorting;
         $resultItems['query'] = ['items' => $effectiveSize, 'sorting' => $itemListOptions['sorting']];
         $resultItems['selectedFacets'] = $ownFacets;
 

@@ -54,20 +54,37 @@ foreach (['de','en','fr','it','es'] as $language) {
         $template='GuardiansBasicB2B::Category.Item.Partials.CategoryListItem'.($mode==='eager'?'2':'');
         $html=[]; $calls=[];
         foreach (['before','after'] as $version) { $fixture->pluginCalls=$fixture->lookups=0; $html[$version]=$twig[$version]->render($template,$context); $calls[$version]=[$fixture->pluginCalls,$fixture->lookups]; }
-        cardCheck(cardMarkupContract($html['before'],true)===cardMarkupContract($html['after']), 'Card semantics differ '.$language.'/'.$currency.'/'.$mode.'/'.$id);
+        $expected = withoutInvalidCardComparisons($html['before'], $item['data']['prices']['rrp']['unitPrice']['value'] === null ? [$id] : []);
+        cardCheck(cardMarkupContract($expected,true)===cardMarkupContract($html['after']), 'Card semantics differ '.$language.'/'.$currency.'/'.$mode.'/'.$id);
         cardCheck($calls['before']===$calls['after'], 'Card service/helper calls changed');
-        $before=cardMarkupCounts($html['before']); $after=cardMarkupCounts($html['after']);
-        cardCheck($before['elements']-$after['elements']===2+($item['data']['item']['feedbackCount']?0:1),'Unexpected element delta');
+        $before=cardMarkupCounts($html['before']); $expectedCounts=cardMarkupCounts($expected); $after=cardMarkupCounts($html['after']);
+        cardCheck($expectedCounts['elements']-$after['elements']===2+($item['data']['item']['feedbackCount']?0:1),'Unexpected element delta');
         $rows[]=['language'=>$language,'currency'=>$currency,'mode'=>$mode,'itemId'=>$id,'before'=>$before,'after'=>$after,'semantics'=>'PASS','helperCalls'=>$calls['after']];
     }
     $checkout=new ProductCardCurrency(); $checkout->currency='EUR';
     $context=['itemList'=>$items,'services'=>['checkout'=>$checkout],'category'=>['id'=>60],'prioritizeFirstCardImage'=>true];
+    $edgeContext = $context;
+    // A zero RRP on one item must not interrupt the rest of the grid.
+    foreach ([0, 0.0, '0', '0.00', null] as $index => $zeroRrp) {
+        $edgeContext['itemList'][$index]['data']['prices']['rrp']['unitPrice']['value'] = $zeroRrp;
+    }
+    $edgeHtml = $twig['after']->render('GuardiansBasicB2B::Category.Item.Partials.CategoryGridOnly', $edgeContext);
+    cardCheck(substr_count($edgeHtml, 'data-eg-item="') === 60, 'Zero RRP interrupted 60-card grid');
+    foreach ([['N / A', 9.99, false], [4.99, null, false], [4.99, '0.00', false], [4.99, 'N / A', false],
+              [4.99, 4.99, false], [4.99, 2.5, false], ['4.99', '9.99', true], [0, 9.99, true]] as [$price,$rrp,$sale]) {
+        $sample = $items[0];
+        $sample['data']['prices']['default']['unitPrice']['value'] = $price;
+        $sample['data']['prices']['rrp']['unitPrice']['value'] = $rrp;
+        $single = $twig['after']->render('GuardiansBasicB2B::Category.Item.Partials.CategoryListItem',
+            ['item'=>$sample,'translations'=>$translations,'cardAttributeMap'=>$fixture->maps[100],'percent'=>17]);
+        cardCheck((strpos($single,'i-action-sale')!==false)===$sale && (strpos($single,'class="cat-rrp-price"')!==false)===$sale,'Invalid card sale label or price');
+    }
     $html=[];
     foreach (['before','after'] as $version) {
         $html[$version]=$twig[$version]->render('GuardiansBasicB2B::Category.Item.Partials.CategoryGridOnly',$context);
         file_put_contents($dir.'/cards-'.$language.'-'.$version.'.html',$html[$version]);
     }
-    cardCheck(cardMarkupContract($html['before'],true)===cardMarkupContract($html['after']), '60-card grid semantics differ');
+    cardCheck(cardMarkupContract(withoutInvalidCardComparisons($html['before'], range(100,159,11)),true)===cardMarkupContract($html['after']), '60-card grid semantics differ');
     cardCheck(substr_count($html['after'],'data-eg-item="')===60,'Lost homepage cards');
     cardCheck(substr_count($html['after'],'fetchpriority="high"')===0,'Empty first image must not gain priority');
     $grids[]=['language'=>$language,'cards'=>60,'before'=>cardMarkupCounts($html['before']),'after'=>cardMarkupCounts($html['after']),'semantics'=>'PASS'];

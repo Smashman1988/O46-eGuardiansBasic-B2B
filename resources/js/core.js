@@ -1,6 +1,25 @@
 /* Shared existing B2B modules. Page entry points retain their initialization order. */
 var O46Core = window.O46Core || { installed: Object.create(null) };
 
+// IO's prepared unitPrice already reflects the customer's net/gross setting.
+O46Core.updateVariationPrices = function ($item, prices) {
+    const amount = entry => {
+        const value = entry && entry.unitPrice && entry.unitPrice.value;
+        if (typeof value !== 'number' && (typeof value !== 'string' || !/^[0-9]+(?:\.[0-9]+)?(?:e[+-]?[0-9]+)?$/i.test(value))) return null;
+        const number = Number(value);
+        return Number.isFinite(number) && number >= 0 ? number : null;
+    };
+    const price = amount(prices && prices.default), rrp = amount(prices && prices.rrp);
+    const sale = price !== null && rrp !== null && rrp > price;
+    const money = new Intl.NumberFormat('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    $item.find('[data-eg-item-price]').text(price === null ? '' : money.format(price)).parent().toggleClass('d-none', price === null);
+    $item.find('[data-eg-item-discount]').toggleClass('d-none', !sale);
+    $item.find('[data-eg-item-special]').toggleClass('d-none', sale);
+    $item.find('[data-eg-item-rrp]').text(sale ? money.format(rrp) : '');
+    $item.find('[data-eg-item-rrp-spar]').text(sale ? money.format(rrp - price) : '');
+    $item.find('[data-eg-item-rrp-percent]').text(sale ? -Math.round((1 - price / rrp) * 100) : '');
+};
+
 /* vendors: shared by main, cat, item, vue. */
 O46Core.vendors = O46Core.vendors || function () {
     if (O46Core.installed.vendors) return;
@@ -45,9 +64,6 @@ O46Core.apiservice = O46Core.apiservice || function () {
                 data: params,
                 dataType: dataType,
                 contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-                beforeSend: function () {
-                    /* Laderosette oder fade effekte oder so */
-                },
                 statusCode: {
                     404: function () {
                         console.error('404');
@@ -68,55 +84,17 @@ O46Core.apiservice = O46Core.apiservice || function () {
                         console.error('Error 500');
                     }
                 },
-                complete: function (jqXHR) {
-               
-                    /* Laderosette oder fade beenden */
-                    //callback("complete");
-                    //var response = jqXHR.responseText ? $.parseJSON(jqXHR.responseText) : {};
-                    //callback(response);
+                success: function (response, textStatus, xhr) {
+                    if (typeof callback === 'function') callback(response, xhr.status);
                 },
-                success: function (jqXHR) {
-            
-                    //var response = jqXHR.responseText ? $.parseJSON(jqXHR.responseText) : {};
-                    if(typeof callback === 'function') {
-                        callback(jqXHR);
+                error: function (xhr) {
+                    var response;
+                    try {
+                        response = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+                    } catch (_) {
+                        response = xhr;
                     }
-                    
-                },
-                fail: function(jqXHR)
-                {
-                    console.log("fail")
-                    var response = "";
-                    try{
-                        response = jqXHR.responseText ? $.parseJSON(jqXHR.responseText) : {};
-                    }
-                    catch(error){
-                        response = jqXHR;
-                    }
-                    
-                    if(typeof callback === 'function') {
-                        callback(response);
-                    }
-
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                   console.log("isError")
-                    //var response = jqXHR ? $.parseJSON(jqXHR) : {};
-                    var response = "";
-                    try{
-                        response = jqXHR.responseText ? $.parseJSON(jqXHR.responseText) : {};
-                    }
-                    catch (error){
-                        response = jqXHR;
-                    }
-                    if(typeof callback === 'function') {
-                         callback(response);
-                    }
-                    //messageServiceTranslations[response.data.exceptionCode]
-                },
-                always: function()
-                {
-
+                    if (typeof callback === 'function') callback(response, xhr.status);
                 }
             });
         };
@@ -126,21 +104,11 @@ O46Core.apiservice = O46Core.apiservice || function () {
            * @param {string} data
            * @param {function} callback
            */
-          this.post = function( url, data, callback, dataType){
-            dataType = dataType | "json";  
-            callApi(url,'POST',data,function(response){
-                if(typeof callback === 'function') {
-                    callback(response);
-                }
-            }, dataType);
-          };   
-			this.get = function( url, data, callback, dataType, timeoutMs){
-            dataType = dataType || "json"; 
-            callApi(url,'GET',data,function(response){
-                if(typeof callback === 'function') {
-                    callback(response);
-                }
-            },dataType,timeoutMs);
+          this.post = function(url, data, callback, dataType, timeoutMs) {
+            callApi(url, 'POST', data, callback, dataType, timeoutMs);
+          };
+          this.get = function(url, data, callback, dataType, timeoutMs) {
+            callApi(url, 'GET', data, callback, dataType, timeoutMs);
           };
           this.put = function(url, data){
             this.callApi(url,'PUT',data);
@@ -532,6 +500,13 @@ O46Core.basketHeader = O46Core.basketHeader || (function () {
     return { start, accept, refresh, refreshAfterWrite, invalidate };
 })();
 
+// IO BasketItemResource::store confirms a completed write with HTTP 201 and data:true.
+O46Core.basketAddError = function(response, status) {
+    if (status === 201 && response?.data === true) return null;
+    const code = response?.data?.exceptionCode;
+    return (typeof code === 'number' || typeof code === 'string') && /^\d+$/.test(String(code)) ? String(code) : '0';
+};
+
 /* basket: shared by main, cat, item, vue. */
 O46Core.basket = O46Core.basket || function () {
     if (O46Core.installed.basket) return;
@@ -546,15 +521,12 @@ this.addItem = function(variationId, quantity, callback) {
         quantity: quantity
     };
 
-    eGuardians.apiservice.post('/rest/io/basket/items/', data, function(response) {
+    eGuardians.apiservice.post('/rest/io/basket/items/', data, function(response, status) {
+        const error = O46Core.basketAddError(response, status);
         const basket = response?.events?.AfterBasketChanged?.basket;
-
         if (basket) O46Core.basketHeader.accept(basket);
-        else if (!response?.data?.exceptionCode) O46Core.basketHeader.refreshAfterWrite();
-
-        if (typeof callback === 'function') {
-            callback(response);
-        }
+        else O46Core.basketHeader.refreshAfterWrite();
+        if (typeof callback === 'function') callback(response, error);
     });
 };
         this.openBasketPreviewSmall = function(callback) {
@@ -874,8 +846,6 @@ O46Core.matrix = O46Core.matrix || function () {
 
   // Vorprüfung + Fehlerfall-Absicherung
   var BASKET_GET_TIMEOUT_MS = 12000;
-  var FINAL_CHECK_GRACE_MS = 500;
-  var FINAL_RETRY_GRACE_MS = 700;
 
   // Notice Box
   var EG_NOTICE_FORCE = true;
@@ -1065,66 +1035,46 @@ O46Core.matrix = O46Core.matrix || function () {
   var EG_I18N = {
     de: {
       add_start: "Wird hinzugefügt...Bitte warten",
-      add_verify: "Prüfe Warenkorb...Bitte warten",
-      add_fix: "Ergänze fehlende Mengen...Bitte warten",
+      add_uncertain: "Warenkorb bitte vor dem erneuten Hinzufügen prüfen.",
       added_ok: "Hinzugefügt ✓",
-      added_partial: "Teilweise erledigt – bitte prüfen",
       not_addable: "Nicht verfügbar",
-      err_retry: "Fehler – bitte neu",
       err_add_fallback: "Fehler beim Hinzufügen.",
-      err_stock: "Die gewünschte Menge konnte nicht vollständig hinzugefügt werden. Bitte Bestand prüfen.",
       info_some_limited: "Einige Mengen wurden an Bestand/Maximalmenge angepasst.",
       info_nothing_addable: "Nichts hinzugefügt – die gewünschte Menge ist bereits im Warenkorb oder aktuell nicht verfügbar."
     },
     en: {
       add_start: "Adding...Please wait",
-      add_verify: "Checking basket...Please wait",
-      add_fix: "Adding missing quantities...Please wait",
+      add_uncertain: "Please check your basket before adding again.",
       added_ok: "Added ✓",
-      added_partial: "Partially done – please check",
       not_addable: "Not available",
-      err_retry: "Error – try again",
       err_add_fallback: "Error adding item.",
-      err_stock: "The requested quantity could not be added completely. Please check stock.",
       info_some_limited: "Some quantities were adjusted to stock/order limits.",
       info_nothing_addable: "Nothing added – the requested quantity is already in the basket or currently unavailable."
     },
     fr: {
       add_start: "Ajout en cours...Veuillez patienter",
-      add_verify: "Vérification du panier...Veuillez patienter",
-      add_fix: "Ajout des quantités manquantes...Veuillez patienter",
+      add_uncertain: "Veuillez vérifier votre panier avant un nouvel ajout.",
       added_ok: "Ajouté ✓",
-      added_partial: "Partiellement terminé – veuillez vérifier",
       not_addable: "Indisponible",
-      err_retry: "Erreur – réessayer",
       err_add_fallback: "Erreur lors de l'ajout.",
-      err_stock: "La quantité demandée n’a pas pu être ajoutée entièrement. Veuillez vérifier le stock.",
       info_some_limited: "Certaines quantités ont été ajustées selon le stock/les limites.",
       info_nothing_addable: "Rien n’a été ajouté – la quantité demandée est déjà dans le panier ou indisponible."
     },
     it: {
       add_start: "Aggiunta in corso...attendere",
-      add_verify: "Controllo carrello...attendere",
-      add_fix: "Aggiunta quantità mancanti...attendere",
+      add_uncertain: "Controlla il carrello prima di aggiungere di nuovo.",
       added_ok: "Aggiunto ✓",
-      added_partial: "Parzialmente fatto – controlla",
       not_addable: "Non disponibile",
-      err_retry: "Errore – riprova",
       err_add_fallback: "Errore durante l'aggiunta.",
-      err_stock: "La quantità richiesta non è stata aggiunta completamente. Controlla lo stock.",
       info_some_limited: "Alcune quantità sono state adattate a stock/limiti.",
       info_nothing_addable: "Niente aggiunto – la quantità richiesta è già nel carrello o non disponibile."
     },
     es: {
       add_start: "Añadiendo...Espere",
-      add_verify: "Comprobando carrito...Espere",
-      add_fix: "Añadiendo cantidades pendientes...Espere",
+      add_uncertain: "Comprueba la cesta antes de volver a añadir.",
       added_ok: "Añadido ✓",
-      added_partial: "Hecho parcialmente – comprueba",
       not_addable: "No disponible",
-      err_retry: "Error – inténtalo de nuevo",
       err_add_fallback: "Error al añadir.",
-      err_stock: "La cantidad solicitada no se pudo añadir completamente. Comprueba el stock.",
       info_some_limited: "Algunas cantidades se ajustaron a stock/límites.",
       info_nothing_addable: "No se añadió nada – la cantidad solicitada ya está en el carrito o no está disponible."
     }
@@ -1153,7 +1103,6 @@ O46Core.matrix = O46Core.matrix || function () {
 
   // === HELPERS ===
   function formatEuro(n) {
-    maybeRefreshCurrencySymbol();
     n = (typeof n === "number" && isFinite(n)) ? n : 0;
     return EG_NUMBER_FORMAT.format(n) + " " + EG_CURRENCY_SYMBOL;
   }
@@ -1161,12 +1110,6 @@ O46Core.matrix = O46Core.matrix || function () {
   function toInt(v) {
     var n = parseInt(v, 10);
     return isFinite(n) ? n : 0;
-  }
-
-  function sleep(ms) {
-    return new Promise(function (resolve) {
-      setTimeout(resolve, ms);
-    });
   }
 
   function getVariationsJson(matrix) {
@@ -1678,7 +1621,9 @@ O46Core.matrix = O46Core.matrix || function () {
 
       txt = txt.toLowerCase();
 
-      if (txt.indexOf("ean") !== -1) return code;
+      if (txt.indexOf("ean") !== -1 || [b.type, b.barcodeType].some(function (type) {
+        return /^gtin_(?:8|13|14|128)$/i.test(String(type ?? "").trim());
+      })) return code;
     }
 
     for (var j = 0; j < barcodes.length; j++) {
@@ -1742,8 +1687,19 @@ O46Core.matrix = O46Core.matrix || function () {
 
     if (!window.eGuardians || !eGuardians.apiservice || !eGuardians.apiservice.get) return cb();
 
-    // Mirror the endpoint's limit. Remaining rows need their existing single-item data.
-    var key = missingIds.slice(0, BATCH_MAX_IDS).join(",");
+    // Process at most one chunk at a time. Missing rows in completed chunks
+    // retain the usual bounded single-item fallback after all chunks finish.
+    var offset = 0;
+    function nextChunk() {
+      if (offset >= missingIds.length) return cb();
+      var ids = missingIds.slice(offset, offset + BATCH_MAX_IDS);
+      offset += ids.length;
+      fetchVariationChunk(ids.join(","), nextChunk);
+    }
+    nextChunk();
+  }
+
+  function fetchVariationChunk(key, cb) {
     if (vBatchInflight[key]) {
       vBatchInflight[key].push(cb);
       return;
@@ -2145,6 +2101,7 @@ O46Core.matrix = O46Core.matrix || function () {
   }
 
   function recalcMatrixTotals(matrix) {
+    maybeRefreshCurrencySymbol();
     var totalQty = 0;
     var totalSum = 0;
 
@@ -2179,295 +2136,63 @@ O46Core.matrix = O46Core.matrix || function () {
   }
 
   // === BASKET UI ===
-  function extractAddErrorCode(response) {
-    try {
-      if (response && response.data && response.data.exceptionCode) return String(response.data.exceptionCode);
-      if (response && response.exceptionCode) return String(response.exceptionCode);
-      if (response && response.data && response.data.code) return String(response.data.code);
-      if (response && response.status && toInt(response.status) >= 400) return String(response.status);
-      if (response && response.isError) return "add_failed";
-    } catch (e) {}
-
-    return "";
-  }
-
-  function addItemsToBasketBatch(items, insertSelector, opts) {
-    insertSelector = insertSelector || "[data-eg-size-matrix]";
-    opts = opts || {};
-
+  function addItemsToBasketBatch(items) {
+    var basketItems = items.map(function (item) {
+      return { variationId: toInt(item.variationId), quantity: toInt(item.quantity) };
+    });
     return new Promise(function (resolve, reject) {
-      if (!items || !items.length) return resolve(null);
-
-      if (!window.eGuardians || !eGuardians.apiservice || !eGuardians.apiservice.post) {
-        return reject(new Error("eGuardians.apiservice.post fehlt"));
-      }
-
-      var basketItems = [];
-
-      for (var i = 0; i < items.length; i++) {
-        var it = items[i];
-        if (!it) continue;
-
-        var vid = toInt(it.variationId);
-        var qty = toInt(it.quantity);
-
-        if (!vid || qty <= 0) continue;
-
-        basketItems.push({
-          variationId: vid,
-          quantity: qty
-        });
-      }
-
-      if (!basketItems.length) return resolve(null);
-
-      var payload = {
-        basketItems: basketItems
-      };
-
-      var done = false;
-
-      var timer = setTimeout(function () {
-        if (done) return;
-        done = true;
-
-        var errT = new Error("EG_BATCH_TIMEOUT");
-        errT._egCode = "EG_BATCH_TIMEOUT";
-        errT._egResponse = null;
-        reject(errT);
-      }, ADD_TIMEOUT_MS);
-
-      try {
-        eGuardians.apiservice.post(BASKET_BATCH_ENDPOINT, payload, function (response) {
-          if (done) return;
-
-          done = true;
-          clearTimeout(timer);
-
-          var code = extractAddErrorCode(response);
-
-          if (code) {
-            var err = new Error(code);
-            err._egCode = code;
-            err._egResponse = response;
-
-            if (!opts.silent) {
-              showErrorToast(
-                (window.messageServiceTranslations && messageServiceTranslations[code]) || t("err_add_fallback"),
-                insertSelector
-              );
-            }
-
-            return reject(err);
+      eGuardians.apiservice.post(BASKET_BATCH_ENDPOINT, { basketItems: basketItems }, function (response, status) {
+        var error = O46Core.basketAddError(response, status);
+        if (error === null) return resolve(response);
+        var failure = new Error(error);
+        // IO can reject a row after other rows/bundle components have been added.
+        if (status === 400 && /^(110|111|112|113|114)$/.test(error)) {
+          var reason = window.messageServiceTranslations?.[error];
+          var stock = response?.data?.placeholder?.stock;
+          if (reason && reason.includes(":stock")) {
+            reason = (typeof stock === "number" || typeof stock === "string") && /^\d+(?:\.\d+)?$/.test(String(stock))
+              ? reason.replace(":stock", String(stock)) : "";
           }
-
-          resolve(response);
-        });
-      } catch (e) {
-        if (done) return;
-
-        done = true;
-        clearTimeout(timer);
-
-        try {
-          e._egCode = e && e.message ? String(e.message) : "add_failed";
-        } catch (e2) {}
-
-        reject(e);
-      }
+          failure.basketReason = reason;
+        }
+        reject(failure);
+      }, "json", ADD_TIMEOUT_MS);
     });
   }
 
   // === BASKET SNAPSHOT / DELTA CHECK ===
-  function normalizeBasketItems(resp) {
-    try {
-      if (resp && Array.isArray(resp.data)) return resp.data;
-      if (resp && resp.data && Array.isArray(resp.data.data)) return resp.data.data;
-      if (resp && resp.data && Array.isArray(resp.data)) return resp.data;
-      if (resp && Array.isArray(resp)) return resp;
-    } catch (e) {}
-
-    return [];
-  }
-
-  function sumBasketByVariation(itemsArr) {
-    var map = {};
-
-    for (var i = 0; i < (itemsArr || []).length; i++) {
-      var it = itemsArr[i];
-      if (!it) continue;
-
-      var vid = null;
-
-      if (it.variationId != null) {
-        vid = toInt(it.variationId);
-      }
-
-      if (!vid && it.variation && it.variation.data && it.variation.data.variation && it.variation.data.variation.id != null) {
-        vid = toInt(it.variation.data.variation.id);
-      }
-
-      if (!vid) continue;
-
-      var q = it.quantity != null ? toInt(it.quantity) : 0;
-      if (!isFinite(q) || q < 0) q = 0;
-
-      var key = String(vid);
-      map[key] = (map[key] || 0) + q;
-    }
-
-    return map;
-  }
-
-  function getBasketSnapshot(timeoutMs) {
-    timeoutMs = toInt(timeoutMs) || BASKET_GET_TIMEOUT_MS;
-
+  function getBasketSnapshot() {
     return new Promise(function (resolve, reject) {
-      var done = false;
-
-      var timer = setTimeout(function () {
-        if (done) return;
-        done = true;
-        reject(new Error("BASKET_TIMEOUT"));
-      }, timeoutMs);
-
-      function finish(raw) {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-
-        var arr = normalizeBasketItems(raw);
-
-        resolve({
-          raw: raw,
-          items: arr,
-          qtyMap: sumBasketByVariation(arr)
-        });
-      }
-
-      try {
-        if (window.eGuardians && eGuardians.apiservice && eGuardians.apiservice.get) {
-          eGuardians.apiservice.get(BASKET_BATCH_ENDPOINT, {}, function (response) {
-            try {
-              finish(response && response.data ? response.data : response);
-            } catch (e0) {
-              reject(e0);
-            }
-          });
-          return;
+      function receive(response, status) {
+        var rows = response?.data?.data ?? response?.data ?? response;
+        if ((status != null && (status < 200 || status >= 300)) || !Array.isArray(rows)) {
+          return reject(new Error("Invalid basket items response"));
         }
 
-        if (window.fetch) {
-          fetch(BASKET_BATCH_ENDPOINT, { credentials: "same-origin" })
-            .then(function (r) {
-              if (!r || !r.ok) throw new Error(String(r ? r.status : "basket_http"));
-              return r.json();
-            })
-            .then(function (json) {
-              finish(json);
-            })
-            .catch(function (err) {
-              if (done) return;
-              done = true;
-              clearTimeout(timer);
-              reject(err);
-            });
-          return;
+        var qtyMap = {};
+        for (var row of rows) {
+          var id = row?.variationId ?? row?.variation?.data?.variation?.id;
+          var quantity = row?.quantity;
+          if (id == null || !/^\d+$/.test(String(id)) || !Number.isSafeInteger(Number(id)) ||
+              (typeof quantity !== "number" && typeof quantity !== "string") ||
+              String(quantity).trim() === "" || !Number.isFinite(Number(quantity)) || Number(quantity) < 0) {
+            return reject(new Error("Invalid basket item"));
+          }
+          if (Number(id) > 0) qtyMap[id] = (qtyMap[id] || 0) + Number(quantity);
         }
-
-        reject(new Error("basket_get_missing"));
-      } catch (e) {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        reject(e);
+        resolve({ qtyMap: qtyMap });
       }
+      if (window.eGuardians?.apiservice?.get) {
+        eGuardians.apiservice.get(BASKET_BATCH_ENDPOINT, {}, receive, "json", BASKET_GET_TIMEOUT_MS);
+        return;
+      }
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, BASKET_GET_TIMEOUT_MS);
+      fetch(BASKET_BATCH_ENDPOINT, { credentials: "same-origin", cache: "no-store", signal: controller.signal })
+        .then(async function (response) { receive(await response.json(), response.status); })
+        .catch(reject)
+        .finally(function () { clearTimeout(timer); });
     });
-  }
-
-  function buildWantedMap(items) {
-    var map = {};
-
-    for (var i = 0; i < (items || []).length; i++) {
-      var it = items[i];
-      if (!it) continue;
-
-      var vid = String(toInt(it.variationId));
-      var qty = toInt(it.quantity);
-
-      if (!vid || vid === "0" || qty <= 0) continue;
-
-      map[vid] = (map[vid] || 0) + qty;
-    }
-
-    return map;
-  }
-
-  function computeDeltaResult(beforeQtyMap, afterQtyMap, wantedMap) {
-    beforeQtyMap = beforeQtyMap || {};
-    afterQtyMap = afterQtyMap || {};
-    wantedMap = wantedMap || {};
-
-    var missing = [];
-    var okMap = {};
-    var okCount = 0;
-    var totalCount = 0;
-
-    for (var vid in wantedMap) {
-      if (!Object.prototype.hasOwnProperty.call(wantedMap, vid)) continue;
-
-      var wanted = toInt(wantedMap[vid]);
-      if (!wanted || wanted <= 0) continue;
-
-      totalCount++;
-
-      var before = toInt(beforeQtyMap[vid] || 0);
-      var after = toInt(afterQtyMap[vid] || 0);
-      var delta = after - before;
-
-      if (!isFinite(delta) || delta < 0) delta = 0;
-
-      if (delta >= wanted) {
-        okMap[String(vid)] = true;
-        okCount++;
-      } else {
-        var miss = wanted - delta;
-        if (miss > 0) {
-          missing.push({
-            variationId: String(vid),
-            quantity: miss
-          });
-        }
-      }
-    }
-
-    return {
-      missing: missing,
-      okMap: okMap,
-      okCount: okCount,
-      totalCount: totalCount
-    };
-  }
-
-  function applyResultToInputs(matrix, wantedMap, result) {
-    if (!matrix || !wantedMap || !result) return;
-
-    var missingMap = {};
-    var missing = result.missing || [];
-
-    for (var i = 0; i < missing.length; i++) {
-      missingMap[String(missing[i].variationId)] = toInt(missing[i].quantity);
-    }
-
-    for (var vid in wantedMap) {
-      if (!Object.prototype.hasOwnProperty.call(wantedMap, vid)) continue;
-
-      if (result.okMap && result.okMap[String(vid)]) {
-        setQtyByVariationId(matrix, vid, 0);
-      } else if (missingMap[String(vid)] != null) {
-        setQtyByVariationId(matrix, vid, missingMap[String(vid)]);
-      }
-    }
   }
 
   // === MAGICZOOM / PREVIEW ===
@@ -2880,6 +2605,7 @@ O46Core.matrix = O46Core.matrix || function () {
   function buildRows(matrix, variations) {
     var body = matrix.querySelector(".eg-size-matrix-body");
     if (!body) return [];
+    maybeRefreshCurrencySymbol();
 
     body.innerHTML = "";
 
@@ -2993,6 +2719,7 @@ O46Core.matrix = O46Core.matrix || function () {
     }
 
     fetchVariationsBatch(ids, function () {
+      maybeRefreshCurrencySymbol();
       var tasks = [];
 
       for (var r = 0; r < rows.length; r++) {
@@ -3077,6 +2804,7 @@ O46Core.matrix = O46Core.matrix || function () {
           } else if (vid2) {
             tasks.push(function (done) {
               fetchVariationDetailsSingle(vid2, function (vx) {
+                maybeRefreshCurrencySymbol();
                 apply(vx);
                 done();
               });
@@ -3160,7 +2888,7 @@ O46Core.matrix = O46Core.matrix || function () {
 
     matrix.addEventListener("click", function (e) {
       var btn = e.target && e.target.closest ? e.target.closest("[data-eg-matrix-add]") : null;
-      if (!btn) return;
+      if (!btn || btn.disabled) return;
 
       if (!btn.getAttribute("data-eg-base-text")) {
         btn.setAttribute("data-eg-base-text", btn.textContent || "");
@@ -3197,6 +2925,10 @@ O46Core.matrix = O46Core.matrix || function () {
 
       if (!items.length) return;
 
+      // The pre-clamp and the POST operate on this selection. Do not let a
+      // later edit be cleared as if it had been included in the same write.
+      var writeInputs = matrix.querySelectorAll('[data-eg-qty]:not(:disabled)');
+      writeInputs.forEach(function (input) { input.disabled = true; });
       btn.disabled = true;
       btn.setAttribute("aria-busy", "true");
       btn.setAttribute("data-eg-busy", "1");
@@ -3204,12 +2936,11 @@ O46Core.matrix = O46Core.matrix || function () {
 
       (async function () {
         var snapBefore = null;
-        var wantedMap = null;
         var hadAdjustments = false;
 
         try {
           try {
-            snapBefore = await getBasketSnapshot(BASKET_GET_TIMEOUT_MS);
+            snapBefore = await getBasketSnapshot();
           } catch (eBefore) {
             snapBefore = null;
           }
@@ -3238,13 +2969,14 @@ O46Core.matrix = O46Core.matrix || function () {
             return;
           }
 
-          wantedMap = buildWantedMap(items);
-
           // Normalfall: genau EIN Batch-POST.
-          var response = await addItemsToBasketBatch(items, "[data-eg-size-matrix]", { silent: true });
+          var response = await addItemsToBasketBatch(items);
 
           var basket = response?.events?.AfterBasketChanged?.basket || response?.data?.basket;
-          if (!await O46Core.basketHeader.accept(basket)) await O46Core.basketHeader.refreshAfterWrite();
+          // A confirmed write is complete even if the separate header GET stalls.
+          O46Core.basketHeader.accept(basket).then(function (accepted) {
+            if (!accepted) return O46Core.basketHeader.refreshAfterWrite();
+          });
 
           var qInputs = matrix.querySelectorAll("[data-eg-qty]");
           for (var j = 0; j < qInputs.length; j++) {
@@ -3278,162 +3010,16 @@ O46Core.matrix = O46Core.matrix || function () {
 
           return;
         } catch (err) {
-          console.error(err);
-
-          // Fehlerfall: nicht blind nochmal alles senden.
-          // Wenn Snapshot vorhanden ist, prüfen wir Delta und senden nur fehlende Mengen 1x nach.
-          if (!snapBefore || !wantedMap) {
-            showErrorToast(t("err_stock"), "[data-eg-size-matrix]");
-            btn.textContent = t("err_retry");
-
-            setTimeout(function () {
-              btn.textContent = baseText;
-              btn.disabled = false;
-              btn.removeAttribute("aria-busy");
-              btn.removeAttribute("data-eg-busy");
-            }, 1500);
-
-            return;
-          }
-
-          btn.textContent = t("add_verify");
-          await sleep(FINAL_CHECK_GRACE_MS);
-
-          var snapAfterFirst = null;
-
-          try {
-            snapAfterFirst = await getBasketSnapshot(BASKET_GET_TIMEOUT_MS);
-          } catch (eAfterFirst) {
-            snapAfterFirst = null;
-          }
-
-          if (!snapAfterFirst) {
-            showErrorToast(t("err_stock"), "[data-eg-size-matrix]");
-            btn.textContent = t("err_retry");
-
-            setTimeout(function () {
-              btn.textContent = baseText;
-              btn.disabled = false;
-              btn.removeAttribute("aria-busy");
-              btn.removeAttribute("data-eg-busy");
-            }, 1500);
-
-            return;
-          }
-
-          var resultFirst = computeDeltaResult(
-            (snapBefore && snapBefore.qtyMap) || {},
-            (snapAfterFirst && snapAfterFirst.qtyMap) || {},
-            wantedMap
-          );
-
-          if (!resultFirst.missing || !resultFirst.missing.length) {
-            applyResultToInputs(matrix, wantedMap, resultFirst);
-            recalcMatrixTotals(matrix);
-
-            await O46Core.basketHeader.refreshAfterWrite();
-
-            if (hadAdjustments) {
-              showInfoToast(t("info_some_limited"), "[data-eg-size-matrix]", 1);
-            }
-
-            btn.textContent = t("added_ok");
-            btn.disabled = false;
-            btn.removeAttribute("aria-busy");
-            btn.removeAttribute("data-eg-busy");
-
-            if (window.eGuardians && eGuardians.basket && typeof eGuardians.basket.openBasketPreviewSmall === "function") {
-              eGuardians.basket.openBasketPreviewSmall(function () {
-                var $jq = window.jQuery || window.$;
-
-                if ($jq) {
-                  $jq("html").addClass("basket-prev-small-open");
-
-                  setTimeout(function () {
-                    $jq("html").removeClass("basket-prev-small-open");
-                  }, 3000);
-                }
-              });
-            }
-
-            return;
-          }
-
-          // Vor Recovery nochmal gegen den aktuellen Warenkorb pre-clampen.
-          // Dadurch wird auch im Fehlerfall nicht blind zu viel nachgeschoben.
-          var preRetry = preClampItemsAgainstBasket(resultFirst.missing, (snapAfterFirst && snapAfterFirst.qtyMap) || {}, matrix);
-          var retryItems = preRetry.items || [];
-
-          if (preRetry && (preRetry.adjusted > 0 || preRetry.blocked > 0)) {
-            hadAdjustments = true;
-          }
-
-          recalcMatrixTotals(matrix);
-
-          if (retryItems.length > 0) {
-            btn.textContent = t("add_fix");
-
-            try {
-              await addItemsToBasketBatch(retryItems, "[data-eg-size-matrix]", { silent: true });
-            } catch (eRetry) {
-              console.error(eRetry);
-            }
-
-            await sleep(FINAL_RETRY_GRACE_MS);
-          }
-
-          var snapAfterRetry = null;
-
-          try {
-            snapAfterRetry = await getBasketSnapshot(BASKET_GET_TIMEOUT_MS);
-          } catch (eAfterRetry) {
-            snapAfterRetry = snapAfterFirst;
-          }
-
-          var resultFinal = computeDeltaResult(
-            (snapBefore && snapBefore.qtyMap) || {},
-            (snapAfterRetry && snapAfterRetry.qtyMap) || {},
-            wantedMap
-          );
-
-          applyResultToInputs(matrix, wantedMap, resultFinal);
-          recalcMatrixTotals(matrix);
-
-          if (resultFinal.okCount > 0) {
-            await O46Core.basketHeader.refreshAfterWrite();
-          }
-
-          var somethingAdded = resultFinal.okCount > 0;
-          var everythingAdded = resultFinal.okCount >= resultFinal.totalCount && resultFinal.totalCount > 0;
-
-          if (hadAdjustments) {
-            showInfoToast(t("info_some_limited"), "[data-eg-size-matrix]", 1);
-          }
-
-          if (window.eGuardians && eGuardians.basket && typeof eGuardians.basket.openBasketPreviewSmall === "function" && somethingAdded) {
-            eGuardians.basket.openBasketPreviewSmall(function () {
-              var $jq = window.jQuery || window.$;
-
-              if ($jq) {
-                $jq("html").addClass("basket-prev-small-open");
-
-                setTimeout(function () {
-                  $jq("html").removeClass("basket-prev-small-open");
-                }, 3000);
-              }
-            });
-          }
-
-          if (everythingAdded) {
-            btn.textContent = t("added_ok");
-          } else {
-            btn.textContent = t("added_partial");
-            showErrorToast(t("err_stock"), "[data-eg-size-matrix]");
-          }
-
+          // Bundles can partially add other variation IDs, and another tab can
+          // change quantities. A later basket snapshot cannot identify this write.
+          O46Core.basketHeader.refreshAfterWrite();
+          showErrorToast((err?.basketReason ? err.basketReason + " " : "") + t("add_uncertain"), matrix);
+          btn.textContent = t("add_uncertain");
           btn.disabled = false;
           btn.removeAttribute("aria-busy");
           btn.removeAttribute("data-eg-busy");
+        } finally {
+          writeInputs.forEach(function (input) { input.disabled = false; });
         }
       })();
     });

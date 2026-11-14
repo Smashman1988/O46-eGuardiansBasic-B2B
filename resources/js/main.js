@@ -77,10 +77,10 @@ this.addItemToBasket = function (_this) {
 
     eGuardians.helper.btnShowLoader(_this);
 
-    eGuardians.basket.addItem(variationId, quantity, function (response) {
-        if (response?.data?.exceptionCode) {
+    eGuardians.basket.addItem(variationId, quantity, function (response, errorCode) {
+        if (errorCode != null) {
             eGuardians.ui.message.error.show({
-                message: messageServiceTranslations[response.data.exceptionCode],
+                message: messageServiceTranslations[errorCode] || messageServiceTranslations[0],
                 insertElement: '.item-actions-wrap'
             });
             eGuardians.helper.btnHideLoader(_this);

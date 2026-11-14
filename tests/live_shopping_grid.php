@@ -144,7 +144,7 @@ foreach (['de','en','fr','it','es'] as $lang) foreach (['EUR','USD','CHF'] as $c
     compareCardImages($old['cards'],$new['cards'],$priorityExpected);
     check($old['liveCalls']===range(1,6)&&$new['liveCalls']===range(1,6),'Live data calls must remain exactly IDs1..6 once');
     check($old['visibleIds']===$new['visibleIds']&&count($new['cards'])===count($new['visibleIds']),'Active/expired/empty gating changed');
-    check($old['translations']===42&&$new['translations']===7,'Translation preparation not shared');
+    check($old['translations']===42&&$new['translations']===5,'Translation preparation not shared');
     check($old['currencyGetters']===6&&$new['currencyGetters']===1,'Currency getter not shared');
     check($old['currencyPreparations']===1&&$new['currencyPreparations']===1,'Existing cached currency work was miscounted');
     check(!$new['singleFactories'],'Unexpected per-card fallback after batch');

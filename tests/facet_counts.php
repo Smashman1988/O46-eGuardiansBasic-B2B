@@ -95,6 +95,37 @@ foreach ([[], ['query'=>[]], ['query'=>false]] as $invalid) {
     $row = countRequest($invalid+['countsOnly'=>'1'], []);
     check($row['status']===400 && !$row['calls'], 'invalid request unchanged and no search');
 }
+$report['categoryInputCases'] = [];
+foreach ([['77'], '12x', '1e3', '92233720368547758080'] as $categoryId) {
+    $row = countRequest(['categoryId'=>$categoryId, 'query'=>'shoes'], [$hit]);
+    check($row['status']===400 && !$row['calls'], 'Malformed category ID caused an unrelated category or query search');
+    $report['categoryInputCases'][] = ['input'=>$categoryId, 'status'=>$row['status'], 'searches'=>count($row['calls'])];
+}
+foreach (['', 0, '0'] as $categoryId) {
+    $row = countRequest(['categoryId'=>$categoryId, 'query'=>'shoes'], [$hit]);
+    check($row['status']===200 && count($row['calls'])===1, 'Empty category ID must still allow keyword search');
+    $report['categoryInputCases'][] = ['input'=>$categoryId, 'status'=>$row['status'], 'searches'=>count($row['calls'])];
+}
+$report['filterInputCases'] = [];
+foreach (['de','en','fr','it','es'] as $language) {
+    $objects[LocalizationRepositoryContract::class]->lang = $language;
+    foreach ([['categoryId'=>60], ['query'=>'shoes']] as $route) {
+        foreach ([['priceMax'=>['90']], ['priceMin'=>[12]], ['facets'=>[['17'],'19']]] as $badFilter) {
+            $row = countRequest($route + $badFilter, [$hit]);
+            check($row['status'] === 400 && !$row['calls'], 'Malformed filter reached a search for '.$language);
+            $report['filterInputCases'][] = ['language'=>$language, 'route'=>$route, 'input'=>$badFilter, 'status'=>400, 'searches'=>0];
+        }
+        foreach ([['facets'=>['17','19'], 'priceMin'=>'', 'priceMax'=>'12.50'],
+                  ['facets'=>'17,19', 'priceMin'=>0, 'priceMax'=>3.5]] as $validFilter) {
+            $row = countRequest($route + $validFilter, [$hit]);
+            $opts = $row['calls'][0]['itemList']->options;
+            check($row['status'] === 200 && count($row['calls']) === 1 && $opts['facets'] === $validFilter['facets']
+                && $opts['priceMin'] === $validFilter['priceMin'] && $opts['priceMax'] === $validFilter['priceMax'],
+                'Valid filter or number format changed for '.$language);
+            $report['filterInputCases'][] = ['language'=>$language, 'route'=>$route, 'input'=>$validFilter, 'status'=>200, 'searches'=>1];
+        }
+    }
+}
 
 // Execute the available upstream implementation through build(), rather than
 // claiming that the stub search proves the platform's setPage contract.
@@ -118,7 +149,8 @@ foreach ([0,50,-1] as $size) {
 }
 $report['existingSearchAssertions'] = $previousAssertions;
 $report['newAssertions'] = $assertions-$previousAssertions;
-$report['pass'] = count($report['cases'])+count($report['parameterCases'])+3+count($report['ioPagination']);
+$report['pass'] = count($report['cases']) + count($report['parameterCases']) + 3 + count($report['ioPagination'])
+    + count($report['categoryInputCases']) + count($report['filterInputCases']);
 $report['status'] = 'PASS';
 file_put_contents($argv[3], json_encode($report, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR));
 echo $report['pass'].' facet cases / '.$report['newAssertions']." new assertions PASS; native engine NOT_TESTED\n";

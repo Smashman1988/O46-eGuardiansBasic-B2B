@@ -1,8 +1,6 @@
 {% set variationAttributes = cardAttributeMap ?? getAttributesWithImages(itemId) -%}
 {% set transLabels = transLabels ?? {
-    availsizedeal: trans("GuardiansBasicB2B::Template.availsizedeal"),
-    availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize"),
-    morethen18: trans("GuardiansBasicB2B::Template.morethen18")
+    availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize")
 } -%}
 {% if variationAttributes.attributes is defined and variationAttributes.attributes | length > 0 -%}
     {% set boxAttributeList = variationAttributes.attributes | filter(attr => attr.type == 'box') -%}

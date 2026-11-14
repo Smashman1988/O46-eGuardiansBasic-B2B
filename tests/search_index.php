@@ -146,6 +146,7 @@ namespace {
     require $argv[2].'/src/Services/ItemSearchAutocompleteService.php';
     require $argv[2].'/src/Api/Resources/ItemSearchAutocompleteResource.php';
     $src=dirname(__DIR__).'/src/';
+    require $src.'Helper/SeoPage.php';
     foreach (['Services/EnglishTextSearch','Services/SearchAutocompleteService','Contexts/EnglishTextSearchContext','Providers/GuardiansBasicServiceProvider','Resources/FacetResource','Resources/SearchAutocompleteResource'] as $name) require $src.$name.'.php';
     $provider=new \GuardiansBasicB2B\Providers\GuardiansBasicServiceProvider();
     $provider->register();

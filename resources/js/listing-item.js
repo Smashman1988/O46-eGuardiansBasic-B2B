@@ -185,16 +185,7 @@ O46Core.item = O46Core.item || function () {
                         }else{
                             $('.data-stock-warn').html(messageServiceTranslations["stockWarn3"])
                         }                        
-                        const pricenumber = variationData.prices.default.data.unitPrice;
-                        const uvpnumber = variationData.prices.rrp.data.unitPrice;
-                        $itemElement.find('[data-eg-item-price]').html(new Intl.NumberFormat("de-DE").format(pricenumber));
-                        if(variationData.prices.rrp != null){
-                            $itemElement.find('[data-eg-item-rrp]').html(new Intl.NumberFormat("de-DE").format(uvpnumber));
-                            var rrppercent = (1 - variationData.prices.default.data.unitPrice / variationData.prices.rrp.data.unitPrice ) * -100;
-                            $itemElement.find('[data-eg-item-rrp-percent]').html(Math.round(rrppercent).toFixed(0));
-                            var rrpspar = (variationData.prices.default.data.unitPrice - variationData.prices.rrp.data.unitPrice );
-                            $itemElement.find('[data-eg-item-rrp-spar]').html(new Intl.NumberFormat("de-DE").format(rrpspar));
-                        }
+                        O46Core.updateVariationPrices($itemElement, variationData.prices);
                         
                         
                         

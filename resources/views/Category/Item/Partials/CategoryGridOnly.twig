@@ -5,12 +5,9 @@
     tInBasket: trans("GuardiansBasicB2B::Template.inbasket")
 } %}
 {% set transLabels = {
-    availsizedeal: trans("GuardiansBasicB2B::Template.availsizedeal"),
-    availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize"),
-    morethen18: trans("GuardiansBasicB2B::Template.morethen18")
+    availsizeonesize: trans("GuardiansBasicB2B::Template.availsizeonesize")
 } %}
 {% set currencycheck = services.checkout.getCurrencyData.name %}
-{% set isShoeCategory = category.id in [44, 52] or category.parentCategoryId in [44, 52] %}
 {% set cardVendorLogoBase = itemList is not empty ? plugin_path('GuardiansBasicB2B') ~ '/images/vendors/' : '' %}
 <div class="category-product-list row disp-flexi">
 {% set attributeMapsByItem = getCardAttributeMaps(itemList|default([])|map(item => item.data.variation.itemId)) %}

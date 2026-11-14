@@ -50,6 +50,12 @@ async function scenario(browser,file,code,lang){
         checks.push({name:'short input removes full suggestion row and loader',pass:!actual.text&&!actual.loading&&actual.requests.length===5,actual});
         const endpoint='/rest/'+(['it','es'].includes(lang)?'guardiansbasicb2b':'io')+'/item/search/autocomplete/';
         checks.push({name:'existing debounce and language endpoint preserved',pass:actual.requests.length===5&&actual.requests.every(x=>x.url===endpoint)});
+        await fill('network error',6);
+        await p.evaluate(()=>pending[5].cb({},503));
+        actual=await snapshot();
+        checks.push({name:'failed transport leaves full search available',pass:!actual.text&&!actual.loading&&actual.value==='network error'&&actual.requests.length===6,actual});
+        await fill('recovered',7);await reply(6,'RECOVERED');actual=await snapshot();
+        checks.push({name:'next query recovers without rebinding',pass:!actual.loading&&actual.text.includes('RECOVERED')&&actual.requests.length===7,actual});
         report.rows.push({file,lang,width,checks,status:checks.every(x=>x.pass)&&!errors.length?'PASS':'FAIL',errors});
     }catch(error){report.rows.push({file,lang,width,status:'TECHNICAL_ABORT',error:String(error),errors});}
     finally{await p.close();}

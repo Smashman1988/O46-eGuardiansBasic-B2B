@@ -7,6 +7,20 @@ function cardMarkupDocument($html) {
     $dom->loadHTML('<?xml encoding="UTF-8"><main id="card-contract-root">'.$html.'</main>', LIBXML_NOERROR | LIBXML_NOWARNING);
     return $dom;
 }
+// The original fixture includes items with an absent numeric RRP, even when
+// their formatted RRP or external percent is still populated. Only these IDs
+// may lose the old sale badge, 'statt' label/price and has-rrp class.
+function withoutInvalidCardComparisons($html, array $ids) {
+    $chunks = preg_split('/(?=<div class="cat-item has-rrp has-variations" data-eg-item=")/', $html);
+    foreach ($chunks as &$chunk) {
+        if (!preg_match('/^<div class="cat-item has-rrp has-variations" data-eg-item="([0-9]+)"/', $chunk, $id) || !in_array((int)$id[1], $ids, true)) continue;
+        $chunk = preg_replace('/^<div class="cat-item has-rrp has-variations"/','<div class="cat-item has-variations"',$chunk);
+        $chunk = preg_replace('~<span class="item-action i-action-sale">\s*(?:[+-]?[0-9.,]+)?%\s*</span>~s','',$chunk,1,$badges);
+        $chunk = preg_replace('~<span class="bold font-12">[^<]*<span class="cat-rrp-price">[^<]*</span></span>\s*~s','',$chunk,1,$labels);
+        if ($badges !== 1 || $labels !== 1) throw new RuntimeException('Missing original comparison for fixture item '.$id[1]);
+    }
+    return implode('', $chunks);
+}
 function cardMarkupContract($html, $oldMarkup = false) {
     $dom = cardMarkupDocument($html);
     $xpath = new \DOMXPath($dom);
