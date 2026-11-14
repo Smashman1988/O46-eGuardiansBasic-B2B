@@ -3,6 +3,7 @@
 ## Unreleased – Layout der Variantenmatrix
 
 - Auf der Produktseite und im Quickview entfällt die sichtbare Ladezeile für Preise und Bestände. Die Matrix reserviert den Platz für ihre Varianten passend zur Containerbreite. Fehler beim Laden bleiben sichtbar.
+- Fehlen Variantendaten, erscheint ein aufklappbarer Hinweis in der Summenzeile. Mengenfelder, Warenkorbbutton und Beschreibung behalten beim Eintreffen des Fehlers ihre Position.
 
 ## Unreleased – Warenkorb, Varianten und Rendering (2026-11-14)
 

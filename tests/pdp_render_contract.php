@@ -76,10 +76,18 @@ function comparableProductHtml($html, $legacy) {
     $html = preg_replace('~[ \t]+(?=<div class="eg-size-matrix-body">)~', '', $html);
     if ($legacy) {
         // Retire only the two pending-state markers from the historical matrix.
-        // Preserve both error labels, the live region and its exact position.
+        // Preserve both translations used when data is unavailable.
         $html = preg_replace('~(data-eg-matrix-status)\s+data-fallback="[a-z]{2}:GuardiansBasicB2B::Template\.matrixFallback"~', '$1', $html);
         $html = preg_replace('~(data-unavailable="[a-z]{2}:GuardiansBasicB2B::Template\.matrixUnavailable">)[a-z]{2}:GuardiansBasicB2B::Template\.matrixLoading(</div>)~', '$1$2', $html);
     }
+    // Compare the one relocated live region separately from the surrounding HTML.
+    // Its translations and its initially empty accessible content must match exactly.
+    if (preg_match('~<div role="status" aria-atomic="true" data-eg-matrix-status\s+data-partial="([^"]+)"\s+data-unavailable="([^"]+)"></div>~', $html, $status)) {
+        $html = preg_replace('~\s*' . preg_quote($status[0], '~') . '~', '', $html, 1);
+        $html .= "\n" . $status[1] . "\n" . $status[2];
+    }
+    $html = preg_replace('~\s+(?=<div class="eg-size-matrix-table" aria-busy="true">)~', "\n", $html);
+    $html = preg_replace('~\s*<div class="eg-matrix-error-slot">\s*<button\b[^>]*\bdata-eg-matrix-error-toggle\b[^>]*><span aria-hidden="true">⚠</span></button>\s*</div>~', '', $html, 1);
     $html = preg_replace_callback('~(<script type="application/ld\+json">)(.*?)(</script>)~s',function ($m) use ($legacy) {
         $data=json_decode(trim($m[2]),true,512,JSON_THROW_ON_ERROR);
         if (($data['@type']??null)!=='Product') return $m[0];
@@ -188,8 +196,13 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
     $matrixReuseAlreadyPresent=strpos($before,'set matrixLabel =')!==false;
     $retired = ['GuardiansBasicB2B::Template.matrixFallback', 'GuardiansBasicB2B::Template.matrixLoading'];
     $priorLoadingCalls = array_intersect($pair['before']['texts'], $retired);
+    $missingLabel = 'GuardiansBasicB2B::Template.matrixMissing';
+    $newLabelCalls = substr_count($pair['after']['html'], 'data-eg-matrix-error-toggle') - substr_count($pair['before']['html'], 'data-eg-matrix-error-toggle');
+    if (count(array_keys($pair['after']['texts'], $missingLabel, true)) !== substr_count($pair['after']['html'], 'data-eg-matrix-error-toggle')) {
+        throw new RuntimeException('Expected one localized error control name per rendered matrix');
+    }
     if (array_intersect($pair['after']['texts'], $retired) ||
-        $textDelta !== (($full || $guardAlreadyPresent ? 0 : 32) + ($matrixReuseAlreadyPresent ? 0 : 10) + count($priorLoadingCalls))) {
+        $textDelta !== (($full || $guardAlreadyPresent ? 0 : 32) + ($matrixReuseAlreadyPresent ? 0 : 10) + count($priorLoadingCalls) - $newLabelCalls)) {
         throw new RuntimeException('Unexpected translation call change');
     }
     $imageSortReuseAlreadyPresent=strpos($before,'for prevImg in sortedItemImages')!==false;

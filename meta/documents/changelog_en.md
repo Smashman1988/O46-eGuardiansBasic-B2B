@@ -3,6 +3,7 @@
 ## Unreleased – Variation matrix layout
 
 - Product pages and quick views reserve space for the variation rows at the current container width. Prices and stock fill their cells without a separate visible loading message. Loading errors remain visible.
+- When variation data is unavailable, shoppers can expand the error message in the totals row. Quantity fields, the basket button and the description stay in place when the error arrives.
 
 ## Unreleased – Basket, variations and rendering (2026-11-14)
 

@@ -2703,10 +2703,21 @@ O46Core.matrix = O46Core.matrix || function () {
     var variations = getVariationsJson(matrix);
     var rows = buildRows(matrix, Array.isArray(variations) ? variations : []);
     var status = matrix.querySelector("[data-eg-matrix-status]");
+    var errorToggle = matrix.querySelector("[data-eg-matrix-error-toggle]");
     var table = matrix.querySelector(".eg-size-matrix-table");
-    if (!rows.length) {
+    function finishLoading(message) {
       if (table) table.setAttribute("aria-busy", "false");
-      if (status) status.textContent = status.dataset.unavailable;
+      if (status) status.textContent = message || "";
+      if (errorToggle) errorToggle.hidden = !message;
+    }
+    if (errorToggle && status) {
+      errorToggle.addEventListener("click", function () {
+        var open = status.classList.toggle("eg-matrix-error-open");
+        errorToggle.setAttribute("aria-expanded", String(open));
+      });
+    }
+    if (!rows.length) {
+      finishLoading(status && status.dataset.unavailable);
       return;
     }
     var unavailableRows = 0;
@@ -2817,11 +2828,7 @@ O46Core.matrix = O46Core.matrix || function () {
 
       runQueue(tasks, CONCURRENCY, function () {
         recalcMatrixTotals(matrix);
-        if (table) table.setAttribute("aria-busy", "false");
-        if (status) {
-          status.textContent = unavailableRows === 0 ? "" :
-            unavailableRows === rows.length ? status.dataset.unavailable : status.dataset.partial;
-        }
+        finishLoading(status && unavailableRows ? (unavailableRows === rows.length ? status.dataset.unavailable : status.dataset.partial) : "");
 
         var firstRow = matrix.querySelector(".eg-row");
         if (firstRow) setActiveRow(matrix, firstRow);

@@ -12749,7 +12749,21 @@ footer .footer-logo-omr { aspect-ratio: 170 / 120; }
 .eg-size-matrix .eg-color-link > span { position: absolute; right: 0; bottom: 0; background: #fff; border-radius: 2px; }
 .eg-size-matrix .eg-color-link > span svg { width: 12px; height: 12px; }
 .eg-size-matrix .eg-size-matrix-footer { padding: 10px 8px; background: #fff; border-radius: 0 0 5px 5px; }
-.eg-size-matrix .eg-matrix-totals { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; font-size: .875rem; }
+.eg-size-matrix .eg-matrix-totals { display: grid; grid-template-columns: minmax(0,max-content) minmax(1.5rem,1fr) minmax(0,max-content); gap: 4px; align-items: center; margin-bottom: 8px; font-size: .875rem; overflow-wrap: anywhere; }
+.eg-matrix-error-slot { position: relative; align-self: stretch; container: eg-matrix-error / inline-size; }
+.eg-matrix-error-slot button {
+  position: absolute; inset: 0; width: 100%; margin: 0; padding: 0; border: 0; background: transparent;
+  color: #843500; font: inherit; font-weight: 600; line-height: 1; text-decoration: underline; cursor: pointer;
+}
+@container eg-matrix-error (min-width: 9rem) {
+  .eg-matrix-error-slot button span { display: none; }
+  .eg-matrix-error-slot button::after { content: attr(aria-label); }
+}
+/* Keep the error announced. Only an explicit request for its text expands the footer. */
+.eg-size-matrix-footer [data-eg-matrix-status]:not(:empty):not(.eg-matrix-error-open) {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.eg-size-matrix-footer .eg-matrix-error-open { margin-bottom: 8px; overflow-wrap: anywhere; }
 .eg-size-matrix [data-eg-matrix-add] { width: 100%; min-height: 44px; white-space: normal; }
 /* Scope modal sizing and scrolling to the existing product quickview. */
 .modal.modal-cross { top: 0; --eg-matrix-sticky-top: 0px; }

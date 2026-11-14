@@ -430,9 +430,6 @@
          data-eg-color-values="{{ hasColor ? (colorAttr.values | json_encode | e('html_attr')) : '[]' }}"
          data-eg-base-variation-id="{{ itemData.variation.id }}">
 
-      <div role="status" aria-atomic="true" data-eg-matrix-status
-           data-partial="{{ trans('GuardiansBasicB2B::Template.matrixPartial') }}"
-           data-unavailable="{{ trans('GuardiansBasicB2B::Template.matrixUnavailable') }}"></div>
       <div class="eg-size-matrix-table" aria-busy="true">
       <div class="eg-size-matrix-head">
         {% set matrixColumns = {
@@ -498,8 +495,15 @@
       <div class="eg-size-matrix-footer">
         <div class="eg-matrix-totals">
           <div>{{ trans("GuardiansBasicB2B::Template.gesamtstmatrix") }} <span data-eg-total-qty>0</span></div>
+          <div class="eg-matrix-error-slot">
+            {% set matrixMissing = trans('GuardiansBasicB2B::Template.matrixMissing') %}
+            <button type="button" data-eg-matrix-error-toggle aria-label="{{ matrixMissing }}" title="{{ matrixMissing }}" aria-expanded="false" hidden><span aria-hidden="true">⚠</span></button>
+          </div>
           <div>{{ trans("GuardiansBasicB2B::Template.submatrix") }} <span data-eg-total-sum>0,00 €</span></div>
         </div>
+        <div role="status" aria-atomic="true" data-eg-matrix-status
+             data-partial="{{ trans('GuardiansBasicB2B::Template.matrixPartial') }}"
+             data-unavailable="{{ trans('GuardiansBasicB2B::Template.matrixUnavailable') }}"></div>
 
         <button type="button"
                 class="btn btn-primary d-flex align-items-center justify-content-center btn-big product-list add-to-basket-lg-container item-actions"

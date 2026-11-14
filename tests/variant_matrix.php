@@ -4,7 +4,9 @@
 require $argv[1];
 $source = file_get_contents(__DIR__ . '/../resources/views/Item/SingleItem.twig');
 $start = strpos($source, '    <div class="eg-size-matrix"');
-$end = strpos($source, '</button>', $start);
+$addButton = strpos($source, 'data-eg-matrix-add>', $start);
+if ($addButton === false) { throw new RuntimeException('Matrix basket button missing'); }
+$end = strpos($source, '</button>', $addButton);
 $end = strpos($source, '</div>', strpos($source, '</div>', $end) + 6) + 6;
 if ($start === false || $end <= $start) { throw new RuntimeException('Matrix template missing'); }
 $template = substr($source, $start, $end - $start);
@@ -65,8 +67,17 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
         ['variationId'=>0,'attributes'=>[['attributeId'=>2,'attributeValueId'=>101]]]
     ];
     $doc = new DOMDocument();
-    $doc->loadHTML($twig->render('matrix', $context), LIBXML_NOERROR | LIBXML_NOWARNING);
+    $doc->loadHTML('<meta charset="UTF-8">'.$twig->render('matrix', $context), LIBXML_NOERROR | LIBXML_NOWARNING);
     $xpath = new DOMXPath($doc);
+    $footer = '//div[@class="eg-size-matrix-footer"]';
+    $toggle = $footer.'/div[@class="eg-matrix-totals"]/div[@class="eg-matrix-error-slot"]/button[@data-eg-matrix-error-toggle and @type="button" and @hidden and @aria-expanded="false"]';
+    $status = $footer.'/div[@role="status" and @data-eg-matrix-status and @aria-atomic="true"]';
+    if ($xpath->query($toggle)->length !== 1 || $xpath->query($status)->length !== 1 ||
+        $xpath->query($status.'/following-sibling::button[@data-eg-matrix-add]')->length !== 1 ||
+        $xpath->evaluate('string('.$toggle.'/@aria-label)') !== $translations['matrixMissing'] ||
+        $xpath->evaluate('string('.$toggle.'/@title)') !== $translations['matrixMissing']) {
+        throw new RuntimeException('Missing localized error disclosure or relocated status: '.$lang);
+    }
     $body = '//div[@class="eg-size-matrix-body"]';
     $measure = $body.'/div[contains(concat(" ", normalize-space(@class), " "), " eg-matrix-measure ") and contains(concat(" ", normalize-space(@class), " "), " col-12 ") and @aria-hidden="true"]';
     if ($xpath->query($body.'/*')->length !== 2 || $xpath->query($measure)->length !== 1 ||

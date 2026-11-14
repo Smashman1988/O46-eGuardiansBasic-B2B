@@ -19,13 +19,17 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
             const root = document.querySelector('[data-item-variation]');
             const ids = Array.from({ length: count }, (_, i) => ({ variationId: i + 1 }));
             root.dataset.egVariations = JSON.stringify([...ids, ids[0]]);
-            root.innerHTML = ('<div data-eg-size-matrix data-eg-mode="color"><div role="status" data-eg-matrix-status ' +
-                'data-partial="Partial" data-unavailable="Unavailable"></div>' +
-                '<div class="eg-size-matrix-table" aria-busy="true"><div class="eg-size-matrix-body"></div></div></div>').repeat(copies);
+            root.innerHTML = ('<div data-eg-size-matrix data-eg-mode="color">' +
+                '<div class="eg-size-matrix-table" aria-busy="true"><div class="eg-size-matrix-body"></div></div>' +
+                '<div class="eg-size-matrix-footer"><div class="eg-matrix-totals">' +
+                '<div class="eg-matrix-error-slot"><button type="button" data-eg-matrix-error-toggle aria-expanded="false" hidden>Details</button></div></div>' +
+                '<div role="status" aria-atomic="true" data-eg-matrix-status data-partial="Partial" data-unavailable="Unavailable"></div>' +
+                '</div></div>').repeat(copies);
             window.statuses = [];
             root.querySelectorAll('[data-eg-matrix-status]').forEach(status => {
+                const table = status.closest('[data-eg-size-matrix]').querySelector('.eg-size-matrix-table');
                 new MutationObserver(() => statuses.push({
-                    text: status.textContent, busy: status.nextElementSibling.getAttribute('aria-busy')
+                    text: status.textContent, busy: table.getAttribute('aria-busy')
                 })).observe(status, { childList: true });
             });
             let openBatches = 0;
@@ -85,7 +89,8 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
         await page.addScriptTag({ content: sharedModule(entry, 'matrix') });
         const initial = await page.evaluate(() => {
             const status = document.querySelector('[data-eg-matrix-status]');
-            const initial = { text:status.textContent, busy:status.nextElementSibling.getAttribute('aria-busy') };
+            const table = status.closest('[data-eg-size-matrix]').querySelector('.eg-size-matrix-table');
+            const initial = { text:status.textContent, busy:table.getAttribute('aria-busy') };
             egInitSizeMatrices(document);
             return initial;
         });
@@ -129,11 +134,12 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
                 document.body.appendChild(modal);
                 egInitSizeMatrices(matrix);
                 const value = [matrix.querySelector('[data-eg-matrix-status]').textContent,
-                    matrix.querySelector('.eg-size-matrix-table').getAttribute('aria-busy'), matrix.querySelectorAll('.eg-row').length];
+                    matrix.querySelector('.eg-size-matrix-table').getAttribute('aria-busy'), matrix.querySelectorAll('.eg-row').length,
+                    matrix.querySelector('[data-eg-matrix-error-toggle]').hidden];
                 modal.remove();
                 return value;
             });
-            assert.deepEqual(empty, ['Unavailable', 'false', 0]);
+            assert.deepEqual(empty, ['Unavailable', 'false', 0, false]);
         }
         // Allow transport completion and the bounded fallback queue to finish.
         for (let i = 0; i < 8; i++) await page.clock.fastForward(20);
@@ -144,7 +150,7 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
                 return document.getElementById('ItemImgZoom').getAttribute('href');
             });
             const final = [...document.querySelectorAll('[data-eg-matrix-status]')].map(status => ({
-                text: status.textContent, busy: status.nextElementSibling.getAttribute('aria-busy')
+                text: status.textContent, busy: status.closest('[data-eg-size-matrix]').querySelector('.eg-size-matrix-table').getAttribute('aria-busy')
             }));
             return { ...calls, samples, images, statuses:window.statuses, final, rows: [...document.querySelectorAll('.eg-row')].map(row => ({
                 id: +row.dataset.egVariationId, price: +row.querySelector('[data-eg-price]').dataset.egPriceValue,
@@ -171,6 +177,18 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
                 'Waiting for batch or single responses must not add a loading message');
             const message = mode === 'partial' ? 'Partial' : mode === 'allFailed' ? 'Unavailable' : '';
             assert.deepEqual(result.final, Array.from({ length:copies }, () => ({ text:message, busy:'false' })));
+            const details = page.locator('[data-eg-matrix-error-toggle]').first();
+            assert.equal(await details.isVisible(), Boolean(message));
+            if (message) {
+                const status = page.locator('[data-eg-matrix-status]').first();
+                assert.equal(await details.getAttribute('aria-expanded'), 'false');
+                await details.press('Enter');
+                assert.equal(await details.getAttribute('aria-expanded'), 'true');
+                assert.equal(await status.evaluate(el => el.classList.contains('eg-matrix-error-open')), true);
+                await details.press('Space');
+                assert.equal(await details.getAttribute('aria-expanded'), 'false');
+                assert.equal(await status.evaluate(el => el.classList.contains('eg-matrix-error-open')), false);
+            }
         }
         const singleIds = new Set(expectedSingles);
         const orderedIds = [1, ...allIds]; // color mode breaks ties by ascending variation ID

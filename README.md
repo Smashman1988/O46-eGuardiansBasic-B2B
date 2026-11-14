@@ -24,7 +24,7 @@ Auf dem bereitgestellten Stand `ffb0e90` aktualisierte Ceres bei einer Mengenän
 
 Der Warenkorb sendet Mengenänderungen nacheinander und zeigt einen Ladehinweis, bis PlentyONE Zeilen, Warenwert und den Stand zur 199-€-Grenze bestätigt hat. Der Header verwendet auf Startseite, Kategorie, Produktseite und Vue-Seiten denselben kompakten Anzeigedatensatz. Ein normaler Seitenwechsel im bereits bestätigten Tab braucht bei gültigen Daten keinen zusätzlichen Headerabruf. Auf Vue-Seiten dient der vorhandene Ceres-Startabruf als Quelle. [Datenfluss, Cookie- und Cacheprüfung, Vorher-/Nachher-Vergleich und Testgrenzen](meta/documents/warenkorb-synchronisierung.md)
 
-Auf Produktseite und im Quickview reserviert die Variantenmatrix beim ersten Rendern Platz für ihre Zeilen. Preise und Bestände erscheinen in den vorgesehenen Feldern. Der laufende Abruf ist über `aria-busy` gekennzeichnet. Bei fehlenden Daten erscheint eine Meldung in der gewählten Shopsprache.
+Auf Produktseite und im Quickview reserviert die Variantenmatrix beim ersten Rendern Platz für ihre Zeilen. Preise und Bestände erscheinen in den vorgesehenen Feldern. Der laufende Abruf ist über `aria-busy` gekennzeichnet. Fehlen nach dem Abruf Daten, lässt sich die Fehlermeldung in der Summenzeile öffnen. Verfügbare Varianten bleiben bestellbar.
 
 ## Server-Performance Phase 3 (2026-11-14)
 

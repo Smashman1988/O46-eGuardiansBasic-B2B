@@ -16,7 +16,13 @@ async function run(browser, mode) {
     page.on('pageerror', error => errors.push(error.message));
     try {
         await context.route('**/*', route => route.request().isNavigationRequest()
-            ? route.fulfill({ contentType: 'text/html', body: '<html lang="de"><body><div data-eg-title="Currency">€</div><article data-item-variation><div data-eg-size-matrix><div data-eg-matrix-status></div><div class="eg-size-matrix-table"><div class="eg-size-matrix-body"></div></div><span data-eg-total-sum></span><button data-eg-matrix-add>In den Warenkorb</button></div></article></body></html>' })
+            ? route.fulfill({ contentType: 'text/html', body: `<html lang="de"><body><div data-eg-title="Currency">€</div>
+                <article data-item-variation><div data-eg-size-matrix>
+                <div class="eg-size-matrix-table" aria-busy="true"><div class="eg-size-matrix-body"></div></div>
+                <div class="eg-size-matrix-footer"><div class="eg-matrix-totals"><span data-eg-total-sum></span>
+                <div class="eg-matrix-error-slot"><button type="button" data-eg-matrix-error-toggle aria-expanded="false" hidden>Details</button></div></div>
+                <div role="status" data-eg-matrix-status data-partial="Teilweise ausgefallen"></div>
+                <button data-eg-matrix-add>In den Warenkorb</button></div></div></article></body></html>` })
             : (() => {
                 assert.equal(new URL(route.request().url()).pathname, '/rest/io/basket/');
                 headerReads++;
@@ -39,7 +45,7 @@ async function run(browser, mode) {
                 if (selector === '[data-eg-title="Currency"]') calls.currencyQueries++;
                 return original.call(this, selector);
             };
-            const count = mode === 'currency' ? 60 : mode === 'edit-pending' ? 2 : 1;
+            const count = mode === 'currency' ? 60 : ['edit-pending','partial-stock'].includes(mode) ? 2 : 1;
             const variants = Array.from({length: count}, (_, i) => ({variationId: i+1}));
             document.querySelector('[data-item-variation]').dataset.egVariations = JSON.stringify(variants);
             window.eGuardians = {};
@@ -50,11 +56,15 @@ async function run(browser, mode) {
                     const reply = (status, data) => complete(status, status >= 400 ? 'error' : 'OK',
                         { text: data === undefined ? '' : JSON.stringify(data) });
                     if (options.url.includes('/variations/batch')) {
+                        if (mode === 'partial-stock') return reply(200, { data: {
+                            items: { 1: {price:2,stock:50,images:[],ean:'001'} }, missing:[2]
+                        } });
                         return reply(200, {data: {items: Object.fromEntries(variants.map(v =>
                             [v.variationId, {price: 2, stock: 50, images: [], ean: '001'}]))}});
                     }
                     if (options.type === 'POST') {
                         calls.posts++;
+                        if (mode === 'partial-stock') calls.postData = Object.fromEntries(new URLSearchParams(options.data));
                         if (mode === 'edit-pending') {
                             window.finishPost = () => { calls.quantity++; reply(201, {data:true}); };
                             return;
@@ -102,6 +112,14 @@ async function run(browser, mode) {
         });
         await page.clock.runFor(50);
         const activity = await page.evaluate(() => calls.currencyQueries);
+        if (mode === 'partial-stock') {
+            const details = page.locator('[data-eg-matrix-error-toggle]');
+            assert.equal(await page.locator('[data-eg-matrix-status]').textContent(), 'Teilweise ausgefallen');
+            await details.press('Enter');
+            assert.equal(await details.getAttribute('aria-expanded'), 'true');
+            assert.equal(await page.locator('[data-eg-total-sum]').textContent(), '2,00 €');
+            assert.equal(await page.evaluate(() => calls.posts), 0, 'Opening error details must never book');
+        }
         if (mode === 'currency') {
             // The header can be replaced as a whole, bypassing the observer on the old node.
             await page.evaluate(() => {
@@ -149,7 +167,7 @@ async function run(browser, mode) {
     const browser = await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE});
     try {
         const results = [];
-        const confirmed = ['success','invalid-read','invalid-row','edit-pending'];
+        const confirmed = ['success','invalid-read','invalid-row','edit-pending','partial-stock'];
         for (const mode of [...confirmed,'network','network-applied','delayed','zero','order-max','invalid-response','unexpected-status','bundle-partial','other-tab','currency']) {
             const result = await run(browser, mode);
             results.push(result);
@@ -169,6 +187,9 @@ async function run(browser, mode) {
                 assert.ok(result.initialCurrencyQueries <= 5);
                 assert.equal(result.changeCurrencyQueries, 1);
                 assert.equal(result.sum, '2,00 CHF');
+            }
+            if (mode === 'partial-stock') {
+                assert.deepEqual(result.postData, {'basketItems[0][variationId]':'1', 'basketItems[0][quantity]':'1'});
             }
         }
         if (process.argv[3]) fs.writeFileSync(process.argv[3], JSON.stringify(results,null,2));
