@@ -14,24 +14,24 @@
       "sha256": "f098123deb797c869c7e06854f0d113d79af4a469c25554227bb69dd95f74723"
     },
     "js/cat.min.js": {
-      "version": 4,
-      "sha256": "550328341bc927baf35bd50bd6fcb9f9014f7886fc9768094527232e7f51ec01"
+      "version": 5,
+      "sha256": "17e0ac9135ace08d5319d99cc93e1716f4ce812a249f5598f2bc8ba8adbda1a2"
     },
     "js/contact-widget.js": {
       "version": 1,
       "sha256": "e90c3f7c1cb233a1c59274deac527dfd3e6c4c1342f7206954ffe35f027d04c1"
     },
     "js/core.min.js": {
-      "version": 9,
-      "sha256": "937f8f6fac3542becafd5a7e9d4a58cf8bbc5d8d34078816c2829cf08f2b69a8"
+      "version": 10,
+      "sha256": "804a5ce14958aa8c45908ae52df55722193ac0bb06a0ed4d5803a8338630ea96"
     },
     "js/facets.min.js": {
       "version": 1,
       "sha256": "2160eff770cf7ed5e091d7d78174ba141c6f28633f4f789c029bbae14ee41e45"
     },
     "js/item.min.js": {
-      "version": 4,
-      "sha256": "1d1a933c80c4475a497876e6435b91891fc6f17bb8aed38f60c0be57874f1966"
+      "version": 5,
+      "sha256": "df46239d079cf1aeee1b6551183222a309b38253f5d0624828892e324a297a38"
     },
     "js/jquery-3.7.1.min.js": {
       "version": 1,
@@ -42,16 +42,16 @@
       "sha256": "1e23342e39817586c448d281818f8e8e255d4183baa6bbcef3c24c6d52eeb81e"
     },
     "js/main.min.js": {
-      "version": 4,
-      "sha256": "aabf40addc78caa8af41b06cbdf69ef28c097bd606c6bf4c491994f5c718ef93"
+      "version": 5,
+      "sha256": "8becdf4e4684122c3e0e2b46b22aca6df4070f2a047295d3951ee387da179dc5"
     },
     "js/matrix.min.js": {
-      "version": 1,
-      "sha256": "72f9c1c2c66cb7bf4a2e71c064c487064f056740b7ad1795123703cdb7df1ca4"
+      "version": 2,
+      "sha256": "4733944d29f30980fba7962ce1c35c4496de3817b45451d37f29ad659fb313b3"
     },
     "js/vue.min.js": {
-      "version": 4,
-      "sha256": "8489429c3d6346c638aec1075a9271b5d6dfb595122731f562626d096a45014f"
+      "version": 5,
+      "sha256": "9fff0a52227f80baf14aaeab9b6875a2470b03f5ac9da7a2c5fc13bfa5185422"
     }
   }
 }

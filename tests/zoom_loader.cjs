@@ -1,11 +1,18 @@
 // Deterministic lifecycle contracts for the actual gallery loader source.
 // Fake DOM, clock, vendor-ready signal and AJAX; the real vendor is covered by theme_bundles.cjs.
-// node tests/zoom_loader.cjs [report.json]
+// node tests/zoom_loader.cjs [report.json] [loader-source.js]
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
-const source = fs.readFileSync(path.join(__dirname, '../resources/js/zoom-loader.js'), 'utf8');
+const acorn = require('acorn');
+const source = fs.readFileSync(process.argv[3] || path.join(__dirname, '../resources/js/zoom-loader.js'), 'utf8');
+const core = fs.readFileSync(path.join(__dirname, '../resources/js/core.js'), 'utf8');
+const apiNode = acorn.parse(core, {ecmaVersion: 'latest'}).body.find(node =>
+    node.type === 'ExpressionStatement' && node.expression.type === 'AssignmentExpression' &&
+    core.slice(node.expression.left.start, node.expression.left.end) === 'O46Core.apiservice');
+assert.ok(apiNode, 'The actual shared API adapter must be available');
+const apiSource = core.slice(apiNode.start, apiNode.end);
 const rows = [];
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 
@@ -36,7 +43,7 @@ class Clock {
     }
 }
 
-function fixture({delayMatrix = false} = {}) {
+function fixture({delayMatrix = false, realApi = false} = {}) {
     const clock = new Clock();
     const state = { scripts: [], requests: [], html: [], shows: 0, bindings: 0, starts: 0,
         redirects: [], vendorReady: false, vendorCallbacks: [], matrixCalls: 0, matrixReady: !delayMatrix };
@@ -58,7 +65,7 @@ function fixture({delayMatrix = false} = {}) {
         head: { appendChild(script) { state.scripts.push(script); } }
     };
     const sandbox = {
-        document, O46Core: {ensureMatrix() { state.matrixCalls++; return matrixReady; }}, URL, Promise,
+        document, O46Core: {installed: {}, ensureMatrix() { state.matrixCalls++; return matrixReady; }}, URL, Promise,
         setTimeout: (fn, delay) => clock.set(fn, delay), clearTimeout: id => clock.clear(id),
         console: { warn() {} },
         location: { href: 'https://shop.example/fr/category/', assign(url) { state.redirects.push(url); } },
@@ -74,6 +81,30 @@ function fixture({delayMatrix = false} = {}) {
     };
     sandbox.window = sandbox;
     vm.createContext(sandbox);
+    if (realApi) {
+        // Run the production API facade. Only the AJAX transport/clock is fake:
+        // its timeout ends the request via the same error callback as jQuery.
+        sandbox.$.ajax = options => {
+            let complete = false;
+            let timer;
+            const request = {url: options.url, type: options.dataType, method: options.method,
+                timeout: options.timeout, timedOut: false,
+                succeed(html) {
+                    if (complete) return;
+                    complete = true;
+                    clock.clear(timer);
+                    options.success(html, 'success', {status: 200});
+                }};
+            if (options.timeout > 0) timer = clock.set(() => {
+                if (complete) return;
+                complete = true;
+                request.timedOut = true;
+                options.error({status: 0, responseText: ''});
+            }, options.timeout);
+            state.requests.push(request);
+        };
+        vm.runInContext(apiSource + ';O46Core.apiservice();', sandbox, {filename: 'core-api-adapter.js'});
+    }
     vm.runInContext(source, sandbox, { filename: 'zoom-loader.js' });
     function installVendor(alreadyReady = false) {
         sandbox.MagicZoom = { start() {
@@ -217,8 +248,64 @@ async function run() {
         assert.equal(test.state.bindings, 0);
         rows.push({ case: failure + '-localized-product-fallback', status: 'PASS' });
     }
+    test = fixture({realApi: true});
+    test.installVendor(true);
+    test.loader.openQuickview({href: '/it/product?keep=1&quickViewItem=true'}, 10);
+    await test.clock.advance(29999);
+    assert.equal(test.state.redirects.length, 0, 'Allow slow HTML rendering until its deadline');
+    assert.equal(test.state.shows, 0);
+    await test.clock.advance(1);
+    assert.equal(test.state.redirects.length, 1, 'A hanging HTML read must reach the product fallback');
+    assert.equal(test.state.requests.length, 1, 'No automatic HTML retry');
+    assert.equal(test.state.requests[0].method, 'GET');
+    assert.equal(test.state.requests[0].type, 'html');
+    assert.equal(test.state.requests[0].timeout, 30000, 'Deadline travels through the production API adapter');
+    assert.equal(test.state.requests[0].timedOut, true);
+    assert.equal(test.state.redirects[0], 'https://shop.example/it/product?keep=1');
+    rows.push({case: 'hanging-html-actual-api-adapter-deadline', status: 'PASS', beforeDeadlineMs: 29999, timeoutMs: 30000, requests: 1, redirects: 1});
+
+    test.loader.openQuickview({href: '/it/product?keep=1'}, 10);
+    test.state.requests[1].succeed('<p>retry product</p>');
+    await test.clock.advance(10);
+    assert.deepEqual(test.state.html, ['<p>retry product</p>']);
+    assert.equal(test.state.shows, 1);
+    assert.equal(test.state.bindings, 1);
+    assert.equal(test.state.redirects.length, 1);
+    assert.equal(test.state.scripts.length, 0, 'A later explicit interaction reuses ready assets');
+    rows.push({case: 'new-interaction-after-html-timeout', status: 'PASS', requests: 2, automaticRetries: 0});
+
+    for (const responseDelay of [0, 20000]) {
+        test = fixture({realApi: true});
+        test.installVendor(true);
+        test.loader.openQuickview({href: '/fr/slow-product'}, 10);
+        await test.clock.advance(responseDelay);
+        test.state.requests[0].succeed('<p>complete product</p>');
+        await test.clock.advance(30010 - responseDelay);
+        assert.deepEqual(test.state.html, ['<p>complete product</p>']);
+        assert.equal(test.state.shows, 1);
+        assert.equal(test.state.bindings, 1);
+        assert.deepEqual(test.state.redirects, []);
+        assert.equal(test.state.requests[0].timedOut, false);
+        rows.push({case: 'html-success-through-actual-api-' + responseDelay + 'ms', status: 'PASS', responseDelayMs: responseDelay});
+    }
+
+    test = fixture({realApi: true});
+    test.installVendor(true);
+    test.loader.openQuickview({href: '/en/old-product'}, 10);
+    await test.clock.advance(5000);
+    test.loader.openQuickview({href: '/en/new-product'}, 10);
+    test.state.requests[1].succeed('<p>new product</p>');
+    await test.clock.advance(25010);
+    assert.equal(test.state.requests[0].timedOut, true);
+    assert.deepEqual(test.state.html, ['<p>new product</p>']);
+    assert.equal(test.state.shows, 1);
+    assert.deepEqual(test.state.redirects, [], 'A stale read deadline must not navigate away from a newer choice');
+    rows.push({case: 'stale-html-timeout-keeps-newer-quickview', status: 'PASS'});
     const report = { status: 'PASS', mode: 'ISOLATED_LOADER_FAKE_DOM_CLOCK_VENDOR_AND_AJAX', cases: rows };
     if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(report, null, 2));
     console.log(rows.length + ' loader lifecycle cases PASS');
 }
-run().catch(error => { console.error(error); process.exitCode = 1; });
+run().catch(error => {
+    if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify({status: 'FAIL', cases: rows, error: error.message}, null, 2));
+    console.error(error); process.exitCode = 1;
+});

@@ -1,5 +1,39 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Kleine Matrixoptimierungen (2026-11-15)
+
+- Mengenlimit-Aliasprüfung bei bereits vorhandenem `orderMax` überspringen, alle Fallbacks erhalten. Spaltenbeschriftungen einmal je Matrixaufbau auflösen. Bei 60 Varianten: 360 → 6 Überschriftenabfragen, im gemischten Limit-Fixture 75 → 45 Normalisierungen. 160 Source-/Min-Vergleiche in fünf Sprachen liefern identisches Zeilen-HTML.
+- Matrixasset 1 → 2, +57 minifizierte Bytes für weniger wiederholte Verarbeitung; zwölf weitere Assets bytegleich zum ersten Abschluss. Gesamter Auftrag: vier kleine Verbesserungen, +164 produktive Quellbytes, −51 JS-Bytes über die fünf geänderten Assets, 0 entfernte Requests/Backendabfragen. Kein neuer Laufzeitgewinn behauptet. [Aktualisierter Bericht](../../.cache/data-flow-2606c6a-20261115/Pruefbericht.html).
+- Gezielte Matrix-, Schreibschutz-, Loader-, Bundle-, Twig-2/3- und Versionsprüfungen bestehen. Historische Migrationstestfixture auf ihren expliziten Startstand korrigiert; Produktvalidator unverändert. Dauerhaften Optimierungsgrundsatz ohne Mindestschwellen in README dokumentiert; keine vorhandene AGENTS.md gefunden. Kein Commit, Push, Deployment, Sync oder B2C-Eingriff.
+
+## Unreleased – Gezielte Variantendatenverarbeitung (2026-11-15)
+
+- PDP/Quickview liefern im DOM nur Varianten-IDs und Attribute; vollständiger Twig-Kontext bleibt erhalten. Entferne den ungenutzten jQuery-Mapabruf beim Initialisieren: ein doppelter JSON-Parse und eine gecachte Kopie entfallen. Legacy-Auswahl liest weiterhin bedarfsgerecht; Matrixpreise, Bestand, EAN, Bilder, Reihenfolge, Mengenlimits und Batchabrufe unverändert.
+- Lokales Replay gespeicherter Shopdaten: neun PDP-Varianten 4.232 → 2.333 Attributbytes, 18 Quickview-Varianten 9.389 → 4.655. Keine Backendabfrage und kein HTTP-Request eingespart, kein belegter nativer Zeitgewinn. Kein sicherer zusätzlicher Theme-Fix für die Basket-PUT-Wartezeit. Galeriekompaktierung nach ungünstigem PHP-Prototyp verworfen. [Prüfbericht](../../.cache/data-flow-2606c6a-20261115/Pruefbericht.html).
+- Gezielte PHP-/Twig-2/3-/JS-Prüfungen bestehen, einschließlich 160 ALT/NEU-Controllerfällen, 600 Matrixzeilen, Warenkorb/Session, sechs LiveShopping-Karten, 60 Startseitenartikeln und fünf Sprachen. Nur Main/Kategorie/Produkt/Vue 4 → 5, je 27 Byte kleiner; neun andere Assets bytegleich. Reproduzierbarer Build und Diffprüfung PASS; korrigierte Testaufbauabbrüche im Bericht.
+- Bestehende lokale Änderungen erhalten. **B – lokal bestanden mit Grenzen**; keine vollständige Suite oder native Kundenabnahme. Kein Commit, Push, Merge, Deployment, Plugin-Sync, Cache-Purge, produktiver Schreibzugriff oder B2C-Eingriff.
+
+## Unreleased – Architekturreview und Transportkorrekturen (2026-11-15)
+
+- Architektur-/Datenflussreview auf `2606c6a`; Preview 426 (Ceres/IO 5.0.86) und produktives B2B-Set 427 (5.0.81, Theme 1.0.6) anhand aktueller Verwaltung getrennt. [HTML-Bericht](../../.cache/architecture-review-2606c6a-20261115/Pruefbericht.html) mit SSR-Alternativen, Aufrufketten, strukturellen Kandidaten und vollständiger Dateiliste. Vorhandene lokale Änderungen erhalten.
+- Quickview-HTML-GET nutzt das vorhandene Timeout von 30 Sekunden und den bestehenden Produktseiten-Fallback; kein unendliches Warten bei bereits geladenen Assets, keine automatische Wiederholung. Langsame gültige Antworten bis zum Zeitlimit und Schutz vor veralteten Antworten erhalten.
+- Öffentliche Theme-API: `put()` ruft den vorhandenen privaten Transport auf; `delete()` respektiert explizite Antwortformate. Ceres-Warenkorb-PUT, Preis-/Mengenprüfungen und Persistenz unverändert. Kein Serverlast- oder TTFB-Gewinn behauptet.
+- API vorher 9/12, nachher Quelle/Min jeweils 12/12; Quickview 16/16; Auth je 76/76; Matrixabrufe 16/16, Matrixschreiben je 15/15; Header 30/30; Bundle-Fixtures 16/16; Assetversionierung 22/22. Nur Core 9 → 10; zwölf andere Assets bytegleich. Finaler Wiederholungsbuild und Assetcheck ohne Änderungen. Sandbox-Browserabbruch mit erfolgreicher Gegenprobe und erneuertes Quellhash-Manifest im Bericht dokumentiert.
+- Größere Serverumbauten bis zu Datenäquivalenz-/Kundenkontextnachweis zurückgestellt. Keine vollständige Suite oder native Nachher-Abnahme; kein Commit, Push, Deployment, Sync, Purge, Warenkorbschreibzugriff, Bestellung, Zahlung oder B2C-Eingriff.
+
+## Unreleased – Warenkorb-Skalierung (2026-11-15)
+
+- Preview 426 / `2606c6a`: 32 native Vorgänge bei 1/5/10/20 Variantenpositionen aus zwei Artikeln. Wachsende Wartezeit überwiegend vor dem HTTP-Antwortbeginn; PUT/DELETE ohne Folge-GET. Genaue IO-/PlentyONE-Ursache benötigt Serverprofiling. [Messbericht und Supportbefund](../../.cache/basket-scaling-2606c6a/Pruefbericht.html).
+- Gewicht-/UVP-Zusatzknoten im Warenkorb werden erhalten und nur bei Bedarf aktualisiert. Nachgewiesenes unnötiges Entfernen/Erzeugen bei 20 Positionen lokal von 40/40 auf 0/0 reduziert. Preis-, Mengen-, Summen-, Matching- und Requestlogik unverändert; kein behaupteter nativer Zeitgewinn.
+- Gezielte Tests: 19 Warenkorb-Szenarien, 30 Headerprüfungen, 15 Matrixmodi, 40 IO-Datenvergleiche + 3 Seiteneffektproben, 22 Versionsprüfungen PASS. Zwei bytegleiche Builds, keine JS-/CSS-Asset- oder Versionsänderung. Native Nachher-Abnahme offen, technische Abbrüche im Bericht.
+- **B – PASS mit Einschränkungen; Hauptwartezeit nicht behoben.** Isolierter Testkorb vollständig bereinigt, Benutzerkorb unverändert. Kein Commit, Deployment, Sync, Purge, Auftrag, Zahlung oder B2C-Eingriff.
+
+## Nachprüfung – Phase 7 auf Preview 426 (2026-11-15)
+
+- Ausgelieferter Commit `2606c6a`: 13/13 Theme-Assets stimmen mit Git überein. Native isolierte Gastprüfungen für Quickview, Warenkorb und Checkout-Navigation; eigener Testkorb vollständig bereinigt, ursprüngliche fünf Positionen / 23 Stück unverändert.
+- **B – PASS mit Einschränkungen.** Historische Erstklickursache nicht bewiesen; kein zugestellter Produktklick beim wirkungslosen Desktop-Automationsschritt. Erzwungener Früh-Close und normaler erfolgreicher Close getrennt bewertet. Angemeldeter Checkout und serverseitige Mindestwertdurchsetzung bleiben ungeprüft. [HTML-Bericht und Evidenz](../../.cache/native-phase7-followup-2606c6a/Pruefbericht.html).
+- Nur fehlende Matrix-Loaderabhängigkeit in bestehender Dropdown-Testfixture ergänzt; Assertions unverändert, danach 160/160 PASS. Assetcheck ohne Änderungen; Versionstest 22/22 PASS. Keine Produktcode-, Asset- oder Versionsänderung; kein Commit, Deployment, Sync, Purge, Auftrag, Zahlung oder B2C-Eingriff.
+
 ## Unreleased – Phase 7: bedarfsgesteuerte Ressourcen (2026-11-15)
 
 - Vorhandene Phase-5-Änderungen auf `95b1636` erhalten. Native Ressourcenmatrix für Preview 426 erfasst; zwölf bestehende Asset-Hashes entsprechen dem Ausgangsstand.

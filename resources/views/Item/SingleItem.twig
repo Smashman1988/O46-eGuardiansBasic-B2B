@@ -351,7 +351,7 @@
 <div data-item-variation class="row"
      data-eg-handler="initVariation"
      data-eg-event="load"
-     data-eg-variations="{{ variationsWithAttributes | json_encode | e('html_attr') }}">
+     data-eg-variations="{{ variationsWithAttributes | map(v => {variationId: v.variationId, attributes: v.attributes}) | json_encode | e('html_attr') }}">
 
 {% set sizeAttr = null %}
 {% set colorAttr = null %}

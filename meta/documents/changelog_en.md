@@ -1,5 +1,39 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Small matrix optimizations (2026-11-15)
+
+- Skip redundant order-limit alias scanning when `orderMax` already exists; retain every fallback. Resolve column labels once per matrix build. At 60 variants: 360 → 6 heading queries and 75 → 45 normalizations in the mixed-limit fixture. 160 source/min comparisons across five languages produce identical row DOM.
+- Matrix asset 1 → 2, +57 minified bytes for less repeated processing; twelve other assets unchanged since the first completion. Cumulative task: four small improvements, +164 production source bytes, −51 JS bytes across five changed delivery assets, zero requests/backend queries removed. No new timing gain claimed. [Updated report](../../.cache/data-flow-2606c6a-20261115/Pruefbericht.html).
+- Targeted matrix, write-protection, loader, bundle, Twig 2/3 and version checks pass. Correct the historical migration fixture to its explicit initial version; production validator unchanged. Document the permanent optimization principle without minimum thresholds in README; no existing AGENTS.md found. No commit, push, deployment, sync or B2C changes.
+
+## Unreleased – Targeted variant data processing (2026-11-15)
+
+- Emit only variation IDs and attributes in the PDP/Quickview DOM while retaining the full Twig context. Remove the unused eager jQuery map read: one duplicate JSON parse and cached object tree disappear. Legacy selectors still read on demand; matrix prices, stock, EAN, images, order, limits and batches are unchanged.
+- Local replay of saved shop data: nine PDP variants 4,232 → 2,333 attribute bytes; 18 Quickview variants 9,389 → 4,655. No backend query or HTTP request removed; no native timing gain claimed. No safe additional theme fix for Basket PUT latency. Reject gallery compaction after an unfavorable PHP prototype. [Report](../../.cache/data-flow-2606c6a-20261115/Pruefbericht.html).
+- Targeted PHP/Twig 2/3/JS checks pass, including 160 before/after controller cases, 600 matrix rows, basket/session, six LiveShopping cards, 60 homepage items and five languages. Only Main/Category/Item/Vue advance 4 → 5, each 27 bytes smaller; nine other assets unchanged. Reproducible build and diff check pass; corrected test-setup interruptions documented.
+- Preserve inherited local changes. **B – local PASS with limitations**; no full-suite or native customer acceptance claim. No commit, push, merge, deployment, plugin sync, cache purge, production write or B2C change.
+
+## Unreleased – Architecture review and transport fixes (2026-11-15)
+
+- Reviewed actual call chains and SSR/hybrid alternatives on `2606c6a`, preserving all inherited local changes. Current administration separates Preview 426 (Ceres/IO 5.0.86) from production B2B set 427 (5.0.81, theme 1.0.6). [Detailed HTML report](../../.cache/architecture-review-2606c6a-20261115/Pruefbericht.html) includes structural priorities, evidence, full file inventory and limits.
+- Bound Quickview HTML GET to 30 seconds through the existing API option and product-page fallback. Preserve slow successful responses, stale-response protection and explicit later interactions; no automatic retry.
+- Fix the public theme PUT wrapper calling a nonexistent method and DELETE discarding explicit response formats through bitwise coercion. Native Ceres basket PUT, validation and persistence remain unchanged. No normal-request, server-load or TTFB gain claimed.
+- API baseline 9/12, fixed source/min each 12/12; Quickview 16/16; authentication each 76/76; matrix reads 16/16 and writes each 15/15; header 30/30; full bundle fixtures 16/16; asset versioning 22/22. Increment only Core 9 → 10; twelve other delivery assets remain identical. Final repeat build and asset check have no changes. Document initial sandbox browser denial, successful isolated countercheck and refreshed comment-only source hash manifest.
+- Larger server changes require data-equivalence and customer-context evidence. No full-suite or native post-deployment claim. No commit, push, deployment, sync, purge, basket write, order, payment or B2C change.
+
+## Unreleased – Basket scaling (2026-11-15)
+
+- Preview 426 / `2606c6a`: 32 native actions at 1/5/10/20 distinct variant positions from two articles. The growing delay primarily precedes HTTP response start; PUT/DELETE have no follow-up GET. Separating IO from PlentyONE requires server profiling. [Measurements and support findings](../../.cache/basket-scaling-2606c6a/Pruefbericht.html).
+- Preserve weight/RRP extra nodes and update changed text only. At 20 positions the local comparison reduces redundant removals/insertions from 40/40 to 0/0. Price, quantity, total, matching and request logic remain unchanged; no native timing gain is claimed.
+- Targeted PASS results: 19 basket scenarios, 30 header checks, 15 matrix modes, 40 IO data comparisons plus 3 side-effect probes and 22 version checks. Two identical builds, no JS/CSS asset or version changes. Native candidate acceptance remains open; technical interruptions are documented.
+- **B – PASS with limitations; primary latency remains unresolved.** Isolated test basket cleaned completely; original user basket unchanged. No commit, deployment, sync, purge, order, payment or B2C changes.
+
+## Follow-up – Phase 7 on Preview 426 (2026-11-15)
+
+- Deployed commit `2606c6a`: all 13 theme assets match Git. Native isolated guest checks cover Quickview, basket and checkout navigation. The test basket was fully cleaned; the original five lines / 23 units remain unchanged.
+- **B – PASS with limitations.** The historical first-click cause remains unproven; the ineffective desktop automation action delivered no product click event. A forced early close and a successful normal close are assessed separately. Authenticated checkout and server-side minimum-order enforcement remain untested. [HTML report and evidence](../../.cache/native-phase7-followup-2606c6a/Pruefbericht.html).
+- Restore only the missing matrix-loader dependency in the existing dropdown test fixture; assertions unchanged, then 160/160 PASS. Asset check reports no changes; versioning checks pass 22/22. No product-code, asset or version change; no commit, deployment, sync, purge, order, payment or B2C change.
+
 ## Unreleased – Phase 7: load resources on demand (2026-11-15)
 
 - Preserve all inherited Phase-5 changes on `95b1636`. Capture the Preview 426 resource matrix; all twelve existing asset hashes match the starting state.

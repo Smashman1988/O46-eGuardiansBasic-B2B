@@ -287,7 +287,6 @@ O46Core.apiservice.call(window);
             this.init = function(mainContainer){
                 attributeList = $(mainContainer).find('[data-eg-attributes]');//.sort(eGuardians.helper.sort_li);
                 //itemVariations = $(mainContainer).data('eg-variations');
-                var itemVariations = $(mainContainer).data('eg-variations');
                 variations = this;
                 $(attributeList).each(function(){
                     //var variationForObject = [];

@@ -62,10 +62,12 @@ O46Core.openQuickview = function (trigger, bindDelay) {
     url.searchParams.set('quickViewItem', 'true');
     var sequence = O46Core.quickviewSequence = (O46Core.quickviewSequence || 0) + 1;
     var html = new Promise(function (resolve, reject) {
+        // Backend-rendered HTML gets the same budget as the variation batch.
+        // Ready assets must not leave a stalled read waiting indefinitely.
         eGuardians.apiservice.get(url.href, '', function (response) {
             if (typeof response === 'string' && response.trim()) resolve(response);
             else reject(new Error('Quickview response is empty or invalid'));
-        }, 'html');
+        }, 'html', 30000);
     });
     // Fetch HTML and both product modules concurrently. The existing matrix
     // observer must be installed before the Quickview markup is inserted.

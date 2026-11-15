@@ -1,5 +1,6 @@
 // Local Chromium regression. Pass a reference Ceres root and a Twig autoloader.
 // O46_BASKET_SYNC_REFERENCE selects an earlier unminified Twig partial for a regression control.
+// O46_BASKET_EXTRAS_REFERENCE / O46_BASKET_CASE=extras isolate the basket-extra DOM regression.
 // Ceres runs its compiled Vue, Vuex, basket components, AJAX action and event handlers.
 // Only the HTTP response bodies and their delivery order are controlled by the test.
 const assert = require('node:assert/strict');
@@ -30,6 +31,7 @@ function renderTemplates() {
         require $argv[1];
         $templates = ['Ceres::PageDesign.Macros.LayoutContainer' => '{% macro show(name) %}{% endmacro %}'];
         if (getenv('O46_BASKET_SYNC_REFERENCE')) $templates['Basket/Partials/QuantitySync.twig'] = file_get_contents(getenv('O46_BASKET_SYNC_REFERENCE'));
+        if (getenv('O46_BASKET_EXTRAS_REFERENCE')) $templates['PageDesign/Components/dusparst.twig'] = file_get_contents(getenv('O46_BASKET_EXTRAS_REFERENCE'));
         $twig = new Twig\Environment(new Twig\Loader\ChainLoader([
             new Twig\Loader\ArrayLoader($templates),
             new Twig\Loader\FilesystemLoader($argv[2].'/resources/views')
@@ -108,7 +110,7 @@ const initial = snapshot(1, 1, 18, [8, 12], 10);
 const high = snapshot(40, 1, 199, [5.5, 12], 14.22);
 const low = snapshot(1, 1, 17.75, [7.5, 12], 8.97);
 
-async function fixture(browser, views, lang, initiallyLoaded) {
+async function fixture(browser, views, lang, initiallyLoaded, data = initial) {
     const page = await browser.newPage();
     page.setDefaultTimeout(2500);
     const errors = [];
@@ -130,7 +132,7 @@ async function fixture(browser, views, lang, initiallyLoaded) {
         Vue.filter('currency', String);
         Vue.filter('itemImages', () => []);
         Vue.filter('itemImage', () => '');
-        Vue.filter('itemURL', () => '#');
+        Vue.filter('itemURL', item => item.variation.itemId ? '/fixture/a-' + item.variation.itemId + '/' : '#');
         Vue.filter('itemName', () => 'Local item');
         Vue.component('quantity-input', ceresRequire('./resources/js/src/app/components/item/QuantityInput.vue').default);
         window.ceresStore = new Vuex.Store({ modules: { basket: load('store/modules/BasketModule').default,
@@ -176,7 +178,7 @@ async function fixture(browser, views, lang, initiallyLoaded) {
             if (data?.basket) trace.published.push(data.basket.itemSumNet);
         });
         ceresStore.subscribe((m, s) => trace.mutations.push({ type: m.type, net: s.basket.data.itemSumNet }));
-    }, {data:initial, initiallyLoaded});
+    }, {data, initiallyLoaded});
     for (const html of [views[lang].meter, views[lang].savings, views[lang].sync]) {
         await page.evaluate(html => {
             const fragment = document.createElement('template');
@@ -201,7 +203,7 @@ async function fixture(browser, views, lang, initiallyLoaded) {
         ]); }}).$mount('#vue-app');
         window.rows = vueApp.$children;
         window.dispatchEvent(new CustomEvent('o46:basket-updated', {detail:{items:initial.basketItems,session:{data:initial}}}));
-    }, {rowModule, totalsHtml:views[lang].totals, initial});
+    }, {rowModule, totalsHtml:views[lang].totals, initial:data});
     assert.deepEqual(errors, [], 'Basket scripts anchor and component startup');
     return {page, errors};
 }
@@ -410,10 +412,13 @@ async function main() {
     const views = renderTemplates();
     const browser = await chromium.launch({ executablePath: process.env.O46_BROWSER_EXECUTABLE });
     try {
-        const cases = [['de','rapid-components'],['de','rapid-inputs'], ...Object.keys(views).map(lang => [lang, 'normal']),
+        const cases = [['de','extras'],['de','rapid-components'],['de','rapid-inputs'], ...Object.keys(views).map(lang => [lang, 'normal']),
             ...['queued','missingEvent','failedWrite','bothFailed','newIntent','newSnapshot','newSnapshotReadError',
                 'tab:beforeInit','tab:coalesced','tab:afterWrite','tab:oldReadError'].map(mode => ['de',mode])];
-        for (const [lang, mode] of cases) {
+        const selected = process.env.O46_BASKET_CASE ? cases.filter(([,mode]) => mode === process.env.O46_BASKET_CASE) : cases;
+        assert.ok(selected.length, 'Requested basket case exists');
+        for (const [lang, mode] of selected) {
+            if (mode === 'extras') { await extras(browser, views); console.log('PASS', lang, mode); continue; }
             const {page,errors} = await fixture(browser,views,lang,mode !== 'tab:beforeInit');
             try {
                 if (mode === 'normal') await normal(page, lang);
@@ -425,8 +430,100 @@ async function main() {
                 console.log('PASS', lang, mode);
             } finally { await page.close(); }
         }
-        console.log(cases.length + ' local basket browser scenarios passed.');
+        console.log(selected.length + ' local basket browser scenarios passed.');
     } finally { await browser.close(); }
+}
+
+async function extras(browser, views) {
+    const data = snapshot(1, 1, 200, [10, 10]);
+    data.basket.itemQuantity = 20;
+    data.basketItems = Array.from({length:20}, (_,i) => {
+        const item = structuredClone(data.basketItems[0]);
+        Object.assign(item, {id:i+1, itemId:i < 19 ? 11 : 12, variationId:i+101});
+        item.variation.id = item.variationId;
+        Object.assign(item.variation.data.variation, {itemId:item.itemId, weightG:1000});
+        item.variation.data.prices.rrp = {unitPrice:{value:20}, currency:'EUR'};
+        return item;
+    });
+    const {page,errors} = await fixture(browser, views, 'de', true, data);
+    async function settle() {
+        await page.evaluate(async () => {
+            await Vue.nextTick();
+            await new Promise(requestAnimationFrame);
+            await new Promise(resolve => requestIdleCallback(resolve, {timeout:1000}));
+        });
+    }
+    async function publish(items) {
+        await page.evaluate(items => window.dispatchEvent(new CustomEvent('o46:basket-updated', {detail:{items}})), items);
+        await settle();
+    }
+    try {
+        await page.waitForFunction(() => document.querySelectorAll('.o46-weight-line').length === 20 && document.querySelectorAll('.o46-rrp-line').length === 20);
+        await settle();
+        await page.evaluate(() => {
+            window.extraNodes = [...document.querySelectorAll('.o46-weight-line,.o46-rrp-line')];
+            window.extraMutations = {added:0, removed:0};
+            new MutationObserver(records => {
+                for (const record of records) for (const [field,key] of [['addedNodes','added'],['removedNodes','removed']]) {
+                    for (const node of record[field]) if (node.nodeType === 1 && node.matches('.o46-weight-line,.o46-rrp-line')) extraMutations[key]++;
+                }
+            }).observe(document.querySelector('#vue-app'), {childList:true, subtree:true});
+        });
+        await publish(data.basketItems);
+        assert.deepEqual(await page.evaluate(() => extraMutations), {added:0,removed:0}, 'Identical basket must preserve all 40 extra elements');
+        assert.ok(await page.evaluate(() => extraNodes.every(node => node.isConnected)), 'Existing extra nodes retained');
+
+        const changed = structuredClone(data);
+        changed.basketItems[0].quantity = 2;
+        Object.assign(changed.basket, {itemQuantity:21,itemSumNet:210,itemSum:249.9});
+        await intent(page, 0, 2);
+        await writes(page, 1);
+        await page.evaluate(value => finishPut(value), changed);
+        await published(page, changed.basket.itemSumNet);
+        await settle();
+        const result = await page.evaluate(() => ({mutations:extraMutations, retained:extraNodes.every(node => node.isConnected),
+            weights:[...document.querySelectorAll('.o46-weight-line')].map(node => node.textContent),
+            rrp:[...document.querySelectorAll('.o46-rrp-line')].map(node => node.textContent), reads:trace.reads.length,
+            prices:[...document.querySelectorAll('.item-total-price')].map(node => Number(node.textContent))}));
+        assert.deepEqual(result.mutations, {added:0,removed:0}, 'One quantity update must not recreate 40 extra elements');
+        assert.ok(result.retained);
+        assert.deepEqual(result.weights, ['Gewicht: 2,00 kg', ...Array(19).fill('Gewicht: 1,00 kg')]);
+        const eur = value => new Intl.NumberFormat('de', {style:'currency',currency:'EUR'}).format(value);
+        assert.deepEqual(result.rrp, [eur(40), ...Array(19).fill(eur(20))]);
+        assert.deepEqual(result.prices, [20,...Array(19).fill(10)], 'Ceres-confirmed prices unchanged');
+        assert.equal(result.reads, 0);
+
+        await page.evaluate(() => {
+            const row = document.querySelector('.basket-list-item');
+            row.append(row.querySelector('.o46-weight-line').cloneNode(true), row.querySelector('.o46-rrp-line').cloneNode(true));
+            row.append(row.querySelector('.o46-rrp-line'));
+        });
+        await publish(changed.basketItems);
+        assert.deepEqual(await page.evaluate(() => {
+            const row = document.querySelector('.basket-list-item');
+            return {weight:row.querySelectorAll('.o46-weight-line').length,rrp:row.querySelectorAll('.o46-rrp-line').length,
+                anchor:row.querySelector('.o46-rrp-line').previousElementSibling.matches('.item-total-price')};
+        }), {weight:1,rrp:1,anchor:true}, 'Duplicate and displaced extras reconciled');
+
+        await page.evaluate(() => {
+            const row = document.querySelector('.basket-list-item');
+            const anchor = row.querySelector('.item-total-price');
+            window.extraBeforeAnchorReplacement = row.querySelector('.o46-rrp-line');
+            anchor.replaceWith(anchor.cloneNode(true));
+        });
+        await publish(changed.basketItems);
+        assert.ok(await page.evaluate(() => extraBeforeAnchorReplacement.isConnected &&
+            extraBeforeAnchorReplacement.previousElementSibling.matches('.item-total-price')), 'Replaced price anchor retains its extra node');
+
+        const missing = structuredClone(changed.basketItems);
+        missing[0].variation.data.variation.weightG = 0;
+        delete missing[0].variation.data.prices.rrp;
+        await publish(missing);
+        assert.equal(await page.locator('.basket-list-item').first().locator('.o46-weight-line,.o46-rrp-line').count(), 0, 'Missing RRP and zero weight remove stale extras');
+        await publish([]);
+        assert.equal(await page.locator('.o46-weight-line,.o46-rrp-line').count(), 0, 'Unmatched rows retain no stale extras');
+        assert.deepEqual(errors, []);
+    } finally { await page.close(); }
 }
 
 async function intent(page, row, quantity) {

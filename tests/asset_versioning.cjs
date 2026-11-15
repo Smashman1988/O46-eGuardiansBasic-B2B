@@ -99,7 +99,11 @@ async function run(output = path.join(project, '.cache/asset-versioning.json')) 
         await combined.build({root}); assert.deepEqual(snapshot(root), before); assertManifestAndUrls(root);
     });
     await test('schema 2 migration adopts only the new matrix asset at version 1', async () => {
-        const current = manifest(root), previous = structuredClone(current);
+        const current = manifest(root);
+        // This historical migration fixture starts at 1 even after the live asset advances.
+        current.assets['js/matrix.min.js'].version = 1;
+        writeJson(root, versionsFile, {...json(root, versionsFile), 'js/matrix.min.js': 1});
+        const previous = structuredClone(current);
         previous.schemaVersion = 2;
         delete previous.assets['js/matrix.min.js'];
         writeJson(root, manifestFile, previous);

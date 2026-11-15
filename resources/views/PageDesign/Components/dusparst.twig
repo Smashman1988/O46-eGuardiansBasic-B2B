@@ -255,6 +255,17 @@
     var nodes = li.querySelectorAll('.o46-weight-line');
     for (var el of nodes){ if (el && el.parentNode) el.parentNode.removeChild(el); }
   }
+  function updateExtraLine(li, selector, className, anchor, text){
+    var nodes = li.querySelectorAll(selector);
+    var node = nodes[0];
+    for (var i=1;i<nodes.length;i++) nodes[i].remove();
+    if (!node){
+      node = document.createElement('div');
+      node.className = className;
+    }
+    if (node.textContent !== text) node.textContent = text;
+    if (node.previousElementSibling !== anchor) anchor.insertAdjacentElement('afterend', node);
+  }
 
   function renderPerItemExtras(items, currencyFallback){
     var rows = document.querySelectorAll(LIST_ITEM_SEL);
@@ -268,13 +279,18 @@
     }
 
     for (var li of rows){
-      clearRrpLines(li);
-      clearWeightLines(li);
-
       var itemId = getItemIdFromRow(li);
-      if (!itemId || !byItemQueues.has(String(itemId))) continue;
+      if (!itemId || !byItemQueues.has(String(itemId))){
+        clearRrpLines(li);
+        clearWeightLines(li);
+        continue;
+      }
       var queue = byItemQueues.get(String(itemId));
-      if (!queue || !queue.length) continue;
+      if (!queue || !queue.length){
+        clearRrpLines(li);
+        clearWeightLines(li);
+        continue;
+      }
 
       var matched = null, idx = -1;
       try{
@@ -304,30 +320,25 @@
           if (nameA) nameAnchorCache.set(li, nameA);
         }
         if (nameA){
-          var wNode = document.createElement('div');
-          wNode.className = 'o46-weight-line small text-muted';
-          wNode.textContent = WEIGHT_LABEL + ' ' + fmtKgFromG(wg * qtyRow);
-          nameA.insertAdjacentElement('afterend', wNode);
-        }
-      }
+          updateExtraLine(li, '.o46-weight-line', 'o46-weight-line small text-muted', nameA,
+            WEIGHT_LABEL + ' ' + fmtKgFromG(wg * qtyRow));
+        } else clearWeightLines(li);
+      } else clearWeightLines(li);
 
       // ---- UVP unter Preisbox (wie vorher) ----
       var rrp = rrpValue(matched);
-      if (!(rrp > 0)) continue;
+      if (!(rrp > 0)){ clearRrpLines(li); continue; }
 
       var cur = rrpCurrency(matched, currencyFallback);
 
       var anchor = anchorCache.get(li);
       if (!anchor || !document.contains(anchor)) {
         anchor = findRrpAnchor(li);
-        if (!anchor) continue;
+        if (!anchor){ clearRrpLines(li); continue; }
         anchorCache.set(li, anchor);
       }
 
-      var node = document.createElement('div');
-      node.className = 'o46-rrp-line';
-      node.textContent = money(rrp * qtyRow, cur);
-      anchor.insertAdjacentElement('afterend', node);
+      updateExtraLine(li, '.o46-rrp-line', 'o46-rrp-line', anchor, money(rrp * qtyRow, cur));
     }
   }
   // =================================================

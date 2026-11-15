@@ -111,11 +111,9 @@ O46Core.apiservice = O46Core.apiservice || function () {
             callApi(url, 'GET', data, callback, dataType, timeoutMs);
           };
           this.put = function(url, data){
-            this.callApi(url,'PUT',data);
+            callApi(url,'PUT',data);
           };
           this.delete = function( url, data, callback, dataType){
-            dataType = dataType | "json"; 
-            //this.callApi(url,'DELETE',data);
             callApi(url,'DELETE',data,function(response){
                 if(typeof callback === 'function') {
                     callback(response);

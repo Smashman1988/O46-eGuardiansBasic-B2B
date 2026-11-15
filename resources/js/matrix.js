@@ -894,9 +894,9 @@ O46Core.matrix = function () {
           if (!id) return;
 
           try {
-            var om = extractOrderMaxFromObj(items[k]);
-            if (om != null && !items[k].orderMax) {
-              items[k].orderMax = om;
+            if (items[k] && !items[k].orderMax) {
+              var om = extractOrderMaxFromObj(items[k]);
+              if (om != null) items[k].orderMax = om;
             }
           } catch (e0) {}
 
@@ -1688,7 +1688,7 @@ O46Core.matrix = function () {
     return span;
   }
 
-  function createRow(matrix, mode, labelA, labelB, colorImgUrl) {
+  function createRow(columnLabels, mode, labelA, labelB, colorImgUrl) {
     var row = document.createElement("div");
     row.className = "col-12 eg-row";
 
@@ -1699,8 +1699,7 @@ O46Core.matrix = function () {
 
       if (colKey) {
         d.setAttribute("data-eg-col", colKey);
-        var heading = matrix.querySelector('.eg-size-matrix-head [data-eg-col="' + colKey + '"]');
-        d.setAttribute("data-eg-label", heading ? (heading.getAttribute("data-eg-label") || heading.textContent.trim()) : colKey);
+        d.setAttribute("data-eg-label", columnLabels[colKey]);
       }
 
       return d;
@@ -1748,8 +1747,7 @@ O46Core.matrix = function () {
 
     var qtyWrap = document.createElement("div");
     qtyWrap.className = "eg-cell eg-qty-wrap";
-    var qtyHeading = matrix.querySelector('.eg-size-matrix-head [data-eg-col="qty"]');
-    var qtyLabel = qtyHeading ? (qtyHeading.getAttribute("data-eg-label") || qtyHeading.textContent.trim()) : "Quantity";
+    var qtyLabel = columnLabels.qty;
     qtyWrap.setAttribute("data-eg-label", qtyLabel);
     qtyWrap.setAttribute("data-eg-col", "qty");
 
@@ -1833,17 +1831,25 @@ O46Core.matrix = function () {
 
     var rows = [];
 
+    // Headings are constant during this build; keep labels local to this matrix.
+    var columnLabels = { stock: "stock", price: "price", ean: "ean", sub: "sub", qty: "Quantity" };
+    if (mode === "size" || mode === "size_color") columnLabels.size = "size";
+    if (items.length) Object.keys(columnLabels).forEach(function (key) {
+      var heading = matrix.querySelector('.eg-size-matrix-head [data-eg-col="' + key + '"]');
+      if (heading) columnLabels[key] = heading.getAttribute("data-eg-label") || heading.textContent.trim();
+    });
+
     items.forEach(function (it) {
       var r;
 
       if (mode === "size_color") {
-        r = createRow(matrix, mode, it.sizeLabel, it.colorLabel, it.colorImgUrl);
+        r = createRow(columnLabels, mode, it.sizeLabel, it.colorLabel, it.colorImgUrl);
       } else if (mode === "size") {
-        r = createRow(matrix, mode, it.sizeLabel, null, "");
+        r = createRow(columnLabels, mode, it.sizeLabel, null, "");
       } else if (mode === "color") {
-        r = createRow(matrix, mode, it.colorLabel, null, it.colorImgUrl);
+        r = createRow(columnLabels, mode, it.colorLabel, null, it.colorImgUrl);
       } else {
-        r = createRow(matrix, "none", null, null, "");
+        r = createRow(columnLabels, "none", null, null, "");
       }
 
       r.setAttribute("data-eg-variation-id", it.variationId);

@@ -1,7 +1,7 @@
 const { readAsset } = require('./theme_assets.cjs');
 // node tests/quickview_dropdown.cjs (same Chrome/Playwright overrides as seo_metadata.cjs).
 // Exercise the real registration, opener and element binder. Only Quickview transport,
-// modal display, image observers and the two products are fixtures; no shop is contacted.
+// modal display, image observers, matrix loading and the two products are fixtures; no shop is contacted.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -69,7 +69,8 @@ async function exercise(browser, asset) {
                 } }
             };
         });
-        await page.addScriptTag({content: 'window.O46Core={};' + fs.readFileSync(path.join(assets, 'zoom-loader.js'), 'utf8')});
+        // The fixture has no matrix; satisfy the opener's core.js loader dependency.
+        await page.addScriptTag({content: 'window.O46Core={ensureMatrix: function () { return Promise.resolve(); }};' + fs.readFileSync(path.join(assets, 'zoom-loader.js'), 'utf8')});
         await page.addScriptTag({ content: 'eGuardians.events.observeLazyImages = ((' + parts.owner + ') => (' + parts.lazy + '))(eGuardians);' +
             'eGuardians.events.bindEvents = ((' + parts.owner + ') => (' + parts.bind + '))(eGuardians);' +
             parts.register + ';' + parts.open + ';eGuardians.events.bindEvents();' });
