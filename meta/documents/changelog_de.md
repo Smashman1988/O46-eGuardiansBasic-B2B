@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Quickview nach schnellem Schließen erneut öffnen (2026-11-15)
+
+- Bootstrap-Transition und nachlaufenden Backdrop-Abbau als zwei reproduzierbare Ursachen des verborgenen Dialogs nachgewiesen. Gemeinsamen Öffner an die öffentlichen Modal-Abschlussereignisse angebunden; letzter Öffnungs-/Schließwunsch gewinnt, abgebrochene Ladeergebnisse bleiben wirkungslos.
+- Identische laufende Öffnungen teilen ihren HTML-Request; fertige Produktdaten werden nicht dauerhaft gecacht. Matrix-/Galerieassets werden wiederverwendet. Matrix- und Warenkorblogik unverändert. Nur Core-Version 10 → 11; zwölf weitere Assets bytegleich.
+- Gezielte Source-/Min-Prüfungen mit echten Bootstrap-/jQuery-/Theme-Assets, fünf Sprachen, Desktop/Mobile, kurzen Intervallen, Lade-/Fehlerfällen, dynamischen Karten, Galerie und isolierter simulierter Buchung. Build reproduzierbar. [Ergebnisse und Timelines](../../.cache/quickview-reopen-b6ba349-20261115/Pruefbericht.html). Bewertung B: lokale Absicherung, native Nachabnahme nach späterer Bereitstellung offen. Kein Commit, Push, Merge, Deployment, Sync, Purge oder B2C-Eingriff.
+
 ## Unreleased – Kleine Matrixoptimierungen (2026-11-15)
 
 - Mengenlimit-Aliasprüfung bei bereits vorhandenem `orderMax` überspringen, alle Fallbacks erhalten. Spaltenbeschriftungen einmal je Matrixaufbau auflösen. Bei 60 Varianten: 360 → 6 Überschriftenabfragen, im gemischten Limit-Fixture 75 → 45 Normalisierungen. 160 Source-/Min-Vergleiche in fünf Sprachen liefern identisches Zeilen-HTML.

@@ -58,29 +58,71 @@ O46Core.startInitialGallery = function () {
 };
 
 O46Core.openQuickview = function (trigger, bindDelay) {
+    var view = O46Core.quickview;
+    if (!view) {
+        var modal = $('.modal-cross');
+        view = O46Core.quickview = { phase: 'hidden', current: null, reads: Object.create(null) };
+        view.apply = function () {
+            // Bootstrap ignores show/hide during transitions. Reconcile only
+            // after its public completion events, including backdrop cleanup.
+            if (view.phase === 'opening' || view.phase === 'closing') return;
+            var request = view.current;
+            if (!request) {
+                if (view.phase === 'shown') modal.modal('hide');
+                return;
+            }
+            if (!request.html || request.rendered) return;
+            request.rendered = true;
+            $('.modal-cross .modal-body').html(request.html);
+            MagicZoom.start();
+            modal.modal('show');
+            setTimeout(function () {
+                if (view.current === request) eGuardians.events.bindEvents('.modal-cross [data-eg-event]');
+            }, request.bindDelay);
+        };
+        function cancel() { view.current = null; }
+        modal.on('show.bs.modal.o46Quickview', function () { view.phase = 'opening'; })
+            .on('shown.bs.modal.o46Quickview', function () { view.phase = 'shown'; view.apply(); })
+            .on('hide.bs.modal.o46Quickview', function () { view.phase = 'closing'; cancel(); })
+            .on('hidden.bs.modal.o46Quickview', function () { view.phase = 'hidden'; view.apply(); })
+            // A dismiss click during opening is ignored by Bootstrap too.
+            // Remember it even when no hide event is emitted; shown will hide.
+            .on('click.o46Quickview', '[data-dismiss="modal"]', cancel)
+            .on('click.o46Quickview', function (event) {
+                if (event.target === this && view.phase === 'opening') cancel();
+            });
+        $(document).on('keydown.o46Quickview', function (event) {
+            if (event.which === 27 && (view.phase === 'opening' || view.phase === 'hidden')) cancel();
+        });
+    }
     var url = new URL($(trigger).data('href'), window.location.href);
     url.searchParams.set('quickViewItem', 'true');
-    var sequence = O46Core.quickviewSequence = (O46Core.quickviewSequence || 0) + 1;
-    var html = new Promise(function (resolve, reject) {
-        // Backend-rendered HTML gets the same budget as the variation batch.
-        // Ready assets must not leave a stalled read waiting indefinitely.
-        eGuardians.apiservice.get(url.href, '', function (response) {
-            if (typeof response === 'string' && response.trim()) resolve(response);
-            else reject(new Error('Quickview response is empty or invalid'));
-        }, 'html', 30000);
-    });
+    if (view.current && view.current.url === url.href) return false;
+    var request = view.current = { url: url.href, bindDelay: bindDelay };
+    // Share only in-flight reads, including a close/reopen before the response.
+    // Completed HTML is not cached across openings or language changes.
+    var html = view.reads[url.href];
+    if (!html) {
+        html = view.reads[url.href] = new Promise(function (resolve, reject) {
+            // Backend-rendered HTML gets the same budget as the variation batch.
+            // Ready assets must not leave a stalled read waiting indefinitely.
+            eGuardians.apiservice.get(url.href, '', function (response) {
+                if (typeof response === 'string' && response.trim()) resolve(response);
+                else reject(new Error('Quickview response is empty or invalid'));
+            }, 'html', 30000);
+        });
+        var forget = function () { delete view.reads[url.href]; };
+        html.then(forget, forget);
+    }
     // Fetch HTML and both product modules concurrently. The existing matrix
     // observer must be installed before the Quickview markup is inserted.
     Promise.all([html, O46Core.ensureMagicZoom(), O46Core.ensureMatrix()]).then(function (results) {
-        if (sequence !== O46Core.quickviewSequence) return;
-        $('.modal-cross .modal-body').html(results[0]);
-        MagicZoom.start();
-        $('.modal-cross').modal();
-        setTimeout(function () {
-            if (sequence === O46Core.quickviewSequence) eGuardians.events.bindEvents('.modal-cross [data-eg-event]');
-        }, bindDelay);
+        if (view.current !== request) return;
+        request.html = results[0];
+        view.apply();
     }).catch(function (error) {
-        if (sequence !== O46Core.quickviewSequence) return;
+        if (view.current !== request) return;
+        view.current = null;
         console.warn('Quickview unavailable; opening the product page.', error);
         // Keep the product reachable after a failed asset or HTML request.
         url.searchParams.delete('quickViewItem');

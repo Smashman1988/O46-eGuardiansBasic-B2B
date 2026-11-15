@@ -60,7 +60,12 @@ async function exercise(browser, asset) {
             window.MagicZoom = { start() {} };
             window.seen = { local: 0, unrelated: 0, product: null };
             jQuery(document).on('mouseup.unrelated', () => { seen.unrelated++; });
-            jQuery.fn.modal = function () { return this.prop('hidden', false); };
+            jQuery.fn.modal = function (action) {
+                const hide = action === 'hide';
+                this.trigger(hide ? 'hide.bs.modal' : 'show.bs.modal').prop('hidden', hide)
+                    .trigger(hide ? 'hidden.bs.modal' : 'shown.bs.modal');
+                return this;
+            };
             window.eGuardians = {
                 events: { selectVariant() { seen.local++; } },
                 apiservice: { get(product, params, callback) {
@@ -84,7 +89,7 @@ async function exercise(browser, asset) {
             await page.locator('.modal-cross button').click();
             const result = await page.evaluate(() => {
                 const $ = jQuery;
-                $('.modal-cross').prop('hidden', true);
+                $('.modal-cross').modal('hide');
                 $('.eg-dropdown').addClass('isOpen');
                 const unrelated = seen.unrelated;
                 $('.eg-dropdown button').trigger('mouseup');

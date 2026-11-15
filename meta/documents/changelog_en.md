@@ -1,5 +1,11 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Reopen Quickview after rapid dismissal (2026-11-15)
+
+- Reproduced two Bootstrap lifecycle failures: an opening discarded during the modal transition, and old backdrop cleanup interrupting a new opening. The shared opener now reconciles the latest open/close intent after public modal completion events; canceled responses cannot insert stale content.
+- Concurrent identical openings share their in-flight HTML request without permanently caching product HTML. Ready matrix/gallery assets remain reusable. Matrix and basket behavior unchanged. Only Core increases from version 10 to 11; twelve other delivery assets remain byte-identical.
+- Focused source/minified tests use shipped Bootstrap, jQuery and theme assets with local service fixtures: five languages, desktop/mobile, short intervals, loading/failure cases, dynamic cards, gallery and an isolated simulated basket write. Reproducible build. [Results and timelines](../../.cache/quickview-reopen-b6ba349-20261115/Pruefbericht.html). Grade B: locally verified; native acceptance after a future deployment remains pending. No commit, push, merge, deployment, sync, cache purge or B2C change.
+
 ## Unreleased – Small matrix optimizations (2026-11-15)
 
 - Skip redundant order-limit alias scanning when `orderMax` already exists; retain every fallback. Resolve column labels once per matrix build. At 60 variants: 360 → 6 heading queries and 75 → 45 normalizations in the mixed-limit fixture. 160 source/min comparisons across five languages produce identical row DOM.

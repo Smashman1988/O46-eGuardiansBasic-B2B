@@ -49,6 +49,20 @@ function fixture({delayMatrix = false, realApi = false} = {}) {
         redirects: [], vendorReady: false, vendorCallbacks: [], matrixCalls: 0, matrixReady: !delayMatrix };
     let resolveMatrix, rejectMatrix;
     const matrixReady = delayMatrix ? new Promise((resolve, reject) => { resolveMatrix = resolve; rejectMatrix = reject; }) : Promise.resolve();
+    // Synchronous modal contract for loader-only tests. Actual transitions and
+    // visibility are separately verified by quickview_lifecycle.cjs.
+    const modalEvents = new Map();
+    const modal = {
+        on(name, selector, handler) { modalEvents.set(name.split('.')[0], handler || selector); return this; },
+        modal(action) {
+            state.shows++;
+            if (action === 'show') {
+                modalEvents.get('show')?.();
+                modalEvents.get('shown')?.();
+            }
+            return this;
+        }
+    };
     const document = {
         currentScript: { getAttribute: () => '/assets/magiczoom.min.js?v=fixture' },
         querySelector: () => state.scripts.find(script => !script.removed) || null,
@@ -74,6 +88,8 @@ function fixture({delayMatrix = false, realApi = false} = {}) {
             events: { bindEvents() { state.bindings++; } }
         },
         $(target) {
+            if (target === document) return {on() {return this;}};
+            if (target === '.modal-cross') return modal;
             return typeof target === 'object' ? { data: () => target.href } : {
                 html(value) { assert.ok(state.matrixReady, 'Quickview must not insert markup before matrix readiness'); state.html.push(value); }, modal() { state.shows++; }
             };
