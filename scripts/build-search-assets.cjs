@@ -1,5 +1,5 @@
 // Legacy command retained; production assets now use the complete reproducible build.
-const fs=require('node:fs'),assert=require('node:assert/strict'),acorn=require('acorn'),{minify}=require('terser');
+const assert=require('node:assert/strict'),acorn=require('acorn');
 function handler(source){
     const found=[];
     function walk(node){

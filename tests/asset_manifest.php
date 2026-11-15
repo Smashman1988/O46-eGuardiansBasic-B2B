@@ -6,7 +6,7 @@ function verifiedThemeAssetPath($asset) {
     $root = dirname(__DIR__) . '/resources/';
     $manifest = json_decode(file_get_contents($root . 'asset-manifest.json'), true);
     $versions = json_decode(file_get_contents($root . 'asset-versions.json'), true);
-    if (!is_array($manifest) || ($manifest['schemaVersion'] ?? null) !== 2
+    if (!is_array($manifest) || ($manifest['schemaVersion'] ?? null) !== 3
         || !is_array($manifest['assets'] ?? null) || !is_array($versions)) {
         throw new RuntimeException('Invalid theme asset manifest schema');
     }

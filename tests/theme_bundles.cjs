@@ -10,7 +10,8 @@ const output = path.resolve(process.argv[2] || '.cache/systematic-optimization-9
 fs.mkdirSync(output, { recursive: true });
 const rows = [], requests = [];
 let origin;
-const gallery = id => `<article class="single"><h2>Product ${id}</h2><a class="MagicZoom" id="ItemImgZoom${id === 'pdp' ? '' : '2'}" href="/image.svg?large=${id}" data-options="zoomMode: off; hint: off;"><img width="320" height="240" src="/image.svg?small=${id}"></a><div class="single-prev-images"></div><button data-eg-event="click" data-eg-handler="testVariant">Size</button></article>`;
+const matrixMarkup = '<div data-item-variation data-eg-variations=\'[{"variationId":1001,"attributes":[]}]\'><div data-eg-size-matrix data-eg-mode="none"><div class="eg-size-matrix-table"><div class="eg-size-matrix-body"></div></div><span data-eg-matrix-status></span><span data-eg-total-qty></span><span data-eg-total-sum></span></div></div>';
+const gallery = id => `<article class="single"><h2>Product ${id}</h2><a class="MagicZoom" id="ItemImgZoom${id === 'pdp' ? '' : '2'}" href="/image.svg?large=${id}" data-options="zoomMode: off; hint: off;"><img width="320" height="240" src="/image.svg?small=${id}"></a><div class="single-prev-images"></div>${matrixMarkup}<button data-eg-event="click" data-eg-handler="testVariant">Size</button></article>`;
 function html(bundle, lang, before, hasGallery = false) {
     const url = before ? '/before/' : '/assets/';
     const asset = before ? path.basename(historicalAssetFile(path.resolve(output, '../before', bundle + '.min.js'))) : bundle + '.min.js';
@@ -22,7 +23,8 @@ function html(bundle, lang, before, hasGallery = false) {
     <div class="modal fade modal-cross" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button class="close" data-dismiss="modal">Close</button></div><div class="modal-body"></div></div></div></div>
     <script>window.activeLang='${lang}';window.messageServiceTranslations={searchexample:'Search'};window.addEventListener('load',function(){eGuardians.initialize();eGuardians.events.testVariant=function(){window.variantClicks=(window.variantClicks||0)+1};window.fixtureReady=true});</script>
     <script src="/assets/jquery-3.7.1.min.js"></script>
-    ${before ? '' : '<script src="/assets/core.min.js" data-eg-magiczoom-src="/assets/magiczoom.min.js" defer></script>'}
+    ${before ? '' : '<script src="/assets/core.min.js" data-eg-magiczoom-src="/assets/magiczoom.min.js" data-eg-matrix-src="/assets/matrix.min.js" defer></script>'}
+    ${!before && bundle === 'item' ? '<script src="/assets/matrix.min.js" data-eg-matrix defer></script>' : ''}
     <script src="${url}${asset}" defer></script>
     ${!before && bundle === 'item' ? '<script src="/assets/magiczoom.min.js" data-eg-magiczoom defer></script>' : ''}
     </body></html>`;
@@ -42,6 +44,10 @@ const server = http.createServer((req, res) => {
     if (u.pathname === '/rest/io/session/') {
         res.setHeader('Content-Type', 'application/json');
         return res.end(JSON.stringify({ data: { basket: { itemQuantity: 0, itemSum: 0, currency: 'EUR', shippingCountryId: 1, customerId: 0, itemWishListIds: [] } } }));
+    }
+    if (u.pathname === '/rest/io/variations/batch') {
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({data:{items:{1001:{id:1001,stock:50,price:4.99,ean:'0012345678901',images:[]}}}}));
     }
     if (u.pathname.endsWith('/product')) {
         res.setHeader('Content-Type', 'text/html');
@@ -81,10 +87,18 @@ async function run() {
                 await page.waitForFunction(() => window.fixtureReady);
                 await page.locator('img.lozad').scrollIntoViewIfNeeded();
                 await page.waitForFunction(() => document.querySelector('img.lozad').naturalWidth > 0);
+                if (bundle === 'item') await page.waitForFunction(() => document.querySelector('[data-eg-price-value="4.99"]'));
                 const initial = await page.evaluate(() => ({ zoom: !!window.MagicZoom, core: Object.keys(O46Core.installed),
-                    requests: performance.getEntriesByType('resource').filter(x => x.name.includes('magiczoom.min.js')).length }));
+                    requests: performance.getEntriesByType('resource').filter(x => x.name.includes('magiczoom.min.js')).length,
+                    matrixRequests: performance.getEntriesByType('resource').filter(x => x.name.includes('matrix.min.js')).length,
+                    matrixInstalled: !!O46Core.installed.matrix, matrixInitializer: typeof window.egInitSizeMatrices }));
                 assert.equal(initial.zoom, bundle === 'item');
                 assert.equal(initial.requests, bundle === 'item' ? 1 : 0);
+                assert.equal(initial.matrixRequests, bundle === 'item' ? 1 : 0, 'No matrix download without a consumer; eager PDP dependency');
+                assert.equal(initial.matrixInstalled, bundle === 'item');
+                // The lightweight public hook stays available for stored content.
+                // installed.matrix and the network count distinguish real loading.
+                assert.equal(initial.matrixInitializer, 'function');
                 const cold = await metrics(page, cdp);
                 // Duplicate inclusion of the core must not attach listeners again.
                 const prior = await page.evaluate(() => ($._data(document, 'events')?.click || []).length);
@@ -104,6 +118,8 @@ async function run() {
                 });
                 await page.locator('.modal-cross [data-eg-handler="testVariant"]').click();
                 assert.equal(await page.evaluate(() => window.variantClicks), 1);
+                await page.waitForFunction(() => document.querySelector('.modal-cross [data-eg-price-value="4.99"]'));
+                assert.equal(await page.locator('.modal-cross [data-eg-ean]').textContent(), '0012345678901');
                 if (bundle === 'cat' || bundle === 'item') {
                     await page.evaluate(() => {
                         window.expansionOpened = false; window.expansionClosed = false;
@@ -123,6 +139,9 @@ async function run() {
                     return modal && getComputedStyle(modal).opacity === '1' && modal.querySelector('.mz-ready');
                 });
                 assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('magiczoom.min.js')).length), 1);
+                assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('matrix.min.js')).length), 1, 'Two Quickviews reuse one matrix download');
+                assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => new URL(x.name).pathname === '/rest/io/variations/batch').length), 1, 'Confirmed variation data are reused across Quickviews');
+                assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => /\/rest\/io\/variations\/\d+/.test(x.name)).length), 0, 'Successful batch requires no individual fallback');
                 assert.deepEqual(errors.slice(start), []);
                 if (bundle === 'cat') await page.screenshot({ path: path.join(output, 'quickview-' + width + '.png') });
                 await page.reload();
@@ -134,8 +153,20 @@ async function run() {
             // The fifth language uses exactly the same existing handlers.
             await page.goto(origin + '/?bundle=cat&lang=en&gallery');
             await page.waitForFunction(() => window.fixtureReady && document.querySelector('#ItemImgZoom .mz-ready'));
+            await page.waitForFunction(() => document.querySelector('[data-eg-price-value="4.99"]'));
             assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('magiczoom.min.js')).length), 1);
-            rows.push({ status: 'PASS', width, case: 'initial-gallery-on-content-page' });
+            assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('matrix.min.js')).length), 1);
+            rows.push({ status: 'PASS', width, case: 'initial-gallery-and-matrix-on-content-page' });
+            await page.goto(origin + '/?bundle=vue&lang=en');
+            await page.waitForFunction(() => window.fixtureReady);
+            assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('matrix.min.js')).length), 0);
+            await page.evaluate(markup => {
+                document.querySelector('.category-product-list').insertAdjacentHTML('beforeend', markup);
+                O46Core.startInitialGallery();
+            }, gallery('pdp'));
+            await page.waitForFunction(() => document.querySelector('#ItemImgZoom .mz-ready') && document.querySelector('[data-eg-price-value="4.99"]'));
+            assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('matrix.min.js')).length), 1);
+            rows.push({status:'PASS', width, case:'late-content-matrix-and-gallery'});
             await page.goto(origin + '/?bundle=cat&lang=en');
             await page.waitForFunction(() => window.fixtureReady);
             assert.equal(await page.locator('html').getAttribute('lang'), 'en');
@@ -146,6 +177,15 @@ async function run() {
             assert.equal(await page.locator('h1').textContent(), 'Product fallback');
             await page.unroute('**/assets/magiczoom.min.js');
             rows.push({ status: 'PASS', width, case: 'english-quickview-asset-failure-product-fallback' });
+            await page.goto(origin + '/?bundle=vue&lang=es');
+            await page.waitForFunction(() => window.fixtureReady);
+            await page.route('**/assets/matrix.min.js', route => route.abort('failed'));
+            await page.locator('.linkabso').click();
+            await page.waitForURL('**/es/product?keep=1');
+            assert.equal(await page.locator('h1').textContent(), 'Product fallback');
+            await page.unroute('**/assets/matrix.min.js');
+            rows.push({status:'PASS', width, case:'spanish-quickview-matrix-failure-product-fallback'});
+            assert.deepEqual(errors, [], 'All full-bundle, content and fallback flows have no JavaScript exception');
             await context.close();
         }
     } finally { await browser.close(); server.close(); }

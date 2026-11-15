@@ -32,8 +32,6 @@ eGuardians.initialize = function () {
 };
 
   eGuardians.events = new function() {
-        var events = this;
-        var timoutSave = null;
         this.observeLazyImages = function () {
             if (this.lazyObserver && this.lazyObserver.observer) {
                 this.lazyObserver.observer.disconnect();

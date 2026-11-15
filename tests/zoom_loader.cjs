@@ -36,10 +36,12 @@ class Clock {
     }
 }
 
-function fixture() {
+function fixture({delayMatrix = false} = {}) {
     const clock = new Clock();
     const state = { scripts: [], requests: [], html: [], shows: 0, bindings: 0, starts: 0,
-        redirects: [], vendorReady: false, vendorCallbacks: [] };
+        redirects: [], vendorReady: false, vendorCallbacks: [], matrixCalls: 0, matrixReady: !delayMatrix };
+    let resolveMatrix, rejectMatrix;
+    const matrixReady = delayMatrix ? new Promise((resolve, reject) => { resolveMatrix = resolve; rejectMatrix = reject; }) : Promise.resolve();
     const document = {
         currentScript: { getAttribute: () => '/assets/magiczoom.min.js?v=fixture' },
         querySelector: () => state.scripts.find(script => !script.removed) || null,
@@ -56,7 +58,7 @@ function fixture() {
         head: { appendChild(script) { state.scripts.push(script); } }
     };
     const sandbox = {
-        document, O46Core: {}, URL, Promise,
+        document, O46Core: {ensureMatrix() { state.matrixCalls++; return matrixReady; }}, URL, Promise,
         setTimeout: (fn, delay) => clock.set(fn, delay), clearTimeout: id => clock.clear(id),
         console: { warn() {} },
         location: { href: 'https://shop.example/fr/category/', assign(url) { state.redirects.push(url); } },
@@ -66,7 +68,7 @@ function fixture() {
         },
         $(target) {
             return typeof target === 'object' ? { data: () => target.href } : {
-                html(value) { state.html.push(value); }, modal() { state.shows++; }
+                html(value) { assert.ok(state.matrixReady, 'Quickview must not insert markup before matrix readiness'); state.html.push(value); }, modal() { state.shows++; }
             };
         }
     };
@@ -91,7 +93,9 @@ function fixture() {
         state.vendorCallbacks.sort((a, b) => a.priority - b.priority).forEach(entry => entry.callback());
         state.vendorCallbacks.length = 0;
     }
-    return { state, clock, document, sandbox, loader: sandbox.O46Core, installVendor, vendorDomReady };
+    return { state, clock, document, sandbox, loader: sandbox.O46Core, installVendor, vendorDomReady,
+        completeMatrix() { state.matrixReady = true; resolveMatrix(); },
+        failMatrix() { rejectMatrix(new Error('Matrix asset unavailable')); } };
 }
 
 async function completeDownload(test, script) {
@@ -156,6 +160,21 @@ async function run() {
     assert.equal(test.state.scripts.length, 0);
     rows.push({ case: 'existing-vendor-no-second-download', status: 'PASS' });
 
+    test = fixture({delayMatrix:true});
+    test.installVendor(true);
+    test.loader.openQuickview({href:'/en/product?keep=1'}, 10);
+    test.state.requests[0].callback('<p>waiting for matrix</p>');
+    await test.clock.advance(10);
+    assert.equal(test.state.matrixCalls, 1);
+    assert.equal(test.state.shows, 0);
+    assert.deepEqual(test.state.html, []);
+    test.completeMatrix();
+    await test.clock.advance(10);
+    assert.equal(test.state.shows, 1);
+    assert.equal(test.state.bindings, 1);
+    assert.deepEqual(test.state.redirects, []);
+    rows.push({case:'quickview-waits-for-matrix-before-inserting-html',status:'PASS'});
+
     for (const staleResponse of ['<p>old product</p>', { error: 'old request failed' }]) {
         test = fixture();
         test.installVendor(true);
@@ -177,12 +196,15 @@ async function run() {
         rows.push({ case: typeof staleResponse === 'string' ? 'stale-success-ignored-url-normalized' : 'stale-error-ignored', status: 'PASS' });
     }
 
-    for (const failure of ['invalid-html', 'gallery-download']) {
-        test = fixture();
-        if (failure === 'invalid-html') test.installVendor(true);
+    for (const failure of ['invalid-html', 'gallery-download', 'matrix-download']) {
+        test = fixture({delayMatrix:failure === 'matrix-download'});
+        if (failure !== 'gallery-download') test.installVendor(true);
         test.loader.openQuickview({ href: '/es/product?facets=7%2C9&query=zapato+azul&quickViewItem=true&keep=1' }, 10);
         if (failure === 'invalid-html') test.state.requests[0].callback({ error: 'server' });
-        else test.state.scripts[0].emit('error');
+        else if (failure === 'matrix-download') {
+            test.state.requests[0].callback('<p>valid product</p>');
+            test.failMatrix();
+        } else test.state.scripts[0].emit('error');
         await test.clock.advance(0);
         assert.equal(test.state.redirects.length, 1);
         const fallback = new URL(test.state.redirects[0]);

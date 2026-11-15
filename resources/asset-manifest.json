@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "assets": {
     "css/checkout.min.css": {
       "version": 1,
@@ -22,8 +22,8 @@
       "sha256": "e90c3f7c1cb233a1c59274deac527dfd3e6c4c1342f7206954ffe35f027d04c1"
     },
     "js/core.min.js": {
-      "version": 8,
-      "sha256": "c9d0c9426abf1c2b1bbf335cb4aff85dcc4ff9c99f0dcff8e8df1de094e7ea20"
+      "version": 9,
+      "sha256": "937f8f6fac3542becafd5a7e9d4a58cf8bbc5d8d34078816c2829cf08f2b69a8"
     },
     "js/facets.min.js": {
       "version": 1,
@@ -44,6 +44,10 @@
     "js/main.min.js": {
       "version": 4,
       "sha256": "aabf40addc78caa8af41b06cbdf69ef28c097bd606c6bf4c491994f5c718ef93"
+    },
+    "js/matrix.min.js": {
+      "version": 1,
+      "sha256": "72f9c1c2c66cb7bf4a2e71c064c487064f056740b7ad1795123703cdb7df1ca4"
     },
     "js/vue.min.js": {
       "version": 4,

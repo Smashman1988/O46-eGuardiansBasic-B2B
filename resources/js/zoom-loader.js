@@ -67,9 +67,9 @@ O46Core.openQuickview = function (trigger, bindDelay) {
             else reject(new Error('Quickview response is empty or invalid'));
         }, 'html');
     });
-    // Fetch the existing HTML and the zoom library concurrently. Insert only when
-    // both are ready, so matrix observers never encounter a half-ready gallery.
-    Promise.all([html, O46Core.ensureMagicZoom()]).then(function (results) {
+    // Fetch HTML and both product modules concurrently. The existing matrix
+    // observer must be installed before the Quickview markup is inserted.
+    Promise.all([html, O46Core.ensureMagicZoom(), O46Core.ensureMatrix()]).then(function (results) {
         if (sequence !== O46Core.quickviewSequence) return;
         $('.modal-cross .modal-body').html(results[0]);
         MagicZoom.start();

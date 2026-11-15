@@ -40,8 +40,15 @@ function readAsset(file, encoding = 'utf8') {
         source = source.slice(0, node.start) + code + source.slice(node.end);
     }
     const dir = path.dirname(file);
-    const core = file.includes('.min.') ? fs.readFileSync(path.join(dir, 'core.min.js'), 'utf8') + '\n' + source :
-        ['core.js', 'search.js', 'listing-item.js'].map(name => fs.readFileSync(path.join(dir, name), 'utf8')).join('\n');
+    // Isolated method fixtures explicitly include the actual dependency module.
+    // The full HTTP harness separately verifies that it is loaded only on demand.
+    // Explicit historical baselines keep the previous embedded matrix definition;
+    // a current split core must have its real sibling, never a stub or omission.
+    const compressed = file.includes('.min.');
+    const coreDefinition = fs.readFileSync(path.join(dir, compressed ? 'core.min.js' : 'core.js'), 'utf8');
+    const matrixFiles = coreDefinition.includes('O46Core.ensureMatrix') ? [compressed ? 'matrix.min.js' : 'matrix.js'] : [];
+    const core = compressed ? [coreDefinition, ...matrixFiles.map(name => fs.readFileSync(path.join(dir, name), 'utf8')), source].join('\n') :
+        [coreDefinition, ...['search.js', 'listing-item.js', ...matrixFiles].map(name => fs.readFileSync(path.join(dir, name), 'utf8'))].join('\n');
     const modules = {};
     function walk(node, visit) {
         if (!node?.type || visit(node) === false) return;
@@ -137,8 +144,10 @@ function eventsOwner(source) {
 // its UMD call, so locating it by a nested-call text substring is not reliable.
 function sharedModule(file, key) {
     const page = fs.readFileSync(file, 'utf8');
-    const coreFile = path.join(path.dirname(file), file.includes('.min.') ? 'core.min.js' : 'core.js');
+    const suffix = file.includes('.min.') ? '.min.js' : '.js';
+    let coreFile = path.join(path.dirname(file), 'core' + suffix);
     if (!page.includes('O46Core.' + key) || !fs.existsSync(coreFile)) return null;
+    if (key === 'matrix' && fs.readFileSync(coreFile, 'utf8').includes('O46Core.ensureMatrix')) coreFile = path.join(path.dirname(file), 'matrix' + suffix);
     const source = fs.readFileSync(coreFile, 'utf8'), found = [];
     function visit(node) {
         if (!node?.type) return;

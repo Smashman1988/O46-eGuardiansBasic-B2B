@@ -38,6 +38,7 @@ async function run(browser, mode) {
         await page.clock.install();
         await page.addScriptTag({path: jquery});
         await page.addScriptTag({path: core});
+        await page.addScriptTag({path: path.join(path.dirname(core), core.endsWith('.min.js') ? 'matrix.min.js' : 'matrix.js')});
         await page.evaluate(mode => {
             window.calls = { posts: 0, reads: 0, quantity: 0, componentQuantity: 0, currencyQueries: 0 };
             const original = document.querySelector;

@@ -9,15 +9,12 @@ use Plenty\Modules\Authorization\Services\AuthHelper;
 use Plenty\Modules\Item\ItemImage\Contracts\ItemImageRepositoryContract;
 use Plenty\Modules\Feedback\Contracts\FeedbackRepositoryContract;
 use Plenty\Modules\Feedback\Contracts\FeedbackAverageRepositoryContract;
-use Plenty\Modules\Feedback\Models\FeedbackAverage;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\CategoryItems;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\Facets;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\SearchItems;
 use Plenty\Modules\Webshop\ItemSearch\Services\ItemSearchService;
 use Plenty\Modules\Webshop\ItemSearch\SearchPresets\CrossSellingItems;
 use IO\Services\BasketService;
-use Plenty\Modules\Item\Manufacturer\Contracts\ManufacturerExternalRepositoryContract;
-use Plenty\Modules\Plugin\Libs\Contracts\LibraryCallContract;
 use Plenty\Plugin\Http\Request;
 use IO\Services\CategoryService;
 use Ceres\Helper\SearchOptions;
@@ -233,9 +230,6 @@ class Base_Extension extends Twig_Extension
             "itemId" => $itemId,
             "ratingValue" => 5
         ];
-        $itemColumns = [
-            '*'
-        ];
 
         $feedbacksItem = $FeedbackRepositoryContract->listFeedbacks($page, $maxCount, [], $filters);
         $feedbacksReturn = null;
@@ -251,9 +245,6 @@ class Base_Extension extends Twig_Extension
     {
         /** @var FeedbackAverageRepositoryContract $FeedbackAverageRepositoryContract */
         $FeedbackAverageRepositoryContract = pluginApp(FeedbackAverageRepositoryContract::class);
-        $filters = [
-            "itemId" => $itemId
-        ];
 
         $feedbacksItem = $FeedbackAverageRepositoryContract->getFeedbackAverage($itemId);
         $feedbacksReturn = null;

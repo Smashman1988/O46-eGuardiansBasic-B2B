@@ -408,7 +408,8 @@
       </div>
     </div>
 </div>    
-            {% if (category.id or isSearch) and not isItem %}
+            {# The brands directory explicitly renders no product grid or facets. #}
+            {% if (category.id or isSearch) and not isItem and (rendersItemGrid is not defined or rendersItemGrid) %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/facets.min.js?v=1" defer></script>
             {% endif %}
             {# Keep the existing page selection and Ceres-owned jQuery exception. #}
@@ -420,6 +421,7 @@
                 {% set themePageScript = 'vue.min.js?v=4' %}
                 {% set themeNeedsJquery = false %}
             {% elseif currentTemplate in vuePages|keys or category.id in nojs %}
+            {% elseif rendersItemGrid is defined and not rendersItemGrid %}
             {% elseif category.id or isSearch %}
                 {% set themePageScript = 'cat.min.js?v=4' %}
             {% elseif isItem %}
@@ -428,7 +430,11 @@
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=8" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=9" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=1" defer></script>
+            {% if isItem %}
+                {# Keep initial PDP matrix initialization synchronous with its page bundle. #}
+                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=1" data-eg-matrix defer></script>
+            {% endif %}
             <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}" defer></script>
             {% if isItem %}
                 {# After item.js defines mzOptions, before DOMContentLoaded initializes the gallery. #}

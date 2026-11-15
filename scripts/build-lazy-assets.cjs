@@ -1,8 +1,6 @@
 // Legacy command retained; production assets now use the complete reproducible build.
-const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const acorn = require('acorn');
-const { minify } = require('terser');
 function regions(source) {
     const found = {};
     const flattenedCategory = [];

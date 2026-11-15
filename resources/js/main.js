@@ -13,8 +13,6 @@ eGuardians.initialize = function () {
 };
 
   eGuardians.events = new function() {
-        var events = this;
-        var timoutSave = null;
         this.observeLazyImages = function () {
             if (this.lazyObserver && this.lazyObserver.observer) {
                 this.lazyObserver.observer.disconnect();
@@ -215,9 +213,7 @@ this.initShopData = function () { return O46Core.basketHeader.start(); };
                     $('[data-eg-btnfilter] span').html(response.data.itemList.total);
                     
                     
-                    var facetUrl = "";
                     var urlParam = {};
-                    var priceUrl = "";
                     if(priceMin>0 || priceMax>0){
                         urlParam["priceMin"] = priceMin;
                         urlParam["priceMax"] = priceMax;

@@ -1,5 +1,22 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Phase 7: load resources on demand (2026-11-15)
+
+- Preserve all inherited Phase-5 changes on `95b1636`. Capture the Preview 426 resource matrix; all twelve existing asset hashes match the starting state.
+- Move the unchanged variant-matrix function into `matrix.min.js`. PDPs load its definition before their page bundle; Quickview waits for matrix, zoom and HTML. Preserve the public initializer, dynamically inserted content matrices, single-flight loading and visible failure handling. Quantity, price and order rules are unchanged.
+- Use the existing grid flag to load Main instead of Category on the brands directory and omit its unused facets asset. CSS, Critical CSS and review widget remain unchanged.
+- Increment only Core **8 → 9**; introduce matrix at **1**. Eleven existing assets stay byte-identical. Strict asset-lock migration 2 → 3 retains per-file numeric versions and dynamic plugin paths.
+- Local evidence: **34,103 fewer initial body bytes** without a matrix; calculated brands saving **64,618 bytes / one request**. A cold PDP or the complete first-Quickview flow costs **3,236 more body bytes / one request**. Warm initial reload transfers 0 JS bytes in both cohorts. No native CPU/LCP gain claimed and no TTFB measurement.
+- Loader, full-bundle, matrix/header, search/lazy-loading and version checks pass; Twig 2/3 each pass **90 cases / 815 assertions**. Technical test interruptions and acceptance boundaries are recorded in the [full report](../../.cache/phase7-95b1636/Pruefbericht.html). **B – locally prepared; native after-deployment acceptance remains open.** No commit, deployment, sync, purge, orders, payments or B2C changes.
+
+## Unreleased – Phase 5: controlled legacy cleanup (2026-11-15)
+
+- Based on `95b1636`, local `develop` only. Inventory covers all 2,720 tracked files; Preview 426 selection was read without changes. Full Ceres registration stays active; the configurable own `register`/`all` path is neither enabled nor removed.
+- Removed only 25 proven internal remnants: twelve private JS bindings, three unused PHP imports, two unused PHP arrays and eight build imports. Nine existing files lose 955 source bytes and 25 net lines; no function or file removed. Preserve public APIs, configurable overrides, translations and dynamic resources.
+- All twelve delivered assets and versions remain byte-identical. No Twig/CSS change, browser request/initialization reduction or measured performance improvement. Two reproducible full builds, second with no changes; 32 AST-helper comparisons unchanged. Terser remains a build dependency but is no longer eagerly loaded by helper-only imports.
+- Added feedback contract regression: 20 cases, 40 before/after executions, 181 assertions; PHP lint 14/14. Twig 2/3, five-language contracts, authentication, variation prices, search, shop mode, Quickview/bundles, matrix/header and asset/CSS build checks pass. Technical browser aborts and one countercheck each are recorded; no full-suite or native customer-class claim.
+- **B – PASS with limitations; suitable for a local commit.** Native accounts/checkout, external stored references and pre-existing legacy/language-data gaps remain open. [Full report](../../.cache/phase5-95b1636/Pruefbericht.html). No commit, push, deployment, sync, purge or B2C change.
+
 ## Unreleased – Phase 4: response handling, metadata and language routes (2026-11-14)
 
 - Based on `aaa638f`, local `develop` changes only. Four login/logout handlers now use the existing shared user service, including Vue's cache invalidation. Missing or inconsistent replies no longer announce success or redirect; loaders finish and authentication writes are never retried automatically. Escape contact first names before HTML output. In the same 76 local cases, 28 exceptions/stuck loaders and twelve false logout confirmations fall to zero; sources and generated assets each pass 76 cases.

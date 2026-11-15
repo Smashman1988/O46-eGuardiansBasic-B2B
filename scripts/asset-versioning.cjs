@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const assert = require('node:assert/strict');
 const jsFiles = [
     ['core.js', 'core.min.js'],
+    ['matrix.js', 'matrix.min.js'],
     ...['main', 'cat', 'item', 'vue'].map(name => [name + '.js', name + '.min.js']),
     ['magiczoom.js', 'magiczoom.min.js'],
     ['facets.js', 'facets.min.js'],
@@ -23,15 +24,25 @@ function prepare({root = path.resolve(__dirname, '..'), outputs = []} = {}) {
     const read = file => contents.has(file) ? contents.get(file) : fs.readFileSync(path.join(root, file));
     const versions = JSON.parse(fs.readFileSync(path.join(root, 'resources/asset-versions.json'), 'utf8'));
     const previous = JSON.parse(fs.readFileSync(path.join(root, 'resources/asset-manifest.json'), 'utf8'));
-    assert.equal(previous.schemaVersion, 2, 'Invalid asset lock schema; keep resources/asset-manifest.json with the sources');
+    assert.ok([2, 3].includes(previous.schemaVersion), 'Invalid asset lock schema; keep resources/asset-manifest.json with the sources');
     assert.deepEqual(Object.keys(versions).sort(), assetFiles, 'asset-versions.json must contain every delivery asset exactly once');
-    assert.deepEqual(Object.keys(previous.assets).sort(), assetFiles, 'Asset lock must contain every delivery asset exactly once');
+    // One explicit migration introduces the matrix asset at version 1. Once
+    // schema 3 is written, missing lock entries remain errors for every asset.
+    const introducingMatrix = previous.schemaVersion === 2;
+    const lockedFiles = introducingMatrix ? assetFiles.filter(file => file !== 'js/matrix.min.js') : assetFiles;
+    assert.deepEqual(Object.keys(previous.assets).sort(), lockedFiles, 'Asset lock must contain every delivery asset exactly once');
     const assets = {}, references = new Set();
     for (const file of assetFiles) {
         // .gitattributes deploys LF. Emit those exact bytes on Windows as well.
         const content = lf(read('resources/' + file));
         const current = versions[file], accepted = previous.assets[file], sha256 = hash(content);
         assert.ok(Number.isSafeInteger(current) && current > 0, 'Invalid asset version for ' + file + ': use a positive safe integer');
+        if (introducingMatrix && file === 'js/matrix.min.js') {
+            assert.equal(current, 1, 'New matrix asset must start at version 1');
+            assets[file] = {version: current, sha256};
+            contents.set('resources/' + file, content);
+            continue;
+        }
         assert.ok(accepted && Number.isSafeInteger(accepted.version) && accepted.version > 0 &&
             /^[0-9a-f]{64}$/.test(accepted.sha256), 'Invalid asset lock entry for ' + file);
         if (sha256 !== accepted.sha256) {
@@ -63,7 +74,7 @@ function prepare({root = path.resolve(__dirname, '..'), outputs = []} = {}) {
     assert.deepEqual([...references].sort(), assetFiles, 'Every delivery asset must have a versioned Twig reference');
     const page = contents.get(templates[0]);
     assert.equal((page.match(/\/js\/\{\{ themePageScript \}\}/g) || []).length, 1, 'One existing dynamic bundle URL');
-    const manifest = {schemaVersion: 2, assets};
+    const manifest = {schemaVersion: 3, assets};
     contents.set('resources/asset-manifest.json', JSON.stringify(manifest, null, 2) + '\n');
     return {root, outputs: [...contents].map(([file, content]) => ({file, content})), manifest};
 }

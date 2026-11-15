@@ -4,11 +4,12 @@
   "css/main.min.css": 3,
   "js/cat.min.js": 4,
   "js/contact-widget.js": 1,
-  "js/core.min.js": 8,
+  "js/core.min.js": 9,
   "js/facets.min.js": 1,
   "js/item.min.js": 4,
   "js/jquery-3.7.1.min.js": 1,
   "js/magiczoom.min.js": 1,
   "js/main.min.js": 4,
+  "js/matrix.min.js": 1,
   "js/vue.min.js": 4
 }

@@ -51,7 +51,7 @@ function assertChanged(before, after, assets) {
 function assertManifestAndUrls(root) {
     const data = manifest(root), versions = json(root, versionsFile);
     assert.deepEqual(Object.keys(data).sort(), ['assets', 'schemaVersion']);
-    assert.equal(data.schemaVersion, 2);
+    assert.equal(data.schemaVersion, 3);
     assert.deepEqual(Object.keys(data.assets).sort(), [...versioning.assetFiles].sort());
     assert.deepEqual(Object.keys(versions).sort(), [...versioning.assetFiles].sort());
     const page = fs.readFileSync(path.join(root, pageFile), 'utf8');
@@ -64,7 +64,7 @@ function assertManifestAndUrls(root) {
         assert.equal(entry.sha256, hash(fs.readFileSync(path.join(root, 'resources', asset))), asset + ': final bytes');
         assert.match(entry.sha256, /^[0-9a-f]{64}$/);
         const needle = path.posix.basename(asset) + '?v=' + entry.version;
-        const expected = ['css/main.min.css', 'css/checkout.min.css', 'js/magiczoom.min.js'].includes(asset) ? 2 : 1;
+        const expected = ['css/main.min.css', 'css/checkout.min.css', 'js/magiczoom.min.js', 'js/matrix.min.js'].includes(asset) ? 2 : 1;
         assert.equal(templates.split(needle).length - 1, expected, asset + ': active and fallback URL coverage');
         for (const match of templates.matchAll(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^"\'\\s<>]*)', 'g'))) {
             assert.equal(match[1], '', asset + ': no timestamp/hash/additional parameter');
@@ -91,12 +91,47 @@ async function run(output = path.join(project, '.cache/asset-versioning.json')) 
         const before = snapshot(root), css = stylesheet.prepare({root}), js = await javascript.prepare({root});
         const prepared = versioning.prepare({root, outputs: [...css.outputs, ...js.outputs]});
         assert.deepEqual(snapshot(root), before); assert.equal(prepared.root, root);
-        assert.equal(prepared.manifest.schemaVersion, 2);
+        assert.equal(prepared.manifest.schemaVersion, 3);
         assert.ok(!prepared.outputs.some(x => x.file === versionsFile), 'Builder cannot rewrite manual configuration');
     });
     await test('two complete builds are identical with exact numeric URLs and no runtime lookup', async () => {
         await combined.build({root}); const before = snapshot(root); assertManifestAndUrls(root);
         await combined.build({root}); assert.deepEqual(snapshot(root), before); assertManifestAndUrls(root);
+    });
+    await test('schema 2 migration adopts only the new matrix asset at version 1', async () => {
+        const current = manifest(root), previous = structuredClone(current);
+        previous.schemaVersion = 2;
+        delete previous.assets['js/matrix.min.js'];
+        writeJson(root, manifestFile, previous);
+        const before = snapshot(root), prepared = versioning.prepare({root});
+        assert.deepEqual(snapshot(root), before, 'Schema migration preparation is read-only');
+        assert.equal(prepared.manifest.schemaVersion, 3);
+        assert.equal(prepared.manifest.assets['js/matrix.min.js'].version, 1);
+        for (const [asset, entry] of Object.entries(previous.assets)) assert.deepEqual(prepared.manifest.assets[asset], entry);
+        versioning.publish(prepared);
+        assert.deepEqual(assertManifestAndUrls(root), current);
+    });
+    await test('schema 2 migration rejects an initial matrix version above 1 without writes', async () => {
+        const current = manifest(root), previous = structuredClone(current), versions = json(root, versionsFile);
+        previous.schemaVersion = 2; delete previous.assets['js/matrix.min.js'];
+        writeJson(root, manifestFile, previous);
+        writeJson(root, versionsFile, {...versions, 'js/matrix.min.js': 2});
+        try { assertReadOnlyError(root, () => versioning.prepare({root}), /New matrix asset must start at version 1/); }
+        finally { writeJson(root, manifestFile, current); writeJson(root, versionsFile, versions); }
+    });
+    await test('both lock schemas reject missing established entries and schema 3 requires matrix', async () => {
+        const current = manifest(root);
+        try {
+            for (const schemaVersion of [2, 3]) {
+                const broken = structuredClone(current); broken.schemaVersion = schemaVersion;
+                if (schemaVersion === 2) delete broken.assets['js/matrix.min.js'];
+                delete broken.assets['js/core.min.js']; writeJson(root, manifestFile, broken);
+                assertReadOnlyError(root, () => versioning.prepare({root}), /Asset lock|lock.*asset/i);
+            }
+            const broken = structuredClone(current); delete broken.assets['js/matrix.min.js'];
+            writeJson(root, manifestFile, broken);
+            assertReadOnlyError(root, () => versioning.prepare({root}), /Asset lock|lock.*asset/i);
+        } finally { writeJson(root, manifestFile, current); }
     });
     await test('current --check is read-only', async () => {
         const before = snapshot(root); await combined.build({root, check: true}); assert.deepEqual(snapshot(root), before);
