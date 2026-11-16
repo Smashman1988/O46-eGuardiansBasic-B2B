@@ -18,13 +18,11 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
             var container = $("[data-eg-search]");
             if (!container.is(e.target) && container.has(e.target).length === 0)
             {
-                if($(".row-search-wrap").length>0){
-                    $(".row-search-wrap").hide();
-                }
+                $(".row-search-wrap").hide();
             }
         });
         $(document).on('focus', '[data-eg-livesearch]', function () {
-            if ($(".row-search-wrap").length > 0) $(".row-search-wrap").show();
+            $(".row-search-wrap").show();
         });
     }
     // Fokusverhalten bleibt gleich
@@ -126,8 +124,8 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
         $row.append($left).append($right);
         $input.closest('[data-eg-search], .searchbox-404').find('.search-wrap, [data-eg-search]').first().append($row);
 
-        $('[data-eg-search]').toggleClass('search-active-results', suggestionCount > 0 || $ulItem.children().length > 0);
-        $('[data-eg-search]').removeClass('search-loading');
+        $('[data-eg-search]').toggleClass('search-active-results', suggestionCount > 0 || $ulItem.children().length > 0)
+            .removeClass('search-loading');
     }
 
     // Jetzt debounce aktivieren
@@ -139,6 +137,7 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
     });
 
     $(_this).keydown(function(e){
+        if (e.keyCode != 40 && e.keyCode != 38 && e.keyCode != 13) return;
         var x = $(this).closest('[data-eg-search], .searchbox-404').find('.list-autocomplete li').get();
         if (e.keyCode == 40 || e.keyCode == 38) {
             if (!x.length) return;

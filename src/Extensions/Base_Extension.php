@@ -93,20 +93,24 @@ class Base_Extension extends Twig_Extension
     public function getFacetView(array $facets, array $selectedFacets = []): array
     {
         $selected = [];
+        // Only active filter chips consume a name lookup; other values stay in rows.
+        $names = [];
         foreach (array_merge($this->requestedFacetIds(), $selectedFacets) as $value) {
             $id = SeoPage::positiveInteger($value);
             if ($id !== null && !in_array((string)$id, $selected, true)) {
                 $selected[] = (string)$id;
+                $names[$id] = null;
             }
         }
         $values = [];
-        $names = [];
         foreach ($facets as $facet) {
             $rows = [];
             foreach ($facet['values'] ?? [] as $value) {
                 $id = (string)$value['id'];
                 $rows[] = [$id, $value['name'], (int)$value['count']];
-                $names[$id] = $value['name'];
+                if (array_key_exists($id, $names)) {
+                    $names[$id] = $value['name'];
+                }
             }
             $values[(string)$facet['id']] = $rows;
         }
@@ -115,7 +119,7 @@ class Base_Extension extends Twig_Extension
         // An absent bucket is not proof of an invalid ID or an untranslated facet.
         foreach ($selected as $id) {
             $active[] = ['id' => $id, 'name' => $names[$id] ?? null,
-                'remaining' => implode(',', array_values(array_diff($selected, [$id])))];
+                'remaining' => implode(',', array_diff($selected, [$id]))];
         }
         return ['values' => $values, 'selected' => $selected, 'active' => $active];
     }

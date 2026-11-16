@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Phase 11: häufige Komponenten (2026-11-16)
+
+- Produktkarten bereiten Bewertungen nur bei sichtbarer Ausgabe vor und lösen den Hersteller einmal auf. Filter halten den zusätzlichen Namensindex nur für ausgewählte IDs und vermeiden eine Array-Neuindizierung. Pagination und Footer verwenden identische Übersetzungen beziehungsweise Ressourcenpfade innerhalb eines Renders erneut.
+- Suche vermeidet Ergebnislistenabfragen und Arraykopien bei gewöhnlichen Tasten sowie doppelte DOM-Selektoren. Debounce, Sprachrouten, Fehler- und Antwortreihenfolgebehandlung bleiben erhalten. Sechs LiveShopping-Karten und 60 Kategorieartikel einschließlich Reihenfolge, Sammelabrufen und Geschäftsdaten unverändert.
+- Acht kleine Verbesserungen; netto −256 produktive Quellbytes, −37 ausgelieferte JS-Bodybytes, identisches Vergleichs-HTML und keine entfernten Requests. Nur Core 11 → 12; zwölf andere Assets bytegleich. Keine gemessene native Beschleunigung behauptet.
+- Gezielte Twig-2/3-, PHP-, Such-, Filter-, Pagination-, Quickview-, Sprach-/InfiniteScroll- und Bundleprüfungen PASS. PHP-Kompatibilitätsbefund vor dem Validator behoben; Sandbox-Erstfehler und Twig-2-Deprecation-Gegenprobe im [HTML-Bericht](../../.cache/phase11-cccb7bf-20261116/Pruefbericht.html). Reproduzierbarer vollständiger Build und Assetcheck. Bewertung B; keine vollständige Suite oder native Nachher-Abnahme. Nur lokal auf develop, kein Commit, Push, Deployment, Sync, Purge oder B2C-Eingriff.
+
 ## Unreleased – Quickview nach schnellem Schließen erneut öffnen (2026-11-15)
 
 - Bootstrap-Transition und nachlaufenden Backdrop-Abbau als zwei reproduzierbare Ursachen des verborgenen Dialogs nachgewiesen. Gemeinsamen Öffner an die öffentlichen Modal-Abschlussereignisse angebunden; letzter Öffnungs-/Schließwunsch gewinnt, abgebrochene Ladeergebnisse bleiben wirkungslos.

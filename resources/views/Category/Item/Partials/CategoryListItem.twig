@@ -14,19 +14,18 @@
     {% set percent = ((1 - unitPriceValue / rrpUnitValue) * -100) | number_format(dezimalcount, ',', '.') -%}
 {% endif -%}
 {% set isSustainable = (item.data.tags is iterable ? item.data.tags | filter(tag => tag.id == 284) : []) | length > 0 -%}
-{% import "GuardiansBasicB2B::Category.Macros.render-rating" as Rating -%}
-{% set feedbackRatingDecimal = item.data.item.feedbackDecimal ?? 0 -%}
 {% set feedbackCount = item.data.item.feedbackCount ?? 0 -%}
-{% set rawLogo = item.data.item.manufacturer.logo -%}
+{% set cardManufacturer = item.data.item.manufacturer -%}
+{% set rawLogo = cardManufacturer.logo -%}
 {% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': cardEagerImages ? plugin_path('GuardiansBasicB2B') ~ '/images/vendors/' : (cardVendorLogoBase ?? (plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'))}) -%}
 <div class="cat-item{% if hasRRP %} has-rrp{% endif %} has-variations" data-eg-item="{{ item.data.variation.itemId }}"><div class="article-header text-center col-12 cat-article-header-info"><span class="col-7">{% if hasRRP %}<span class="item-action i-action-sale">{{ percent }}%</span>{% endif %}
 {%- if isSustainable %} <span class="item-action i-action-nachhaltig-cat">{{ translations.tSustainability }}</span>{% endif -%}
-{% if feedbackCount > 0 %}<span class="item-action2">{{ Rating.renderRating(feedbackRatingDecimal, 5) }}</span>{% endif -%}
+{% if feedbackCount > 0 %}{% import "GuardiansBasicB2B::Category.Macros.render-rating" as Rating %}<span class="item-action2">{{ Rating.renderRating(item.data.item.feedbackDecimal ?? 0, 5) }}</span>{% endif -%}
 </span><span class="col-5">
 {%- if vendorlogo is not empty -%}
-    {% if cardEagerImages %}<img src="{{ vendorlogo }}" class="cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">{% else %}<img src="" data-src="{{ vendorlogo }}" class="lozad cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">{% endif -%}
+    {% if cardEagerImages %}<img src="{{ vendorlogo }}" class="cat-logo" width="50px" height="50px" alt="{{ cardManufacturer.name }} Logo" title="{{ cardManufacturer.name }}">{% else %}<img src="" data-src="{{ vendorlogo }}" class="lozad cat-logo" width="50px" height="50px" alt="{{ cardManufacturer.name }} Logo" title="{{ cardManufacturer.name }}">{% endif -%}
 {% elseif rawLogo is not empty -%}
-    {% if cardEagerImages %}<img src="{{ rawLogo }}" class="cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">{% else %}<img src="" data-src="{{ rawLogo }}" class="lozad cat-logo" width="50px" height="50px" alt="{{ item.data.item.manufacturer.name }} Logo" title="{{ item.data.item.manufacturer.name }}">{% endif -%}
+    {% if cardEagerImages %}<img src="{{ rawLogo }}" class="cat-logo" width="50px" height="50px" alt="{{ cardManufacturer.name }} Logo" title="{{ cardManufacturer.name }}">{% else %}<img src="" data-src="{{ rawLogo }}" class="lozad cat-logo" width="50px" height="50px" alt="{{ cardManufacturer.name }} Logo" title="{{ cardManufacturer.name }}">{% endif -%}
 {% endif -%}
 </span></div><div class="article-body cat-item-image text-center {% if isShoeCategory %}cat-item-shoe{% endif %}"><a class="product-list article a" href="{{ itemUrl }}{% if currencycheck != 'EUR' %}?currency={{ currencycheck }}{% endif %}" title="{{ itemName }}"><picture>
 {%- if cardHasResponsiveImage -%}

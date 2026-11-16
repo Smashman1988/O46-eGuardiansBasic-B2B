@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Phase 11: frequently used components (2026-11-16)
+
+- Product cards prepare ratings only when displayed and resolve the manufacturer once. Facets retain a secondary name index only for selected IDs and avoid redundant array reindexing. Pagination and footer reuse identical translations and asset paths within each render.
+- Search skips result-list queries and array copies for ordinary keys and removes duplicate DOM selectors. Preserve debounce, localized routes, error handling and stale-response guards. Six LiveShopping cards and 60 category items retain their order, batches and business data.
+- Eight small improvements: net −256 production source bytes, −37 delivered JS body bytes, identical comparison HTML and zero removed requests. Only Core advances 11 → 12; twelve other assets stay byte-identical. No native timing gain claimed.
+- Focused Twig 2/3, PHP, search, filters, pagination, Quickview, language routes, InfiniteScroll and bundle checks pass. Fix the rejected PHP construct in production code without relaxing the validator. Initial sandbox failures and the Twig-2 deprecation countercheck are documented in the [HTML report](../../.cache/phase11-cccb7bf-20261116/Pruefbericht.html). Reproducible full build and asset check. Grade B; no full-suite or native post-deployment claim. Local develop changes only; no commit, push, deployment, sync, cache purge or B2C change.
+
 ## Unreleased – Reopen Quickview after rapid dismissal (2026-11-15)
 
 - Reproduced two Bootstrap lifecycle failures: an opening discarded during the modal transition, and old backdrop cleanup interrupting a new opening. The shared opener now reconciles the latest open/close intent after public modal completion events; canceled responses cannot insert stale content.
