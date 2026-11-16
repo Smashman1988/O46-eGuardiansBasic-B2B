@@ -1,5 +1,14 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Phase 13: product cards and asset delivery (2026-11-16)
+
+- Replace the separate badge/logo header with compact image overlays. Preserve complete images, loading contracts, sizes, prices and quickview. Use flexible cards, two-line names and row-aligned buttons at least 44 px tall. Remove the OneSize wrapper and obsolete CSS; derive critical styles, including the previously missing PDP card base, from the existing source.
+- Keep the shared card and compatible eager-loading `CategoryListItem2` adapter. Consolidate logo markup, prepare the currency link once, and remove duplicate include branches in both public category macros. InfiniteScroll no longer copies new items into jQuery, queries their descendants or schedules the redundant image-free 50 ms timer; existing requests and observer lifecycle remain.
+- Build the unchanged contact-widget source into global Core, saving one script request per complete page. Keep matrix, zoom, facets and page bundles separate. Strict asset-lock schema 4 rejects migration with an old Core. Only Core 14 → 15, category 5 → 6 and main CSS 3 → 4; nine other active assets remain byte-identical.
+- Local evidence: 60 cards save 7,380 HTML bytes and 140 elements. Complete pages save 3,879 JS body bytes, category/search 3,972; local gzip transfer saves 1,058/1,079 bytes. Main CSS grows by 2,246 bytes; the selected critical branch grows by 2,281/2,308/8,033 bytes. Costs are reported separately; no native timing gain claimed.
+- PASS per Twig 2/3: 1,260 card, 90 list and 90 asset-page cases, five logo fallbacks, four isolated comparisons, 135 LiveShopping comparisons plus two error cases, 175 syntax/38 render cases. Browser: 140 card cases/1,680 cards, six critical-style pairs, 16 bundle, eight lazy-image, 30 scroll and six quickview cases; contact 55 scenarios/1,332 assertions, filter smoke 33 and language routes 101. Asset-version checks 24, CSS-build checks 19, repeat build, asset check and diff check pass. Initial sandbox failures and an additional facet run terminated after 180 seconds remain documented; no complete-suite claim.
+- [HTML report with before/after images, resource matrix and all changed files](../../.cache/phase13-fa194e9-20261116/Pruefbericht.html). **B – locally ready to commit on `fa194e9`; native acceptance and the full current Preview 426 resource inventory remain open.** No commit/push/merge/deploy/sync/purge or content, cart, order, payment or B2C changes.
+
 ## Unreleased – Close autocomplete with Escape (2026-11-16)
 
 - Add the missing Escape branch to the shared keyboard handler. Cancel the existing debounce and invalidate pending responses through the input version; dismiss results and selection while preserving text and focus. New input reopens normally; no extra request, navigation or global Escape suppression. A closed search field leaves the other search field intact.

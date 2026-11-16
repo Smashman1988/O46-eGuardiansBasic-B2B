@@ -1,10 +1,9 @@
 {
   "css/checkout.min.css": 1,
   "css/contact-widget.css": 1,
-  "css/main.min.css": 3,
-  "js/cat.min.js": 5,
-  "js/contact-widget.js": 1,
-  "js/core.min.js": 14,
+  "css/main.min.css": 4,
+  "js/cat.min.js": 6,
+  "js/core.min.js": 15,
   "js/facets.min.js": 1,
   "js/item.min.js": 5,
   "js/jquery-3.7.1.min.js": 1,

@@ -11,8 +11,8 @@
             <span class="availsize">{{ attributeValue.name }}</span>{{ ' ' }}
         {%- endfor -%}
     {% else -%}
-        <div class="no-cat-at"><span class="availsize">{{ transLabels.availsizeonesize }}</span></div>
+        <span class="availsize">{{ transLabels.availsizeonesize }}</span>
     {%- endif -%}
 {% else -%}
-    <div class="no-cat-at"><span class="availsize">{{ transLabels.availsizeonesize }}</span></div>
+    <span class="availsize">{{ transLabels.availsizeonesize }}</span>
 {%- endif -%}

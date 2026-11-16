@@ -588,17 +588,10 @@ $(document).on('click', '.linkabso', function () {
     });
 
     // Lazyload nach Append
-    $('.category-product-list').on('append.infiniteScroll', function (event, response, path, items) {
-        const $newItems = $(items);
-        const $newLazy = $newItems.find('.lozad');
-
-        if ($newLazy.length) {
-            eGuardians.events.observeLazyImages();
-        } else {
-            setTimeout(() => {
-                eGuardians.events.observeLazyImages();
-            }, 50);
-        }
+    $('.category-product-list').on('append.infiniteScroll', function () {
+        // Append has already inserted the complete cards. Both former branches
+        // refreshed the same observer; no per-card search or delayed retry needed.
+        eGuardians.events.observeLazyImages();
     });
 })();
 

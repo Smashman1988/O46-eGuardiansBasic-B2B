@@ -13,7 +13,7 @@ const jsFiles = [
     ['vendor/jquery-3.7.1.js', 'jquery-3.7.1.min.js']
 ];
 const cssFiles = [['main.css', 'main.min.css'], ['checkout.css', 'checkout.min.css']];
-const assetFiles = [...jsFiles.map(([, file]) => 'js/' + file), 'js/contact-widget.js',
+const assetFiles = [...jsFiles.map(([, file]) => 'js/' + file),
     ...cssFiles.map(([, file]) => 'css/' + file), 'css/contact-widget.css'].sort();
 const templates = ['resources/views/PageDesign/PageDesign.twig', 'resources/views/PageDesign/Partials/Head.twig'];
 const lf = value => value.toString().replace(/\r\n/g, '\n');
@@ -24,13 +24,23 @@ function prepare({root = path.resolve(__dirname, '..'), outputs = []} = {}) {
     const read = file => contents.has(file) ? contents.get(file) : fs.readFileSync(path.join(root, file));
     const versions = JSON.parse(fs.readFileSync(path.join(root, 'resources/asset-versions.json'), 'utf8'));
     const previous = JSON.parse(fs.readFileSync(path.join(root, 'resources/asset-manifest.json'), 'utf8'));
-    assert.ok([2, 3].includes(previous.schemaVersion), 'Invalid asset lock schema; keep resources/asset-manifest.json with the sources');
+    assert.ok([2, 3, 4].includes(previous.schemaVersion), 'Invalid asset lock schema; keep resources/asset-manifest.json with the sources');
     assert.deepEqual(Object.keys(versions).sort(), assetFiles, 'asset-versions.json must contain every delivery asset exactly once');
     // One explicit migration introduces the matrix asset at version 1. Once
     // schema 3 is written, missing lock entries remain errors for every asset.
     const introducingMatrix = previous.schemaVersion === 2;
-    const lockedFiles = introducingMatrix ? assetFiles.filter(file => file !== 'js/matrix.min.js') : assetFiles;
-    assert.deepEqual(Object.keys(previous.assets).sort(), lockedFiles, 'Asset lock must contain every delivery asset exactly once');
+    const bundlingContact = previous.schemaVersion < 4;
+    const lockedFiles = introducingMatrix ? assetFiles.filter(file => file !== 'js/matrix.min.js') : [...assetFiles];
+    if (bundlingContact) lockedFiles.push('js/contact-widget.js');
+    assert.deepEqual(Object.keys(previous.assets).sort(), lockedFiles.sort(), 'Asset lock must contain every delivery asset exactly once');
+    if (bundlingContact) {
+        // Retire only this known request, without accepting an unverified source
+        // change during migration. Its code is now hashed inside the core build.
+        const contact = previous.assets['js/contact-widget.js'];
+        assert.ok(Number.isSafeInteger(contact.version) && contact.version > 0 &&
+            contact.sha256 === hash(lf(fs.readFileSync(path.join(root, 'resources/js/contact-widget.js')))),
+            'Contact bundle migration requires the unchanged locked source');
+    }
     const assets = {}, references = new Set();
     for (const file of assetFiles) {
         // .gitattributes deploys LF. Emit those exact bytes on Windows as well.
@@ -56,6 +66,14 @@ function prepare({root = path.resolve(__dirname, '..'), outputs = []} = {}) {
         assets[file] = {version: current, sha256};
         contents.set('resources/' + file, content);
     }
+    // A CSS-only build must never retire the old request while leaving an old
+    // core behind. Verify the actual emitted bundle and its complete inputs.
+    const coreBuild = JSON.parse(read('build/js/manifest.json')).files.find(entry => entry.target === 'resources/js/core.min.js');
+    const coreSources = ['resources/js/core.js', 'resources/js/search.js', 'resources/js/zoom-loader.js', 'resources/js/contact-widget.js'];
+    assert.ok(coreBuild && JSON.stringify(coreBuild.sources) === JSON.stringify(coreSources) &&
+        coreBuild.sha256 === assets['js/core.min.js'].sha256 &&
+        coreBuild.sourceSha256 === hash(coreSources.map(file => lf(read(file))).join('\n')),
+        'Contact bundle requires a current complete core build; run npm run build');
     function version(file) {
         assert.ok(assets[file], 'Unknown own delivery asset: ' + file);
         references.add(file);
@@ -74,7 +92,7 @@ function prepare({root = path.resolve(__dirname, '..'), outputs = []} = {}) {
     assert.deepEqual([...references].sort(), assetFiles, 'Every delivery asset must have a versioned Twig reference');
     const page = contents.get(templates[0]);
     assert.equal((page.match(/\/js\/\{\{ themePageScript \}\}/g) || []).length, 1, 'One existing dynamic bundle URL');
-    const manifest = {schemaVersion: 3, assets};
+    const manifest = {schemaVersion: 4, assets};
     contents.set('resources/asset-manifest.json', JSON.stringify(manifest, null, 2) + '\n');
     return {root, outputs: [...contents].map(([file, content]) => ({file, content})), manifest};
 }

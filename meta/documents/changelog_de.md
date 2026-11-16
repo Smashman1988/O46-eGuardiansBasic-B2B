@@ -1,5 +1,14 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Phase 13: Produktkarten und Asset-Aufteilung (2026-11-16)
+
+- Badge-/Logo-Kopfzeile durch kompakte Bild-Overlays ersetzen; vollständige Bilder, vorhandene Bildladeverträge, Größen, Preise und Quickview erhalten. Flexible Karten mit zweizeiligen Namen und mindestens 44 px hohen, zeilenweise ausgerichteten Buttons. OneSize-Wrapper und überholte CSS-Regeln entfernen; Critical CSS einschließlich der bisher fehlenden PDP-Kartenbasis aus der bestehenden Quelle ableiten.
+- Gemeinsame Karte beibehalten, Logoausgabe und Währungslink vereinfachen; beide öffentlichen Kategorienmakros ohne doppelte Include-Blöcke. `CategoryListItem2` bleibt der kompatible Eager-Adapter. InfiniteScroll ohne zusätzliche Nachfahrensuche, jQuery-Kopie oder bildlosen 50-ms-Timer; vorhandener Abruf und Observer unverändert.
+- Kontaktwidget aus unveränderter Quelle in den globalen Core integrieren: ein Script-Request weniger pro vollständiger Seite. Matrix/Zoom/Facetten/Seitenbundles getrennt erhalten. Streng geprüfter Asset-Lock Schema 4 verhindert die Umstellung mit veraltetem Core. Nur Core 14 → 15, Kategorie 5 → 6, Main-CSS 3 → 4; neun weitere aktive Assets bytegleich.
+- Lokal: 60 Karten −7.380 HTML-Byte / −140 Elemente; JS pro vollständiger Seite −3.879 Byte, Kategorie/Suche −3.972; lokale gzip-Übertragung −1.058/−1.079 Byte. Main-CSS +2.246 Byte; aktiver Critical-Zweig +2.281/+2.308/+8.033 Byte. Kosten und Einsparungen getrennt, keine native Laufzeitbehauptung.
+- PASS: je Twig 2/3 1.260 Karten-, 90 Listen- und 90 Asset-Seitenfälle, fünf Logo-Fallbacks, vier isolierte Vergleiche, 135 LiveShopping-Vergleiche + zwei Fehlerfälle, 175 Syntax-/38 Renderfälle; 140 Browser-Kartenfälle / 1.680 Karten, sechs Critical-CSS-Paare, 16 Bundle-, acht Lazyload-, 30 Scroll-, sechs Quickview-Fälle; Kontakt 55/1.332, Filter-Smoke 33, Sprachrouten 101; 24 Versions-/19 CSS-Buildprüfungen. Wiederholungsbuild, Assetcheck und Diffprüfung PASS. Sandbox-Erstfehler sowie ein nach 180 s abgebrochener zusätzlicher Facettenlauf sind im Bericht erhalten; keine vollständige Gesamtsuite behauptet.
+- [HTML-Prüfbericht mit Vorher/Nachher, Ressourcenmatrix und allen Dateien](../../.cache/phase13-fa194e9-20261116/Pruefbericht.html). **B – lokal commitbereit auf `fa194e9`; native Abnahme und vollständige aktuelle Preview-426-Ressourceninventur offen.** Kein Commit/Push/Merge/Deployment/Sync/Purge; keine Inhalts-, Warenkorb-, Bestell-, Zahlungs- oder B2C-Änderungen.
+
 ## Unreleased – Autocomplete per Escape schließen (2026-11-16)
 
 - Fehlenden Escape-Zweig im gemeinsamen Tastaturhandler ergänzen. Vorhandenen Debounce abbrechen und Antworten mit der bestehenden Eingabeversion invalidieren; Liste und aktive Auswahl schließen, Text und Fokus erhalten. Neue Eingabe öffnet wieder; keine neue Suche, Navigation oder globale Unterdrückung von Escape. Geschlossenes Suchfeld beeinflusst das andere Suchfeld nicht.

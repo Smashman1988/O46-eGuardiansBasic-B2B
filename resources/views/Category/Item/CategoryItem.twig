@@ -167,23 +167,13 @@
                 {# 🟢 Macro für die beiden Varianten erstellen #} 
                 {% macro categoryItem(item, variant, currencycheck, isShoeCategory, translations, transLabels, cardAttributeMap) %}
                     <article class="post col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">
-                        {% if variant == 1 %}
-                            {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2" with {
+                        {% include variant == 1 ? 'GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2' : 'GuardiansBasicB2B::Category.Item.Partials.CategoryListItem' with {
                                 'item': item,
                                 'currencycheck': currencycheck,
                                 'isShoeCategory': isShoeCategory,
                                 'translations': translations,
                                 'transLabels': transLabels
                             } %}
-                        {% else %}
-                            {% include "GuardiansBasicB2B::Category.Item.Partials.CategoryListItem" with {
-                                'item': item,
-                                'currencycheck': currencycheck,
-                                'isShoeCategory': isShoeCategory,
-                                'translations': translations,
-                                'transLabels': transLabels
-                            } %}
-                        {% endif %}
                     </article>
                 {% endmacro %}
  

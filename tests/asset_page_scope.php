@@ -196,7 +196,6 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
                 if (!empty($case['matrix'])) { $expected[] = verifiedThemeAssetPath('js/matrix.min.js'); }
                 $expected[] = verifiedThemeAssetPath('js/' . $case['page'] . '.min.js');
                 if (!empty($case['zoom'])) { $expected[] = verifiedThemeAssetPath('js/magiczoom.min.js'); }
-                $expected[] = verifiedThemeAssetPath('js/contact-widget.js');
             }
             check($actual === $expected, 'Wrong own JS order/count: ' . json_encode($actual));
             foreach ($tags as $tag) {
@@ -236,6 +235,10 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
             $report['cases'][$key] = ['status' => 'PASS', 'scripts' => $actual,
                 'stylesheetsIncludingNoscript' => $css, 'page' => $case['page'],
                 'initialMatrix' => $case['matrix'] ?? false, 'fragment' => $case['fragment'] ?? false];
+            preg_match_all('~<script\b[^>]*?\ssrc="([^"]+)"~', $html, $allScripts);
+            $report['cases'][$key]['otherDeclaredScripts'] = array_values(array_filter($allScripts[1], function ($url) {
+                return strpos($url, '/plugins/GuardiansBasicB2B/') !== 0;
+            }));
         } catch (Throwable $e) { $report['failures'][$key] = $e->getMessage(); }
     }
 }

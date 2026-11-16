@@ -11832,9 +11832,35 @@ opacity: 0.7;
 .sizebox{font-family: Roboto, sans-serif;font-weight: 700;font-size: 12px;line-height: 18px;letter-spacing: 0.02em;}
 /* B2B card separators */
 .cat-item-sizes{border-top:1px solid #dcdcdc;border-bottom:1px solid #dcdcdc;padding:1px 0;}
+/* The same geometry is emitted in all existing critical-CSS branches. */
+.category-product-list > .post{height:auto;min-height:0!important;}
+.cat-item.has-variations{display:flex;flex-direction:column;overflow:hidden;}
+.cat-item.has-variations > .cat-item-image{flex:none;}
+.cat-item.has-variations .cat-item-image > a{width:100%;height:100%;margin:0;}
+.cat-item.has-variations .cat-item-image picture{display:block;width:100%;height:100%;padding:24px 0 26px;}
+.cat-item.has-variations .cat-item-image picture img{width:100%;height:100%;max-height:100%;object-fit:contain;}
+.cat-item.has-variations .cat-badges,.cat-item.has-variations .cat-logo,.cat-item.has-variations .item-action2{position:absolute;z-index:1;pointer-events:none;box-shadow:0 1px 4px #0002;border-radius:4px;}
+.cat-item.has-variations .cat-badges{top:6px;left:6px;max-width:calc(100% - 60px);display:flex;flex-direction:column;align-items:flex-start;gap:3px;box-shadow:none;}
+.cat-item.has-variations .item-action{position:static;margin:0;padding:3px 6px;font-size:12px;line-height:16px;border-radius:4px;box-shadow:0 1px 4px #0002;white-space:normal;overflow-wrap:anywhere;}
+.cat-item.has-variations .cat-item-image > .cat-logo{top:6px;right:6px;width:42px;height:34px;max-width:42px;object-fit:contain;padding:3px;background:rgba(255,255,255,.94);}
+.cat-item.has-variations .item-action2{left:6px;bottom:6px;top:auto;padding:3px 5px;margin:0;line-height:1;background:rgba(255,255,255,.94);}
+.cat-item.has-variations .item-ratings-head{vertical-align:middle;margin:0;}
+.cat-item.has-variations .rating-grey,.cat-item.has-variations .rating-fuller-inner{white-space:nowrap;}
+.cat-item.has-variations .rating-grey .icon-star{color:#737373;}
+.cat-item.has-variations .rating-fuller .icon-star{color:#a56300;}
+.cat-item.has-variations > .cat-item-data{display:flex;flex:1;flex-direction:column;gap:5px;padding:5px 4px 0;}
+.cat-item.has-variations .cat-attr-sizes{min-height:0!important;padding:2px 0;align-content:flex-start;}
+.cat-item.has-variations .availsize{line-height:18px;margin:2px;padding:0 4px;}
+.cat-item.has-variations .cat-item-name{line-height:18px;min-height:36px;}
+.cat-item.has-variations .cat-card-price{margin-top:auto;min-height:27px;}
+.cat-item.has-variations .linkabso{min-height:44px;flex:none;white-space:normal;padding:8px 4px;}
+@media (max-width:767.98px){
+    .cat-item.has-variations .item-action{font-size:11px;line-height:14px;padding:3px 5px;}
+    .cat-item.has-variations .cat-item-image > .cat-logo{width:36px;height:30px;}
+    .cat-item.has-variations .cat-badges{max-width:calc(100% - 54px);}
+}
 /* End B2B card separators */
 .cat-attr-sizes{display: flex;align-items: center;flex-wrap: wrap;padding: 0px 0 3px 0;justify-content: center;min-height: 80px;}
-.no-cat-at{display: flex;align-items: center;flex-wrap: wrap;padding: 0;justify-content: center;min-height: 75px;}
 .ptpb{padding-top:0px!important;padding-bottom:0px!important;}
 .tcenter{text-align: center;}
 
@@ -12032,7 +12058,7 @@ body .cookie-bar>.container-max>div:first-child>div>div>a.text-primary{backgroun
     position: absolute !important;
 }
 @media (min-width: 1023px){
-.cat-attr-sizes,.no-cat-at{
+.cat-attr-sizes{
     min-height: 51px!important;
 }
 }
@@ -12320,13 +12346,6 @@ span.cookie-bar__header-title.h2 {
 .dsp-flex-f-14{
 	display:flex;
 	font-size:14px;
-}
-.cat-article-header-info{
-	display:flex;
-	min-height:80px;
-}
-.cat-logo{
-	max-width:50px;
 }
 .BqJep{
 	background-color: #fff;

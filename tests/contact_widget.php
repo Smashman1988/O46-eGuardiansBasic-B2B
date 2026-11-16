@@ -164,9 +164,10 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
             check('js/' . $bundle . '.min.js?v=' . $bundles[2][$index] === verifiedThemeAssetPath('js/' . $bundle . '.min.js'), 'Wrong bundle numeric asset version: ' . $page);
         }
         if (isset($newsletterBundles[$page])) { check($bundles[1][0] === $newsletterBundles[$page], 'Wrong bundle: ' . $page); }
-        foreach (['css/contact-widget.css', 'js/contact-widget.js'] as $resource) {
+        foreach (['css/contact-widget.css', 'js/core.min.js'] as $resource) {
             check(substr_count($rendered, '/fixture-plugins/GuardiansBasicB2B/' . verifiedThemeAssetPath($resource) . '"') === $expected, 'Wrong dynamic asset inclusion: ' . $page);
         }
+        check(strpos($rendered, '/js/contact-widget.js') === false, 'Contact behavior must not be requested twice');
         if ($language === 'de' && isset($newsletterBundles[$page])) {
             $originalUrls = ownThemeAssetUrls($rendered, $assetPluginBase);
             check(count($originalUrls) > 0, 'Missing own asset URLs for cache contract');

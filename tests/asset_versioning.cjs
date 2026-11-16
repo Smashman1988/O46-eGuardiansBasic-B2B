@@ -37,6 +37,15 @@ function snapshot(root) {
     return out;
 }
 function manifest(root) { return json(root, manifestFile); }
+function legacyLock(root, current, schemaVersion) {
+    const previous = structuredClone(current);
+    previous.schemaVersion = schemaVersion;
+    if (schemaVersion < 4) previous.assets['js/contact-widget.js'] = {
+        version: 1, sha256: hash(fs.readFileSync(path.join(root, 'resources/js/contact-widget.js')))
+    };
+    if (schemaVersion === 2) delete previous.assets['js/matrix.min.js'];
+    return previous;
+}
 function differentAssets(before, after) {
     assert.deepEqual(Object.keys(after.assets).sort(), Object.keys(before.assets).sort());
     return Object.keys(after.assets).filter(key => JSON.stringify(before.assets[key]) !== JSON.stringify(after.assets[key])).sort();
@@ -51,7 +60,7 @@ function assertChanged(before, after, assets) {
 function assertManifestAndUrls(root) {
     const data = manifest(root), versions = json(root, versionsFile);
     assert.deepEqual(Object.keys(data).sort(), ['assets', 'schemaVersion']);
-    assert.equal(data.schemaVersion, 3);
+    assert.equal(data.schemaVersion, 4);
     assert.deepEqual(Object.keys(data.assets).sort(), [...versioning.assetFiles].sort());
     assert.deepEqual(Object.keys(versions).sort(), [...versioning.assetFiles].sort());
     const page = fs.readFileSync(path.join(root, pageFile), 'utf8');
@@ -91,7 +100,7 @@ async function run(output = path.join(project, '.cache/asset-versioning.json')) 
         const before = snapshot(root), css = stylesheet.prepare({root}), js = await javascript.prepare({root});
         const prepared = versioning.prepare({root, outputs: [...css.outputs, ...js.outputs]});
         assert.deepEqual(snapshot(root), before); assert.equal(prepared.root, root);
-        assert.equal(prepared.manifest.schemaVersion, 3);
+        assert.equal(prepared.manifest.schemaVersion, 4);
         assert.ok(!prepared.outputs.some(x => x.file === versionsFile), 'Builder cannot rewrite manual configuration');
     });
     await test('two complete builds are identical with exact numeric URLs and no runtime lookup', async () => {
@@ -103,32 +112,28 @@ async function run(output = path.join(project, '.cache/asset-versioning.json')) 
         // This historical migration fixture starts at 1 even after the live asset advances.
         current.assets['js/matrix.min.js'].version = 1;
         writeJson(root, versionsFile, {...json(root, versionsFile), 'js/matrix.min.js': 1});
-        const previous = structuredClone(current);
-        previous.schemaVersion = 2;
-        delete previous.assets['js/matrix.min.js'];
+        const previous = legacyLock(root, current, 2);
         writeJson(root, manifestFile, previous);
         const before = snapshot(root), prepared = versioning.prepare({root});
         assert.deepEqual(snapshot(root), before, 'Schema migration preparation is read-only');
-        assert.equal(prepared.manifest.schemaVersion, 3);
+        assert.equal(prepared.manifest.schemaVersion, 4);
         assert.equal(prepared.manifest.assets['js/matrix.min.js'].version, 1);
-        for (const [asset, entry] of Object.entries(previous.assets)) assert.deepEqual(prepared.manifest.assets[asset], entry);
+        for (const [asset, entry] of Object.entries(previous.assets)) if (asset !== 'js/contact-widget.js') assert.deepEqual(prepared.manifest.assets[asset], entry);
         versioning.publish(prepared);
         assert.deepEqual(assertManifestAndUrls(root), current);
     });
     await test('schema 2 migration rejects an initial matrix version above 1 without writes', async () => {
-        const current = manifest(root), previous = structuredClone(current), versions = json(root, versionsFile);
-        previous.schemaVersion = 2; delete previous.assets['js/matrix.min.js'];
+        const current = manifest(root), previous = legacyLock(root, current, 2), versions = json(root, versionsFile);
         writeJson(root, manifestFile, previous);
         writeJson(root, versionsFile, {...versions, 'js/matrix.min.js': 2});
         try { assertReadOnlyError(root, () => versioning.prepare({root}), /New matrix asset must start at version 1/); }
         finally { writeJson(root, manifestFile, current); writeJson(root, versionsFile, versions); }
     });
-    await test('both lock schemas reject missing established entries and schema 3 requires matrix', async () => {
+    await test('all lock schemas reject missing established entries and current schema requires matrix', async () => {
         const current = manifest(root);
         try {
-            for (const schemaVersion of [2, 3]) {
-                const broken = structuredClone(current); broken.schemaVersion = schemaVersion;
-                if (schemaVersion === 2) delete broken.assets['js/matrix.min.js'];
+            for (const schemaVersion of [2, 3, 4]) {
+                const broken = legacyLock(root, current, schemaVersion);
                 delete broken.assets['js/core.min.js']; writeJson(root, manifestFile, broken);
                 assertReadOnlyError(root, () => versioning.prepare({root}), /Asset lock|lock.*asset/i);
             }
@@ -136,6 +141,26 @@ async function run(output = path.join(project, '.cache/asset-versioning.json')) 
             writeJson(root, manifestFile, broken);
             assertReadOnlyError(root, () => versioning.prepare({root}), /Asset lock|lock.*asset/i);
         } finally { writeJson(root, manifestFile, current); }
+    });
+    await test('schema 3 retires only the verified unchanged contact source', async () => {
+        const current = manifest(root), previous = legacyLock(root, current, 3);
+        writeJson(root, manifestFile, previous);
+        try {
+            const before = snapshot(root), prepared = versioning.prepare({root});
+            assert.deepEqual(snapshot(root), before);
+            assert.deepEqual(prepared.manifest, current);
+            previous.assets['js/contact-widget.js'].sha256 = '0'.repeat(64);
+            writeJson(root, manifestFile, previous);
+            assertReadOnlyError(root, () => versioning.prepare({root}), /Contact bundle migration/);
+        } finally { writeJson(root, manifestFile, current); }
+    });
+    await test('contact request cannot retire with an old core bundle manifest', async () => {
+        const file = 'build/js/manifest.json', original = json(root, file);
+        const old = structuredClone(original);
+        old.files.find(entry => entry.target === 'resources/js/core.min.js').sources.pop();
+        writeJson(root, file, old);
+        try { assertReadOnlyError(root, () => versioning.prepare({root}), /Contact bundle requires/); }
+        finally { writeJson(root, file, original); }
     });
     await test('current --check is read-only', async () => {
         const before = snapshot(root); await combined.build({root, check: true}); assert.deepEqual(snapshot(root), before);
@@ -235,9 +260,12 @@ async function run(output = path.join(project, '.cache/asset-versioning.json')) 
         bump(root, ['js/facets.min.js', 'css/checkout.min.css']); await combined.build({root});
         assertChanged(before, assertManifestAndUrls(root), ['css/checkout.min.css', 'js/facets.min.js']);
     });
-    await test('raw contact JavaScript and CSS require their own versions', async () => {
-        const before = manifest(root), affected = ['js/contact-widget.js', 'css/contact-widget.css'];
+    await test('bundled contact source requires core version and contact CSS its own version', async () => {
+        const before = manifest(root), affected = ['js/core.min.js', 'css/contact-widget.css'];
         fs.appendFileSync(path.join(root, 'resources/js/contact-widget.js'), '\nwindow.__assetVersionContact = 3;\n');
+        const snapshotBefore = snapshot(root);
+        await assert.rejects(javascript.build({root}), /Asset content changed: js\/core.min.js/);
+        assert.deepEqual(snapshot(root), snapshotBefore);
         fs.appendFileSync(path.join(root, 'resources/css/contact-widget.css'), '\n.asset-version-contact{outline-offset:3px}\n');
         assertReadOnlyError(root, () => versioning.prepare({root}), /Asset content changed: (?:css|js)\/contact-widget\./);
         bump(root, affected); await combined.build({root}); assertChanged(before, assertManifestAndUrls(root), affected);

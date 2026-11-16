@@ -67,12 +67,12 @@ class Phase11ItemProbe {
     function getFlagTwo() { return $this->value('flagTwo'); }
 }
 function phase11Check($ok, $message) { if (!$ok) throw new RuntimeException($message); }
-function phase11Environment($fixture, $before = false) {
+function phase11Environment($fixture, $before = false, $allBefore = false) {
     $names = ['Category.Item.CategoryItem','Category.Item.CategoryItemContent','Category.Item.Partials.CategoryListItem','Category.Item.Partials.CategoryListItem2','Category.Item.Partials.CategoryAttributes','Category.Item.Partials.CategoryGridOnly','Category.Item.Partials.AllItemsLink','Category.Macros.render-rating'];
     $templates = ['layout'=>'{% block PageBody %}{% endblock %}'];
     foreach ($names as $name) {
         $relative = str_replace('.', '/', $name).'.twig';
-        $base = $before && $name === 'Category.Item.Partials.CategoryListItem' ? $GLOBALS['argv'][2] : __DIR__.'/../resources/views';
+        $base = $before && ($allBefore || $name === 'Category.Item.Partials.CategoryListItem') ? $GLOBALS['argv'][2] : __DIR__.'/../resources/views';
         $templates['GuardiansBasicB2B::'.$name] = file_get_contents($base.'/'.$relative);
     }
     foreach (['Pagination','FacetFilter2','FacetFilter3'] as $name) $templates['GuardiansBasicB2B::Category.Item.Partials.'.$name]='';
@@ -106,6 +106,7 @@ function phase11Compare($twig, $fixture, $template, $context, $label) {
     phase11Check($result['before']['calls']===$result['after']['calls'],'Service/helper calls changed: '.$label);
     return $result;
 }
+if (defined('O46_CARD_FIXTURE_ONLY')) return;
 $cards=[]; $lists=[]; $probes=[];
 foreach (['de','en','fr','it','es'] as $lang) {
     $fixture=[];$twig=[];

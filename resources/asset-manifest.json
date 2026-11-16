@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "assets": {
     "css/checkout.min.css": {
       "version": 1,
@@ -10,20 +10,16 @@
       "sha256": "4a05763f573afab5904376a3be371f97990649329adf23a1228cd229a002d677"
     },
     "css/main.min.css": {
-      "version": 3,
-      "sha256": "f098123deb797c869c7e06854f0d113d79af4a469c25554227bb69dd95f74723"
+      "version": 4,
+      "sha256": "1149f47895acd1c3d30b6da78c7acad554ec17a1f54f4d266e480bc0a58e950c"
     },
     "js/cat.min.js": {
-      "version": 5,
-      "sha256": "17e0ac9135ace08d5319d99cc93e1716f4ce812a249f5598f2bc8ba8adbda1a2"
-    },
-    "js/contact-widget.js": {
-      "version": 1,
-      "sha256": "e90c3f7c1cb233a1c59274deac527dfd3e6c4c1342f7206954ffe35f027d04c1"
+      "version": 6,
+      "sha256": "eda54f5a554d8ed98ef89ee82139efa86c839f30fa529f43b3cc288f7ff84aca"
     },
     "js/core.min.js": {
-      "version": 14,
-      "sha256": "bec1f167a84f7536b2d0ecb7948c9f0d44b8b67c30863eea5d0167b8fe889aca"
+      "version": 15,
+      "sha256": "ba919e1e4b809cea64c490b087f0f6b3ad10b622e050a48fc3a57aefc8990500"
     },
     "js/facets.min.js": {
       "version": 1,

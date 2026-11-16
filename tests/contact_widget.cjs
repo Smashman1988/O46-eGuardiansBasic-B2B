@@ -7,7 +7,7 @@ const { pathToFileURL } = require('node:url');
 const { chromium } = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
 const directory = path.resolve(process.argv[2]);
 const reportPath = path.resolve(process.argv[3]);
-const script = fs.readFileSync(path.join(__dirname, '../resources/js/contact-widget.js'), 'utf8');
+const script = fs.readFileSync(path.join(__dirname, '../resources/js/' + (process.argv.includes('--bundled') ? 'core.min.js' : 'contact-widget.js')), 'utf8');
 const report = { scenarios: [], assertions: 0, pageErrors: [], externalRequests: [], plentyONE: 'NOT_RUN' };
 function check(ok, message) { assert.ok(ok, message); report.assertions++; }
 const intersects = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
