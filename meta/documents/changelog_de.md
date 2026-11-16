@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Autocomplete per Escape schließen (2026-11-16)
+
+- Fehlenden Escape-Zweig im gemeinsamen Tastaturhandler ergänzen. Vorhandenen Debounce abbrechen und Antworten mit der bestehenden Eingabeversion invalidieren; Liste und aktive Auswahl schließen, Text und Fokus erhalten. Neue Eingabe öffnet wieder; keine neue Suche, Navigation oder globale Unterdrückung von Escape. Geschlossenes Suchfeld beeinflusst das andere Suchfeld nicht.
+- Bisher fehlende Combobox-/Listbox-ARIA-Zustände für Öffnen, Auswahl, Außenklick, Wiederfokus und Schließen ergänzen. Artikel- und reine Suchvorschläge, Header und 404-Suche berücksichtigen. Pfeiltasten, sprachabhängiges Enter, Maus/Touch und API-Verträge bleiben erhalten.
+- Source/Min × fünf Sprachen × Desktop/Mobile: 20 Szenarien / 760 Prüfungen PASS; Fehler am alten HEAD in 10 Szenarien reproduziert. Bestehende Suche: 8 Lifecycle-, 40 Antwortreihenfolge-, 15 Vergleichsszenarien (130 Render-/560 Helfervergleiche); 22 Assetversionsprüfungen PASS. Historischen HTML-Vergleich nur um die beabsichtigten neuen ARIA-/ID-Attribute abgegrenzt; direkte ARIA-Assertions im neuen Test. Keine komplette Phase-12-Wiederholung.
+- Core 13 → 14; zwölf weitere Assets bytegleich. Reproduzierbarer Build, Assetcheck und Diffprüfung bestanden. Spanischer Name für Artikel 2326745 stammt aus lokalisierten PlentyONE-/IO-Artikeltexten, nicht aus einer Theme-Übersetzung; Inhalt unverändert, Datenbank-/Indexabgleich offen.
+- [HTML-Prüfbericht und genaue Dateiliste](../../.cache/escape-fix-bd16861-20261116/Pruefbericht.html). **B – lokal commitbereit auf `bd16861`, native Nachabnahme erst nach Nutzer-Deployment.** Kein Commit, Push, Merge, Deployment, Sync, Purge, Produktiv-, B2C- oder Warenkorbeingriff.
+
 ## Unreleased – Phase 12: Suche und Autocomplete (2026-11-16)
 
 - Highlight-Ausdruck einmal je akzeptierter Antwort vorbereiten; Zweiargument-Helfer, HTML-Escaping und Sonderzeichen erhalten. API-Arraykopien und wiederholte Formular-/Eingabe-/Listenabfragen entfernen. 400-ms-Debounce ohne Argumentarray; Tastaturauswahl ohne zusätzliche Ergebnisarrays. Antwortversionierung und Fehler-Fallbacks unverändert.

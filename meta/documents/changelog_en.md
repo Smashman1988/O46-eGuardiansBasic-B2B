@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Close autocomplete with Escape (2026-11-16)
+
+- Add the missing Escape branch to the shared keyboard handler. Cancel the existing debounce and invalidate pending responses through the input version; dismiss results and selection while preserving text and focus. New input reopens normally; no extra request, navigation or global Escape suppression. A closed search field leaves the other search field intact.
+- Add the previously missing combobox/listbox ARIA state for opening, selection, outside dismissal, refocusing and closing. Cover item results, suggestion-only results, header and 404 search. Preserve arrows, language-specific Enter behavior, mouse/touch and API contracts.
+- Source/minified × five languages × desktop/mobile: 20 scenarios / 760 checks PASS; reproduce the old bug in 10 scenarios. Existing search checks: 8 lifecycle, 40 response-order and 15 comparison scenarios (130 render / 560 helper comparisons); 22 asset-version checks PASS. Exclude only the intentional new ARIA/ID metadata from the historical HTML comparison; assert real ARIA directly in the new test. No full Phase 12 rerun.
+- Core 13 → 14; twelve other assets byte-identical. Reproducible build, asset check and diff check pass. The Spanish name for item 2326745 comes from localized PlentyONE/IO item text, not theme translation; no content change or administrative database/index comparison.
+- [HTML report and exact changed-file list](../../.cache/escape-fix-bd16861-20261116/Pruefbericht.html). **B – locally ready to commit on `bd16861`; native acceptance awaits deployment by the user.** No commit, push, merge, deployment, sync, purge, production, B2C or cart changes.
+
 ## Unreleased – Phase 12: search and autocomplete (2026-11-16)
 
 - Prepare the highlight expression once per accepted response; preserve the two-argument helper, HTML escaping and special characters. Remove API-array copies and repeated form/input/list lookups. Keep the 400 ms debounce without an argument array; retain the existing collection for keyboard selection. Response versioning and error fallbacks remain unchanged.

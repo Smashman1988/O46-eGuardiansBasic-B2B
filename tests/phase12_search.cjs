@@ -59,7 +59,28 @@ async function scenario(browser,version,lang) {
             eGuardians.events.initLiveSearch=eval('('+search+')');
             eGuardians.events.initLiveSearch(input);eGuardians.events.initLiveSearch(input);
             window.enter=query=>{input.value=query;input.dispatchEvent(new Event('input',{bubbles:true}))};
-            window.snapshot=()=>({html:document.querySelector('[data-eg-search]').outerHTML,value:input.value});
+            window.snapshot=()=>{
+                const copy=document.querySelector('[data-eg-search]').cloneNode(true);
+                // The later Escape fix deliberately adds combobox metadata. Compare
+                // all pre-existing markup unchanged; search_escape.cjs tests real ARIA.
+                const omit=(node,name,expected)=>{if(expected.test(node.getAttribute(name)||''))node.removeAttribute(name)};
+                for(const node of copy.querySelectorAll('[data-eg-livesearch]')){
+                    omit(node,'role',/^combobox$/);omit(node,'aria-autocomplete',/^list$/);
+                    omit(node,'aria-expanded',/^(true|false)$/);omit(node,'aria-controls',/^eg-autocomplete-\d+$/);
+                    omit(node,'aria-activedescendant',/^eg-autocomplete-\d+-\d+$/);
+                }
+                for(const node of copy.querySelectorAll('.row-search-wrap')){
+                    omit(node,'role',/^listbox$/);omit(node,'id',/^eg-autocomplete-\d+$/);
+                }
+                for(const node of copy.querySelectorAll('.list-autocomplete, .list-autocomplete-suggestion')){
+                    omit(node,'role',/^group$/);
+                    for(const item of node.children){
+                        omit(item,'role',/^option$/);omit(item,'id',/^eg-autocomplete-\d+-\d+$/);
+                        omit(item,'aria-selected',/^(true|false)$/);
+                    }
+                }
+                return {html:copy.outerHTML,value:input.value};
+            };
             document.addEventListener('click',e=>{if(e.target.closest('a'))e.preventDefault()});
         },{search:method(version.search,'initLiveSearch'),helper:method(version.core,'autoCompleteReg'),lang});
         const data=await p.evaluate(queries=>{
