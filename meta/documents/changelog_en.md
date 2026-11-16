@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Phase 12: search and autocomplete (2026-11-16)
+
+- Prepare the highlight expression once per accepted response; preserve the two-argument helper, HTML escaping and special characters. Remove API-array copies and repeated form/input/list lookups. Keep the 400 ms debounce without an argument array; retain the existing collection for keyboard selection. Response versioning and error fallbacks remain unchanged.
+- Only IT/ES omit unused category aggregation through the existing normalizing adapter. Preserve the IO contract for DE/EN/FR; no production PHP changes. HTTP requests and search batches remain 1 → 1. Translate the active pagination title with the existing page label. Attribute historical jQuery warnings to the Ceres instance setter; leave libraries unchanged.
+- For 25 displayed results: 25 → 1 RegExp compilations, 26 → 2 input-value reads and 5 → 1 form-action reads; remove two array wrappers/32 copied entries. Add one small highlight context per response. Net +567 production source bytes, +37 built JS bytes; only Core 12 → 13, twelve assets byte-identical. No native timing gain claimed.
+- Focused source/minified, language, special-character, error, keyboard, facet, response-order, PHP/IO, Twig 2/3, bundle and version checks pass; reproducible build and asset check. The initial bundle run was blocked by the localhost sandbox; the retry passed 16/16 cases. [HTML report with exact results and the full changed-file list](../../.cache/phase12-e142914-20261116/Pruefbericht.html). Grade B: locally ready to commit; native Phase 12 and authenticated-customer acceptance remain pending. No commit, push, merge, deployment, sync, cache purge or B2C change.
+
 ## Unreleased – Phase 11: frequently used components (2026-11-16)
 
 - Product cards prepare ratings only when displayed and resolve the manufacturer once. Facets retain a secondary name index only for selected IDs and avoid redundant array reindexing. Pagination and footer reuse identical translations and asset paths within each render.

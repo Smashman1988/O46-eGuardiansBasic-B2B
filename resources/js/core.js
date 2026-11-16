@@ -699,13 +699,16 @@ O46Core.helper = O46Core.helper || function () {
             $(btnElem).removeClass('btn-load');
             $(btnElem).removeAttr('disabled','disabled');
         }
-        this.autoCompleteReg = function ($input, label) {
+        this.autoCompleteReg = function ($input, label, prepared) {
             const $span = $('<span>');
-            const query = $input.val();
-            if (!query) return $span.text(label);
-
-            const literal = query.replace(/[$.*+?^{}()|[\]\\]/g, '\\$&');
-            const match = new RegExp(literal, 'i').exec(label);
+            // Optional context belongs to one response, never to the input/cache.
+            let pattern = prepared && prepared.pattern;
+            if (pattern === undefined) {
+                const query = $input.val();
+                pattern = query ? new RegExp(query.replace(/[$.*+?^{}()|[\]\\]/g, '\\$&'), 'i') : null;
+                if (prepared) prepared.pattern = pattern;
+            }
+            const match = pattern && pattern.exec(label);
             if (!match) return $span.text(label);
 
             return $span.append(

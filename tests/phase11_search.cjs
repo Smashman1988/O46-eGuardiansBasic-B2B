@@ -132,7 +132,15 @@ async function scenario(browser, version, lang) {
             rows.push(original);
             for (const version of versions.slice(1)) {
                 const current = await scenario(browser, version, lang);
-                for (const stage of ['rendered', 'ordinary', 'hidden', 'shown', 'keys']) assert.deepEqual(current[stage], original[stage], lang + ' ' + version.name + ' ' + stage);
+                // Phase 12 intentionally omits category only through the existing
+                // IT/ES adapter. Keep every other request/DOM comparison exact.
+                const expected = JSON.parse(JSON.stringify(original));
+                if (['it', 'es'].includes(lang)) for (const stage of ['rendered', 'ordinary', 'hidden', 'shown', 'keys']) {
+                    for (const state of Array.isArray(expected[stage]) ? expected[stage] : [expected[stage]]) {
+                        for (const request of state.requests) request.params.types = ['item', 'suggestion'];
+                    }
+                }
+                for (const stage of ['rendered', 'ordinary', 'hidden', 'shown', 'keys']) assert.deepEqual(current[stage], expected[stage], lang + ' ' + version.name + ' ' + stage);
                 assert.equal(original.operations.ordinaryKeys['find:.list-autocomplete li'], 12);
                 assert.equal(original.operations.ordinaryKeys['get:undefined'], 12);
                 assert.equal(current.operations.ordinaryKeys['find:.list-autocomplete li'] || 0, 0);

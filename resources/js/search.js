@@ -28,28 +28,23 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
     // Fokusverhalten bleibt gleich
     var currentFocus = -1;
     var useEnglishSearchIndex = activeLang === 'it' || activeLang === 'es';
+    const $input = $(_this);
+    const autocompleteUrl = useEnglishSearchIndex
+        ? '/rest/guardiansbasicb2b/item/search/autocomplete/'
+        : '/rest/io/item/search/autocomplete/';
     let searchInputVersion = 0;
-
-    // debounce Funktion (einmal definiert, wiederverwendbar)
-    function debounce(func, delay) {
-        let timer;
-        return function (...args) {
-            const context = this;
-            clearTimeout(timer);
-            timer = setTimeout(() => func.apply(context, args), delay);
-        };
-    }
+    let searchTimer;
 
     // Input-Handler (ausgelagert)
-    function handleLiveSearchInput(event, inputVersion) {
-        const $input = $(event.currentTarget);
+    function handleLiveSearchInput(inputVersion) {
         const query = $.trim($input.val());
 
         if (query.length > 3) {
             $('[data-eg-search]').addClass('search-loading');
             $('.related-search').hide();
 
-            const types = ["item", "category", "suggestion"];
+            // Only our IT/ES adapter guarantees categories.all without aggregation.
+            const types = useEnglishSearchIndex ? ["item", "suggestion"] : ["item", "category", "suggestion"];
             const searchParams = {
                 template: "Ceres::ItemList.Components.ItemSearch",
                 query: query,
@@ -57,9 +52,6 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
                 templateType: "home"
             };
 
-            const autocompleteUrl = useEnglishSearchIndex
-                ? '/rest/guardiansbasicb2b/item/search/autocomplete/'
-                : '/rest/io/item/search/autocomplete/';
             eGuardians.apiservice.get(autocompleteUrl, searchParams, function (response, status) {
                 // Ignore responses for an older input, including A → B → A changes.
                 if (inputVersion !== searchInputVersion || query !== $.trim($input.val())) return;
@@ -85,6 +77,8 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
     // Rendering-Funktion (ausgelagert für Performance & Klarheit)
     function renderAutocompleteResults(response, $input) {
         $('.row-search-wrap').remove();
+        // Prepare on the first displayed label only, shared within this response.
+        const highlighting = {};
 
         const $row = $("<div />").addClass('row row-search-wrap');
         const $left = $("<div />").addClass('col-12 col-md-7 item-suggestion');
@@ -94,29 +88,32 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
         const $ulSuggestion = $("<ul/>").addClass('list-autocomplete-suggestion list-no-style');
 
         let suggestionCount = 0;
-        $(response.data.suggestion).each(function (key, suggestion) {
+        let suggestionUrl;
+        // Iterate API arrays directly; retain the existing non-array fallback.
+        $.each(Array.isArray(response.data.suggestion) ? response.data.suggestion : $(response.data.suggestion), function (key, suggestion) {
             if (suggestionCount === 5) return false;
             const label = String(suggestion?.label ?? '');
             if (!label) return;
+            if (suggestionCount === 0) suggestionUrl = $input[0].form.action + '?query=';
 
             const $link = $('<a>').attr({
-                href: $input[0].form.action + '?query=' + encodeURIComponent(label),
+                href: suggestionUrl + encodeURIComponent(label),
                 title: label
             });
-            $link.append(eGuardians.helper.autoCompleteReg($input, label));
+            $link.append(eGuardians.helper.autoCompleteReg($input, label, highlighting));
             $ulSuggestion.append($('<li>').append($link));
             suggestionCount++;
         });
         $right.append($ulSuggestion);
 
         const $ulItem = $("<ul/>").addClass('list-autocomplete list-no-style');
-        $(response.data.item).each(function (key, item) {
+        $.each(Array.isArray(response.data.item) ? response.data.item : $(response.data.item), function (key, item) {
             const label = String(item?.label ?? '');
             if (!label) return;
 
             const $link = $('<a>').attr({ href: item.url, title: label });
             const $image = $('<img>').attr({ src: item.image || '', alt: label });
-            $link.append($('<span>').append($image), eGuardians.helper.autoCompleteReg($input, label));
+            $link.append($('<span>').append($image), eGuardians.helper.autoCompleteReg($input, label, highlighting));
             $ulItem.append($('<li>').append($link));
         });
         $left.append($ulItem);
@@ -124,30 +121,31 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
         $row.append($left).append($right);
         $input.closest('[data-eg-search], .searchbox-404').find('.search-wrap, [data-eg-search]').first().append($row);
 
-        $('[data-eg-search]').toggleClass('search-active-results', suggestionCount > 0 || $ulItem.children().length > 0)
+        $('[data-eg-search]').toggleClass('search-active-results', suggestionCount > 0 || $ulItem[0].childElementCount > 0)
             .removeClass('search-loading');
     }
 
-    // Jetzt debounce aktivieren
-    const loadSuggestions = debounce(handleLiveSearchInput, 400);
-    $(_this).on('input', function (event) {
+    // Keep 400 ms and invalidate older responses immediately, before debounce.
+    $input.on('input', function () {
         currentFocus = -1;
-        $(this).closest('[data-eg-search], .searchbox-404').find('.autocomplete-active').removeClass('autocomplete-active');
-        loadSuggestions.call(this, event, ++searchInputVersion);
+        $input.closest('[data-eg-search], .searchbox-404').find('.autocomplete-active').removeClass('autocomplete-active');
+        clearTimeout(searchTimer);
+        const inputVersion = ++searchInputVersion;
+        searchTimer = setTimeout(function () { handleLiveSearchInput(inputVersion); }, 400);
     });
 
-    $(_this).keydown(function(e){
+    $input.keydown(function(e){
         if (e.keyCode != 40 && e.keyCode != 38 && e.keyCode != 13) return;
-        var x = $(this).closest('[data-eg-search], .searchbox-404').find('.list-autocomplete li').get();
+        var x = $input.closest('[data-eg-search], .searchbox-404').find('.list-autocomplete li');
         if (e.keyCode == 40 || e.keyCode == 38) {
             if (!x.length) return;
             currentFocus += e.keyCode == 40 ? 1 : -1;
             addAutocompleteItemActive(x);
-            $(this).val($(x[currentFocus]).find('a').attr('title'));
-        } else if (e.keyCode == 13 && useEnglishSearchIndex && $(x).is('.autocomplete-active')) {
+            $input.val($(x[currentFocus]).find('a').attr('title'));
+        } else if (e.keyCode == 13 && useEnglishSearchIndex && x.is('.autocomplete-active')) {
             e.preventDefault();
-            $(x).filter('.autocomplete-active').find('a')[0].click();
-        } else if (e.keyCode == 13 && !$(x).is('.autocomplete-active') && $.trim(this.value).length <= 2) {
+            x.filter('.autocomplete-active').find('a')[0].click();
+        } else if (e.keyCode == 13 && !x.is('.autocomplete-active') && $.trim(this.value).length <= 2) {
             e.preventDefault();
         }
         // Unselected Enter and DE/EN/FR retain their localized GET form behavior.
@@ -162,8 +160,9 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
         /*add class "autocomplete-active":*/
         x[currentFocus].classList.add("autocomplete-active");
 
-        $('.list-autocomplete').scrollTop(0)
-        $('.list-autocomplete').scrollTop($('.autocomplete-active').position().top - ($('.list-autocomplete').height()/2))
+        const $lists = $('.list-autocomplete');
+        $lists.scrollTop(0);
+        $lists.scrollTop($('.autocomplete-active').position().top - ($lists.height()/2));
     }
     var removeAutocompleteItemActive = function(x) {
         /*a function to remove the "active" class from all autocomplete items:*/

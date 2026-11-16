@@ -215,6 +215,37 @@ namespace {
             }
         }
     }
+    // Phase 12: omit unused categories only on the existing IT/ES adapter. The
+    // native item preset/options and every displayed item/suggestion stay equal.
+    $categoryContracts=[];
+    foreach (['it','es'] as $lang) {
+        $locale->lang=$lang;
+        $responses=[]; $calls=[];
+        foreach ([true,false] as $withCategories) {
+            $req->data=['query'=>'adidas','types'=>$withCategories?['item','category','suggestion']:['item','suggestion']];
+            $raw=['items'=>['documents'=>[$doc]],'suggestions'=>['searchSuggestions'=>['adidas'=>3,'0002'=>1]]];
+            if ($withCategories) $raw['items']['categories.all']=[];
+            $engine->calls=[];$engine->next=[$raw];
+            $responses[]=$suggestRoute->index()->body;$calls[]=$engine->calls[0];
+            check(count($engine->calls)===1,'one autocomplete batch with/without category');
+            check($engine->calls[0]['items']->categories===$withCategories,'category aggregation follows requested type');
+        }
+        check($responses[0]===$responses[1],'full formatter contract including empty category preserved');
+        check($calls[0]['items']->options===$calls[1]['items']->options,'same native storefront options/customer boundary');
+        check($calls[0]['items']->text===$calls[1]['items']->text && $calls[0]['items']->fields===$calls[1]['items']->fields,'same item query and fields');
+        check($calls[0]['suggestions']==$calls[1]['suggestions'],'same suggestion preset and text');
+        $categoryContracts[]=['language'=>$lang,'categoryAggregationBefore'=>1,'categoryAggregationAfter'=>0,'responseEqual'=>true,'nativePresetsUnchanged'=>true];
+    }
+    // IO directly indexes categories.all. A missing key cannot be assumed safe
+    // for DE/EN/FR; do not relax its warning into a passing API contract.
+    set_error_handler(function($severity,$message){throw new \ErrorException($message,0,$severity);});
+    try {
+        $missingCategoryRejected=false;
+        try { pluginApp(ItemSearchAutocompleteService::class)->transformResult(['items'=>['documents'=>[]],'suggestions'=>['searchSuggestions'=>[]]]); }
+        catch (\ErrorException $e) { $missingCategoryRejected=str_contains($e->getMessage(),'categories.all'); }
+        check($missingCategoryRejected,'IO missing categories.all is not a supported formatter input');
+    } finally { restore_error_handler(); }
+    if ($argc===4) file_put_contents($argv[3].'.categories.json',json_encode(['status'=>'PASS','rows'=>$categoryContracts,'ioMissingCategoryRejected'=>$missingCategoryRejected],JSON_PRETTY_PRINT));
     // The real IO formatter selects the lowest-position variation image, falls back
     // to item images, and forwards the native placeholder for a genuinely empty item.
     foreach ($langs as $lang) {

@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Phase 12: Suche und Autocomplete (2026-11-16)
+
+- Highlight-Ausdruck einmal je akzeptierter Antwort vorbereiten; Zweiargument-Helfer, HTML-Escaping und Sonderzeichen erhalten. API-Arraykopien und wiederholte Formular-/Eingabe-/Listenabfragen entfernen. 400-ms-Debounce ohne Argumentarray; Tastaturauswahl ohne zusätzliche Ergebnisarrays. Antwortversionierung und Fehler-Fallbacks unverändert.
+- Nur IT/ES verzichten über den bestehenden normalisierenden Adapter auf die ungenutzte Kategorieaggregation. IO-Vertrag für DE/EN/FR beibehalten; keine PHP-Produktänderung. HTTP-Requests und Suchbatches bleiben 1 → 1. Aktiven Pagination-Titel mit vorhandenem Seitenlabel übersetzen. Historische jQuery-Warnungen dem Ceres-Instanzsetter zugeordnet; Bibliotheken unverändert.
+- Bei 25 sichtbaren Treffern 25 → 1 RegExp-Kompilierungen, 26 → 2 Eingabewert- und 5 → 1 Formularziel-Lesezugriffe; zwei Arraywrapper/32 kopierte Einträge entfallen. Ein Highlight-Kontext je Antwort kommt hinzu. Netto +567 produktive Quellbytes, +37 gebaute JS-Bytes; nur Core 12 → 13, zwölf Assets bytegleich. Kein belegter nativer Laufzeitgewinn.
+- Gezielte Source-/Min-, Sprach-, Sonderzeichen-, Fehler-, Tastatur-, Filter-, Antwortreihenfolge-, PHP-/IO-, Twig-2/3-, Bundle- und Versionsprüfungen PASS; reproduzierbarer Build und Assetcheck. Bundle-Erstlauf durch localhost-Sandbox blockiert, Wiederholung 16/16 PASS. [HTML-Bericht mit exakten Zahlen und vollständiger Dateiliste](../../.cache/phase12-e142914-20261116/Pruefbericht.html). Bewertung B: lokal commitbereit, native Phase-12-/Kundenabnahme offen. Kein Commit, Push, Merge, Deployment, Sync, Purge oder B2C-Eingriff.
+
 ## Unreleased – Phase 11: häufige Komponenten (2026-11-16)
 
 - Produktkarten bereiten Bewertungen nur bei sichtbarer Ausgabe vor und lösen den Hersteller einmal auf. Filter halten den zusätzlichen Namensindex nur für ausgewählte IDs und vermeiden eine Array-Neuindizierung. Pagination und Footer verwenden identische Übersetzungen beziehungsweise Ressourcenpfade innerhalb eines Renders erneut.
