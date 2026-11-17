@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Produktbilder und Markenlogos vergrößern (2026-11-17)
+
+- Pauschale Foto-Innenabstände durch bedarfsgerechte Zeilen für Abzeichen/Logo, Foto und vorhandene Sterne ersetzen. Vollständige Motive mit `contain`, 2 px Innenabstand und moderat höherem Bildrahmen; Kartenoptik, Informationen, volle Bildverlinkung und Buttonausrichtung erhalten. Quadratische Logos wieder 50×50 px statt mobil 34×34 px; andere Seitenverhältnisse responsiv begrenzen.
+- Bei 390 px zwölf geprüfte Motive +11,4–34,8 % Breite/Höhe, Logos +47,1 %; Karten +26,6 px (erste Reihe +6,4 %). Eingebaute weiße Bildränder bleiben erhalten. Keine Bild-, Karten-Twig- oder JavaScript-Änderungen, zusätzlichen Requests oder DOM-Elemente. CSS-Quelle +235 Byte, ausgeliefert +142 Byte, lokale gzip-Dateikompression +54 Byte, aktiver Critical-Zweig +141 Byte; nur Main-CSS 5 → 10 nach lokalen Iterationen, elf weitere Assets unverändert.
+- PASS: 32 Browserfälle/384 Karten, sechs Critical-CSS-Vergleiche, vier alternative Raster; vier Scroll-/Quickview-Fälle mit 48 nachgeladenen Karten; 19 CSS-Build-/24 Assetversionsprüfungen, Wiederholungsbuild und Asset-/Diffcheck. Erster Scroll-Lauf durch localhost-Sandbox blockiert, Wiederholung bestanden; keine Gesamtsuite. [Visueller Prüfbericht und Dateiliste](../../.cache/card-images-7c2f1e1-20261117/Pruefbericht.html). Native Preview-426-Abnahme offen; kein Commit, Push, Merge, Deployment, Sync, Purge, echter Warenkorb- oder B2C-Eingriff.
+
 ## Unreleased – Phase 13: Produktkarten nach Referenz (2026-11-17)
 
 - Bestehenden Karten-CSS-Bereich durch das freigegebene Design ersetzen: dezente gerundete Rahmen, rote Rabatte, Logo rechts oben, dunkle Sternenleiste **ohne Bewertungszahl**, vollständige Größen, zweizeilige Namen und größere grüne Preise mit ausgerichteten Buttons. Bildfläche proportional, vollständige Bilder per `contain`; vorhandene Grid-Breakpoints erhalten.

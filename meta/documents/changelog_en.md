@@ -1,5 +1,11 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Restore product image and brand logo size (2026-11-17)
+
+- Replace blanket photo padding with content-sized rows for badges/logo, photo and existing ratings. Preserve complete images with `contain`, 2 px padding and a moderately taller image frame; retain card styling, information, the full image link and aligned buttons. Restore square logos to 50×50 px from 34×34 px on mobile; constrain other aspect ratios responsively.
+- At 390 px, twelve tested subjects gain 11.4–34.8% in width/height and logos gain 47.1%; cards grow by 26.6 px (first row 6.4%). Whitespace within source files remains. No image, card Twig or JavaScript changes, additional requests or DOM elements. CSS source +235 bytes, shipped +142, local gzip file compression +54, selected critical branch +141; only main CSS advances 5 → 10 through local iterations, eleven other assets unchanged.
+- PASS: 32 browser cases/384 cards, six critical-style comparisons, four alternative grids; four scroll/quickview cases with 48 appended cards; 19 CSS-build and 24 asset-version checks, repeat build and asset/diff checks. Initial scroll run blocked by localhost sandbox, retry passed; no full-suite claim. [Visual report and changed files](../../.cache/card-images-7c2f1e1-20261117/Pruefbericht.html). Native Preview 426 acceptance pending; no commit, push, merge, deployment, sync, purge, real basket actions or B2C changes.
+
 ## Unreleased – Phase 13: reference product-card design (2026-11-17)
 
 - Replace the existing owned card styles with the approved design: subtle rounded borders, red discounts, top-right logo, dark rating pill with **stars only, no review count**, complete wrapping sizes, two-line names, larger green prices and aligned buttons. Preserve full images with `contain` and existing grid breakpoints.

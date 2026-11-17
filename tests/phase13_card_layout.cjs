@@ -9,11 +9,13 @@ const critical=[...read(root+'/resources/views/PageDesign/Partials/Head.twig').r
 const criticalRows=[];
 const wrapperRows=[];
 const design=process.argv.includes('--design');
-const widths=design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,992,1199,1200,1400,1401,1440,1600];
+const imageReview=process.argv.includes('--images');
+const widths=imageReview?[360,390,430,768,1024,1200,1440,1774]:design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,992,1199,1200,1400,1401,1440,1600];
+const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE});
  try{for(const lang of['de','en','fr','it','es'])for(const width of widths)for(const version of['before','after']){
-    if(design&&lang!=='de'&&![390,1440].includes(width))continue;
+    if((design||imageReview)&&lang!=='de'&&![390,1440].includes(width))continue;
     const page=await browser.newPage({viewport:{width,height:900}}),errors=[],imageRequests=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.route('**/*',route=>{
@@ -42,9 +44,26 @@ const widths=design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,99
         const image=card.querySelector('.cat-item-image'),photo=image.querySelector('picture img');
         const overlays=[...image.querySelectorAll('.cat-badges,.cat-logo,.item-action2')];
         const parts=['.cat-item-sizes','.cat-item-name','.cat-card-price','.linkabso'].map(s=>card.querySelector(s)).filter(Boolean);
-        return {card:rect(card),image:rect(image),photo:rect(photo),fit:getComputedStyle(photo).objectFit,natural:[photo.naturalWidth,photo.naturalHeight],parts:parts.map(rect),button:rect(card.querySelector('button')),ratingText:card.querySelector('.item-action2')?.textContent.trim()||'',sizes:[...card.querySelectorAll('.availsize')].map(e=>({text:e.textContent,rect:rect(e),overflow:e.scrollWidth>e.clientWidth+1,interactive:e.matches('button,a,input,[role=button],[aria-selected],[aria-pressed]')})),
+        const logo=image.querySelector('.cat-logo');
+        return {card:rect(card),image:rect(image),photo:rect(photo),fit:getComputedStyle(photo).objectFit,natural:[photo.naturalWidth,photo.naturalHeight],logo:logo?{rect:rect(logo),natural:[logo.naturalWidth,logo.naturalHeight],fit:getComputedStyle(logo).objectFit}:null,parts:parts.map(rect),button:rect(card.querySelector('button')),ratingText:card.querySelector('.item-action2')?.textContent.trim()||'',sizes:[...card.querySelectorAll('.availsize')].map(e=>({text:e.textContent,rect:rect(e),overflow:e.scrollWidth>e.clientWidth+1,interactive:e.matches('button,a,input,[role=button],[aria-selected],[aria-pressed]')})),
             overlays:overlays.map(e=>({rect:rect(e),pointer:getComputedStyle(e).pointerEvents,background:getComputedStyle(e).backgroundColor,clickThrough:(()=>{const r=e.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;if(x<0||x>=innerWidth||y<0||y>=innerHeight)return null;return !!document.elementFromPoint(x,y)?.closest('a.product-list')})()}))};
     }));
+    if(imageReview)values.forEach((v,i)=>{
+        const painted=(rect,natural,bounds)=>{
+            const scale=Math.min(rect.w/natural[0],rect.h/natural[1]);
+            const x=rect.x+(rect.w-natural[0]*scale)/2,y=rect.y+(rect.h-natural[1]*scale)/2;
+            return {x,y,w:natural[0]*scale,h:natural[1]*scale,scale,
+                content:{x:x+bounds[0]*scale,y:y+bounds[1]*scale,w:(bounds[2]-bounds[0])*scale,h:(bounds[3]-bounds[1])*scale}};
+        };
+        v.painted=painted(v.photo,v.natural,imageBounds[i+'.jpg'].bounds);
+        if(v.logo)v.logo.painted=painted(v.logo.rect,v.logo.natural,imageBounds[i+'-logo'].bounds);
+        if(version==='after'){
+            for(const o of v.overlays){const a=v.painted,b=o.rect;
+                assert.ok(Math.min(a.x+a.w,b.right)-Math.max(a.x,b.x)<=1||Math.min(a.y+a.h,b.bottom)-Math.max(a.y,b.y)<=1,'No overlay covers any part of the product file');
+            }
+            if(v.logo)assert.equal(v.logo.fit,'contain','Complete logo preserved');
+        }
+    });
     assert.deepEqual(errors,[]);assert.equal(values.length,12);
     if(version==='after'){
         const lineGroups=new Map();
@@ -63,7 +82,11 @@ const widths=design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,99
         if(width>=1200)assert.equal([...lineGroups.values()][0].length,6,'Six desktop columns');
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No viewport overflow');
     }
-    if(lang==='de'&&[360,390,768,1200,1440,1774].includes(width))await page.screenshot({path:D+`/cards-${width}-${version}.png`,fullPage:true});
+    if(lang==='de'&&(imageReview||[360,390,768,1200,1440,1774].includes(width)))await page.screenshot({path:D+`/cards-${width}-${version}.png`,fullPage:true});
+    if(imageReview&&lang==='de'&&[390,1440].includes(width)){
+        const last=values[width===390?1:5];
+        await page.screenshot({path:D+`/row-${width}-${version}.png`,clip:{x:0,y:0,width,height:Math.ceil(last.card.bottom+12)}});
+    }
     if(lang==='de'&&width===1774)await page.locator('.cat-item').nth(1).screenshot({path:D+`/detail-${version}.png`});
     const initialImageRequests=[...imageRequests];
     if(lang==='de'&&version==='after'&&[390,1440].includes(width)){
@@ -98,6 +121,12 @@ const widths=design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,99
  for(const row of rows.filter(r=>r.version==='after')){
     const before=rows.find(r=>r.version==='before'&&r.lang===row.lang&&r.width===row.width);
     assert.deepEqual([...row.imageRequests].sort(),[...before.imageRequests].sort(),'Unchanged image request multiset');
+    if(imageReview)row.values.forEach((v,i)=>{
+        const old=before.values[i];
+        assert.ok(v.painted.scale>=old.painted.scale,'No product becomes smaller');
+        assert.ok(v.card.h<=old.card.h*1.09,'Card growth remains below 9%');
+        if(v.logo)assert.ok(v.logo.painted.scale>=old.logo.painted.scale,'No logo becomes smaller');
+    });
  }
  console.log(JSON.stringify({status:'PASS',cases:rows.length,cards:rows.length*12,criticalBranches:criticalRows.length,gridContexts:wrapperRows.length,widths}));
 })().catch(e=>{console.error(e);process.exitCode=1});
