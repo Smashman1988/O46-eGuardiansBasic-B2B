@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Phase 13: reference product-card design (2026-11-17)
+
+- Replace the existing owned card styles with the approved design: subtle rounded borders, red discounts, top-right logo, dark rating pill with **stars only, no review count**, complete wrapping sizes, two-line names, larger green prices and aligned buttons. Preserve full images with `contain` and existing grid breakpoints.
+- Remove obsolete size rules, restrict legacy fixed image/article heights to separate legacy cards, and synchronize all three critical-style branches. The already shared card templates, data logic and JavaScript remain byte-identical; surrounding shop structure is unchanged.
+- Only main CSS advances 4 → 5; eleven other assets remain identical. Source +1,787 bytes, shipped CSS +1,844, local gzip file compression +283. Selected critical branch −1,346/+1,902/+2,244 bytes; HTML/DOM counts, backend calls and image requests remain unchanged. No new libraries or requests.
+- PASS per Twig 2/3: 1,260 card contracts, 90 lists, five logo fallbacks and four isolated comparisons; 28 browser cases/336 cards in five languages, six critical-style pairs and four alternative grids; four category/search append cases with 48 cards and four quickviews; 16 bundle, 33 filter-smoke and 19 CSS-build checks. Repeat build, asset, syntax and diff checks pass. Fixture corrections, the initial 30-second quickview timeout and sandbox network restrictions are recorded in the report; no complete-suite claim.
+- [HTML report](../../.cache/phase13-design-720218a-20261117/Pruefbericht.html). Actual local browser renderings use public photos with synthetic fixture data; native Pluginset 426 acceptance remains open until user deployment. No commit/push/merge/deploy/sync/purge, real cart actions or B2C changes.
+
 ## Unreleased – Phase 13: product cards and asset delivery (2026-11-16)
 
 - Replace the separate badge/logo header with compact image overlays. Preserve complete images, loading contracts, sizes, prices and quickview. Use flexible cards, two-line names and row-aligned buttons at least 44 px tall. Remove the OneSize wrapper and obsolete CSS; derive critical styles, including the previously missing PDP card base, from the existing source.

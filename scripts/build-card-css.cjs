@@ -1,4 +1,4 @@
-// Keep the shared product-card separators identical in source, active CSS and
+// Keep the shared product-card layout identical in source, active CSS and
 // all three existing critical-CSS branches. The full CSS builder owns external assets.
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
@@ -7,6 +7,24 @@ const start = '/* B2B card separators */';
 const end = '/* End B2B card separators */';
 const baseStart = '/* B2B card base */';
 const baseEnd = '/* End B2B card base */';
+
+// Fixed image/article heights belong to the separate legacy cards (e.g. the
+// ball adviser). Shared listing cards own their complete geometry below.
+function cleanLegacyCards(root) {
+    const removed = new Set(['.cat-article-header-info', '.cat-logo', '.no-cat-at',
+        '.cat-item-shoe', '.cat-attr-sizes', '.availsize', '.sizebox']);
+    root.walkRules(rule => {
+        const kept = rule.selectors.filter(selector => !removed.has(selector)).map(selector => {
+            if (selector === '.cat-item .cat-item-image' || selector === '.cat-item .cat-item-image img') {
+                return selector.replace('.cat-item ', '.cat-item:not(.has-variations) ');
+            }
+            return selector === '.category-product-list article' ? '.category-product-list article:not(.post)' : selector;
+        });
+        if (!kept.length) rule.remove();
+        else if (kept.join(',') !== rule.selectors.join(',')) rule.selector = kept.join(',');
+    });
+    root.walkAtRules('media', rule => { if (!rule.nodes.length) rule.remove(); });
+}
 
 // The PDP critical branch previously had no listing geometry. Cross-selling
 // uses the same cards, so derive its missing base rules from the owning CSS.
@@ -66,18 +84,17 @@ function syncHead(head, source) {
         blocks++;
         // These selectors belonged to the removed header/one-size wrappers;
         // the logo now has its complete scoped overlay rule in cardCss().
-        const obsolete = new Set(['.cat-article-header-info', '.cat-logo', '.no-cat-at']);
+        // Replace the previous owned region before cleaning legacy selectors.
+        const oldStart = css.indexOf(start), oldEnd = css.indexOf(end, oldStart);
+        assert.ok(oldStart < 0 || oldEnd > oldStart, 'Existing card region has a closing marker');
+        if (oldStart >= 0) css = css.slice(0, oldStart) + css.slice(oldEnd + end.length);
         const expressions = [];
         const parseable = css.replace(/\{\{[\s\S]*?\}\}/g, expression => {
             expressions.push(expression);
             return 'O46_CARD_TWIG_' + (expressions.length - 1);
         });
         const existing = postcss.parse(parseable);
-        existing.walkRules(rule => {
-            const kept = rule.selectors.filter(selector => !obsolete.has(selector));
-            if (!kept.length) rule.remove();
-            else if (kept.length !== rule.selectors.length) rule.selector = kept.join(',');
-        });
+        cleanLegacyCards(existing);
         css = existing.toString().replace(/O46_CARD_TWIG_(\d+)/g, (_, index) => expressions[Number(index)]);
         if (blocks === 1) {
             const from = css.indexOf(baseStart), to = css.indexOf(baseEnd, from);
@@ -97,5 +114,5 @@ function build(check = false) {
     return require('./build-css.cjs').build({check});
 }
 
-module.exports = {cardCss, syncHead, build};
+module.exports = {cardCss, syncHead, cleanLegacyCards, build};
 if (require.main === module) console.log(JSON.stringify(build(process.argv.includes('--check'))));

@@ -69,19 +69,23 @@ foreach(['de','en','fr','it','es'] as $lang){
     // Visual data is explicit: public product photographs, varied local card fixtures.
     $photoFile=dirname($argv[3]).'/visual-selected.json';
     if(is_file($photoFile)){
-        $photos=json_decode(file_get_contents($photoFile),true);$markup=['before'=>'','after'=>''];
+        $photos=json_decode(file_get_contents($photoFile),true);$markup=['before'=>'','after'=>''];$next='';
         foreach($photos as $i=>$photo){
             $item=phase11Items(12,$lang)[$i%12];$item['data']['texts']['name1']=$photo['name'];
             $item['data']['images']['all']=[['urlPreview'=>'/visual/'.$i.'.jpg']];
             $item['data']['item']['manufacturer']=['name'=>$photo['brand'],'logo'=>$i%3===2?'':'/visual/'.$i.'-logo'];
             $item['data']['item']['feedbackCount']=$i%3===1?0:5;
             $item['data']['item']['feedbackDecimal']=4.2;
-            $sizes=$i%3===0?['OneSize']:($i%3===1?['S','M','L']:['34','35','36','37','38','39','40','41','42','43','44','45','46','47','48','49']);
+            $sizes=$i%3===0?[]:($i%3===1?['S']:['34','35','36','37','38','39','40','41','42','43','44','45','46','47','48','49']);
+            if($i<6)$sizes=[['36','37','38','39'],[],['S','M','L'],[],['S','M','L','XL','XXL','3XL','4XL'],['39-42','43-46']][$i];
             $values=[];foreach($sizes as$n=>$size)$values[]=['position'=>$n,'name'=>$size];
-            $ctx=['item'=>$item,'translations'=>$translations,'transLabels'=>['availsizeonesize'=>'OneSize'],'cardAttributeMap'=>['attributes'=>[['type'=>'box','values'=>$values]]],'cardPriorityImage'=>$i===0];
-            foreach(['before','after']as$v)$markup[$v].='<article class="post col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">'.$t[$v]->render('GuardiansBasicB2B::Category.Item.Partials.CategoryListItem',$ctx).'</article>';
+            $ctx=['item'=>$item,'translations'=>$translations,'transLabels'=>['availsizeonesize'=>$f['after']->trans('GuardiansBasicB2B::Template.availsizeonesize')],'cardAttributeMap'=>['attributes'=>$values?[['type'=>'box','values'=>$values]]:[]],'cardImageMinViewport'=>in_array($i,[2,3])?768:(in_array($i,[4,5])?1200:null)];
+            foreach(['before','after']as$v)$markup[$v].='<article class="post col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">'.$t[$v]->render('GuardiansBasicB2B::Category.Item.Partials.CategoryListItem'.($i<2?'2':''),$ctx).'</article>';
+            $ctx['cardImageMinViewport']=null;
+            $next.='<article class="post col-6 col-sm-6 col-md-3 col-lg-3 col-xl-2 col-xlg-2 col-xxlg-2">'.$t['after']->render('GuardiansBasicB2B::Category.Item.Partials.CategoryListItem',$ctx).'</article>';
         }
         foreach($markup as$v=>$html)file_put_contents(dirname($argv[3]).'/cards-'.$lang.'-'.$v.'.html','<div class="category-product-list row">'.$html.'</div>');
+        file_put_contents(dirname($argv[3]).'/cards-'.$lang.'-next.html','<div class="category-product-list row">'.$next.'</div>');
     }
 }
 file_put_contents($argv[3],json_encode(['status'=>'PASS','twig'=>Twig\Environment::VERSION,'cards'=>$cards,'lists'=>$lists,'isolated'=>$isolated,'limits'=>['Real local templates and fonts; platform services are fixtures. No native customer acceptance or transfer timing.']],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));

@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Phase 13: Produktkarten nach Referenz (2026-11-17)
+
+- Bestehenden Karten-CSS-Bereich durch das freigegebene Design ersetzen: dezente gerundete Rahmen, rote Rabatte, Logo rechts oben, dunkle Sternenleiste **ohne Bewertungszahl**, vollständige Größen, zweizeilige Namen und größere grüne Preise mit ausgerichteten Buttons. Bildfläche proportional, vollständige Bilder per `contain`; vorhandene Grid-Breakpoints erhalten.
+- Überholte Größenregeln entfernen, Legacy-Bild-/Artikelhöhen von gemeinsamen Karten abgrenzen, alle drei Critical-CSS-Zweige synchronisieren. Bereits gemeinsame Karten-Twig-Struktur, Datenlogik, JavaScript und Shoprahmen bleiben bytegleich beziehungsweise unverändert.
+- Nur Main-CSS 4 → 5; elf weitere Assets bytegleich. Quelle +1.787 Bytes, ausgelieferte CSS +1.844, lokale gzip-Kompression +283. Aktiver Critical-Zweig −1.346/+1.902/+2.244 Bytes; HTML/DOM, Backend- und Bildrequests unverändert. Keine zusätzlichen Bibliotheken oder Anfragen.
+- PASS: je Twig 2/3 1.260 Kartenverträge, 90 Listen, fünf Logo-Fallbacks, vier isolierte Vergleiche; 28 Browserfälle/336 Karten in fünf Sprachen, sechs Critical-Paare, vier alternative Raster; vier Kategorie-/Such-Nachladefälle mit 48 Karten und vier Quickviews; 16 Bundle-, 33 Filter-Smoke- und 19 CSS-Buildprüfungen. Wiederholungsbuild, Assetcheck, Syntax- und Diffprüfung bestanden. Testaufbau-Korrekturen, 30-s-Quickview-Ersttimeout und Sandbox-Netzwerkgrenzen im Bericht; keine vollständige Suite behauptet.
+- [HTML-Prüfbericht](../../.cache/phase13-design-720218a-20261117/Pruefbericht.html). Lokale echte Browser-Renderings mit öffentlichen Fotos und synthetischen Testdaten; native Abnahme auf Pluginset 426 nach Nutzer-Deployment offen. Kein Commit/Push/Merge/Deployment/Sync/Purge, keine echten Warenkorbaktionen, B2C unverändert.
+
 ## Unreleased – Phase 13: Produktkarten und Asset-Aufteilung (2026-11-16)
 
 - Badge-/Logo-Kopfzeile durch kompakte Bild-Overlays ersetzen; vollständige Bilder, vorhandene Bildladeverträge, Größen, Preise und Quickview erhalten. Flexible Karten mit zweizeiligen Namen und mindestens 44 px hohen, zeilenweise ausgerichteten Buttons. OneSize-Wrapper und überholte CSS-Regeln entfernen; Critical CSS einschließlich der bisher fehlenden PDP-Kartenbasis aus der bestehenden Quelle ableiten.
