@@ -3,14 +3,16 @@ const fs=require('fs'),path=require('path'),assert=require('node:assert/strict')
 const {chromium}=require(process.env.O46_PLAYWRIGHT_MODULE||'playwright');
 const D=path.resolve(process.argv[2]),root=path.resolve(__dirname,'..'),rows=[];
 const read=p=>fs.readFileSync(p,'utf8');
+const candidate=process.argv.includes('--candidate');
+const bottomReview=process.argv.includes('--bottom-align');
 const head=read(D+'/before/resources/views/PageDesign/Partials/Head.twig');
 const fonts=[...head.replaceAll("{{ plugin_path('GuardiansBasicB2B') }}",'/theme').matchAll(/@font-face\{[^}]+\}/g)].slice(0,3).map(x=>x[0]).join('');
-const critical=[...read(root+'/resources/views/PageDesign/Partials/Head.twig').replaceAll("{{ plugin_path('GuardiansBasicB2B') }}",'/theme').matchAll(/<style>(@font-face[\s\S]*?)<\/style>/g)].map(x=>x[1]);
+const critical=[...read(candidate?D+'/candidate-head.twig':root+'/resources/views/PageDesign/Partials/Head.twig').replaceAll("{{ plugin_path('GuardiansBasicB2B') }}",'/theme').matchAll(/<style>(@font-face[\s\S]*?)<\/style>/g)].map(x=>x[1]);
 const criticalRows=[];
 const wrapperRows=[],overlayRows=[];
 const design=process.argv.includes('--design');
 const imageReview=process.argv.includes('--images');
-const widths=imageReview?[360,390,430,768,1024,1200,1440,1774]:design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,992,1199,1200,1400,1401,1440,1600];
+const widths=bottomReview?[360,390,430,768,1200,1440]:imageReview?[360,390,430,768,1024,1200,1440,1774]:design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,992,1199,1200,1400,1401,1440,1600];
 const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE});
@@ -25,7 +27,7 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
         if(/\.woff2?$/.test(name)&&fs.existsSync(font))return route.fulfill({path:font});
         return route.abort();
     });
-    const css=read((version==='before'?D+'/before':root)+'/resources/css/main.min.css');
+    const css=read(version==='before'?D+'/before/resources/css/main.min.css':candidate?D+'/candidate.css':root+'/resources/css/main.min.css');
     const html=read(D+`/cards-${lang}-${version}.html`);
     await page.setContent('<!doctype html><html lang="'+lang+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://cards.test/"><style>'+fonts+css+'</style></head><body class="hold-transition"><main id="page-body" class="container-fluid" style="padding:12px">'+html+'</main><button id="totop" hidden>Top</button></body></html>');
     await page.evaluate(()=>document.fonts.ready);
@@ -46,8 +48,11 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
         const parts=['.cat-item-sizes','.cat-item-name','.cat-card-price','.linkabso'].map(s=>card.querySelector(s)).filter(Boolean);
         const logo=image.querySelector('.cat-logo');
         const sizeContainer=card.querySelector('.cat-attr-sizes');
+        const name=card.querySelector('.cat-item-name'),price=card.querySelector('.cat-card-price');
+        const textBottom=e=>{const r=e.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(e);return Math.max(...[...range.getClientRects()].filter(t=>t.top<r.bottom-.1).map(t=>Math.min(t.bottom,r.bottom)));};
         return {card:rect(card),image:rect(image),photo:rect(photo),fit:getComputedStyle(photo).objectFit,natural:[photo.naturalWidth,photo.naturalHeight],logo:logo?{rect:rect(logo),natural:[logo.naturalWidth,logo.naturalHeight],fit:getComputedStyle(logo).objectFit}:null,parts:parts.map(rect),button:rect(card.querySelector('button')),ratingText:card.querySelector('.item-action2')?.textContent.trim()||'',sizes:[...card.querySelectorAll('.availsize')].map(e=>({text:e.textContent,rect:rect(e),overflow:e.scrollWidth>e.clientWidth+1,interactive:e.matches('button,a,input,[role=button],[aria-selected],[aria-pressed]')})),
             content:card.querySelector('.cat-item-data').textContent.replace(/\s+/g,' ').trim(),sizeContainer:rect(sizeContainer),badgeGroup:card.querySelector('.cat-badges')?rect(card.querySelector('.cat-badges')):null,
+            name:rect(name),nameTextBottom:textBottom(name),price:rect(price),saleTextBottom:textBottom(price.querySelector('.outlet-green')),rrpTextBottom:price.querySelector('.font-12')?textBottom(price.querySelector('.font-12')):null,dataPadding:getComputedStyle(card.querySelector('.cat-item-data')).padding,cellPaddingBottom:getComputedStyle(card.parentElement).paddingBottom,
             alignment:[...card.querySelectorAll('.sizebox,.availsize,.cat-item-name,.cat-card-price,.cat-card-price>span')].map(e=>getComputedStyle(e).textAlign),
             sizesJustify:getComputedStyle(sizeContainer).justifyContent,priceJustify:getComputedStyle(card.querySelector('.cat-card-price')).justifyContent,
             overlays:overlays.map(e=>({kind:e.matches('.cat-logo')?'logo':e.matches('.item-action2')?'rating':e.matches('.i-action-sale')?'sale':'sustainability',rect:rect(e),position:getComputedStyle(e).position,pointer:getComputedStyle(e).pointerEvents,background:getComputedStyle(e).backgroundColor,clickThrough:(()=>{const r=e.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;if(x<0||x>=innerWidth||y<0||y>=innerHeight)return null;return !!document.elementFromPoint(x,y)?.closest('a.product-list')})()}))};
@@ -104,7 +109,15 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
             for(const o of v.overlays){if(o.kind==='rating')assert.equal(o.position,'absolute','Ratings remain a bottom overlay');assert.equal(o.pointer,'none');assert.notEqual(o.clickThrough,false,'Overlay must retain image click');assert.ok(o.rect.x>=v.image.x-1&&o.rect.right<=v.image.right+1&&o.rect.y>=v.image.y-1&&o.rect.bottom<=v.image.bottom+1,'Overlay stays inside image');}
             const key=Math.round(v.card.y);if(!lineGroups.has(key))lineGroups.set(key,[]);lineGroups.get(key).push(v);
         });
-        for(const line of lineGroups.values())assert.ok(Math.max(...line.map(v=>v.button.bottom))-Math.min(...line.map(v=>v.button.bottom))<2,'Buttons align per row');
+        for(const line of lineGroups.values()){
+            assert.ok(Math.max(...line.map(v=>v.button.bottom))-Math.min(...line.map(v=>v.button.bottom))<2,'Buttons align per row');
+            if(bottomReview){
+                for(const get of [v=>v.name.bottom,v=>v.nameTextBottom,v=>v.price.bottom,v=>v.saleTextBottom])assert.ok(Math.max(...line.map(get))-Math.min(...line.map(get))<2,'Name, actual last name line, price and sale text align at the bottom: '+JSON.stringify(line.map(v=>({name:v.name.bottom,text:v.nameTextBottom,price:v.price.bottom,sale:v.saleTextBottom}))));
+                const rrps=line.map(v=>v.rrpTextBottom).filter(v=>v!==null);
+                if(rrps.length>1)assert.ok(Math.max(...rrps)-Math.min(...rrps)<2,'RRP text aligns per row');
+                for(const v of line){assert.equal(v.dataPadding,'0px');assert.equal(v.cellPaddingBottom,'10px');}
+            }
+        }
         if(width>=1200)assert.equal([...lineGroups.values()][0].length,6,'Six desktop columns');
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No viewport overflow');
         if(lang==='de'&&[390,1440].includes(width)){
@@ -158,9 +171,16 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
     if(imageReview)row.values.forEach((v,i)=>{
         const old=before.values[i];
         assert.ok(v.painted.scale>=old.painted.scale,'No product becomes smaller');
-        assert.ok(v.card.h<=old.card.h+1,'Cards do not grow');
+        if(bottomReview)assert.ok(v.card.h+parseFloat(v.cellPaddingBottom)<=old.card.h+parseFloat(old.cellPaddingBottom)+1,'Total row footprint does not grow');
+        else assert.ok(v.card.h<=old.card.h+1,'Cards do not grow');
         assert.equal(v.content,old.content,'All product information retained');
         if(v.logo)assert.ok(v.logo.painted.scale>=old.logo.painted.scale,'No logo becomes smaller');
+        if(bottomReview){
+            const relative=(part,card)=>[part.x-card.x,part.y-card.y,part.w,part.h];
+            assert.deepEqual(relative(v.image,v.card),relative(old.image,old.card),'Image geometry unchanged');
+            assert.deepEqual(relative(v.photo,v.card),relative(old.photo,old.card),'Photo geometry unchanged');
+            v.overlays.forEach((o,j)=>assert.deepEqual(relative(o.rect,v.card),relative(old.overlays[j].rect,old.card),'Overlay geometry unchanged'));
+        }
     });
  }
  console.log(JSON.stringify({status:'PASS',cases:rows.length,cards:rows.length*12,criticalBranches:criticalRows.length,gridContexts:wrapperRows.length,overlayGeometry:overlayRows.length,widths}));

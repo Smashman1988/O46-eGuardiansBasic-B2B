@@ -11830,7 +11830,7 @@ opacity: 0.7;
 .paddinlr{padding-left:0px;padding-right:0px;}
 /* B2B card separators */
 /* One shared card layout; the existing grid breakpoints and image sources stay intact. */
-.category-product-list > .post,.category-product-list > div:not(.copy-result-item){display:flex;height:auto;min-height:0;padding:0 5px 20px!important;}
+.category-product-list > .post,.category-product-list > div:not(.copy-result-item){display:flex;height:auto;min-height:0;padding:0 5px 10px!important;}
 .cat-item.has-variations{display:flex;flex-direction:column;width:100%;height:100%;padding:0;overflow:hidden;border:1px solid #dedede;border-radius:7px;background:#fff;}
 /* Ten equal intrinsic tracks reserve 70% of the actual badge/logo height.
    Both start at the same card edge; contain whitespace can reduce overlap to zero. */
@@ -11852,24 +11852,26 @@ opacity: 0.7;
 .cat-item.has-variations .icon-star{margin-right:1px;}
 .cat-item.has-variations .rating-grey .icon-star{color:#b8b8b8;}
 .cat-item.has-variations .rating-fuller .icon-star{color:#ffdc0f;}
-.cat-item.has-variations > .cat-item-data{display:flex;flex:1;flex-direction:column;gap:7px;padding:7px 12px 12px;text-align:center;}
+.cat-item.has-variations > .cat-item-data{display:flex;flex:1;flex-direction:column;gap:7px;padding:0;text-align:center;}
+.cat-item.has-variations > .cat-item-data > *{margin-inline:8px;}
+.cat-item.has-variations .cat-item-sizes{flex:1;}
 .cat-item.has-variations .sizebox{display:block;margin-bottom:4px;color:#538700;font-size:12px;font-weight:600;line-height:17px;}
 .cat-item.has-variations .cat-attr-sizes{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:4px;}
 .cat-item.has-variations .availsize{max-width:100%;padding:1px 6px;border:1px solid #c5c5c5;border-radius:4px;background:#fff;color:#1a1a1a;font-size:13px;font-weight:500;line-height:18px;overflow-wrap:anywhere;}
-.cat-item.has-variations .cat-item-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:38px;margin:0;color:#161616;font-size:14px;font-weight:600;line-height:19px;}
-.cat-item.has-variations .cat-card-price{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:0 8px;min-height:32px;margin-top:auto;}
+.cat-item.has-variations .cat-item-name{display:-webkit-box;flex:none;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-block:0;color:#161616;font-size:14px;font-weight:600;line-height:19px;}
+/* Align RRP and sale on separate lines, including cards without RRP; content may grow. */
+.cat-item.has-variations .cat-card-price{display:flex;flex:none;flex-wrap:wrap;align-items:baseline;align-content:flex-end;justify-content:center;gap:0 8px;min-height:48px;}
 .cat-item.has-variations .cat-card-price > span{white-space:nowrap;}
-.cat-item.has-variations .cat-card-price > .font-12{color:#41464c;font-size:12px;font-weight:400;}
+.cat-item.has-variations .cat-card-price > .font-12{flex-basis:100%;color:#41464c;font-size:12px;font-weight:400;}
 .cat-item.has-variations .cat-rrp-price{text-decoration:line-through;}
 .cat-item.has-variations .cat-card-price > .outlet-green{color:#609b00;font-size:23px;font-weight:700;line-height:30px;}
-.cat-item.has-variations .linkabso{flex:none;width:100%;min-height:44px;padding:9px 5px;border:0;border-radius:4px;background:linear-gradient(#6aab00,#588f00);color:#fff;font-size:14px;font-weight:600;line-height:20px;white-space:normal;}
+.cat-item.has-variations .linkabso{flex:none;width:auto;min-height:44px;margin-bottom:8px;padding:9px 5px;border:0;border-radius:4px;background:linear-gradient(#6aab00,#588f00);color:#fff;font-size:14px;font-weight:600;line-height:20px;white-space:normal;}
 .cat-item.has-variations .linkabso:hover{background:#4e8000;}
 .cat-item.has-variations .linkabso:focus-visible{outline:2px solid #263c00;outline-offset:-4px;}
 @media(max-width:767.98px),(min-width:1200px) and (max-width:1399.98px){
  .cat-item.has-variations > .cat-item-image{aspect-ratio:.82;}
  .cat-item.has-variations .item-action{padding:4px 6px;font-size:14px;line-height:17px;}
  .cat-item.has-variations .i-action-nachhaltig-cat{font-size:10px;line-height:13px;}
- .cat-item.has-variations > .cat-item-data{padding:7px 8px 9px;}
  .cat-item.has-variations .cat-card-price > .outlet-green{font-size:21px;}
  .cat-item.has-variations .linkabso{font-size:13px;}
 }

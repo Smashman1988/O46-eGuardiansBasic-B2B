@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Namen und Preise unten ausrichten, Reihenabstand reduzieren (2026-11-17)
+
+- Unteres Zell-Padding direkt von 20 auf 10 px reduzieren. Gemeinsames Daten-Padding auf 0 setzen, mobile Überschreibung entfernen; Inhalte behalten 8 px seitlichen Abstand und Buttons 8 px zum unteren Kartenrand.
+- Den Größenbereich flexibel wachsen lassen; Preis-Automargin und Namens-Mindesthöhe entfernen. Ein-/zweizeilige Namen unten ausrichten. UVP und Verkaufspreis erhalten einheitliche separate Zeilen in einem mindestens 48 px hohen, weiter wachsenden Preisbereich. Alle Informationen und lange OneSize-Hinweise bleiben zentriert und erhalten. Bild-/Overlay-Regeln, Karten-Twig und produktives JavaScript unverändert.
+- PASS: 28 Browserzustände/336 Karten, sechs Critical-CSS-Vergleiche, vier alternative Raster, zwei Overlay-Höhenprüfungen; vier Scroll-/Quickview-Fälle mit 48 Nachladekarten und vier Quickviews. 0 px Versatz der sichtbaren Namen, UVP, Verkaufspreise und Buttons je Reihe. Einzelkarten −27 bis +8 px; gesamte Reihen einschließlich Zellabstand 2–37 px kompakter. CSS-/Assetcheck, identischer Wiederholungsbuild und Syntax-/Diffcheck bestanden. Main-CSS 14 → 16 (v15 nur lokal), elf andere Assets unverändert; Quelle +181 Byte, ausgeliefert +87, lokale gzip-Kompression +40, je aktiver Critical-Zweig +90.
+- [Visueller Prüfbericht mit Dateiliste](../../.cache/card-bottom-alignment-20261117/Pruefbericht.html). Frühere Kandidaten und ein Screenshot-Ausschnitt korrigiert; finale Scroll-Prüfung nach zwischenzeitlich am Nutzungslimit gescheiterter automatischer Freigabeprüfung regulär bestanden. Separater Berichtscheck zunächst mit 30-s-Timeout wegen ungeladener Bilder in geschlossenen Details; Bildladen korrigiert. Keine Gesamtsuite; native Pluginset-426-Abnahme offen. Nur lokal auf B2B develop; kein Commit, Push, Deployment, Sync, Cache-Purge oder B2C-Eingriff.
+
 ## Unreleased – Karten oben bündig, Teilüberdeckung und Zentrierung (2026-11-17)
 
 - Rabatt oben links, Nachhaltigkeit darunter und Logo oben rechts mit gleicher oberer Flucht. Foto-Grenze aus 70 % der tatsächlichen maximalen Block-/Logohöhe ableiten; höchstens 30 % Überdeckung, je nach Bildformat/Weißraum bis null. Nachhaltigkeit bei der Blockhöhe berücksichtigen. Logos proportional bis 50 px hoch; Sterne unten links als datenabhängiges Overlay. Alle Informationen von Größen bis Verkaufspreis zentrieren; Größen bleiben passiv.

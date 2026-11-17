@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Bottom-align names and prices, reduce row spacing (2026-11-17)
+
+- Reduce the existing cell bottom padding from 20 to 10 px. Set shared data padding to zero and remove the mobile override; retain 8 px side margins on inner content and 8 px below buttons.
+- Let the size section grow; remove the automatic price margin and name minimum height. Bottom-align one-/two-line names. Put RRP and sale price on consistent separate lines in a minimum 48 px price area that can grow. Preserve centered information and complete OneSize notices. Image/overlay rules, card Twig and production JavaScript remain unchanged.
+- PASS: 28 browser states/336 cards, six critical-style comparisons, four alternative grids, two overlay-height checks; four scroll/quickview cases with 48 appended cards and four quickviews. Zero-pixel within-row offset for visible names, RRP, sale prices and buttons. Individual cards change by −27 to +8 px; rows including spacing become 2–37 px shorter. CSS/asset checks, identical repeat build and syntax/diff checks pass. Main CSS 14 → 16 (v15 local only), eleven other assets unchanged; source +181 bytes, shipped +87, local gzip compression +40, selected critical branch +90.
+- [Visual report and changed files](../../.cache/card-bottom-alignment-20261117/Pruefbericht.html). Earlier candidates and a screenshot crop were corrected; final scroll checks passed normally after automatic approval review temporarily failed due to a usage limit. The separate report check initially timed out after 30 seconds on unloaded images inside closed details; report image loading was corrected. No full-suite run; native Pluginset 426 acceptance remains open. Local B2B develop only; no commit, push, deployment, sync, cache purge or B2C changes.
+
 ## Unreleased – Aligned card labels, partial overlap and centered information (2026-11-17)
 
 - Align the discount at top left, sustainability below it and the brand at top right. Derive the photo edge from 70% of the actual maximum label-group/logo height; overlap stays at most 30%, potentially zero depending on image format/whitespace. Include sustainability in the group height. Keep proportional logos up to 50 px tall and existing rating stars as a bottom-left overlay. Center all information from available sizes through sale price; sizes remain informational.

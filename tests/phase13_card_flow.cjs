@@ -32,6 +32,13 @@ const server=http.createServer((req,res)=>{
    await page.waitForFunction(()=>document.querySelectorAll('.cat-item').length===24);
    for(const n of [12,13,18,23]){const photo=page.locator('.cat-item picture img').nth(n);await photo.scrollIntoViewIfNeeded();await photo.evaluate(i=>new Promise((resolve,reject)=>{if(i.complete&&i.naturalWidth)return resolve();i.onload=resolve;i.onerror=()=>reject(Error('Appended image failed'));}));}
    const all=await geometry();assert.deepEqual(all.slice(12),first,'Appended lazy cards match initial card geometry');
+   if(process.argv.includes('--bottom-align')){
+     const cards=await page.locator('.cat-item').evaluateAll(es=>es.map(e=>({y:Math.round(e.getBoundingClientRect().y),bottoms:['.cat-item-name','.cat-card-price','.cat-card-price>.outlet-green','.linkabso','.cat-card-price>.font-12'].map(s=>e.querySelector(s)?.getBoundingClientRect().bottom??null)})));
+     for(const y of new Set(cards.map(c=>c.y))){const line=cards.filter(c=>c.y===y);for(let part=0;part<5;part++){const bottoms=line.map(c=>c.bottoms[part]).filter(v=>v!==null);if(bottoms.length>1)assert.ok(Math.max(...bottoms)-Math.min(...bottoms)<2,'Initial and appended names, RRP, sale prices and buttons align');}}
+     await page.evaluate(()=>scrollTo(0,0));
+     const clip=await page.locator('.cat-item').nth(12).evaluate((e,width)=>{const r=e.getBoundingClientRect();return {x:0,y:r.y-12,width,height:r.height+24}},width);
+     await page.screenshot({path:D+'/append-'+route.replaceAll('/','')+'-'+width+'.png',fullPage:true,clip});
+   }
    assert.equal(requests.filter(r=>r.path===route+'?page=2').length,1,'One next-page request');
    const button=page.locator('.cat-item .linkabso').nth(12);await button.click();
    await page.waitForFunction(()=>!!document.querySelector('.modal-cross.show [data-local-quickview]'));
