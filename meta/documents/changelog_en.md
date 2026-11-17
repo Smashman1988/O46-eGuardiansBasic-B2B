@@ -1,5 +1,11 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Aligned card labels, partial overlap and centered information (2026-11-17)
+
+- Align the discount at top left, sustainability below it and the brand at top right. Derive the photo edge from 70% of the actual maximum label-group/logo height; overlap stays at most 30%, potentially zero depending on image format/whitespace. Include sustainability in the group height. Keep proportional logos up to 50 px tall and existing rating stars as a bottom-left overlay. Center all information from available sizes through sale price; sizes remain informational.
+- Card heights unchanged against v10. Twelve subjects gain 0–33.2% per axis at 390 px and 9.1–32.3% at 1440 px; measured discount/logo overlap 0–26%. No additional DOM elements, requests, image, card Twig or production JavaScript changes. Main CSS 10 → 14, eleven other assets unchanged; source +173 bytes, shipped +108, local gzip file compression +5, selected critical branch +108.
+- PASS: 32 browser states/384 cards, six critical-style comparisons, four alternate grids, two height-invariance checks, six logo-format cases/24 logos; four scroll/quickview cases with 48 appended cards; CSS/asset-version checks, identical repeat build and syntax/diff checks. [Visual report](../../.cache/card-overlays-centered-20261117/Pruefbericht.html). Native Preview 426 acceptance pending; no full suite, aborted runs or timeouts, commit/push/merge/deployment/sync/purge or B2C change.
+
 ## Unreleased – Restore product image and brand logo size (2026-11-17)
 
 - Replace blanket photo padding with content-sized rows for badges/logo, photo and existing ratings. Preserve complete images with `contain`, 2 px padding and a moderately taller image frame; retain card styling, information, the full image link and aligned buttons. Restore square logos to 50×50 px from 34×34 px on mobile; constrain other aspect ratios responsively.

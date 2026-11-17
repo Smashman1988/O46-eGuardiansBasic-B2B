@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Karten oben bündig, Teilüberdeckung und Zentrierung (2026-11-17)
+
+- Rabatt oben links, Nachhaltigkeit darunter und Logo oben rechts mit gleicher oberer Flucht. Foto-Grenze aus 70 % der tatsächlichen maximalen Block-/Logohöhe ableiten; höchstens 30 % Überdeckung, je nach Bildformat/Weißraum bis null. Nachhaltigkeit bei der Blockhöhe berücksichtigen. Logos proportional bis 50 px hoch; Sterne unten links als datenabhängiges Overlay. Alle Informationen von Größen bis Verkaufspreis zentrieren; Größen bleiben passiv.
+- Gegenüber v10 unveränderte Kartenhöhe; zwölf Motive bei 390 px 0–33,2 %, bei 1440 px 9,1–32,3 % größer je Achse; gemessene Rabatt-/Logoüberdeckung 0–26 %. Keine zusätzlichen DOM-Elemente, Requests, Bild-, Karten-Twig- oder produktiven JavaScript-Änderungen. Main-CSS 10 → 14, elf weitere Assets bytegleich; Quelle +173 Byte, ausgeliefert +108, lokale gzip-Dateikompression +5, je aktiver Critical-Zweig +108.
+- PASS: 32 Browserzustände/384 Karten, sechs Critical-CSS-Vergleiche, vier alternative Raster, zwei Höhenneutralitätsprüfungen, sechs Logoformat-Fälle/24 Logos; vier Scroll-/Quickview-Fälle mit 48 Nachladekarten; CSS-/Assetversionscheck, unveränderter Wiederholungsbuild und Syntax-/Diffcheck. [Visueller Prüfbericht](../../.cache/card-overlays-centered-20261117/Pruefbericht.html). Native Preview-426-Abnahme offen; keine Gesamtsuite, keine Abbrüche/Timeouts, kein Commit/Push/Merge/Deployment/Sync/Purge oder B2C-Eingriff.
+
 ## Unreleased – Produktbilder und Markenlogos vergrößern (2026-11-17)
 
 - Pauschale Foto-Innenabstände durch bedarfsgerechte Zeilen für Abzeichen/Logo, Foto und vorhandene Sterne ersetzen. Vollständige Motive mit `contain`, 2 px Innenabstand und moderat höherem Bildrahmen; Kartenoptik, Informationen, volle Bildverlinkung und Buttonausrichtung erhalten. Quadratische Logos wieder 50×50 px statt mobil 34×34 px; andere Seitenverhältnisse responsiv begrenzen.

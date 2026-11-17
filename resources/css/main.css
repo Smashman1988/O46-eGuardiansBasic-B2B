@@ -11832,31 +11832,32 @@ opacity: 0.7;
 /* One shared card layout; the existing grid breakpoints and image sources stay intact. */
 .category-product-list > .post,.category-product-list > div:not(.copy-result-item){display:flex;height:auto;min-height:0;padding:0 5px 20px!important;}
 .cat-item.has-variations{display:flex;flex-direction:column;width:100%;height:100%;padding:0;overflow:hidden;border:1px solid #dedede;border-radius:7px;background:#fff;}
-/* Content-sized overlay tracks protect edge-to-edge photos; absent ratings reserve no space. */
-.cat-item.has-variations > .cat-item-image{position:relative;display:grid;grid-template-columns:minmax(0,1fr) fit-content(44%);grid-template-rows:auto minmax(0,1fr) auto;flex:none;contain:size;width:100%;aspect-ratio:1;border-bottom:1px solid #ededed;}
-.cat-item.has-variations .cat-item-image > a{position:static;grid-area:2/1/3/3;display:block;min-height:0;margin:0;}
+/* Ten equal intrinsic tracks reserve 70% of the actual badge/logo height.
+   Both start at the same card edge; contain whitespace can reduce overlap to zero. */
+.cat-item.has-variations > .cat-item-image{position:relative;display:grid;grid-template-columns:minmax(0,1fr) fit-content(44%);grid-template-rows:repeat(10,auto) minmax(0,1fr);flex:none;contain:size;width:100%;aspect-ratio:1;padding-top:4px;border-bottom:1px solid #ededed;}
+.cat-item.has-variations .cat-item-image > a{position:static;grid-area:8/1/12/3;display:block;min-height:0;margin:0;}
 .cat-item.has-variations .cat-item-image > a::after{content:"";position:absolute;inset:0;}
 .cat-item.has-variations .cat-item-image picture{display:block;width:100%;height:100%;padding:2px;}
 .cat-item.has-variations .cat-item-image picture img{display:block;width:100%;height:100%;max-height:100%;object-fit:contain;}
-.cat-item.has-variations .cat-badges,.cat-item.has-variations .cat-logo,.cat-item.has-variations .item-action2{position:relative;inset:auto;z-index:1;pointer-events:none;}
-.cat-item.has-variations .cat-badges{grid-area:1/1;align-self:start;min-width:0;margin:4px 4px 2px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
-.cat-item.has-variations .item-action{position:static;margin:0;padding:5px 9px;border-radius:5px;color:#fff;font-size:18px;font-weight:700;line-height:20px;white-space:normal;overflow-wrap:anywhere;}
+.cat-item.has-variations .cat-badges,.cat-item.has-variations .cat-logo,.cat-item.has-variations .item-action2{z-index:1;pointer-events:none;}
+.cat-item.has-variations .cat-badges{position:relative;grid-area:1/1/11/2;align-self:start;min-width:0;margin:0 6px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
+.cat-item.has-variations .item-action{position:static;max-width:100%;margin:0;padding:5px 9px;border-radius:5px;color:#fff;font-size:18px;font-weight:700;line-height:20px;white-space:normal;overflow-wrap:anywhere;}
 .cat-item.has-variations .i-action-sale{background:#ed080d;}
 .cat-item.has-variations .i-action-nachhaltig-cat{background:#00875a;font-size:11px;line-height:14px;padding:3px 5px;}
-.cat-item.has-variations .cat-item-image > .cat-logo{grid-area:1/2;justify-self:end;min-width:0;width:auto;height:50px;max-width:min(calc(100% - 6px),110px);max-height:50px;margin:2px 6px 2px 0;object-fit:contain;background:rgba(255,255,255,.9);}
-.cat-item.has-variations .item-action2{grid-area:3/1/4/3;justify-self:start;display:flex;align-items:center;gap:5px;max-width:calc(100% - 14px);margin:0 7px 2px;padding:4px 7px;border-radius:14px;color:#fff;background:rgba(30,30,30,.82);font-size:12px;line-height:16px;}
+.cat-item.has-variations .cat-item-image > .cat-logo{position:relative;grid-area:1/2/11/3;align-self:start;justify-self:end;min-width:0;width:auto;height:auto;max-width:min(calc(100% - 6px),110px);max-height:50px;margin-right:6px;object-fit:contain;background:rgba(255,255,255,.9);}
+.cat-item.has-variations .item-action2{position:absolute;left:7px;bottom:6px;top:auto;display:flex;align-items:center;gap:5px;max-width:calc(100% - 14px);margin:0;padding:4px 7px;border-radius:14px;color:#fff;background:rgba(30,30,30,.82);font-size:12px;line-height:16px;}
 .cat-item.has-variations .item-ratings-head{position:relative;flex:none;margin:0;line-height:16px;}
 .cat-item.has-variations .rating-grey,.cat-item.has-variations .rating-fuller-inner{width:max-content;font-size:14px;line-height:16px;white-space:nowrap;}
 .cat-item.has-variations .rating-fuller{position:absolute;top:0;left:0;overflow:hidden;}
 .cat-item.has-variations .icon-star{margin-right:1px;}
 .cat-item.has-variations .rating-grey .icon-star{color:#b8b8b8;}
 .cat-item.has-variations .rating-fuller .icon-star{color:#ffdc0f;}
-.cat-item.has-variations > .cat-item-data{display:flex;flex:1;flex-direction:column;gap:7px;padding:7px 12px 12px;text-align:left;}
+.cat-item.has-variations > .cat-item-data{display:flex;flex:1;flex-direction:column;gap:7px;padding:7px 12px 12px;text-align:center;}
 .cat-item.has-variations .sizebox{display:block;margin-bottom:4px;color:#538700;font-size:12px;font-weight:600;line-height:17px;}
-.cat-item.has-variations .cat-attr-sizes{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px;}
+.cat-item.has-variations .cat-attr-sizes{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:4px;}
 .cat-item.has-variations .availsize{max-width:100%;padding:1px 6px;border:1px solid #c5c5c5;border-radius:4px;background:#fff;color:#1a1a1a;font-size:13px;font-weight:500;line-height:18px;overflow-wrap:anywhere;}
 .cat-item.has-variations .cat-item-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:38px;margin:0;color:#161616;font-size:14px;font-weight:600;line-height:19px;}
-.cat-item.has-variations .cat-card-price{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;min-height:32px;margin-top:auto;}
+.cat-item.has-variations .cat-card-price{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:0 8px;min-height:32px;margin-top:auto;}
 .cat-item.has-variations .cat-card-price > span{white-space:nowrap;}
 .cat-item.has-variations .cat-card-price > .font-12{color:#41464c;font-size:12px;font-weight:400;}
 .cat-item.has-variations .cat-rrp-price{text-decoration:line-through;}

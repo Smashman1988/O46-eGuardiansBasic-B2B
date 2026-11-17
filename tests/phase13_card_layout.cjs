@@ -7,7 +7,7 @@ const head=read(D+'/before/resources/views/PageDesign/Partials/Head.twig');
 const fonts=[...head.replaceAll("{{ plugin_path('GuardiansBasicB2B') }}",'/theme').matchAll(/@font-face\{[^}]+\}/g)].slice(0,3).map(x=>x[0]).join('');
 const critical=[...read(root+'/resources/views/PageDesign/Partials/Head.twig').replaceAll("{{ plugin_path('GuardiansBasicB2B') }}",'/theme').matchAll(/<style>(@font-face[\s\S]*?)<\/style>/g)].map(x=>x[1]);
 const criticalRows=[];
-const wrapperRows=[];
+const wrapperRows=[],overlayRows=[];
 const design=process.argv.includes('--design');
 const imageReview=process.argv.includes('--images');
 const widths=imageReview?[360,390,430,768,1024,1200,1440,1774]:design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,992,1199,1200,1400,1401,1440,1600];
@@ -42,11 +42,15 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
     const values=await page.locator('.cat-item').evaluateAll(cards=>cards.map(card=>{
         const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom}};
         const image=card.querySelector('.cat-item-image'),photo=image.querySelector('picture img');
-        const overlays=[...image.querySelectorAll('.cat-badges,.cat-logo,.item-action2')];
+        const overlays=[...image.querySelectorAll('.cat-badges>.item-action,.cat-logo,.item-action2')];
         const parts=['.cat-item-sizes','.cat-item-name','.cat-card-price','.linkabso'].map(s=>card.querySelector(s)).filter(Boolean);
         const logo=image.querySelector('.cat-logo');
+        const sizeContainer=card.querySelector('.cat-attr-sizes');
         return {card:rect(card),image:rect(image),photo:rect(photo),fit:getComputedStyle(photo).objectFit,natural:[photo.naturalWidth,photo.naturalHeight],logo:logo?{rect:rect(logo),natural:[logo.naturalWidth,logo.naturalHeight],fit:getComputedStyle(logo).objectFit}:null,parts:parts.map(rect),button:rect(card.querySelector('button')),ratingText:card.querySelector('.item-action2')?.textContent.trim()||'',sizes:[...card.querySelectorAll('.availsize')].map(e=>({text:e.textContent,rect:rect(e),overflow:e.scrollWidth>e.clientWidth+1,interactive:e.matches('button,a,input,[role=button],[aria-selected],[aria-pressed]')})),
-            overlays:overlays.map(e=>({rect:rect(e),pointer:getComputedStyle(e).pointerEvents,background:getComputedStyle(e).backgroundColor,clickThrough:(()=>{const r=e.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;if(x<0||x>=innerWidth||y<0||y>=innerHeight)return null;return !!document.elementFromPoint(x,y)?.closest('a.product-list')})()}))};
+            content:card.querySelector('.cat-item-data').textContent.replace(/\s+/g,' ').trim(),sizeContainer:rect(sizeContainer),badgeGroup:card.querySelector('.cat-badges')?rect(card.querySelector('.cat-badges')):null,
+            alignment:[...card.querySelectorAll('.sizebox,.availsize,.cat-item-name,.cat-card-price,.cat-card-price>span')].map(e=>getComputedStyle(e).textAlign),
+            sizesJustify:getComputedStyle(sizeContainer).justifyContent,priceJustify:getComputedStyle(card.querySelector('.cat-card-price')).justifyContent,
+            overlays:overlays.map(e=>({kind:e.matches('.cat-logo')?'logo':e.matches('.item-action2')?'rating':e.matches('.i-action-sale')?'sale':'sustainability',rect:rect(e),position:getComputedStyle(e).position,pointer:getComputedStyle(e).pointerEvents,background:getComputedStyle(e).backgroundColor,clickThrough:(()=>{const r=e.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;if(x<0||x>=innerWidth||y<0||y>=innerHeight)return null;return !!document.elementFromPoint(x,y)?.closest('a.product-list')})()}))};
     }));
     if(imageReview)values.forEach((v,i)=>{
         const painted=(rect,natural,bounds)=>{
@@ -58,9 +62,27 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
         v.painted=painted(v.photo,v.natural,imageBounds[i+'.jpg'].bounds);
         if(v.logo)v.logo.painted=painted(v.logo.rect,v.logo.natural,imageBounds[i+'-logo'].bounds);
         if(version==='after'){
-            for(const o of v.overlays){const a=v.painted,b=o.rect;
-                assert.ok(Math.min(a.x+a.w,b.right)-Math.max(a.x,b.x)<=1||Math.min(a.y+a.h,b.bottom)-Math.max(a.y,b.y)<=1,'No overlay covers any part of the product file');
+            // Latest design: common top edge, at most 30% overlap, measured against contain pixels.
+            const intersection=(a,b)=>({w:Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)),h:Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y))});
+            const headerHeight=Math.max(v.badgeGroup?.h||0,v.logo?.rect.h||0);
+            assert.ok(Math.abs(v.photo.y-v.image.y-(6+.7*headerHeight))<1,'Photo boundary derives from actual label/logo heights');
+            if(v.badgeGroup){
+                assert.ok(Math.abs(v.badgeGroup.y-v.image.y-4)<1,'All label groups start at the common card edge');
+                const hit=intersection(v.badgeGroup,v.painted);
+                assert.ok(!hit.w||hit.h/v.badgeGroup.h<=.3+1/v.badgeGroup.h,'Sustainability is included in the top label group budget');
             }
+            for(const o of v.overlays.filter(o=>o.kind==='sale'||o.kind==='logo')){
+                    assert.ok(Math.abs(o.rect.y-v.image.y-4)<1,'Discounts and logos share the same top offset on every card');
+                    const visible=o.kind==='logo'?v.logo.painted:o.rect,hit=intersection(visible,v.painted);
+                    o.photoOverlap=hit.w>0?hit.h/visible.h:0;
+                    assert.ok(o.photoOverlap<=.3+1/visible.h,'At most 30% overlaps the actual product image');
+            }
+            for(let a=0;a<v.overlays.length;a++)for(let b=a+1;b<v.overlays.length;b++){
+                const hit=intersection(v.overlays[a].rect,v.overlays[b].rect);
+                assert.ok(hit.w<=1||hit.h<=1,'Labels, logo and ratings never overlap each other');
+            }
+            assert.ok(v.image.bottom-v.photo.bottom<=3.01,'No bottom strip reserved for ratings');
+            assert.ok(v.photo.x-v.image.x<=2.01&&v.image.right-v.photo.right<=2.01,'Photo uses the full available width');
             if(v.logo)assert.equal(v.logo.fit,'contain','Complete logo preserved');
         }
     });
@@ -72,15 +94,27 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
             assert.equal(v.fit,'contain','Full product image preserved');
             assert.ok(v.photo.h>50&&v.photo.bottom<=v.image.bottom+1&&v.photo.y>=v.image.y-1,'Loaded photo stays in its visible frame');
             for(const size of v.sizes){assert.equal(size.overflow,false,'Complete size label wraps');assert.equal(size.interactive,false,'Informational sizes');}
+            assert.ok(v.alignment.every(a=>a==='center'),'Sizes, OneSize, name, UVP and sale price centered');
+            assert.equal(v.sizesJustify,'center');assert.equal(v.priceJustify,'center');
+            const sizeLines=new Map();for(const s of v.sizes){const y=Math.round(s.rect.y);if(!sizeLines.has(y))sizeLines.set(y,[]);sizeLines.get(y).push(s.rect);}
+            for(const line of sizeLines.values())assert.ok(Math.abs((Math.min(...line.map(r=>r.x))+Math.max(...line.map(r=>r.right)))/2-(v.sizeContainer.x+v.sizeContainer.w/2))<1,'Each wrapped size row centered');
             assert.equal(v.ratingText,'','Only rating stars, no count');
             assert.ok(v.button.h>=44,'Touch target');
             for(let j=1;j<v.parts.length;j++)assert.ok(v.parts[j].y>=v.parts[j-1].bottom-1,'Card content must not overlap');
-            for(const o of v.overlays){assert.equal(o.pointer,'none');assert.notEqual(o.clickThrough,false,'Overlay must retain image click');assert.ok(o.rect.x>=v.image.x-1&&o.rect.right<=v.image.right+1&&o.rect.y>=v.image.y-1&&o.rect.bottom<=v.image.bottom+1,'Overlay stays inside image');}
+            for(const o of v.overlays){if(o.kind==='rating')assert.equal(o.position,'absolute','Ratings remain a bottom overlay');assert.equal(o.pointer,'none');assert.notEqual(o.clickThrough,false,'Overlay must retain image click');assert.ok(o.rect.x>=v.image.x-1&&o.rect.right<=v.image.right+1&&o.rect.y>=v.image.y-1&&o.rect.bottom<=v.image.bottom+1,'Overlay stays inside image');}
             const key=Math.round(v.card.y);if(!lineGroups.has(key))lineGroups.set(key,[]);lineGroups.get(key).push(v);
         });
         for(const line of lineGroups.values())assert.ok(Math.max(...line.map(v=>v.button.bottom))-Math.min(...line.map(v=>v.button.bottom))<2,'Buttons align per row');
         if(width>=1200)assert.equal([...lineGroups.values()][0].length,6,'Six desktop columns');
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No viewport overflow');
+        if(lang==='de'&&[390,1440].includes(width)){
+            const geometry=()=>page.locator('.cat-item,.cat-item-image,.cat-item-data').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height]}));
+            const shown=await geometry();
+            await page.locator('.cat-badges>.item-action,.cat-logo,.item-action2').evaluateAll(es=>es.forEach(e=>e.style.display='none'));
+            assert.deepEqual(await geometry(),shown,'Overlay presence never increases the frame or card height');
+            await page.locator('.cat-badges>.item-action,.cat-logo,.item-action2').evaluateAll(es=>es.forEach(e=>e.style.removeProperty('display')));
+            overlayRows.push({width,status:'PASS',cards:values.length});
+        }
     }
     if(lang==='de'&&(imageReview||[360,390,768,1200,1440,1774].includes(width)))await page.screenshot({path:D+`/cards-${width}-${version}.png`,fullPage:true});
     if(imageReview&&lang==='de'&&[390,1440].includes(width)){
@@ -116,7 +150,7 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
     }
     rows.push({lang,width,version,cards:values.length,status:'PASS',firstRowHeight:values[0].card.h,values,imageRequests:initialImageRequests,errors});
     await page.close();
- }}finally{await browser.close();fs.writeFileSync(D+'/card-layout.json',JSON.stringify({rows,criticalRows,wrapperRows},null,2));}
+ }}finally{await browser.close();fs.writeFileSync(D+'/card-layout.json',JSON.stringify({rows,criticalRows,wrapperRows,overlayRows},null,2));}
  assert.ok(criticalRows.every(r=>r.same),'Critical/full card geometry: '+criticalRows.filter(r=>!r.same).map(r=>r.width+'/'+r.branch).join(', '));
  for(const row of rows.filter(r=>r.version==='after')){
     const before=rows.find(r=>r.version==='before'&&r.lang===row.lang&&r.width===row.width);
@@ -124,9 +158,10 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
     if(imageReview)row.values.forEach((v,i)=>{
         const old=before.values[i];
         assert.ok(v.painted.scale>=old.painted.scale,'No product becomes smaller');
-        assert.ok(v.card.h<=old.card.h*1.09,'Card growth remains below 9%');
+        assert.ok(v.card.h<=old.card.h+1,'Cards do not grow');
+        assert.equal(v.content,old.content,'All product information retained');
         if(v.logo)assert.ok(v.logo.painted.scale>=old.logo.painted.scale,'No logo becomes smaller');
     });
  }
- console.log(JSON.stringify({status:'PASS',cases:rows.length,cards:rows.length*12,criticalBranches:criticalRows.length,gridContexts:wrapperRows.length,widths}));
+ console.log(JSON.stringify({status:'PASS',cases:rows.length,cards:rows.length*12,criticalBranches:criticalRows.length,gridContexts:wrapperRows.length,overlayGeometry:overlayRows.length,widths}));
 })().catch(e=>{console.error(e);process.exitCode=1});
