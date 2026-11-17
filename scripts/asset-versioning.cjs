@@ -68,12 +68,17 @@ function prepare({root = path.resolve(__dirname, '..'), outputs = []} = {}) {
     }
     // A CSS-only build must never retire the old request while leaving an old
     // core behind. Verify the actual emitted bundle and its complete inputs.
-    const coreBuild = JSON.parse(read('build/js/manifest.json')).files.find(entry => entry.target === 'resources/js/core.min.js');
-    const coreSources = ['resources/js/core.js', 'resources/js/search.js', 'resources/js/zoom-loader.js', 'resources/js/contact-widget.js'];
-    assert.ok(coreBuild && JSON.stringify(coreBuild.sources) === JSON.stringify(coreSources) &&
-        coreBuild.sha256 === assets['js/core.min.js'].sha256 &&
-        coreBuild.sourceSha256 === hash(coreSources.map(file => lf(read(file))).join('\n')),
-        'Contact bundle requires a current complete core build; run npm run build');
+    const built = JSON.parse(read('build/js/manifest.json')).files;
+    function requireBundle(name, inputs, message) {
+        const entry = built.find(e => e.target === 'resources/js/' + name + '.min.js');
+        const sources = inputs.map(s => 'resources/js/' + s + '.js');
+        assert.ok(entry && JSON.stringify(entry.sources) === JSON.stringify(sources) &&
+            entry.sha256 === assets['js/' + name + '.min.js'].sha256 &&
+            entry.sourceSha256 === hash(sources.map(file => lf(read(file))).join('\n')), message);
+    }
+    requireBundle('core', ['core', 'search', 'zoom-loader', 'contact-widget'], 'Contact bundle requires a current complete core build; run npm run build');
+    requireBundle('item', ['matrix', 'item'], 'PDP requires a current combined matrix/item build; run npm run build');
+    requireBundle('main', ['listing-item', 'main'], 'Shared main/Vue delivery requires a current main build; run npm run build');
     function version(file) {
         assert.ok(assets[file], 'Unknown own delivery asset: ' + file);
         references.add(file);
@@ -83,13 +88,14 @@ function prepare({root = path.resolve(__dirname, '..'), outputs = []} = {}) {
         let source = lf(read(file));
         source = source.replace(/(\{\{\s*plugin_path\('GuardiansBasicB2B'\)\s*\}\}\/)((?:js|css)\/[\w./-]+)(?:\?[^"\r\n]*)?(?=")/g,
             (_, base, asset) => base + version(asset));
-        // Reuse the existing four branch assignments instead of adding a runtime
+        // Reuse the existing branch assignments instead of adding a runtime
         // map, include, macro, service or filesystem lookup for the dynamic bundle.
         source = source.replace(/(\{% set themePageScript = ')(main|cat|item|vue)\.min\.js(?:\?[^']*)?(' %\})/g,
             (_, start, bundle, end) => start + version('js/' + bundle + '.min.js').slice(3) + end);
         contents.set(file, source);
     }
-    assert.deepEqual([...references].sort(), assetFiles, 'Every delivery asset must have a versioned Twig reference');
+    // Old cached HTML can still fetch the locked Vue v5 asset. New pages share main.
+    assert.deepEqual([...references].sort(), assetFiles.filter(file => file !== 'js/vue.min.js'), 'Every active asset must have a versioned Twig reference');
     const page = contents.get(templates[0]);
     assert.equal((page.match(/\/js\/\{\{ themePageScript \}\}/g) || []).length, 1, 'One existing dynamic bundle URL');
     const manifest = {schemaVersion: 4, assets};

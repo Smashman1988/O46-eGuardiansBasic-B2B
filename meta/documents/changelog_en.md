@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Page bundles, appended cards and inline prices (2026-11-17)
+
+- Standard product pages load the variation matrix with the item code. Other pages retain on-demand matrix and zoom loading. Main and former Vue routes share the page bundle while retaining their respective logout behavior.
+- The first two cards use the same renderer directly. Listing fragments omit the duplicate loading status; sizes, images, prices and Quickview links are preserved.
+- The smaller struck-through RRP and sale price share a centered line. Star size and equal padding on all four sides follow the card width. The printed “3 PAAR” and “24ER PACK” labels stay visible in the tested photos.
+- Asset versions: main CSS 16 → 17, main and item JS 5 → 6.
+
 ## Unreleased – Bottom-align names and prices, reduce row spacing (2026-11-17)
 
 - Reduce the existing cell bottom padding from 20 to 10 px. Set shared data padding to zero and remove the mobile override; retain 8 px side margins on inner content and 8 px below buttons.

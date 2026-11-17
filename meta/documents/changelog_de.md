@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Skripte, nachgeladene Karten und Preiszeile (2026-11-17)
+
+- Normale Produktseiten laden die Matrix mit dem Artikelcode. Andere Seiten behalten den bedarfsgesteuerten Matrix- und Zoomabruf. Main und der bisherige Vue-Zweig nutzen ein gemeinsames Seitenbundle; das jeweilige Abmeldeverhalten bleibt erhalten.
+- Listen rendern auch die ersten beiden Karten direkt über dasselbe Partial. Nachladeantworten enthalten keine zweite Statusanzeige; Karten behalten ihre Größen, Bilder, Preise und Quickview-Links.
+- UVP klein und durchgestrichen neben dem Verkaufspreis, zusammen zentriert. Sterne und rundum gleicher Innenabstand richten sich nach der Kartenbreite. Die Aufdrucke „3 PAAR“ und „24ER PACK“ bleiben in den geprüften Fotos frei.
+- Assetversionen: Main-CSS 16 → 17, Main-JS und Item-JS 5 → 6.
+
 ## Unreleased – Namen und Preise unten ausrichten, Reihenabstand reduzieren (2026-11-17)
 
 - Unteres Zell-Padding direkt von 20 auf 10 px reduzieren. Gemeinsames Daten-Padding auf 0 setzen, mobile Überschreibung entfernen; Inhalte behalten 8 px seitlichen Abstand und Buttons 8 px zum unteren Kartenrand.

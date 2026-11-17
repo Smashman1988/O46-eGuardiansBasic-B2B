@@ -73,7 +73,7 @@ function assertManifestAndUrls(root) {
         assert.equal(entry.sha256, hash(fs.readFileSync(path.join(root, 'resources', asset))), asset + ': final bytes');
         assert.match(entry.sha256, /^[0-9a-f]{64}$/);
         const needle = path.posix.basename(asset) + '?v=' + entry.version;
-        const expected = ['css/main.min.css', 'css/checkout.min.css', 'js/magiczoom.min.js', 'js/matrix.min.js'].includes(asset) ? 2 : 1;
+        const expected = asset === 'js/vue.min.js' ? 0 : ['css/main.min.css', 'css/checkout.min.css', 'js/magiczoom.min.js', 'js/matrix.min.js'].includes(asset) ? 2 : 1;
         assert.equal(templates.split(needle).length - 1, expected, asset + ': active and fallback URL coverage');
         for (const match of templates.matchAll(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^"\'\\s<>]*)', 'g'))) {
             assert.equal(match[1], '', asset + ': no timestamp/hash/additional parameter');
@@ -238,6 +238,15 @@ async function run(output = path.join(project, '.cache/asset-versioning.json')) 
         assert.deepEqual(snapshot(root), partial);
         bump(root, ['js/cat.min.js', 'js/vue.min.js']); await javascript.build({root});
         assertChanged(before, assertManifestAndUrls(root), affected);
+    });
+    await test('matrix is shipped in both the lazy asset and PDP; partial updates fail', async () => {
+        const before = manifest(root);
+        fs.appendFileSync(path.join(root, 'resources/js/matrix.js'), '\nwindow.__pdpMatrixFixture = 1;\n');
+        bump(root, ['js/matrix.min.js']); const guard = snapshot(root);
+        await assert.rejects(javascript.build({root}), /Asset content changed: js\/item\.min\.js/);
+        assert.deepEqual(snapshot(root), guard);
+        bump(root, ['js/item.min.js']); await javascript.build({root});
+        assertChanged(before, assertManifestAndUrls(root), ['js/matrix.min.js','js/item.min.js']);
     });
     await test('shared core search source changes only its composed core output', async () => {
         const before = manifest(root);

@@ -12,10 +12,10 @@ const server=http.createServer((req,res)=>{
  if(/\.woff2?$/.test(u.pathname))return res.end(fs.readFileSync(root+'/resources/documents/fonts/'+path.basename(u.pathname)));
  if(u.pathname==='/rest/io/session/'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({data:{basket:{itemQuantity:0,itemSum:0,currency:'EUR',shippingCountryId:1,customerId:0,itemWishListIds:[]}}}));}
  res.setHeader('Content-Type','text/html');
- if(u.searchParams.get('quickViewItem')==='true')return res.end('<article class="single"><h2 data-local-quickview>Local quickview</h2></article>');
+ if(u.searchParams.get('quickViewItem')==='true'&&!u.searchParams.has('page'))return res.end('<article class="single"><h2 data-local-quickview>Local quickview</h2></article>');
  const next=u.searchParams.get('page')==='2';
  const cards=read(D+'/cards-de-'+(next?'next':'after')+'.html').replaceAll('https://b2b.outlet46.de',origin);
- res.end(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Card flow fixture</title><style>${fonts+read(root+'/resources/css/main.min.css')}</style></head><body><main style="padding:12px">${cards}</main>${next?'':'<a class="pagination__next" href="'+u.pathname+'?page=2">Next</a>'}<button id="totop" hidden>Top</button><div class="modal fade modal-cross" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button class="close" data-dismiss="modal">Close</button></div><div class="modal-body"></div></div></div></div><script src="/assets/jquery-3.7.1.min.js"></script><script src="/assets/core.min.js" data-eg-magiczoom-src="/assets/magiczoom.min.js" data-eg-matrix-src="/assets/matrix.min.js" defer></script><script src="/assets/cat.min.js" defer></script><script>window.activeLang='de';window.messageServiceTranslations={searchexample:'Search'};addEventListener('load',()=>{eGuardians.initialize();window.fixtureReady=true})</script></body></html>`);
+ res.end(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Card flow fixture</title><style>${fonts+read(root+'/resources/css/main.min.css')}</style></head><body><main style="padding:12px">${cards}</main>${next?'':'<a class="pagination__next" href="'+u.pathname+'?page=2&amp;quickViewItem=true">Next</a>'}<button id="totop" hidden>Top</button><div class="modal fade modal-cross" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button class="close" data-dismiss="modal">Close</button></div><div class="modal-body"></div></div></div></div><script src="/assets/jquery-3.7.1.min.js"></script><script src="/assets/core.min.js" data-eg-magiczoom-src="/assets/magiczoom.min.js" data-eg-matrix-src="/assets/matrix.min.js" defer></script><script src="/assets/cat.min.js" defer></script><script>window.activeLang='de';window.messageServiceTranslations={searchexample:'Search'};addEventListener('load',()=>{eGuardians.initialize();window.fixtureReady=true})</script></body></html>`);
 });
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port;
@@ -39,10 +39,10 @@ const server=http.createServer((req,res)=>{
      const clip=await page.locator('.cat-item').nth(12).evaluate((e,width)=>{const r=e.getBoundingClientRect();return {x:0,y:r.y-12,width,height:r.height+24}},width);
      await page.screenshot({path:D+'/append-'+route.replaceAll('/','')+'-'+width+'.png',fullPage:true,clip});
    }
-   assert.equal(requests.filter(r=>r.path===route+'?page=2').length,1,'One next-page request');
+   assert.equal(requests.filter(r=>r.path===route+'?page=2&quickViewItem=true').length,1,'One next-page request');
    const button=page.locator('.cat-item .linkabso').nth(12);await button.click();
    await page.waitForFunction(()=>!!document.querySelector('.modal-cross.show [data-local-quickview]'));
-   assert.equal(requests.filter(r=>r.path.includes('quickViewItem=true')).length,1);
+   assert.equal(requests.filter(r=>r.path.includes('quickViewItem=true')&&!r.path.includes('page=2')).length,1);
    assert.equal(requests.filter(r=>r.method!=='GET').length,0,'No basket writes');assert.deepEqual(errors,[]);
    rows.push({route,width,status:'PASS',initialCards:12,afterAppend:24,matchedCards:12,quickview:true,errors,requests});await page.close();
  }}finally{await browser.close();server.close();fs.writeFileSync(D+'/card-flow.json',JSON.stringify(rows,null,2));}

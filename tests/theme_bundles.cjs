@@ -14,7 +14,7 @@ const matrixMarkup = '<div data-item-variation data-eg-variations=\'[{"variation
 const gallery = id => `<article class="single"><h2>Product ${id}</h2><a class="MagicZoom" id="ItemImgZoom${id === 'pdp' ? '' : '2'}" href="/image.svg?large=${id}" data-options="zoomMode: off; hint: off;"><img width="320" height="240" src="/image.svg?small=${id}"></a><div class="single-prev-images"></div>${matrixMarkup}<button data-eg-event="click" data-eg-handler="testVariant">Size</button></article>`;
 function html(bundle, lang, before, hasGallery = false) {
     const url = before ? '/before/' : '/assets/';
-    const asset = before ? path.basename(historicalAssetFile(path.resolve(output, '../before', bundle + '.min.js'))) : bundle + '.min.js';
+    const asset = before ? path.basename(historicalAssetFile(path.resolve(output, '../before', bundle + '.min.js'))) : (bundle === 'vue' ? 'main' : bundle) + '.min.js';
     return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><title>Local bundle contract</title></head><body>
     <header><h1>Theme fixture</h1><span data-eg-basket-quantity>0</span><span data-basket-sum>0</span><a class="wishlist-link"></a></header>
     <script id="app-data-custom" type="application/json">{"templateType":"category"}</script>
@@ -24,8 +24,7 @@ function html(bundle, lang, before, hasGallery = false) {
     <script>window.activeLang='${lang}';window.messageServiceTranslations={searchexample:'Search'};window.addEventListener('load',function(){eGuardians.initialize();eGuardians.events.testVariant=function(){window.variantClicks=(window.variantClicks||0)+1};window.fixtureReady=true});</script>
     <script src="/assets/jquery-3.7.1.min.js"></script>
     ${before ? '' : '<script src="/assets/core.min.js" data-eg-magiczoom-src="/assets/magiczoom.min.js" data-eg-matrix-src="/assets/matrix.min.js" defer></script>'}
-    ${!before && bundle === 'item' ? '<script src="/assets/matrix.min.js" data-eg-matrix defer></script>' : ''}
-    <script src="${url}${asset}" defer></script>
+    <script src="${url}${asset}"${!before && bundle === 'item' ? ' data-eg-matrix' : !before && bundle === 'vue' ? ' data-eg-vue-logout' : ''} defer></script>
     ${!before && bundle === 'item' ? '<script src="/assets/magiczoom.min.js" data-eg-magiczoom defer></script>' : ''}
     </body></html>`;
 }
@@ -92,9 +91,19 @@ async function run() {
                     requests: performance.getEntriesByType('resource').filter(x => x.name.includes('magiczoom.min.js')).length,
                     matrixRequests: performance.getEntriesByType('resource').filter(x => x.name.includes('matrix.min.js')).length,
                     matrixInstalled: !!O46Core.installed.matrix, matrixInitializer: typeof window.egInitSizeMatrices }));
+                if (bundle === 'main' || bundle === 'vue') {
+                    const result = await page.evaluate(() => {
+                        const original = eGuardians.user.logoutUser;
+                        try {
+                            eGuardians.user.logoutUser = (...args) => args;
+                            return eGuardians.events.logoutUser('fixture-button');
+                        } finally { eGuardians.user.logoutUser = original; }
+                    });
+                    assert.deepEqual(result, bundle === 'vue' ? ['fixture-button', true] : ['fixture-button']);
+                }
                 assert.equal(initial.zoom, bundle === 'item');
                 assert.equal(initial.requests, bundle === 'item' ? 1 : 0);
-                assert.equal(initial.matrixRequests, bundle === 'item' ? 1 : 0, 'No matrix download without a consumer; eager PDP dependency');
+                assert.equal(initial.matrixRequests, 0, 'Normal PDP includes matrix; other pages wait for a consumer');
                 assert.equal(initial.matrixInstalled, bundle === 'item');
                 // The lightweight public hook stays available for stored content.
                 // installed.matrix and the network count distinguish real loading.
@@ -139,7 +148,7 @@ async function run() {
                     return modal && getComputedStyle(modal).opacity === '1' && modal.querySelector('.mz-ready');
                 });
                 assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('magiczoom.min.js')).length), 1);
-                assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('matrix.min.js')).length), 1, 'Two Quickviews reuse one matrix download');
+                assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => x.name.includes('matrix.min.js')).length), bundle === 'item' ? 0 : 1, 'Two Quickviews reuse the installed or lazily loaded matrix');
                 assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => new URL(x.name).pathname === '/rest/io/variations/batch').length), 1, 'Confirmed variation data are reused across Quickviews');
                 assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').filter(x => /\/rest\/io\/variations\/\d+/.test(x.name)).length), 0, 'Successful batch requires no individual fallback');
                 assert.deepEqual(errors.slice(start), []);

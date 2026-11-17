@@ -133,6 +133,7 @@ $cases = [
     'homepage' => ['template' => 'tpl.home', 'builder' => true, 'page' => 'main', 'checkoutCss' => true],
     'category' => ['template' => 'tpl.category.item', 'category' => 100, 'grid' => true, 'page' => 'cat', 'facets' => true],
     'search' => ['template' => 'tpl.search', 'grid' => true, 'page' => 'cat', 'facets' => true],
+    'product-with-category' => ['template' => 'tpl.item', 'category' => 100, 'page' => 'cat', 'matrix' => true, 'zoom' => true],
     'product' => ['template' => 'tpl.item', 'page' => 'item', 'matrix' => true, 'zoom' => true],
     'basket' => ['template' => 'tpl.category.content', 'category' => 9001, 'basketClass' => true,
         'page' => 'vue', 'facets' => true, 'checkoutCss' => true, 'jquery' => false],
@@ -193,11 +194,17 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
                 if (!empty($case['facets'])) { $expected[] = verifiedThemeAssetPath('js/facets.min.js'); }
                 if ($case['jquery'] ?? true) { $expected[] = verifiedThemeAssetPath('js/jquery-3.7.1.min.js'); }
                 $expected[] = verifiedThemeAssetPath('js/core.min.js');
-                if (!empty($case['matrix'])) { $expected[] = verifiedThemeAssetPath('js/matrix.min.js'); }
-                $expected[] = verifiedThemeAssetPath('js/' . $case['page'] . '.min.js');
+                if (!empty($case['matrix']) && $case['page'] !== 'item') { $expected[] = verifiedThemeAssetPath('js/matrix.min.js'); }
+                $expected[] = verifiedThemeAssetPath('js/' . ($case['page'] === 'vue' ? 'main' : $case['page']) . '.min.js');
                 if (!empty($case['zoom'])) { $expected[] = verifiedThemeAssetPath('js/magiczoom.min.js'); }
             }
             check($actual === $expected, 'Wrong own JS order/count: ' . json_encode($actual));
+            check(substr_count($html, ' data-eg-vue-logout ') === ($case['page'] === 'vue' ? 1 : 0), 'Preserve the original Vue logout route');
+            if (!empty($case['matrix'])) {
+                $provider = $case['page'] === 'item' ? 'item' : 'matrix';
+                $marked = array_values(array_filter($tags, function ($tag) { return strpos($tag[3], ' data-eg-matrix ') !== false; }));
+                check(count($marked) === 1 && html_entity_decode($marked[0][2]) === verifiedThemeAssetPath('js/' . $provider . '.min.js'), 'Exactly one matrix provider');
+            }
             foreach ($tags as $tag) {
                 if (strpos($tag[2], 'jquery-') === false) { check(strpos($tag[3], 'defer') !== false, 'Own deferred script lost defer'); }
             }

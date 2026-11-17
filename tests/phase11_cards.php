@@ -67,7 +67,7 @@ class Phase11ItemProbe {
     function getFlagTwo() { return $this->value('flagTwo'); }
 }
 function phase11Check($ok, $message) { if (!$ok) throw new RuntimeException($message); }
-function phase11Environment($fixture, $before = false, $allBefore = false) {
+function phase11Environment($fixture, $before = false, $allBefore = false, $queryString = null) {
     $names = ['Category.Item.CategoryItem','Category.Item.CategoryItemContent','Category.Item.Partials.CategoryListItem','Category.Item.Partials.CategoryListItem2','Category.Item.Partials.CategoryAttributes','Category.Item.Partials.CategoryGridOnly','Category.Item.Partials.AllItemsLink','Category.Macros.render-rating'];
     $templates = ['layout'=>'{% block PageBody %}{% endblock %}'];
     foreach ($names as $name) {
@@ -79,7 +79,7 @@ function phase11Environment($fixture, $before = false, $allBefore = false) {
     foreach (['Ceres::PageDesign.Macros.LayoutContainer','Ceres::PageDesign.Macros.ItemName'] as $name) $templates[$name]='';
     $templates['public-macro'] = "{% import 'GuardiansBasicB2B::Category.Item.CategoryItem' as c %}{{ c.categoryItem(item, variant, currencycheck, isShoeCategory, translations, transLabels, cardAttributeMap) }}";
     $twig = new Phase11Environment(new Twig\Loader\ArrayLoader($templates));
-    foreach (['trans'=>'trans','plugin_path'=>'path','getAttributesWithImages'=>'attributes','getCardAttributeMaps'=>'batch','getPartial'=>'partial','config'=>'noop','queryString'=>'noop','createSeoPage'=>'noop'] as $name=>$method) $twig->addFunction(new Twig\TwigFunction($name,[$fixture,$method]));
+    foreach (['trans'=>'trans','plugin_path'=>'path','getAttributesWithImages'=>'attributes','getCardAttributeMaps'=>'batch','getPartial'=>'partial','config'=>'noop','queryString'=>'noop','createSeoPage'=>'noop'] as $name=>$method) $twig->addFunction(new Twig\TwigFunction($name,$name==='queryString' && $queryString!==null ? $queryString : [$fixture,$method]));
     foreach (['itemURL'=>'url','itemName'=>'name','orderByKey'=>'order'] as $name=>$method) $twig->addFilter(new Twig\TwigFilter($name,[$fixture,$method]));
     return $twig;
 }

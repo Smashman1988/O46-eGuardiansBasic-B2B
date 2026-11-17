@@ -3,6 +3,9 @@ var tseElem =  document.getElementById('isVueView');
 O46Core.vendors.call(window);
 var eGuardians = (function(eGuardians) {
 
+  // Preserve the original Vue route's logout behavior when both routes share this bundle.
+  var reloadOnLogout = document.currentScript && document.currentScript.hasAttribute('data-eg-vue-logout');
+
   // Constructor
   function eGuardians() {
     this.initialize();
@@ -244,7 +247,7 @@ this.initShopData = function () { return O46Core.basketHeader.start(); };
             
         }
         this.loginUser = function(button) { return eGuardians.user.loginUser(button); }
-        this.logoutUser = function(button) { return eGuardians.user.logoutUser(button); }
+        this.logoutUser = function(button) { return reloadOnLogout ? eGuardians.user.logoutUser(button, true) : eGuardians.user.logoutUser(button); }
         this.pwdResetUser = function(_this){
             var searchParams = {
                 email: $('#pwd-reset-mail').val()

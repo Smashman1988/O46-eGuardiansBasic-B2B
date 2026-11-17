@@ -414,28 +414,29 @@
             {% endif %}
             {# Keep the existing page selection and Ceres-owned jQuery exception. #}
             {# Asset URLs are generated from asset-versions.json by npm run build. #}
-            {% set themePageScript = 'main.min.js?v=5' %}
+            {% set themePageScript = 'main.min.js?v=6' %}
             {% set themeNeedsJquery = true %}
+            {% set matrixInPageScript = false %}
             {% if "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or (not isBasketCategory and category.id in mainjs) %}
             {% elseif isBasketCategory or category.id in vuejs %}
-                {% set themePageScript = 'vue.min.js?v=5' %}
                 {% set themeNeedsJquery = false %}
             {% elseif currentTemplate in vuePages|keys or category.id in nojs %}
             {% elseif rendersItemGrid is defined and not rendersItemGrid %}
             {% elseif category.id or isSearch %}
                 {% set themePageScript = 'cat.min.js?v=6' %}
             {% elseif isItem %}
-                {% set themePageScript = 'item.min.js?v=5' %}
+                {% set themePageScript = 'item.min.js?v=6' %}
+                {% set matrixInPageScript = true %}
             {% endif %}
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
             <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=15" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=2" defer></script>
-            {% if isItem %}
-                {# Keep initial PDP matrix initialization synchronous with its page bundle. #}
+            {% if isItem and not matrixInPageScript %}
+                {# A PDP routed to another page bundle still needs the matrix before it. #}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=2" data-eg-matrix defer></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}"{% if not themeNeedsJquery %} data-eg-vue-logout{% endif %}{% if matrixInPageScript %} data-eg-matrix{% endif %} defer></script>
             {% if isItem %}
                 {# After item.js defines mzOptions, before DOMContentLoaded initializes the gallery. #}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-magiczoom defer></script>

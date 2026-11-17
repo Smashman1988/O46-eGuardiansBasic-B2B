@@ -12,7 +12,8 @@ const criticalRows=[];
 const wrapperRows=[],overlayRows=[];
 const design=process.argv.includes('--design');
 const imageReview=process.argv.includes('--images');
-const widths=bottomReview?[360,390,430,768,1200,1440]:imageReview?[360,390,430,768,1024,1200,1440,1774]:design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,992,1199,1200,1400,1401,1440,1600];
+const compactRatings=process.argv.includes('--compact-ratings');
+const widths=bottomReview?[...(compactRatings?[320]:[]),360,390,430,768,1200,1440]:imageReview?[360,390,430,768,1024,1200,1440,1774]:design?[360,390,768,1200,1440,1774]:[360,390,575,576,767,768,991,992,1199,1200,1400,1401,1440,1600];
 const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE});
@@ -48,11 +49,14 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
         const parts=['.cat-item-sizes','.cat-item-name','.cat-card-price','.linkabso'].map(s=>card.querySelector(s)).filter(Boolean);
         const logo=image.querySelector('.cat-logo');
         const sizeContainer=card.querySelector('.cat-attr-sizes');
+        const badge=card.querySelector('.item-action2');
+        let starInsets=null;
+        if(badge){const b=rect(badge),s=rect(badge.querySelector('.rating-grey'));starInsets=[s.x-b.x,b.right-s.right,s.y-b.y,b.bottom-s.bottom];}
         const name=card.querySelector('.cat-item-name'),price=card.querySelector('.cat-card-price');
         const textBottom=e=>{const r=e.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(e);return Math.max(...[...range.getClientRects()].filter(t=>t.top<r.bottom-.1).map(t=>Math.min(t.bottom,r.bottom)));};
         return {card:rect(card),image:rect(image),photo:rect(photo),fit:getComputedStyle(photo).objectFit,natural:[photo.naturalWidth,photo.naturalHeight],logo:logo?{rect:rect(logo),natural:[logo.naturalWidth,logo.naturalHeight],fit:getComputedStyle(logo).objectFit}:null,parts:parts.map(rect),button:rect(card.querySelector('button')),ratingText:card.querySelector('.item-action2')?.textContent.trim()||'',sizes:[...card.querySelectorAll('.availsize')].map(e=>({text:e.textContent,rect:rect(e),overflow:e.scrollWidth>e.clientWidth+1,interactive:e.matches('button,a,input,[role=button],[aria-selected],[aria-pressed]')})),
             content:card.querySelector('.cat-item-data').textContent.replace(/\s+/g,' ').trim(),sizeContainer:rect(sizeContainer),badgeGroup:card.querySelector('.cat-badges')?rect(card.querySelector('.cat-badges')):null,
-            name:rect(name),nameTextBottom:textBottom(name),price:rect(price),saleTextBottom:textBottom(price.querySelector('.outlet-green')),rrpTextBottom:price.querySelector('.font-12')?textBottom(price.querySelector('.font-12')):null,dataPadding:getComputedStyle(card.querySelector('.cat-item-data')).padding,cellPaddingBottom:getComputedStyle(card.parentElement).paddingBottom,
+            starInsets,priceParts:[...price.children].map(rect),name:rect(name),nameTextBottom:textBottom(name),price:rect(price),saleTextBottom:textBottom(price.querySelector('.outlet-green')),rrpTextBottom:price.querySelector('.font-12')?textBottom(price.querySelector('.font-12')):null,dataPadding:getComputedStyle(card.querySelector('.cat-item-data')).padding,cellPaddingBottom:getComputedStyle(card.parentElement).paddingBottom,
             alignment:[...card.querySelectorAll('.sizebox,.availsize,.cat-item-name,.cat-card-price,.cat-card-price>span')].map(e=>getComputedStyle(e).textAlign),
             sizesJustify:getComputedStyle(sizeContainer).justifyContent,priceJustify:getComputedStyle(card.querySelector('.cat-card-price')).justifyContent,
             overlays:overlays.map(e=>({kind:e.matches('.cat-logo')?'logo':e.matches('.item-action2')?'rating':e.matches('.i-action-sale')?'sale':'sustainability',rect:rect(e),position:getComputedStyle(e).position,pointer:getComputedStyle(e).pointerEvents,background:getComputedStyle(e).backgroundColor,clickThrough:(()=>{const r=e.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;if(x<0||x>=innerWidth||y<0||y>=innerHeight)return null;return !!document.elementFromPoint(x,y)?.closest('a.product-list')})()}))};
@@ -88,6 +92,15 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
             }
             assert.ok(v.image.bottom-v.photo.bottom<=3.01,'No bottom strip reserved for ratings');
             assert.ok(v.photo.x-v.image.x<=2.01&&v.image.right-v.photo.right<=2.01,'Photo uses the full available width');
+            if(compactRatings && v.starInsets)assert.ok(Math.max(...v.starInsets)-Math.min(...v.starInsets)<0.1,'Stars have equal clearance on all four sides: '+v.starInsets);
+            if(compactRatings && i===5){
+                // Printed “3 PAAR” rectangle in visual/5.jpg (267 × 300 source pixels).
+                assert.deepEqual(v.natural,[267,300]);
+                const label={x:v.painted.x+82*v.painted.scale,y:v.painted.y+274*v.painted.scale,w:103*v.painted.scale,h:26*v.painted.scale};
+                const badge=v.overlays.find(o=>o.kind==='rating').rect;
+                const gap=Math.hypot(Math.max(label.x-badge.right,badge.x-label.x-label.w,0),Math.max(label.y-badge.bottom,badge.y-label.y-label.h,0));
+                assert.ok(gap>=3,'Rating must leave space around the printed pack label: '+width+'px, '+gap);
+            }
             if(v.logo)assert.equal(v.logo.fit,'contain','Complete logo preserved');
         }
     });
@@ -100,6 +113,11 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
             assert.ok(v.photo.h>50&&v.photo.bottom<=v.image.bottom+1&&v.photo.y>=v.image.y-1,'Loaded photo stays in its visible frame');
             for(const size of v.sizes){assert.equal(size.overflow,false,'Complete size label wraps');assert.equal(size.interactive,false,'Informational sizes');}
             assert.ok(v.alignment.every(a=>a==='center'),'Sizes, OneSize, name, UVP and sale price centered');
+            if(process.argv.includes('--inline-prices')){
+                const a=v.priceParts[0], b=v.priceParts.at(-1);
+                assert.ok(a===b || (a.right<=b.x+1 && Math.min(a.bottom,b.bottom)>Math.max(a.y,b.y)), 'RRP and sale on a single line');
+                assert.ok(a.x>=v.price.x-1 && b.right<=v.price.right+1 && Math.abs(a.x+b.right-v.price.x-v.price.right)<2, 'Whole price group fits and is centered: '+JSON.stringify({width,price:v.price,a,b}));
+            }
             assert.equal(v.sizesJustify,'center');assert.equal(v.priceJustify,'center');
             const sizeLines=new Map();for(const s of v.sizes){const y=Math.round(s.rect.y);if(!sizeLines.has(y))sizeLines.set(y,[]);sizeLines.get(y).push(s.rect);}
             for(const line of sizeLines.values())assert.ok(Math.abs((Math.min(...line.map(r=>r.x))+Math.max(...line.map(r=>r.right)))/2-(v.sizeContainer.x+v.sizeContainer.w/2))<1,'Each wrapped size row centered');
@@ -131,6 +149,8 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
     }
     if(lang==='de'&&(imageReview||[360,390,768,1200,1440,1774].includes(width)))await page.screenshot({path:D+`/cards-${width}-${version}.png`,fullPage:true});
     if(imageReview&&lang==='de'&&[390,1440].includes(width)){
+        if(compactRatings)await page.locator('.cat-item').nth(5).screenshot({path:D+'/pack-'+width+'-'+version+'.png'});
+        await page.evaluate(()=>scrollTo(0,0));
         const last=values[width===390?1:5];
         await page.screenshot({path:D+`/row-${width}-${version}.png`,clip:{x:0,y:0,width,height:Math.ceil(last.card.bottom+12)}});
     }
@@ -179,7 +199,10 @@ const imageBounds=imageReview?JSON.parse(read(D+'/image-bounds.json')):null;
             const relative=(part,card)=>[part.x-card.x,part.y-card.y,part.w,part.h];
             assert.deepEqual(relative(v.image,v.card),relative(old.image,old.card),'Image geometry unchanged');
             assert.deepEqual(relative(v.photo,v.card),relative(old.photo,old.card),'Photo geometry unchanged');
-            v.overlays.forEach((o,j)=>assert.deepEqual(relative(o.rect,v.card),relative(old.overlays[j].rect,old.card),'Overlay geometry unchanged'));
+            v.overlays.forEach((o,j)=>{
+                if(compactRatings && o.kind==='rating')assert.ok(o.rect.w<old.overlays[j].rect.w && o.rect.h<old.overlays[j].rect.h,'Stars and backdrop shrink together');
+                else assert.deepEqual(relative(o.rect,v.card),relative(old.overlays[j].rect,old.card),'Overlay geometry unchanged');
+            });
         }
     });
  }

@@ -29,7 +29,15 @@ function card13Pair($twigs,$fixtures,$name,$ctx,$label) {
     $r=[];
     foreach(['before','after'] as $v){$fixtures[$v]->calls=[];$twigs[$v]->ratingLoads=0;$html=$twigs[$v]->render($name,$ctx);$r[$v]=['html'=>$html,'counts'=>cardMarkupCounts($html),'calls'=>$fixtures[$v]->calls,'ratingLoads'=>$twigs[$v]->ratingLoads];}
     phase11Check(card13Contract($r['before']['html'])===card13Contract($r['after']['html']),'Content/image/action contract: '.$label);
-    phase11Check($r['before']['calls']===$r['after']['calls'],'Backend/helper calls: '.$label);
+    if (in_array('--same-markup', $GLOBALS['argv'], true)) {
+        phase11Check(cardMarkupContract($r['before']['html']) === cardMarkupContract($r['after']['html']), 'Complete element/text/attribute contract: '.$label);
+        $a=$r['before']['calls']; $b=$r['after']['calls'];
+        phase11Check(($b['pluginPath'] ?? 0) <= ($a['pluginPath'] ?? 0), 'No extra logo path resolutions: '.$label);
+        unset($a['pluginPath'], $b['pluginPath']);
+        phase11Check($a === $b, 'All other helper calls: '.$label);
+    } else {
+        phase11Check($r['before']['calls']===$r['after']['calls'],'Backend/helper calls: '.$label);
+    }
     phase11Check($r['before']['ratingLoads']===$r['after']['ratingLoads'],'Rating loads: '.$label);
     phase11Check(strpos($r['after']['html'],'cat-article-header-info')===false && strpos($r['after']['html'],'no-cat-at')===false,'Removed empty wrappers: '.$label);
     return $r;
@@ -51,7 +59,7 @@ foreach(['de','en','fr','it','es'] as $lang){
         $items=phase11Items($count,$lang);$ctx=['itemList'=>$items,'services'=>new Phase11CardServices($lang,'EUR'),'category'=>['id'=>100,'details'=>[['name'=>'Fixture']]],'currentPage'=>$page,'itemCountTotal'=>$count,'pageMax'=>3,'isSearch'=>false,'catDetails'=>['name'=>'Fixture'],'translations'=>$translations];
         $r=card13Pair($t,$f,'GuardiansBasicB2B::'.$name,$ctx,$lang.'/'.$kind.'/'.$page.'/'.$count);
         phase11Check(count(card13Contract($r['after']['html']))===$count,'Exact list count');
-        $lists[]=['lang'=>$lang,'kind'=>$kind,'page'=>$page,'count'=>$count,'before'=>$r['before']['counts'],'after'=>$r['after']['counts'],'calls'=>$r['after']['calls']];
+        $lists[]=['lang'=>$lang,'kind'=>$kind,'page'=>$page,'count'=>$count,'before'=>$r['before']['counts'],'after'=>$r['after']['counts'],'beforeCalls'=>$r['before']['calls'],'calls'=>$r['after']['calls']];
     }
     if($lang==='de')foreach(['Category.Item.Partials.CategoryListItem','Category.Item.Partials.CategoryAttributes','Category.Item.CategoryItem','Category.Item.CategoryItemContent'] as $changed){
         $samples=[];$macro=strpos($changed,'Partials')===false;

@@ -18,7 +18,8 @@
 {% set feedbackCount = item.data.item.feedbackCount ?? 0 -%}
 {% set cardManufacturer = item.data.item.manufacturer -%}
 {% set rawLogo = cardManufacturer.logo -%}
-{% set vendorlogo = rawLogo | replace({'https://cdn02.outlet46.de/frontend/vendor/': cardEagerImages ? plugin_path('GuardiansBasicB2B') ~ '/images/vendors/' : (cardVendorLogoBase ?? (plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'))}) | default(rawLogo) -%}
+{% set vendorPrefix = 'https://cdn02.outlet46.de/frontend/vendor/' -%}
+{% set vendorlogo = vendorPrefix in (rawLogo ?? '') ? (rawLogo | replace({(vendorPrefix): cardEagerImages ? plugin_path('GuardiansBasicB2B') ~ '/images/vendors/' : (cardVendorLogoBase ?? (plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'))}) | default(rawLogo)) : rawLogo -%}
 <div class="cat-item{% if hasRRP %} has-rrp{% endif %} has-variations" data-eg-item="{{ item.data.variation.itemId }}"><div class="article-body cat-item-image text-center {% if isShoeCategory %}cat-item-shoe{% endif %}"><a class="product-list article a" href="{{ cardUrl }}" title="{{ itemName }}"><picture>
 {%- if cardHasResponsiveImage -%}
 <source type="image/avif" media="(min-width: {{ cardImageMinViewport }}px)" srcset="{{ img }}.avif"><source media="(min-width: {{ cardImageMinViewport }}px)" srcset="{{ img }}">
@@ -35,5 +36,5 @@
 {%- endif -%}
 {%- if feedbackCount > 0 -%}{% import "GuardiansBasicB2B::Category.Macros.render-rating" as Rating %}<span class="item-action2">{{ Rating.renderRating(item.data.item.feedbackDecimal ?? 0, 5) }}</span>{%- endif -%}
 </div><div class="article-footer cat-item-data"><div class="cat-item-sizes"><span class="outlet-green sizebox">{{ translations.tAvailSizes }}</span><div class="cat-attr-sizes">
-{%- include "GuardiansBasicB2B::Category.Item.Partials.CategoryAttributes" with { 'itemId': item.data.variation.itemId, 'itemFlag': item.data.item.flagTwo, 'transLabels': transLabels, 'cardAttributeMap': cardAttributeMap ?? null } only -%}
+{%- include "GuardiansBasicB2B::Category.Item.Partials.CategoryAttributes" with { 'itemId': item.data.variation.itemId, 'transLabels': transLabels, 'cardAttributeMap': cardAttributeMap ?? null } only -%}
 </div></div><a href="{{ cardUrl }}" class="product-list article a thumb-title cat-item-name mb-0" title="{{ itemName }}">{{ itemName }}</a><div class="cat-card-price">{% if hasRRP %}<span class="bold font-12">{{ translations.tStatt }} <span class="cat-rrp-price">{{ item.data.prices.rrp.unitPrice.formatted }}*</span></span> {% endif %}<span class="bold outlet-green font-18">{{ item.data.prices.default.unitPrice.formatted }}</span></div><button class="btn-primary linkabso idwk-80" data-href="https://b2b.outlet46.de{{ itemUrl }}?quickViewItem=true"><span class="icon-online-shopping-cart mr-2"></span>{{ translations.tInBasket }}</button></div></div>

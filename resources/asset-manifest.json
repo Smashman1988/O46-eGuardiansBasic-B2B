@@ -10,8 +10,8 @@
       "sha256": "4a05763f573afab5904376a3be371f97990649329adf23a1228cd229a002d677"
     },
     "css/main.min.css": {
-      "version": 16,
-      "sha256": "d4d64ad455f1a26d90a099da056ce23cf6e80726fbea598fdfcda84d65018fb8"
+      "version": 17,
+      "sha256": "e54b4046597ec01680d3c2c4218c55141fba276b793c62b05e659bee8794d1ca"
     },
     "js/cat.min.js": {
       "version": 6,
@@ -26,8 +26,8 @@
       "sha256": "2160eff770cf7ed5e091d7d78174ba141c6f28633f4f789c029bbae14ee41e45"
     },
     "js/item.min.js": {
-      "version": 5,
-      "sha256": "df46239d079cf1aeee1b6551183222a309b38253f5d0624828892e324a297a38"
+      "version": 6,
+      "sha256": "c50023a42e3fbb49dd2f7dbfd9588ef79c9cef8c1df1f2f12dbdb1cbf774f790"
     },
     "js/jquery-3.7.1.min.js": {
       "version": 1,
@@ -38,8 +38,8 @@
       "sha256": "1e23342e39817586c448d281818f8e8e255d4183baa6bbcef3c24c6d52eeb81e"
     },
     "js/main.min.js": {
-      "version": 5,
-      "sha256": "8becdf4e4684122c3e0e2b46b22aca6df4070f2a047295d3951ee387da179dc5"
+      "version": 6,
+      "sha256": "4e5371abd46da38264def028bb22448f728f256b0932fa4d30d27c9a2b66e64c"
     },
     "js/matrix.min.js": {
       "version": 2,

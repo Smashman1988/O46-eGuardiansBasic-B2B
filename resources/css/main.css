@@ -11834,7 +11834,7 @@ opacity: 0.7;
 .cat-item.has-variations{display:flex;flex-direction:column;width:100%;height:100%;padding:0;overflow:hidden;border:1px solid #dedede;border-radius:7px;background:#fff;}
 /* Ten equal intrinsic tracks reserve 70% of the actual badge/logo height.
    Both start at the same card edge; contain whitespace can reduce overlap to zero. */
-.cat-item.has-variations > .cat-item-image{position:relative;display:grid;grid-template-columns:minmax(0,1fr) fit-content(44%);grid-template-rows:repeat(10,auto) minmax(0,1fr);flex:none;contain:size;width:100%;aspect-ratio:1;padding-top:4px;border-bottom:1px solid #ededed;}
+.cat-item.has-variations > .cat-item-image{position:relative;display:grid;grid-template-columns:minmax(0,1fr) fit-content(44%);grid-template-rows:repeat(10,auto) minmax(0,1fr);flex:none;contain:size;container-type:inline-size;width:100%;aspect-ratio:1;padding-top:4px;border-bottom:1px solid #ededed;}
 .cat-item.has-variations .cat-item-image > a{position:static;grid-area:8/1/12/3;display:block;min-height:0;margin:0;}
 .cat-item.has-variations .cat-item-image > a::after{content:"";position:absolute;inset:0;}
 .cat-item.has-variations .cat-item-image picture{display:block;width:100%;height:100%;padding:2px;}
@@ -11845,11 +11845,13 @@ opacity: 0.7;
 .cat-item.has-variations .i-action-sale{background:#ed080d;}
 .cat-item.has-variations .i-action-nachhaltig-cat{background:#00875a;font-size:11px;line-height:14px;padding:3px 5px;}
 .cat-item.has-variations .cat-item-image > .cat-logo{position:relative;grid-area:1/2/11/3;align-self:start;justify-self:end;min-width:0;width:auto;height:auto;max-width:min(calc(100% - 6px),110px);max-height:50px;margin-right:6px;object-fit:contain;background:rgba(255,255,255,.9);}
-.cat-item.has-variations .item-action2{position:absolute;left:7px;bottom:6px;top:auto;display:flex;align-items:center;gap:5px;max-width:calc(100% - 14px);margin:0;padding:4px 7px;border-radius:14px;color:#fff;background:rgba(30,30,30,.82);font-size:12px;line-height:16px;}
-.cat-item.has-variations .item-ratings-head{position:relative;flex:none;margin:0;line-height:16px;}
-.cat-item.has-variations .rating-grey,.cat-item.has-variations .rating-fuller-inner{width:max-content;font-size:14px;line-height:16px;white-space:nowrap;}
+.cat-item.has-variations .item-action2{position:absolute;left:1px;bottom:3px;top:auto;display:flex;align-items:center;justify-content:center;margin:0;padding:clamp(2px,calc(4cqi - 3px),5px);border-radius:6px;background:rgba(30,30,30,.82);font-size:clamp(7.5px,5cqi,12px);line-height:1;}
+.cat-item.has-variations .item-ratings-head{position:relative;flex:none;margin:0;line-height:inherit;}
+.cat-item.has-variations .rating-grey,.cat-item.has-variations .rating-fuller-inner{display:flex;width:max-content;font-size:inherit;line-height:inherit;}
 .cat-item.has-variations .rating-fuller{position:absolute;top:0;left:0;overflow:hidden;}
-.cat-item.has-variations .icon-star{margin-right:1px;}
+.cat-item.has-variations .icon-star{margin-right:0;}
+/* The icon font's star sits slightly above the middle of its square. */
+.cat-item.has-variations .icon-star::before{position:relative;top:.06em;}
 .cat-item.has-variations .rating-grey .icon-star{color:#b8b8b8;}
 .cat-item.has-variations .rating-fuller .icon-star{color:#ffdc0f;}
 .cat-item.has-variations > .cat-item-data{display:flex;flex:1;flex-direction:column;gap:7px;padding:0;text-align:center;}
@@ -11859,10 +11861,10 @@ opacity: 0.7;
 .cat-item.has-variations .cat-attr-sizes{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:4px;}
 .cat-item.has-variations .availsize{max-width:100%;padding:1px 6px;border:1px solid #c5c5c5;border-radius:4px;background:#fff;color:#1a1a1a;font-size:13px;font-weight:500;line-height:18px;overflow-wrap:anywhere;}
 .cat-item.has-variations .cat-item-name{display:-webkit-box;flex:none;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-block:0;color:#161616;font-size:14px;font-weight:600;line-height:19px;}
-/* Align RRP and sale on separate lines, including cards without RRP; content may grow. */
-.cat-item.has-variations .cat-card-price{display:flex;flex:none;flex-wrap:wrap;align-items:baseline;align-content:flex-end;justify-content:center;gap:0 8px;min-height:48px;}
+/* Keep the smaller RRP and sale together, centered on their shared baseline. */
+.cat-item.has-variations .cat-card-price{display:flex;flex:none;margin-inline:4px;align-items:baseline;justify-content:center;gap:4px;container-type:inline-size;}
 .cat-item.has-variations .cat-card-price > span{white-space:nowrap;}
-.cat-item.has-variations .cat-card-price > .font-12{flex-basis:100%;color:#41464c;font-size:12px;font-weight:400;}
+.cat-item.has-variations .cat-card-price > .font-12{color:#41464c;font-size:clamp(10px,7cqi,12px);font-weight:400;}
 .cat-item.has-variations .cat-rrp-price{text-decoration:line-through;}
 .cat-item.has-variations .cat-card-price > .outlet-green{color:#609b00;font-size:23px;font-weight:700;line-height:30px;}
 .cat-item.has-variations .linkabso{flex:none;width:auto;min-height:44px;margin-bottom:8px;padding:9px 5px;border:0;border-radius:4px;background:linear-gradient(#6aab00,#588f00);color:#fff;font-size:14px;font-weight:600;line-height:20px;white-space:normal;}
@@ -11872,7 +11874,7 @@ opacity: 0.7;
  .cat-item.has-variations > .cat-item-image{aspect-ratio:.82;}
  .cat-item.has-variations .item-action{padding:4px 6px;font-size:14px;line-height:17px;}
  .cat-item.has-variations .i-action-nachhaltig-cat{font-size:10px;line-height:13px;}
- .cat-item.has-variations .cat-card-price > .outlet-green{font-size:21px;}
+ .cat-item.has-variations .cat-card-price > .outlet-green{font-size:clamp(16px,12cqi,21px);}
  .cat-item.has-variations .linkabso{font-size:13px;}
 }
 /* End B2B card separators */
