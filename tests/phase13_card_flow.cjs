@@ -15,12 +15,13 @@ const server=http.createServer((req,res)=>{
  if(u.searchParams.get('quickViewItem')==='true'&&!u.searchParams.has('page'))return res.end('<article class="single"><h2 data-local-quickview>Local quickview</h2></article>');
  const next=u.searchParams.get('page')==='2';
  const cards=read(D+'/cards-de-'+(next?'next':'after')+'.html').replaceAll('https://b2b.outlet46.de',origin);
- res.end(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Card flow fixture</title><style>${fonts+read(root+'/resources/css/main.min.css')}</style></head><body><main style="padding:12px">${cards}</main>${next?'':'<a class="pagination__next" href="'+u.pathname+'?page=2&amp;quickViewItem=true">Next</a>'}<button id="totop" hidden>Top</button><div class="modal fade modal-cross" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button class="close" data-dismiss="modal">Close</button></div><div class="modal-body"></div></div></div></div><script src="/assets/jquery-3.7.1.min.js"></script><script src="/assets/core.min.js" data-eg-magiczoom-src="/assets/magiczoom.min.js" data-eg-matrix-src="/assets/matrix.min.js" defer></script><script src="/assets/cat.min.js" defer></script><script>window.activeLang='de';window.messageServiceTranslations={searchexample:'Search'};addEventListener('load',()=>{eGuardians.initialize();window.fixtureReady=true})</script></body></html>`);
+ const listing='<main id="page-body"><section class="categoriegrid page-content container"><div class="row"><div class="col-12">'+cards+'</div></div></section></main>';
+ res.end(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Card flow fixture</title><style>${fonts+read(root+'/resources/css/main.min.css')}</style></head><body>${listing}${next?'':'<a class="pagination__next" href="'+u.pathname+'?page=2&amp;quickViewItem=true">Next</a>'}<button id="totop" hidden>Top</button><div class="modal fade modal-cross" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button class="close" data-dismiss="modal">Close</button></div><div class="modal-body"></div></div></div></div><script src="/assets/jquery-3.7.1.min.js"></script><script src="/assets/core.min.js" data-eg-magiczoom-src="/assets/magiczoom.min.js" data-eg-matrix-src="/assets/matrix.min.js" defer></script><script src="/assets/cat.min.js" defer></script><script>window.activeLang='de';window.messageServiceTranslations={searchexample:'Search'};addEventListener('load',()=>{eGuardians.initialize();window.fixtureReady=true})</script></body></html>`);
 });
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE});
- try{for(const route of ['/category/','/search/'])for(const width of [390,1774]){
+ try{for(const route of ['/category/','/search/'])for(const width of [320,390,430,768,1024,1440,1774]){
    requests=[];const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/*',r=>r.request().url().startsWith(origin)?r.continue():r.abort());
@@ -28,6 +29,16 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('.cat-item').count(),12);
    const geometry=()=>page.locator('.cat-item').evaluateAll(es=>es.map(e=>[e.getBoundingClientRect().width,e.getBoundingClientRect().height,e.querySelector('.cat-item-image').getBoundingClientRect().height,e.querySelector('.linkabso').getBoundingClientRect().height]));
    const first=await geometry();
+   if(width<=768){
+     const bounds=await page.locator('.cat-item').evaluateAll(cards=>cards.slice(0,2).map(card=>card.getBoundingClientRect().toJSON()));
+     const [left,right]=bounds;
+     assert.equal(left.top,right.top,'Two cards per row');
+     assert.equal(left.width,right.width,'Equal mobile columns');
+     assert.equal(left.x,5);
+     assert.equal(width-right.right,5);
+     assert.equal(right.x-left.right,6);
+     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),width);
+   }
    await page.evaluate(()=>InfiniteScroll.data(document.querySelector('.category-product-list')).loadNextPage());
    await page.waitForFunction(()=>document.querySelectorAll('.cat-item').length===24);
    for(const n of [12,13,18,23]){const photo=page.locator('.cat-item picture img').nth(n);await photo.scrollIntoViewIfNeeded();await photo.evaluate(i=>new Promise((resolve,reject)=>{if(i.complete&&i.naturalWidth)return resolve();i.onload=resolve;i.onerror=()=>reject(Error('Appended image failed'));}));}

@@ -12,7 +12,7 @@ const baseEnd = '/* End B2B card base */';
 // ball adviser). Shared listing cards own their complete geometry below.
 function cleanLegacyCards(root) {
     const removed = new Set(['.cat-article-header-info', '.cat-logo', '.no-cat-at',
-        '.cat-item-shoe', '.cat-attr-sizes', '.availsize', '.sizebox']);
+        '.cat-item-shoe', '.cat-attr-sizes', '.availsize', '.sizebox', '.icon-star:before']);
     root.walkRules(rule => {
         const kept = rule.selectors.filter(selector => !removed.has(selector)).map(selector => {
             if (selector === '.cat-item .cat-item-image' || selector === '.cat-item .cat-item-image img') {

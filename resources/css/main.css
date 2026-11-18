@@ -5385,9 +5385,6 @@ img[src=""][data-original]
 .icon-comments-o:before {
   content: "\f0e6";
 }
-.icon-star:before {
-  content: "\e91c";
-}
 
 
 body,
@@ -11829,13 +11826,13 @@ opacity: 0.7;
 }
 .paddinlr{padding-left:0px;padding-right:0px;}
 /* B2B card separators */
-/* One shared card layout; the existing grid breakpoints and image sources stay intact. */
-.category-product-list > .post,.category-product-list > div:not(.copy-result-item){display:flex;height:auto;min-height:0;padding:0 5px 10px!important;}
+/* The listing grid supplies its own horizontal gap on small screens. */
+.category-product-list > .post,.category-product-list > div:not(.copy-result-item){display:flex;height:auto;min-height:0;padding:0 var(--cat-cell-padding,5px) 10px!important;}
 .cat-item.has-variations{display:flex;flex-direction:column;width:100%;height:100%;padding:0;overflow:hidden;border:1px solid #dedede;border-radius:7px;background:#fff;}
 /* Ten equal intrinsic tracks reserve 70% of the actual badge/logo height.
    Both start at the same card edge; contain whitespace can reduce overlap to zero. */
 .cat-item.has-variations > .cat-item-image{position:relative;display:grid;grid-template-columns:minmax(0,1fr) fit-content(44%);grid-template-rows:repeat(10,auto) minmax(0,1fr);flex:none;contain:size;container-type:inline-size;width:100%;aspect-ratio:1;padding-top:4px;border-bottom:1px solid #ededed;}
-.cat-item.has-variations .cat-item-image > a{position:static;grid-area:8/1/12/3;display:block;min-height:0;margin:0;}
+.cat-item.has-variations .cat-item-image > a{position:static;grid-area:var(--cat-photo-row,8)/1/12/3;display:block;min-height:0;margin:0;}
 .cat-item.has-variations .cat-item-image > a::after{content:"";position:absolute;inset:0;}
 .cat-item.has-variations .cat-item-image picture{display:block;width:100%;height:100%;padding:2px;}
 .cat-item.has-variations .cat-item-image picture img{display:block;width:100%;height:100%;max-height:100%;object-fit:contain;}
@@ -11850,6 +11847,7 @@ opacity: 0.7;
 .cat-item.has-variations .rating-grey,.cat-item.has-variations .rating-fuller-inner{display:flex;width:max-content;font-size:inherit;line-height:inherit;}
 .cat-item.has-variations .rating-fuller{position:absolute;top:0;left:0;overflow:hidden;}
 .cat-item.has-variations .icon-star{margin-right:0;}
+.icon-star:before{content:"\e91c";}
 /* The icon font's star sits slightly above the middle of its square. */
 .cat-item.has-variations .icon-star::before{position:relative;top:.06em;}
 .cat-item.has-variations .rating-grey .icon-star{color:#b8b8b8;}
@@ -11876,6 +11874,20 @@ opacity: 0.7;
  .cat-item.has-variations .i-action-nachhaltig-cat{font-size:10px;line-height:13px;}
  .cat-item.has-variations .cat-card-price > .outlet-green{font-size:clamp(16px,12cqi,21px);}
  .cat-item.has-variations .linkabso{font-size:13px;}
+}
+@media(max-width:991.98px){
+ /* The search template's legacy column also needs its width during critical paint. */
+ .categoriegrid > .row > .col-xs-12{flex:0 0 100%;padding-inline:5px;}
+ .categoriegrid .category-product-list{--cat-cell-padding:0px;--cat-photo-row:9;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:6px;}
+ .categoriegrid .category-product-list > .col-6{max-width:none;min-width:0;margin-bottom:0;}
+ .categoriegrid .cat-item.has-variations{container-type:inline-size;}
+ /* Keep portraits close to their full width and reserve eight tracks for upper overlays. */
+ .categoriegrid .cat-item.has-variations > .cat-item-image{height:calc(114cqi + 45px);aspect-ratio:auto;}
+ .categoriegrid .cat-item.has-variations .cat-item-image picture{padding:4px 0 2px;}
+}
+@media(min-width:768px) and (max-width:991.98px){
+ /* The surrounding listing column has a 15px tablet gutter and a 5px phone gutter. */
+ .categoriegrid .col-12 > .category-product-list{margin-inline:-10px;}
 }
 /* End B2B card separators */
 .ptpb{padding-top:0px!important;padding-bottom:0px!important;}

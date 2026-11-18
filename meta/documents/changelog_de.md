@@ -1,5 +1,10 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Mobile Produktkarten (2026-11-18)
+
+- Kategorie und Suche nutzen bis 991,98 px zwei gleich breite Produktspalten mit 6 px Abstand. Die Fotos reichen bis an die Innenseite der Kartenrahmen. Hochformatige Produkte und Mengenaufdrucke erhalten mehr Platz unter den Overlays.
+- Main-CSS v18 und die Critical-CSS-Zweige enthalten dieselben mobilen Kartenregeln.
+
 ## Unreleased – Variantenverfügbarkeit und Pagination (2026-11-18)
 
 - Fehlende, ausverkaufte und noch ungeladene Varianten haben keine bestellbare Menge. Lesefehler bleiben wiederholbar. Gemeinsame Abfragen erhalten gültige Nachbarzeilen und bestehende Mengenlimits.

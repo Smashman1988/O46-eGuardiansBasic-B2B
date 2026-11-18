@@ -1,5 +1,10 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Mobile product cards (2026-11-18)
+
+- Category and search listings use two equal columns with a 6 px gap on screens below 992 px. Photos extend to the inside edge of each card. Portrait products and printed pack sizes have more room beneath the overlays.
+- Main CSS v18 and the critical CSS branches include the same mobile card rules.
+
 ## Unreleased – Variation availability and pagination (2026-11-18)
 
 - Missing, out-of-stock and pending variations have no orderable quantity. Failed reads can be retried. Shared requests preserve valid sibling rows and their quantity limits.

@@ -16,6 +16,10 @@ Auch kleine, nachweisbar sinnvolle Verbesserungen sind erwünscht und werden umg
 
 Keine Änderungen allein für eine Änderungszahl, keine unverhältnismäßige Komplexität, kein Funktionsverlust und keine gelockerten Sicherheits-/Integritätsprüfungen. Bestehende Architektur, Persistenz und explizite Konfigurationen erhalten. Anzahl der Verbesserungen, Quellbytes, ausgelieferte Bytes, Requests, Berechnungen, DOM-Operationen und nachgewiesene Laufzeiten getrennt dokumentieren. Gesamtersparnisse nur mit klarer Bezugsbasis ausweisen, nicht doppelt zählen und keine theoretischen Hochrechnungen als gemessene Nutzer-/Produktionswerte ausgeben. Vorhandene Projektvorgaben gelten weiter; dieser Grundsatz ersetzt die Ablehnung eines Kandidaten allein wegen kleiner Einzelwirkung. Eine `AGENTS.md` wurde am 2026-11-15 weder im Repository noch seinen übergeordneten Verzeichnissen gefunden.
 
+## Mobile Produktkarten (2026-11-18)
+
+Kategorie- und Suchlisten zeigen bis zum Desktop-Breakpoint bei 992 px zwei gleich breite Karten mit 5 px Außenrand und 6 px Spaltenabstand. Die Bildfläche nutzt die innere Kartenbreite. Hochformate erhalten Platz unter Rabatt und Markenlogo. Das Bild bleibt vollständig mit `object-fit: contain` sichtbar. Main-CSS v18. [Lokaler Vergleich mit Messwerten und Bildschirmfotos](.cache/mobile-produktkarten-b7bff3f/Pruefbericht.html)
+
 ## Variantenverfügbarkeit und Pagination (2026-11-18)
 
 Die Matrix gibt eine Mengenwahl nach bestätigten Variantendaten frei. Eine ausdrücklich fehlende oder ausverkaufte Variante bleibt gesperrt. Nach Lesefehlern kann der bestehende Matrix-Einstieg die betroffenen Zeilen erneut laden. Für gültige Varianten gelten weiterhin Bestand, Mengenlimit und der jeweilige Preis.
