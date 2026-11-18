@@ -14,8 +14,8 @@
       "sha256": "e54b4046597ec01680d3c2c4218c55141fba276b793c62b05e659bee8794d1ca"
     },
     "js/cat.min.js": {
-      "version": 6,
-      "sha256": "eda54f5a554d8ed98ef89ee82139efa86c839f30fa529f43b3cc288f7ff84aca"
+      "version": 7,
+      "sha256": "dd8d525e3c360b3d804bf4a32a639dc83ce6abbe94acccfcccbbaedce1f9971a"
     },
     "js/core.min.js": {
       "version": 15,
@@ -26,8 +26,8 @@
       "sha256": "2160eff770cf7ed5e091d7d78174ba141c6f28633f4f789c029bbae14ee41e45"
     },
     "js/item.min.js": {
-      "version": 6,
-      "sha256": "c50023a42e3fbb49dd2f7dbfd9588ef79c9cef8c1df1f2f12dbdb1cbf774f790"
+      "version": 7,
+      "sha256": "7815f0887726b96a17b85c92ea5106997a54f77f1073b3317758e2041586543d"
     },
     "js/jquery-3.7.1.min.js": {
       "version": 1,
@@ -42,8 +42,8 @@
       "sha256": "4e5371abd46da38264def028bb22448f728f256b0932fa4d30d27c9a2b66e64c"
     },
     "js/matrix.min.js": {
-      "version": 2,
-      "sha256": "4733944d29f30980fba7962ce1c35c4496de3817b45451d37f29ad659fb313b3"
+      "version": 3,
+      "sha256": "384730be2f491ffe350ebfd996ca296eb176cd6dec5dfad67aa8a0c0cdd35d76"
     },
     "js/vue.min.js": {
       "version": 5,

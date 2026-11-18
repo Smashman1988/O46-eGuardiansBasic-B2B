@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Variantenverfügbarkeit und Pagination (2026-11-18)
+
+- Fehlende, ausverkaufte und noch ungeladene Varianten haben keine bestellbare Menge. Lesefehler bleiben wiederholbar. Gemeinsame Abfragen erhalten gültige Nachbarzeilen und bestehende Mengenlimits.
+- Infinite Scroll übernimmt Canonical, Sprachalternativen, Seitennachbarn und Robots für die sichtbare Seite aus der Serverausgabe. Die Direktive für die Fragment-URL bleibt eigenständig.
+- Assetversionen für Kategorie und Artikel von 6 auf 7, für die separat geladene Matrix von 2 auf 3. [Lokaler Prüfbericht](../../.cache/freigabefixes-6ce83c7/Pruefbericht.html)
+
 ## Unreleased – Skripte, nachgeladene Karten und Preiszeile (2026-11-17)
 
 - Normale Produktseiten laden die Matrix mit dem Artikelcode. Andere Seiten behalten den bedarfsgesteuerten Matrix- und Zoomabruf. Main und der bisherige Vue-Zweig nutzen ein gemeinsames Seitenbundle; das jeweilige Abmeldeverhalten bleibt erhalten.

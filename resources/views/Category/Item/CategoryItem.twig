@@ -26,13 +26,13 @@
     {% set canonicalUrl = services.url.getCanonicalURL(null, true) %}
     {% if rendersItemGrid and categorySeoPage.pagination.valid %}
     {% if currentPage - 1 > 1 %}
-        <link rel="prev" href="{{ canonicalUrl ~ queryString({'page': currentPage - 1}) }}" />
+        <link rel="prev" href="{{ canonicalUrl ~ queryString({'page': currentPage - 1, 'quickViewItem': null}) }}" />
     {% elseif currentPage - 1 == 1 %}
         <link rel="prev" href="{{ canonicalUrl }}" />
     {% endif %}
    
     {% if currentPage + 1 <= pageMax %}
-        <link rel="next" href="{{ canonicalUrl ~ queryString({'page': currentPage + 1}) }}" />
+        <link rel="next" href="{{ canonicalUrl ~ queryString({'page': currentPage + 1, 'quickViewItem': null}) }}" />
     {% endif %}
     {% endif %}
     {% if currentPage == 1 %}

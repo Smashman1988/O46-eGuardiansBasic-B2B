@@ -90,8 +90,12 @@ class VariationBatchResource extends ApiResource
             }
 
             if (!$doc) {
-                $missing[] = (int)$id;
+                // Only a completed, empty search confirms absence. An omitted or
+                // malformed projection stays eligible for the existing single lookup.
                 $items[(string)$id] = null;
+                if (is_array($res) && isset($res['documents']) && $res['documents'] === [] && empty($res['error']) && empty($res['total'])) {
+                    $missing[] = (int)$id;
+                }
                 continue;
             }
 

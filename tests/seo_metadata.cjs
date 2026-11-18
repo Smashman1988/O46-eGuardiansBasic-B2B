@@ -243,6 +243,12 @@ async function browserTests() {
                         // confirmed page beyond it, using the actual jQuery event signature.
                         await page.evaluate(state => {
                             const payload = document.implementation.createHTMLDocument();
+                            payload.title = document.title.replace(/ – Seite 2$/, '') + ' – Seite ' + state.currentPage;
+                            const robots = document.head.querySelector('meta[name="robots"]').cloneNode(false);
+                            robots.dataset.o46HistoryRobots = robots.content;
+                            const description = document.head.querySelector('meta[name="description"]').cloneNode(false);
+                            description.content = description.content.replace(/ – Seite 2$/, '') + ' – Seite ' + state.currentPage;
+                            payload.head.append(robots, description);
                             const meta = payload.createElement('meta');
                             meta.name = 'o46-pagination';
                             meta.content = JSON.stringify(state);

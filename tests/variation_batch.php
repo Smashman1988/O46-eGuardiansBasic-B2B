@@ -39,13 +39,21 @@ namespace Plenty\Modules\Webshop\ItemSearch\Services {
     class ItemSearchService {
         public $calls = 0;
         public $lastFactories = [];
+        public $overrides = [];
         public function getResults($factories) {
             $this->calls++;
             $this->lastFactories = $factories;
             $results = [];
             foreach ($factories as $factory) {
                 $id = $factory['variationId'];
-                if (!isset($GLOBALS['docs'][$id])) continue;
+                if (array_key_exists($id, $this->overrides)) {
+                    if ($this->overrides[$id] !== null) $results['v' . $id] = $this->overrides[$id];
+                    continue;
+                }
+                if (!isset($GLOBALS['docs'][$id])) {
+                    $results['v' . $id] = ['documents' => []];
+                    continue;
+                }
                 $doc = $GLOBALS['docs'][$id];
                 // Apply the declared fields to these source properties. Prices and
                 // other platform enrichments are supplied separately by the fixture.
@@ -140,6 +148,15 @@ namespace {
     if ($resource->index()->data['items'][1]['ean'] !== '00internal') {
         throw new \RuntimeException('An unknown barcode type replaced the first nonempty fallback');
     }
+    $service->overrides = [2 => null, 3 => ['documents' => [['data' => null]]],
+        4 => ['error' => 'timeout', 'documents' => []], 5 => ['documents' => []],
+        6 => (object)['documents' => []], 7 => ['total' => 1, 'documents' => []]];
+    $mixed = (new VariationBatchResource(new \Plenty\Plugin\Http\Request(['ids' => '1,2,3,4,5,6,7']), new \IO\Api\ApiResponse()))->index()->data;
+    if ($mixed['missing'] !== [5] || array_keys($mixed['items']) !== [1,2,3,4,5,6,7] || $mixed['count'] !== 7 ||
+        array_slice($mixed['items'], 1) !== [null,null,null,null,null,null]) {
+        throw new \RuntimeException('Only confirmed empty searches may suppress the single lookup');
+    }
+    $service->overrides = [];
     $cases = [
         [['ids' => ['2x', ['8'], '1e3', '3.2', -1]], []],
         [['ids' => [' 002 ', '3', 2, '3e1', ['4'], '9'], 'template' => ' fixture '], [2,3,9]],

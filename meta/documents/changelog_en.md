@@ -1,5 +1,11 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Variation availability and pagination (2026-11-18)
+
+- Missing, out-of-stock and pending variations have no orderable quantity. Failed reads can be retried. Shared requests preserve valid sibling rows and their quantity limits.
+- Infinite Scroll applies the server's canonical, language alternatives, adjacent pages and robots directive for the visible URL. The fragment URL retains its own robots directive.
+- Category and item assets move from version 6 to 7. The standalone matrix moves from version 2 to 3. [Local verification report](../../.cache/freigabefixes-6ce83c7/Pruefbericht.html)
+
 ## Unreleased – Page bundles, appended cards and inline prices (2026-11-17)
 
 - Standard product pages load the variation matrix with the item code. Other pages retain on-demand matrix and zoom loading. Main and former Vue routes share the page bundle while retaining their respective logout behavior.

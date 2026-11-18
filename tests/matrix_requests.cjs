@@ -212,7 +212,7 @@ async function scenario(browser, entry, mode, count, copies = 1, baseline = fals
             assert.equal(row.ean, missing ? '–' : '001' + row.id);
             assert.equal(row.stock, missing ? null : fallback ? '11' : '20');
             assert.equal(row.orderMax, fallback ? '3' : null);
-            assert.equal(row.quantityCap, missing ? 200 : fallback ? 3 : 20);
+            assert.equal(row.quantityCap, missing ? 0 : fallback ? 3 : 20);
         }
         return { mode, count, copies, batches: result.batches.map(b => b.ids.length),
             singles: result.singles.length, aborted: result.aborted, maxSingles: result.maxSingles,

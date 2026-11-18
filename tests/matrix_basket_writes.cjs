@@ -103,6 +103,14 @@ async function run(browser, mode) {
             egInitSizeMatrices(document);
         }, mode);
         await page.clock.runFor(50);
+        if (mode === 'partial-stock') {
+            const missing = page.locator('[data-eg-variation-id="2"] [data-eg-qty]');
+            assert.equal(await missing.isDisabled(), true);
+            assert.equal(await missing.getAttribute('max'), '0');
+            await missing.evaluate(input => { input.value = '1'; });
+            await page.locator('[data-eg-matrix-add]').click();
+            assert.deepEqual(await page.evaluate(() => [calls.reads, calls.posts]), [0, 0]);
+        }
         const baseline = await page.evaluate(() => {
             const initial = calls.currencyQueries;
             calls.currencyQueries = 0;
@@ -120,6 +128,8 @@ async function run(browser, mode) {
             assert.equal(await details.getAttribute('aria-expanded'), 'true');
             assert.equal(await page.locator('[data-eg-total-sum]').textContent(), '2,00 €');
             assert.equal(await page.evaluate(() => calls.posts), 0, 'Opening error details must never book');
+            // An invalid sibling must also be excluded from a mixed, otherwise valid selection.
+            await page.locator('[data-eg-variation-id="2"] [data-eg-qty]').evaluate(input => { input.value = '1'; });
         }
         if (mode === 'currency') {
             // The header can be replaced as a whole, bypassing the observer on the old node.

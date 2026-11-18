@@ -770,7 +770,14 @@ O46Core.matrix = function () {
   // === REQUEST CACHE ===
   var vCache = {};
   var vInflight = {};
-  var vBatchInflight = {};
+  // Cache only confirmed results: an object is a variation, null is explicitly missing.
+  // An omitted result / failed transport remains undefined and can be retried.
+  function finishVariation(id, listeners, value) {
+    if (vInflight[id] !== listeners) return;
+    delete vInflight[id];
+    if (value !== undefined) vCache[id] = value;
+    listeners.forEach(function (callback) { callback(value); });
+  }
 
   function pickEanFromBarcodes(barcodes) {
     if (!barcodes || !barcodes.length) return null;
@@ -863,93 +870,57 @@ O46Core.matrix = function () {
       if (offset >= missingIds.length) return cb();
       var ids = missingIds.slice(offset, offset + BATCH_MAX_IDS);
       offset += ids.length;
-      fetchVariationChunk(ids.join(","), nextChunk);
+      fetchVariationChunk(ids, nextChunk);
     }
     nextChunk();
   }
 
-  function fetchVariationChunk(key, cb) {
-    if (vBatchInflight[key]) {
-      vBatchInflight[key].push(cb);
-      return;
-    }
+  function fetchVariationChunk(ids, done) {
+    // A PDP and a Quickview may request overlapping (not necessarily identical) batches.
+    var pending = ids.length;
+    var requests = {};
+    function settled() { if (--pending === 0) done(); }
+    ids.forEach(function (id) {
+      if (Object.prototype.hasOwnProperty.call(vCache, id)) settled();
+      else if (vInflight[id]) vInflight[id].push(settled);
+      else requests[id] = vInflight[id] = [settled];
+    });
+    var fresh = Object.keys(requests);
+    if (!fresh.length) return;
 
-    var callbacks = [cb];
-    vBatchInflight[key] = callbacks;
-
-    // Success and transport errors both complete this request. Starting the
-    // single-row fallback from a separate timer races a still-running batch.
-    eGuardians.apiservice.get("/rest/io/variations/batch", { ids: key }, function (response) {
-      if (vBatchInflight[key] !== callbacks) return;
-
-      try {
-        var top = response && response.data ? response.data : null;
-        var payload = (top && top.data && typeof top.data === "object") ? top.data : top;
-
-        var items = (payload && payload.items && typeof payload.items === "object") ? payload.items : {};
-        var missing = (payload && Array.isArray(payload.missing)) ? payload.missing : [];
-
-        Object.keys(items).forEach(function (k) {
-          var id = toInt(k);
-          if (!id) return;
-
-          try {
-            if (items[k] && !items[k].orderMax) {
-              var om = extractOrderMaxFromObj(items[k]);
-              if (om != null) items[k].orderMax = om;
-            }
-          } catch (e0) {}
-
-          vCache[id] = items[k];
-        });
-
-        for (var mi = 0; mi < missing.length; mi++) {
-          var mid = toInt(missing[mi]);
-          if (!mid) continue;
-
-          if (!Object.prototype.hasOwnProperty.call(vCache, mid)) {
-            vCache[mid] = null;
-          }
-        }
-      } catch (e) {}
-
-      delete vBatchInflight[key];
-
-      for (var x = 0; x < callbacks.length; x++) callbacks[x]();
+    eGuardians.apiservice.get("/rest/io/variations/batch", { ids: fresh.join(",") }, function (response, status) {
+      var top = (status == null || status === 200) && !response?.error && response?.data;
+      var payload = top && (top.data || top);
+      var items = (payload && payload.items) || {};
+      var missing = new Set((payload && Array.isArray(payload.missing) ? payload.missing : []).map(toInt));
+      fresh.forEach(function (id) {
+        var item = items[id];
+        if (missing.has(toInt(id))) item = null;
+        else if (!item || typeof item !== "object" || Array.isArray(item) ||
+            (item.id != null ? toInt(item.id) !== toInt(id) : !Object.keys(item).length)) item = undefined;
+        finishVariation(id, requests[id], item);
+      });
     }, "json", BATCH_TIMEOUT_MS);
   }
 
   function fetchVariationDetailsSingle(variationId, cb) {
     variationId = toInt(variationId);
-    if (!variationId) return cb(null);
-
-    if (Object.prototype.hasOwnProperty.call(vCache, variationId)) {
-      return cb(vCache[variationId]);
-    }
-
+    if (!variationId) return cb();
+    if (Object.prototype.hasOwnProperty.call(vCache, variationId)) return cb(vCache[variationId]);
     if (vInflight[variationId]) {
       vInflight[variationId].push(cb);
       return;
     }
 
-    vInflight[variationId] = [cb];
-
-    if (!window.eGuardians || !eGuardians.apiservice || !eGuardians.apiservice.get) {
-      vCache[variationId] = null;
-
-      var list0 = vInflight[variationId] || [];
-      delete vInflight[variationId];
-
-      for (var k0 = 0; k0 < list0.length; k0++) list0[k0](null);
-      return;
-    }
-
+    if (!window.eGuardians || !eGuardians.apiservice || !eGuardians.apiservice.get) return cb();
+    var listeners = vInflight[variationId] = [cb];
     var params = {
       template: encodeURI("Ceres::Item.SingleItem")
     };
 
-    eGuardians.apiservice.get("/rest/io/variations/" + variationId, params, function (response) {
-      var out = null;
+    eGuardians.apiservice.get("/rest/io/variations/" + variationId, params, function (response, status) {
+      if ((status != null && status !== 200) || response?.error) return finishVariation(variationId, listeners, undefined);
+      var out;
 
       try {
         var d = response &&
@@ -958,7 +929,9 @@ O46Core.matrix = function () {
           response.data.documents[0] &&
           response.data.documents[0].data;
 
-        if (d) {
+        if (Array.isArray(response?.data?.documents) && response.data.documents.length === 0 && !Number(response.data.total)) out = null;
+        if (d && typeof d === "object" && !Array.isArray(d) && Object.keys(d).length &&
+            (d.variation?.id == null || toInt(d.variation.id) === variationId)) {
           var orderMax = extractOrderMaxFromObj(d);
 
           out = {
@@ -973,27 +946,10 @@ O46Core.matrix = function () {
           };
         }
       } catch (e) {
-        out = null;
+        out = undefined;
       }
-
-      vCache[variationId] = out;
-
-      var list = vInflight[variationId] || [];
-      delete vInflight[variationId];
-
-      for (var k = 0; k < list.length; k++) list[k](out);
+      finishVariation(variationId, listeners, out);
     }, "json", FETCH_TIMEOUT_MS);
-  }
-
-  function fetchVariationDetails(variationId, cb) {
-    variationId = toInt(variationId);
-    if (!variationId) return cb(null);
-
-    if (Object.prototype.hasOwnProperty.call(vCache, variationId)) {
-      return cb(vCache[variationId]);
-    }
-
-    return fetchVariationDetailsSingle(variationId, cb);
   }
 
   function runQueue(tasks, concurrency, done) {
@@ -1095,19 +1051,6 @@ O46Core.matrix = function () {
     return null;
   }
 
-  function getRowStockNetForVid(matrix, vid) {
-    try {
-      if (!matrix) return null;
-
-      var row = matrix.querySelector('.eg-row[data-eg-variation-id="' + String(vid) + '"]');
-      if (!row) return null;
-
-      return getRowStockNet(row);
-    } catch (e) {}
-
-    return null;
-  }
-
   function getRowOrderMaxReal(row) {
     if (!row) return null;
 
@@ -1116,19 +1059,6 @@ O46Core.matrix = function () {
       var n = parseInt(raw, 10);
       if (isFinite(n) && n > 0) return n;
     }
-
-    return null;
-  }
-
-  function getRowOrderMaxRealForVid(matrix, vid) {
-    try {
-      if (!matrix) return null;
-
-      var row = matrix.querySelector('.eg-row[data-eg-variation-id="' + String(vid) + '"]');
-      if (!row) return null;
-
-      return getRowOrderMaxReal(row);
-    } catch (e) {}
 
     return null;
   }
@@ -1171,8 +1101,13 @@ O46Core.matrix = function () {
       var inBasket = toInt(basketQtyMap[vid] || 0);
       if (!isFinite(inBasket) || inBasket < 0) inBasket = 0;
 
-      var stockNet = getRowStockNetForVid(matrix, vid);
-      var orderMaxReal = getRowOrderMaxRealForVid(matrix, vid);
+      var row = matrix.querySelector('.eg-row[data-eg-variation-id="' + vid + '"]');
+      if (!row || row.dataset.egVariationState !== "available") {
+        blocked++;
+        continue;
+      }
+      var stockNet = getRowStockNet(row);
+      var orderMaxReal = getRowOrderMaxReal(row);
 
       var remainingStock = Infinity;
       if (typeof stockNet === "number" && isFinite(stockNet)) {
@@ -1224,7 +1159,7 @@ O46Core.matrix = function () {
     var qtyEl = row._egQtyEl || (row._egQtyEl = row.querySelector("[data-eg-qty]"));
     if (!qtyEl) return;
 
-    var stock = getRowStockCap(row);
+    var stock = row.dataset.egVariationState === "available" ? getRowStockCap(row) : 0;
     var orderMaxReal = getRowOrderMaxReal(row);
 
     var limit = STOCK_CAP;
@@ -1618,6 +1553,7 @@ O46Core.matrix = function () {
     var token = (toInt(matrix.getAttribute("data-eg-preview-token")) || 0) + 1;
     matrix.setAttribute("data-eg-preview-token", String(token));
 
+    matrix._egPendingPreview = null;
     if (expand) {
       if (ctx.inModal) ensureQuickviewZoom(matrix);
       anchor = document.getElementById(ctx.zoomId);
@@ -1627,30 +1563,11 @@ O46Core.matrix = function () {
       return;
     }
 
-    fetchVariationDetails(vid, function (v) {
-      var cur = toInt(matrix.getAttribute("data-eg-preview-token"));
-      if (cur !== token) return;
-
-      function useImages(imgs) {
-        if (!matrix.isConnected || toInt(matrix.getAttribute("data-eg-preview-token")) !== token) return;
-        if (!imgs || !imgs.length) return;
-        updateMagicZoomWithGallery(matrix, ctx.zoomId, imgs);
-      }
-
-      if (!v || !v.images || !v.images.length) {
-        fetchVariationDetailsSingle(vid, function (v2) {
-          var cur2 = toInt(matrix.getAttribute("data-eg-preview-token"));
-          if (cur2 !== token) return;
-          if (!v2 || !v2.images || !v2.images.length) return;
-
-          useImages(v2.images);
-        });
-
-        return;
-      }
-
-      useImages(v.images);
-    });
+    matrix._egPendingPreview = row.dataset.egVariationState === "loading" ? row : null;
+    var variation = vCache[toInt(vid)];
+    if (variation && variation.images && variation.images.length && matrix.isConnected) {
+      updateMagicZoomWithGallery(matrix, ctx.zoomId, variation.images);
+    }
   }
 
   // === ROW BUILDING ===
@@ -1691,6 +1608,7 @@ O46Core.matrix = function () {
   function createRow(columnLabels, mode, labelA, labelB, colorImgUrl) {
     var row = document.createElement("div");
     row.className = "col-12 eg-row";
+    row.dataset.egVariationState = "loading";
 
     function cell(text, colKey) {
       var d = document.createElement("div");
@@ -1756,7 +1674,8 @@ O46Core.matrix = function () {
     qty.setAttribute("pattern", "[0-9]*");
     qty.setAttribute("autocomplete", "off");
     qty.setAttribute("min", "0");
-    qty.setAttribute("max", String(STOCK_CAP));
+    qty.setAttribute("max", "0");
+    qty.disabled = true;
     qty.setAttribute("step", "1");
     qty.value = "0";
     qty.setAttribute("data-eg-qty", "");
@@ -1871,7 +1790,11 @@ O46Core.matrix = function () {
   // === INIT ===
   function initMatrix(matrix) {
     if (matrix) initMatrixHeadingLabels(matrix);
-    if (!matrix || matrix.getAttribute("data-eg-matrix-initialized") === "1") return;
+    if (!matrix) return;
+    if (matrix.getAttribute("data-eg-matrix-initialized") === "1") {
+      if (matrix._egRetryRows) matrix._egRetryRows();
+      return;
+    }
 
     matrix.setAttribute("data-eg-matrix-initialized", "1");
 
@@ -1895,120 +1818,140 @@ O46Core.matrix = function () {
       finishLoading(status && status.dataset.unavailable);
       return;
     }
-    var unavailableRows = 0;
+    var missingRows = 0;
+    function loadRows(pendingRows) {
+      matrix._egRetryRows = null;
+      if (table) table.setAttribute("aria-busy", "true");
+      var retryRows = [];
 
-    var ids = [];
+      var ids = [];
 
-    for (var i = 0; i < rows.length; i++) {
-      var vid = toInt(rows[i].getAttribute("data-eg-variation-id"));
-      if (vid) ids.push(vid);
-    }
+      for (var i = 0; i < pendingRows.length; i++) {
+        var vid = toInt(pendingRows[i].getAttribute("data-eg-variation-id"));
+        if (vid) ids.push(vid);
+      }
 
-    fetchVariationsBatch(ids, function () {
-      maybeRefreshCurrencySymbol();
-      var tasks = [];
+      fetchVariationsBatch(ids, function () {
+        maybeRefreshCurrencySymbol();
+        var tasks = [];
 
-      for (var r = 0; r < rows.length; r++) {
-        (function (row) {
-          var vid2 = toInt(row.getAttribute("data-eg-variation-id"));
-          var priceEl2 = row._egPriceEl;
-          var eanEl2 = row._egEanEl;
+        for (var r = 0; r < pendingRows.length; r++) {
+          (function (row) {
+            var vid2 = toInt(row.getAttribute("data-eg-variation-id"));
+            var priceEl2 = row._egPriceEl;
+            var eanEl2 = row._egEanEl;
 
-          function apply(v2) {
-            if (!v2) {
-              unavailableRows++;
-              if (priceEl2) {
-                priceEl2.textContent = "–";
-                priceEl2.setAttribute("data-eg-price-value", "0");
+            function apply(v2) {
+              if (!v2) {
+                row.dataset.egVariationState = v2 === null ? "missing" : "error";
+                if (v2 === null) missingRows++;
+                else retryRows.push(row);
+                if (priceEl2) {
+                  priceEl2.textContent = "–";
+                  priceEl2.setAttribute("data-eg-price-value", "0");
+                }
+
+                if (eanEl2) eanEl2.textContent = "–";
+
+                row.removeAttribute("data-eg-ordermax-raw");
+
+                setRowStock(row, null, false);
+                row._egQtyEl.disabled = true;
+                if (v2 === null) row._egStockEl.textContent = t("not_addable");
+                clampQtyToStock(row);
+                return;
               }
 
-              if (eanEl2) eanEl2.textContent = "–";
+              var net = v2.stock?.net ?? v2.stock;
+              var rawStock2 = (typeof net === "number" || (typeof net === "string" && net.trim())) && isFinite(net)
+                ? Number(net) : null;
 
-              row.removeAttribute("data-eg-ordermax-raw");
+              setRowStock(row, rawStock2, true);
+              row._egQtyEl.value = "0";
+              row.dataset.egVariationState = rawStock2 != null && rawStock2 <= 0 ? "unavailable" : "available";
+              row._egQtyEl.disabled = row.dataset.egVariationState !== "available";
+              if (!row._egQtyEl.disabled && matrix._egWriteInputs) {
+                row._egQtyEl.disabled = true;
+                matrix._egWriteInputs.push(row._egQtyEl);
+              }
+              if (matrix._egPendingPreview === row && matrix.isConnected) previewVariationFromRow(matrix, row, true, false);
 
-              setRowStock(row, null, true);
-              clampQtyToStock(row);
-              return;
-            }
-
-            var rawStock2 = (typeof v2.stock === "number" && isFinite(v2.stock)) ? v2.stock : null;
-
-            if (rawStock2 == null && v2.stock && typeof v2.stock.net !== "undefined") {
-              var sn = parseInt(v2.stock.net, 10);
-              if (isFinite(sn)) rawStock2 = sn;
-            }
-
-            setRowStock(row, rawStock2, true);
-
-            if (priceEl2) {
-              if (typeof v2.price === "number" && isFinite(v2.price)) {
-                priceEl2.textContent = formatEuro(v2.price);
-                priceEl2.setAttribute("data-eg-price-value", String(v2.price));
-              } else if (v2.prices && v2.prices.default && v2.prices.default.unitPrice && typeof v2.prices.default.unitPrice.value !== "undefined") {
-                var pv2 = parseFloat(v2.prices.default.unitPrice.value);
-                if (isFinite(pv2)) {
-                  priceEl2.textContent = formatEuro(pv2);
-                  priceEl2.setAttribute("data-eg-price-value", String(pv2));
+              if (priceEl2) {
+                if (typeof v2.price === "number" && isFinite(v2.price)) {
+                  priceEl2.textContent = formatEuro(v2.price);
+                  priceEl2.setAttribute("data-eg-price-value", String(v2.price));
+                } else if (v2.prices && v2.prices.default && v2.prices.default.unitPrice && typeof v2.prices.default.unitPrice.value !== "undefined") {
+                  var pv2 = parseFloat(v2.prices.default.unitPrice.value);
+                  if (isFinite(pv2)) {
+                    priceEl2.textContent = formatEuro(pv2);
+                    priceEl2.setAttribute("data-eg-price-value", String(pv2));
+                  } else {
+                    priceEl2.textContent = "–";
+                    priceEl2.setAttribute("data-eg-price-value", "0");
+                  }
                 } else {
                   priceEl2.textContent = "–";
                   priceEl2.setAttribute("data-eg-price-value", "0");
                 }
+              }
+
+              if (eanEl2) {
+                var ean = v2.ean == null ? "" : String(v2.ean).trim();
+                eanEl2.textContent = ean || "–";
+              }
+
+              var maxO = null;
+
+              try {
+                if (v2.orderMax != null) maxO = toInt(v2.orderMax);
+                if (!maxO) {
+                  var om2 = extractOrderMaxFromObj(v2);
+                  if (om2 != null) maxO = toInt(om2);
+                }
+              } catch (e0) {
+                maxO = null;
+              }
+
+              if (maxO && isFinite(maxO) && maxO > 0) {
+                row.setAttribute("data-eg-ordermax-raw", String(maxO));
               } else {
-                priceEl2.textContent = "–";
-                priceEl2.setAttribute("data-eg-price-value", "0");
+                row.removeAttribute("data-eg-ordermax-raw");
               }
+
+              clampQtyToStock(row);
             }
 
-            if (eanEl2) {
-              var ean = v2.ean == null ? "" : String(v2.ean).trim();
-              eanEl2.textContent = ean || "–";
-            }
-
-            var maxO = null;
-
-            try {
-              if (v2.orderMax != null) maxO = toInt(v2.orderMax);
-              if (!maxO) {
-                var om2 = extractOrderMaxFromObj(v2);
-                if (om2 != null) maxO = toInt(om2);
-              }
-            } catch (e0) {
-              maxO = null;
-            }
-
-            if (maxO && isFinite(maxO) && maxO > 0) {
-              row.setAttribute("data-eg-ordermax-raw", String(maxO));
-            } else {
-              row.removeAttribute("data-eg-ordermax-raw");
-            }
-
-            clampQtyToStock(row);
-          }
-
-          if (vid2 && Object.prototype.hasOwnProperty.call(vCache, vid2)) {
-            apply(vCache[vid2]);
-          } else if (vid2) {
-            tasks.push(function (done) {
-              fetchVariationDetailsSingle(vid2, function (vx) {
-                maybeRefreshCurrencySymbol();
-                apply(vx);
-                done();
+            if (vid2 && Object.prototype.hasOwnProperty.call(vCache, vid2)) {
+              apply(vCache[vid2]);
+            } else if (vid2) {
+              tasks.push(function (done) {
+                fetchVariationDetailsSingle(vid2, function (vx) {
+                  maybeRefreshCurrencySymbol();
+                  apply(vx);
+                  done();
+                });
               });
-            });
-          } else {
-            apply(null);
-          }
-        })(rows[r]);
-      }
+            } else {
+              apply(undefined);
+            }
+          })(pendingRows[r]);
+        }
 
-      runQueue(tasks, CONCURRENCY, function () {
-        recalcMatrixTotals(matrix);
-        finishLoading(status && unavailableRows ? (unavailableRows === rows.length ? status.dataset.unavailable : status.dataset.partial) : "");
+        runQueue(tasks, CONCURRENCY, function () {
+          recalcMatrixTotals(matrix);
+          var unavailableRows = missingRows + retryRows.length;
+          finishLoading(status && unavailableRows ? (unavailableRows === rows.length ? status.dataset.unavailable : status.dataset.partial) : "");
 
-        var firstRow = matrix.querySelector(".eg-row");
-        if (firstRow) setActiveRow(matrix, firstRow);
+          var firstRow = matrix.querySelector(".eg-row");
+          if (firstRow && !matrix.querySelector(".eg-row.eg-active")) setActiveRow(matrix, firstRow);
+          if (retryRows.length) matrix._egRetryRows = function () {
+            retryRows.forEach(function (row) { row.dataset.egVariationState = "loading"; });
+            loadRows(retryRows);
+          };
+        });
       });
-    });
+    }
+    loadRows(rows);
 
     matrix.addEventListener("click", function (e) {
       var link = e.target && e.target.closest ? e.target.closest("[data-eg-color-preview]") : null;
@@ -2080,14 +2023,16 @@ O46Core.matrix = function () {
       for (var i = 0; i < allRows.length; i++) {
         var row = allRows[i];
 
+        if (row.dataset.egVariationState !== "available") continue;
         var qtyEl = row._egQtyEl || row.querySelector("[data-eg-qty]");
-        var q = qtyEl ? toInt(qtyEl.value) : 0;
+        if (!qtyEl || qtyEl.disabled) continue;
+        var q = toInt(qtyEl.value);
 
         if (q <= 0) continue;
 
         clampQtyToStock(row);
 
-        q = qtyEl ? toInt(qtyEl.value) : 0;
+        q = toInt(qtyEl.value);
         if (q <= 0) continue;
 
         var vId = row.getAttribute("data-eg-variation-id");
@@ -2105,7 +2050,8 @@ O46Core.matrix = function () {
 
       // The pre-clamp and the POST operate on this selection. Do not let a
       // later edit be cleared as if it had been included in the same write.
-      var writeInputs = matrix.querySelectorAll('[data-eg-qty]:not(:disabled)');
+      var writeInputs = Array.from(matrix.querySelectorAll('[data-eg-qty]:not(:disabled)'));
+      matrix._egWriteInputs = writeInputs;
       writeInputs.forEach(function (input) { input.disabled = true; });
       btn.disabled = true;
       btn.setAttribute("aria-busy", "true");
@@ -2125,12 +2071,10 @@ O46Core.matrix = function () {
 
           // Vor dem eigentlichen Add prüfen, was schon im Warenkorb liegt.
           // Mengen, die nicht mehr addbar sind, werden vorher auf 0 gesetzt und nicht gepostet.
-          if (snapBefore && snapBefore.qtyMap) {
-            var pre = preClampItemsAgainstBasket(items, snapBefore.qtyMap || {}, matrix);
-            items = pre.items || [];
-            hadAdjustments = !!(pre && (pre.adjusted > 0 || pre.blocked > 0));
-            recalcMatrixTotals(matrix);
-          }
+          var pre = preClampItemsAgainstBasket(items, snapBefore && snapBefore.qtyMap, matrix);
+          items = pre.items;
+          hadAdjustments = pre.adjusted > 0 || pre.blocked > 0;
+          recalcMatrixTotals(matrix);
 
           if (!items.length) {
             showInfoToast(t("info_nothing_addable"), "[data-eg-size-matrix]", 1);
@@ -2197,7 +2141,10 @@ O46Core.matrix = function () {
           btn.removeAttribute("aria-busy");
           btn.removeAttribute("data-eg-busy");
         } finally {
-          writeInputs.forEach(function (input) { input.disabled = false; });
+          matrix._egWriteInputs = null;
+          writeInputs.forEach(function (input) {
+            input.disabled = input.closest(".eg-row").dataset.egVariationState !== "available";
+          });
         }
       })();
     });

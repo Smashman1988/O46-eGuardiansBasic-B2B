@@ -695,7 +695,33 @@ initBFCacheBypass();
     };
     const initialVariant = listVariant(initialUrl);
     const initialPage = requestedPage(initialUrl);
-    const appendedPages = new Set();
+    // Each confirmed page already arrives as an HTML document. Keep only its head
+    // values, never the response document or appended product nodes.
+    const pages = new Map();
+    const links = 'link[rel="canonical"],link[rel="alternate"][hreflang],link[rel="prev"],link[rel="next"],meta[name="o46-language-route"]';
+    const pageHead = (doc, fragment) => {
+        const head = doc.head;
+        if (!head) return null;
+        const robots = head.querySelector('meta[name="robots"]');
+        const directive = fragment ? robots?.dataset.o46HistoryRobots : robots?.content;
+        // A cached fragment from an older theme lacks the direct page's robots
+        // decision. Navigate normally only if that fragment actually becomes visible.
+        if (!directive || !head.querySelector('title')) return fragment ? {directLoad: true} : null;
+        return {
+            title: doc.title,
+            description: head.querySelector('meta[name="description"]')?.content,
+            robots: directive,
+            links: Array.from(head.querySelectorAll(links), node => document.importNode(node, false))
+        };
+    };
+    let activeHead;
+    function applyHead(snapshot) {
+        if (snapshot === activeHead) return;
+        document.head.querySelectorAll(links).forEach(node => node.remove());
+        document.head.append(...snapshot.links.map(node => node.cloneNode(false)));
+        document.head.querySelector('meta[name="robots"]').content = snapshot.robots;
+        activeHead = snapshot;
+    }
     // Only remove an actual server-generated suffix, keeping editorial en dashes.
     const serverSuffix = / – (?:Seite|Page|Pagina|Página) [1-9][0-9]*$/;
     const stripServerSuffix = value => pagination.valid === true && pagination.currentPage > 1
@@ -710,22 +736,37 @@ initBFCacheBypass();
         const requested = requestedPage(url);
         const confirmed = pagination.hasList === true && pagination.ambiguous === false
             && pagination.empty === false && Number.isSafeInteger(pagination.pageMax)
-            && pagination.pageMax > 0 && requested !== null && (requested <= pagination.pageMax || appendedPages.has(requested))
+            && pagination.pageMax > 0 && requested !== null && (requested <= pagination.pageMax || pages.has(requested))
             && (requested !== initialPage || pagination.valid === true);
         const page = confirmed ? requested : 1;
 
-        const newTitle = page > 1 ? `${baseTitle} – ${pageText} ${page}` : baseTitle;
-        const newDescription = baseDescription === undefined ? undefined
+        const snapshot = pages.get(requested);
+        if (snapshot?.directLoad) {
+            url.searchParams.delete('quickViewItem');
+            window.location.replace(url.href);
+            return;
+        }
+        const newTitle = snapshot ? snapshot.title : page > 1 ? `${baseTitle} – ${pageText} ${page}` : baseTitle;
+        const newDescription = snapshot ? snapshot.description : baseDescription === undefined ? undefined
             : (page > 1 ? `${baseDescription} – ${pageText} ${page}` : baseDescription);
 
+        if (snapshot) applyHead(snapshot);
         document.title = newTitle;
 
-        const descTag = document.querySelector('meta[name="description"]');
-        if (descTag) descTag.setAttribute('content', newDescription);
+        let descTag = (document.head || document).querySelector('meta[name="description"]');
+        if (snapshot && newDescription === undefined) descTag?.remove();
+        else if (newDescription !== undefined) {
+            if (!descTag) {
+                descTag = document.createElement('meta');
+                descTag.name = 'description';
+                document.head.append(descTag);
+            }
+            descTag.setAttribute('content', newDescription);
+        }
 
         // Optional: OG und Twitter tags aktualisieren
         const updateMetaTag = (selector, content) => {
-            const el = document.querySelector(selector);
+            const el = (document.head || document).querySelector(selector);
             if (el) el.setAttribute('content', content);
         };
 
@@ -740,38 +781,41 @@ initBFCacheBypass();
         const originalPushState = history.pushState;
         const originalReplaceState = history.replaceState;
 
-        const triggerUpdate = () => setTimeout(updateMeta, 100);
-
         history.pushState = function () {
             originalPushState.apply(this, arguments);
-            triggerUpdate();
+            updateMeta();
         };
 
         history.replaceState = function () {
             originalReplaceState.apply(this, arguments);
-            triggerUpdate();
+            updateMeta();
         };
 
-        window.addEventListener('popstate', triggerUpdate);
+        window.addEventListener('popstate', updateMeta);
     };
 
-    // A later response can prove a page beyond the initial total. Only remember
-    // that exact page after its own list was actually appended on this route.
+    // An append can arrive before or after the history event. Switch only to the
+    // confirmed response for the visible page, on the same route and filter set.
     window.jQuery?.('.category-product-list').on('append.infiniteScroll', (_event, response, path, items) => {
         if (!items?.length) return;
         const url = new URL(path, initialUrl);
         const page = requestedPage(url);
-        if (page === null || page <= pagination.pageMax || listVariant(url) !== initialVariant) return;
+        if (page === null || listVariant(url) !== initialVariant) return;
         try {
             const state = JSON.parse(response.querySelector('meta[name="o46-pagination"]')?.content || 'null');
-            if (state?.valid === true && state.currentPage === page) {
-                appendedPages.add(page);
-                updateMeta();
+            const confirmed = state?.valid === true && state.currentPage === page;
+            if (confirmed || (state?.valid === false && state.requestedPage === page)) {
+                const snapshot = pageHead(response, url.searchParams.has('quickViewItem'));
+                if (!confirmed && !snapshot) return;
+                pages.set(page, snapshot);
+                if (requestedPage(new URL(window.location.href)) === page) updateMeta();
             }
         } catch { /* An unconfirmed response supplies no new pagination evidence. */ }
     });
     observeNavigation();
-    updateMeta(); // falls die Seite mit ?page=2 direkt geladen wird
+    activeHead = pageHead(document, false);
+    if (initialPage !== null && activeHead) pages.set(initialPage, activeHead);
+    updateMeta();
 })();
 O46Core.shopMode.call(window);
 // Matrix-EAN-BESTAND Feature

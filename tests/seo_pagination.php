@@ -1099,6 +1099,40 @@ namespace {
             }
         }
     }
+    // Optional browser input. Render full and transport URLs independently through the real templates.
+    if ($historyFile = getenv('O46_SEO_HISTORY_FIXTURES')) {
+        $historyPages = [];
+        $routes = ['de'=>'/alle-artikel/', 'en'=>'/en/all-articles/', 'fr'=>'/fr/tous-les-articles/', 'it'=>'/it/tutti-gli-articoli/', 'es'=>'/es/todos-los-articulos/'];
+        $templateService->template = 'tpl.category.item';
+        foreach ($routes as $language => $route) {
+            $historyUrls = new class($routes, $language) extends UrlService {
+                public function __construct(private $routes, private $language) {}
+                public function getCanonicalURL($lang = null, $ignore = false) {
+                    return $this->configured && !$ignore ? $this->configured : 'https://example.test' . $this->routes[$lang ?: $this->language];
+                }
+            };
+            foreach (['plain'=>[], 'filtered'=>['facets'=>'9'], 'sorted'=>['sorting'=>'price.asc', 'utm_source'=>'A B'],
+                      'configured'=>[], 'forced'=>[]] as $mode=>$query) {
+                $historyUrls->configured = $mode === 'configured' ? 'https://example.test/editorial/?keep=7' : null;
+                foreach ([18, 19, 20] as $number) foreach ([false, true] as $fragment) {
+                    $request->params = ['page'=>(string)$number] + $query;
+                    if ($fragment) $request->params['quickViewItem'] = 'true';
+                    $ctx = localizedContext($base, $language);
+                    $ctx['services']['url'] = $historyUrls;
+                    $ctx['category']['details'][0]['metaRobots'] = 'INDEX,FOLLOW';
+                    $ctx['category']['details'][0]['metaTitle'] = 'Mode & Accessoires';
+                    if ($mode === 'forced') $ctx['forcedCanonicalUrl'] = 'https://example.test/curated/?lang=' . $language;
+                    $html = $twig->render('regular-head', $ctx + ['pageMax'=>20,'currentPage'=>$number,'itemCountTotal'=>240]);
+                    preg_match('~<head>(.*?)</head>~s', $html, $match);
+                    preg_match_all('~<title>.*?</title>|<meta (?:name="(?:o46-pagination|robots|o46-language-route|description|twitter:title|twitter:description)"|property="og:(?:title|description)")[^>]*>|<link rel="(?:canonical|alternate|prev|next)"[^>]*>~s', $match[1], $tags);
+                    $historyPages[$language][$mode][$number][$fragment ? 'fragment' : 'direct'] = [
+                        'url'=>'https://example.test' . $route . '?' . http_build_query($request->params),
+                        'head'=>implode("\n", $tags[0])];
+                }
+            }
+        }
+        file_put_contents($historyFile, json_encode($historyPages, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
     $report['comparison'] = 'NOT_RUN';
     if (isset($argv[3])) {
         test('compatibility/before-fix-comparison',function () use (&$report,$argv) {

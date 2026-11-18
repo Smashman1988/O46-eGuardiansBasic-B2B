@@ -120,7 +120,7 @@ class SeoPage
         return array_values(array_diff($tokens, ['ALL', 'NONE']));
     }
 
-    public function getRobots($blockRobots, $categoryRobots, $forceNoIndex): string
+    public function getRobots($blockRobots, $categoryRobots, $forceNoIndex, bool $listingHistory = false): string
     {
         $block = $this->parseRobotsDirectives($blockRobots);
         $category = $this->parseRobotsDirectives($categoryRobots);
@@ -129,6 +129,10 @@ class SeoPage
         $noindex = $forceNoIndex || in_array('NOINDEX', $restrictions, true) || $this->getPagination()['noindex'];
         $nofollow = in_array('NOFOLLOW', $restrictions, true);
         foreach (array_keys($this->query) as $key) {
+            // The fragment itself stays noindex. Its visible history URL omits this transport flag.
+            if ($listingHistory && $key === 'quickViewItem') {
+                continue;
+            }
             if (in_array(strtolower($key), ['query', 'currency', 'quickviewitem', 'facets', 'sorting', 'pricemin', 'pricemax'], true)) {
                 $noindex = true;
             }

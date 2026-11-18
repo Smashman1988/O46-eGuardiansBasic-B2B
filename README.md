@@ -16,6 +16,12 @@ Auch kleine, nachweisbar sinnvolle Verbesserungen sind erwünscht und werden umg
 
 Keine Änderungen allein für eine Änderungszahl, keine unverhältnismäßige Komplexität, kein Funktionsverlust und keine gelockerten Sicherheits-/Integritätsprüfungen. Bestehende Architektur, Persistenz und explizite Konfigurationen erhalten. Anzahl der Verbesserungen, Quellbytes, ausgelieferte Bytes, Requests, Berechnungen, DOM-Operationen und nachgewiesene Laufzeiten getrennt dokumentieren. Gesamtersparnisse nur mit klarer Bezugsbasis ausweisen, nicht doppelt zählen und keine theoretischen Hochrechnungen als gemessene Nutzer-/Produktionswerte ausgeben. Vorhandene Projektvorgaben gelten weiter; dieser Grundsatz ersetzt die Ablehnung eines Kandidaten allein wegen kleiner Einzelwirkung. Eine `AGENTS.md` wurde am 2026-11-15 weder im Repository noch seinen übergeordneten Verzeichnissen gefunden.
 
+## Variantenverfügbarkeit und Pagination (2026-11-18)
+
+Die Matrix gibt eine Mengenwahl nach bestätigten Variantendaten frei. Eine ausdrücklich fehlende oder ausverkaufte Variante bleibt gesperrt. Nach Lesefehlern kann der bestehende Matrix-Einstieg die betroffenen Zeilen erneut laden. Für gültige Varianten gelten weiterhin Bestand, Mengenlimit und der jeweilige Preis.
+
+Infinite Scroll übernimmt die Sprach- und Seitenverweise aus dem bereits geladenen HTML. Für die sichtbare URL liefert der Server seine Robots-Entscheidung ohne den technischen Fragmentparameter. Lokale Prüfung auf `develop`, native Abnahme des neuen Builds in 426 offen. [Prüfbericht](.cache/freigabefixes-6ce83c7/Pruefbericht.html)
+
 ## JavaScript, Infinite Scroll und Kartenpreise (2026-11-17)
 
 Normale Produktdetailseiten laden die Variantenmatrix am Anfang von `item.min.js`; Quickviews anderer Seiten laden sie bei Bedarf separat. Die früheren Main- und Vue-Seitenzweige verwenden dieselbe Main-Datei, mit dem bisherigen Logout-Verhalten je Zweig. Facets bleibt vor Core, Cat dahinter. Der erste Render und Infinite Scroll verwenden denselben Kartenrenderer; die Statusmeldungen für das Nachladen stehen einmal auf der Ausgangsseite.
