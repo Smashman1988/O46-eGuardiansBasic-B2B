@@ -3,10 +3,11 @@
 ## Unreleased – Mobile Produktkarten (2026-11-18)
 
 - Kategorie und Suche nutzen bis 991,98 px zwei gleich breite Produktspalten mit 6 px Abstand. Die Fotos reichen bis an die Innenseite der Kartenrahmen. Hochformatige Produkte und Mengenaufdrucke erhalten mehr Platz unter den Overlays.
-- Main-CSS v18 und die Critical-CSS-Zweige enthalten dieselben mobilen Kartenregeln.
+- Mit Main-CSS v19 und beiden Critical-CSS-Zweigen reicht der grüne Warenkorbbutton bis an die Seiten und den unteren Innenrand der Karte. Alle vier Buttonecken behalten die bisherigen 4 px Rundung. Die mindestens 48 px hohe Beschriftungsfläche erlaubt mehrzeilige Übersetzungen.
 
 ## Unreleased – Variantenverfügbarkeit und Pagination (2026-11-18)
 
+- Die Produktsuche behält beim Scrollen auf die nächste Ergebnisseite die bereits geladenen Treffer. Das Suchfragment gibt die bestehende serverseitige Robots-Entscheidung für die sichtbare URL aus.
 - Fehlende, ausverkaufte und noch ungeladene Varianten haben keine bestellbare Menge. Lesefehler bleiben wiederholbar. Gemeinsame Abfragen erhalten gültige Nachbarzeilen und bestehende Mengenlimits.
 - Infinite Scroll übernimmt Canonical, Sprachalternativen, Seitennachbarn und Robots für die sichtbare Seite aus der Serverausgabe. Die Direktive für die Fragment-URL bleibt eigenständig.
 - Assetversionen für Kategorie und Artikel von 6 auf 7, für die separat geladene Matrix von 2 auf 3. [Lokaler Prüfbericht](../../.cache/freigabefixes-6ce83c7/Pruefbericht.html)

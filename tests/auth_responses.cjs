@@ -33,9 +33,14 @@ const core = read('resources/js/core' + (minified ? '.min' : '') + '.js');
 function eventHandler(source, key) {
     // The page IIFE owns eGuardians; Terser renames that closure binding (e.g. t).
     // Retain its actual events-owner binding when extracting an individual method.
-    let owner;
+    let owner, logoutMode = '';
     function visit(node, ancestors = []) {
         if (!node?.type) return;
+        if (node.type === 'Literal' && node.value === 'data-eg-vue-logout') {
+            const binding = [...ancestors].reverse().find(parent => parent.type === 'VariableDeclarator');
+            assert.ok(binding?.init, 'Expected script flag initializer');
+            logoutMode = 'var ' + source.slice(binding.start, binding.end) + ';';
+        }
         if (node.type === 'AssignmentExpression' && node.left.object?.type === 'ThisExpression' &&
             (node.left.property.name || node.left.property.value) === key) {
             const events = [...ancestors].reverse().find(parent => parent.type === 'AssignmentExpression' &&
@@ -50,7 +55,7 @@ function eventHandler(source, key) {
     }
     visit(acorn.parse(source, {ecmaVersion: 'latest'}));
     assert.ok(owner, 'Expected closure owner for ' + key);
-    return '(function(' + owner + '){return (' + assignment(source, 'this', key) + ')})(eGuardians)';
+    return '(function(' + owner + '){' + logoutMode + 'return (' + assignment(source, 'this', key) + ')})(eGuardians)';
 }
 const loginOk = name => ({data: null, events: {AfterAccountAuthentication: {isSuccess: true, accountContact: {firstName: name}}}});
 const logoutOk = {data: 200, events: {AfterAccountContactLogout: []}};
@@ -80,9 +85,9 @@ function translations(lang) {
     for (const key of ['login1', 'login2', 'banneduser', 'wronguserlogindata', 'successlogout']) assert.ok(values[key], lang + '/' + key);
     return values;
 }
-function run(bundle, lang, scenario) {
+function run(bundle, lang, scenario, vueLogout = false) {
     const source = read('resources/js/' + bundle + (minified ? '.min' : '') + '.js');
-    const result = {bundle, lang, scenario: scenario.name, kind: scenario.kind, status: scenario.status, requests: 0,
+    const result = {bundle, vueLogout, lang, scenario: scenario.name, kind: scenario.kind, status: scenario.status, requests: 0,
         shown: 0, hidden: 0, messages: [], rendered: [], redirects: 0, cacheInvalidations: 0, error: null};
     let pending;
     const timers = [];
@@ -92,7 +97,7 @@ function run(bundle, lang, scenario) {
     jq.ajax = options => {result.requests++; pending = options;};
     const location = {href: 'https://fixture.invalid/', reload() {result.redirects++;}};
     const context = {console: {error() {}, warn() {}}, $: jq, jQuery: jq,
-        document: {location}, location, setTimeout: fn => {timers.push(fn);}, clearTimeout() {},
+        document: {location, currentScript: {hasAttribute: name => name === 'data-eg-vue-logout' && vueLogout}}, location, setTimeout: fn => {timers.push(fn);}, clearTimeout() {},
         messageServiceTranslations: translations(lang),
         O46Core: {installed: {}, basketHeader: {invalidate() {result.cacheInvalidations++; return Promise.resolve();}}},
         eGuardians: {helper: {btnShowLoader() {result.shown++;}, btnHideLoader() {result.hidden++;}}, validator: {checkInputs: () => true}}
@@ -113,6 +118,7 @@ function run(bundle, lang, scenario) {
         assert.ok(pending, 'Exactly one captured transport expected');
         if (scenario.status >= 200 && scenario.status < 300) pending.success(scenario.data, 'success', {status: scenario.status});
         else pending.error({status: scenario.status, responseText: JSON.stringify(scenario.data)});
+        if (vueLogout && scenario.success) assert.equal(result.redirects, 1, 'Linked Vue route reloads immediately after logout');
         for (const timer of timers) timer();
         if (location.href !== 'https://fixture.invalid/') result.redirects++;
     } catch (error) {result.error = error.name + ': ' + error.message;}
@@ -124,6 +130,7 @@ function run(bundle, lang, scenario) {
     return result;
 }
 const rows = [];
+if (!reference) for (const scenario of scenarios.filter(s => s.kind === 'logout')) rows.push(run('main', 'de', scenario, true));
 for (const bundle of ['main', 'cat', 'item', 'vue']) for (const scenario of scenarios) rows.push(run(bundle, 'de', scenario));
 // Real theme labels in each additional language; shared behavior is covered above.
 for (const lang of ['en', 'fr', 'it', 'es']) for (const scenario of [scenarios[0], scenarios[2], scenarios[3], scenarios[10]]) rows.push(run('main', lang, scenario));

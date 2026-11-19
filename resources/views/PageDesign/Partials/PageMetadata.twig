@@ -22,11 +22,11 @@
     'es': 'Página'
 }[pageLanguage] | default('Page') %}
 
-{# One final output. Pagination and query rules can only add restrictions. #}
+{# Pagination and query rules can only add restrictions. Search fragments have no category bounds. #}
 {% set blockRobots = block('robots') is defined ? block('robots') : '' %}
 {% set categoryRobots = details is not null ? details.metaRobots : '' %}
 {% set restricted = forceNoIndex is defined and forceNoIndex %}
-<meta name="robots" content="{{ metadataSeoPage.robots(blockRobots, categoryRobots, restricted) }}"{% if not isQuickView and metadataSeoPage.pagination.hasList and request.get('quickViewItem') == 'true' %} data-o46-history-robots="{{ metadataSeoPage.robots(blockRobots, categoryRobots, restricted, true) }}"{% endif %}>
+<meta name="robots" content="{{ metadataSeoPage.robots(blockRobots, categoryRobots, restricted) }}"{% if not isQuickView and request.get('quickViewItem') == 'true' and (metadataSeoPage.pagination.hasList or services.template.getCurrentTemplate() == 'tpl.search') %} data-o46-history-robots="{{ metadataSeoPage.robots(blockRobots, categoryRobots, restricted, true) }}"{% endif %}>
 {# Expose the existing decision to category JS; do not infer bounds from URL/DOM links. #}
 <meta name="o46-pagination" content="{{ metadataSeoPage.pagination | json_encode }}">
 

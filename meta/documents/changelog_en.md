@@ -3,10 +3,11 @@
 ## Unreleased – Mobile product cards (2026-11-18)
 
 - Category and search listings use two equal columns with a 6 px gap on screens below 992 px. Photos extend to the inside edge of each card. Portrait products and printed pack sizes have more room beneath the overlays.
-- Main CSS v18 and the critical CSS branches include the same mobile card rules.
+- Main CSS v19 and both critical CSS branches extend the green cart button to the sides and bottom inside the card border. The button retains its original 4 px radius on all four corners. It is at least 48 px tall and allows longer labels to wrap.
 
 ## Unreleased – Variation availability and pagination (2026-11-18)
 
+- Product search keeps previously loaded results when scrolling to the next page. Search fragments now include the existing server-side robots directive for the visible URL.
 - Missing, out-of-stock and pending variations have no orderable quantity. Failed reads can be retried. Shared requests preserve valid sibling rows and their quantity limits.
 - Infinite Scroll applies the server's canonical, language alternatives, adjacent pages and robots directive for the visible URL. The fragment URL retains its own robots directive.
 - Category and item assets move from version 6 to 7. The standalone matrix moves from version 2 to 3. [Local verification report](../../.cache/freigabefixes-6ce83c7/Pruefbericht.html)

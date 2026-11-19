@@ -68,7 +68,7 @@ function renderTemplates() {
         foreach ([true,false] as $isCart) {
             $choice = trim($selectBundle->render(['currentRequestUri'=>'/content/', 'category'=>['id'=>5497],
                 'mainjs'=>[5497],'vuejs'=>[5482],'vuePages'=>[],'nojs'=>[],'isBasketCategory'=>$isCart]));
-            if (!preg_match($isCart ? '/^vue\.min\.js\?v=\d+:0$/' : '/^main\.min\.js\?v=\d+:1$/', $choice))
+            if (!preg_match('/^main\.min\.js\?v=\d+:'.($isCart ? '0' : '1').'$/', $choice))
                 throw new Exception('Merchant-linked cart bundle priority: '.$choice);
         }
         $views = [];

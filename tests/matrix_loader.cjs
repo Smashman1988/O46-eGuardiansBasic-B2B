@@ -36,6 +36,7 @@ function element() {
 function fixture(mode, options = {}) {
     const state = { scripts: [], observers: [], warnings: [], installs: 0, scans: [], timers: new Map(), nextTimer: 1, roots: [] };
     const document = {
+        getElementById() { return null; },
         currentScript: { getAttribute(name) { return name === 'data-eg-matrix-src' && !options.noUrl ? '/assets/matrix.min.js?v=1' : null; } },
         documentElement: element(),
         querySelector(selector) {

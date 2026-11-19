@@ -11884,6 +11884,8 @@ opacity: 0.7;
  /* Keep portraits close to their full width and reserve eight tracks for upper overlays. */
  .categoriegrid .cat-item.has-variations > .cat-item-image{height:calc(114cqi + 45px);aspect-ratio:auto;}
  .categoriegrid .cat-item.has-variations .cat-item-image picture{padding:4px 0 2px;}
+ /* The card clips the footer to the inside edge of its rounded border. */
+ .categoriegrid .cat-item.has-variations .linkabso{display:block;min-height:48px;margin:0;padding-block:4px;text-align:center;}
 }
 @media(min-width:768px) and (max-width:991.98px){
  /* The surrounding listing column has a 15px tablet gutter and a 5px phone gutter. */

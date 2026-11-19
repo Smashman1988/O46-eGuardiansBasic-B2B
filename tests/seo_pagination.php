@@ -758,6 +758,26 @@ namespace {
             });
         }
     }
+    foreach (['INDEX,FOLLOW','NOINDEX,NOFOLLOW'] as $restriction) {
+        test('search/history-robots/' . $restriction, function () use ($twig,$base,$request,$templateService,$restriction) {
+            $templateService->template = 'tpl.search';
+            $ctx = $base;
+            $ctx['category']['details'][0]['metaRobots'] = $restriction;
+            try {
+                $request->params = ['query'=>'Hose','page'=>'2','sorting'=>'price.asc'];
+                $direct = $twig->render('regular-head',$ctx);
+                $request->params['quickViewItem'] = 'true';
+                $fragment = $twig->render('regular-head',$ctx);
+                $pagination = json_decode(meta($fragment,'o46-pagination'),true);
+                check(!$pagination['hasList'] && !$pagination['valid'],'Expected search without category bounds');
+                check(strpos($direct,'data-o46-history-robots=') === false,'Direct response marked as a fragment');
+                check(preg_match('~<meta name="robots"[^>]* data-o46-history-robots="([^"]+)"~',$fragment,$match) === 1,'Missing direct robots in search fragment');
+                check($match[1] === meta($direct,'robots') && meta($fragment,'robots') === $match[1],'Search restriction changed');
+                $templateService->template = 'tpl.item';
+                check(strpos($twig->render('regular-head',$ctx),'data-o46-history-robots=') === false,'Product Quickview marked as a search list');
+            } finally { $templateService->template = 'tpl.category.content'; }
+        });
+    }
     foreach (['INDEX,FOLLOW','NOINDEX,FOLLOW','NOINDEX,NOFOLLOW','ALL',''] as $value) {
         test('metadata/block-robots-' . $value,function () use ($value,$twig,$base,$request) {
             $request->params = ['page'=>'2'];
@@ -1103,19 +1123,23 @@ namespace {
     if ($historyFile = getenv('O46_SEO_HISTORY_FIXTURES')) {
         $historyPages = [];
         $routes = ['de'=>'/alle-artikel/', 'en'=>'/en/all-articles/', 'fr'=>'/fr/tous-les-articles/', 'it'=>'/it/tutti-gli-articoli/', 'es'=>'/es/todos-los-articulos/'];
-        $templateService->template = 'tpl.category.item';
-        foreach ($routes as $language => $route) {
+        foreach (array_keys($routes) as $language) {
             $historyUrls = new class($routes, $language) extends UrlService {
+                public $search = false;
                 public function __construct(private $routes, private $language) {}
                 public function getCanonicalURL($lang = null, $ignore = false) {
-                    return $this->configured && !$ignore ? $this->configured : 'https://example.test' . $this->routes[$lang ?: $this->language];
+                    $language = $lang ?: $this->language;
+                    $route = $this->search ? ($language === 'de' ? '' : '/' . $language) . '/search/' : $this->routes[$language];
+                    return $this->configured && !$ignore ? $this->configured : 'https://example.test' . $route;
                 }
             };
             foreach (['plain'=>[], 'filtered'=>['facets'=>'9'], 'sorted'=>['sorting'=>'price.asc', 'utm_source'=>'A B'],
-                      'configured'=>[], 'forced'=>[]] as $mode=>$query) {
+                      'configured'=>[], 'forced'=>[], 'search'=>['query'=>'Hose']] as $mode=>$query) {
+                $historyUrls->search = $mode === 'search';
+                $templateService->template = $historyUrls->search ? 'tpl.search' : 'tpl.category.item';
                 $historyUrls->configured = $mode === 'configured' ? 'https://example.test/editorial/?keep=7' : null;
-                foreach ([18, 19, 20] as $number) foreach ([false, true] as $fragment) {
-                    $request->params = ['page'=>(string)$number] + $query;
+                foreach (($historyUrls->search ? [1, 2, 3] : [18, 19, 20]) as $number) foreach ([false, true] as $fragment) {
+                    $request->params = ($number === 1 ? [] : ['page'=>(string)$number]) + $query;
                     if ($fragment) $request->params['quickViewItem'] = 'true';
                     $ctx = localizedContext($base, $language);
                     $ctx['services']['url'] = $historyUrls;
@@ -1126,7 +1150,7 @@ namespace {
                     preg_match('~<head>(.*?)</head>~s', $html, $match);
                     preg_match_all('~<title>.*?</title>|<meta (?:name="(?:o46-pagination|robots|o46-language-route|description|twitter:title|twitter:description)"|property="og:(?:title|description)")[^>]*>|<link rel="(?:canonical|alternate|prev|next)"[^>]*>~s', $match[1], $tags);
                     $historyPages[$language][$mode][$number][$fragment ? 'fragment' : 'direct'] = [
-                        'url'=>'https://example.test' . $route . '?' . http_build_query($request->params),
+                        'url'=>$historyUrls->getCanonicalURL(null,true) . '?' . http_build_query($request->params),
                         'head'=>implode("\n", $tags[0])];
                 }
             }

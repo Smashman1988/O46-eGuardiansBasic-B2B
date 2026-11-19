@@ -21,7 +21,7 @@ const server=http.createServer((req,res)=>{
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE});
- try{for(const route of ['/category/','/search/'])for(const width of [320,390,430,768,1024,1440,1774]){
+ try{for(const route of ['/category/','/search/'])for(const width of [320,390,430,768,991,992,1024,1440,1774]){
    requests=[];const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/*',r=>r.request().url().startsWith(origin)?r.continue():r.abort());
@@ -29,7 +29,7 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('.cat-item').count(),12);
    const geometry=()=>page.locator('.cat-item').evaluateAll(es=>es.map(e=>[e.getBoundingClientRect().width,e.getBoundingClientRect().height,e.querySelector('.cat-item-image').getBoundingClientRect().height,e.querySelector('.linkabso').getBoundingClientRect().height]));
    const first=await geometry();
-   if(width<=768){
+   if(width<992){
      const bounds=await page.locator('.cat-item').evaluateAll(cards=>cards.slice(0,2).map(card=>card.getBoundingClientRect().toJSON()));
      const [left,right]=bounds;
      assert.equal(left.top,right.top,'Two cards per row');
@@ -38,6 +38,11 @@ const server=http.createServer((req,res)=>{
      assert.equal(width-right.right,5);
      assert.equal(right.x-left.right,6);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),width);
+     const footers=await page.locator('.cat-item').evaluateAll(cards=>cards.map(card=>{
+       const action=card.querySelector('.linkabso'),box=card.getBoundingClientRect(),button=action.getBoundingClientRect();
+       return [button.left-box.left,box.right-button.right,box.bottom-button.bottom,button.height,getComputedStyle(action).borderRadius];
+     }));
+     for(const footer of footers)assert.deepEqual(footer,[1,1,1,48,'4px'],'Footer keeps the rounded button and meets the inner edge of the 1px card border');
    }
    await page.evaluate(()=>InfiniteScroll.data(document.querySelector('.category-product-list')).loadNextPage());
    await page.waitForFunction(()=>document.querySelectorAll('.cat-item').length===24);
