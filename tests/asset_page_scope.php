@@ -130,7 +130,8 @@ $base = [
 // Primary ten rows cover the requested nine page types plus the actual brand page.
 // Further rows protect Ceres-jQuery exceptions and content/fragment behavior.
 $cases = [
-    'homepage' => ['template' => 'tpl.home', 'builder' => true, 'page' => 'main', 'checkoutCss' => true],
+    'homepage' => ['template' => 'tpl.home', 'route' => 'home', 'builder' => true, 'page' => 'main', 'checkoutCss' => true],
+    'homepage-category' => ['template' => 'tpl.home.category', 'route' => 'home', 'category' => 9000, 'page' => 'cat', 'facets' => true],
     'category' => ['template' => 'tpl.category.item', 'category' => 100, 'grid' => true, 'page' => 'cat', 'facets' => true],
     'search' => ['template' => 'tpl.search', 'grid' => true, 'page' => 'cat', 'facets' => true],
     'product-with-category' => ['template' => 'tpl.item', 'category' => 100, 'page' => 'cat', 'matrix' => true, 'zoom' => true],
@@ -170,6 +171,7 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
             $request->params = !empty($case['fragment']) ? ['quickViewItem' => 'true'] : [];
             $request->uri = $case['uri'] ?? '/' . $language . '/fixture/';
             $ctx = $base;
+            $ctx['urls']['templateType'] = $case['route'] ?? '';
             $ctx['lang'] = $language;
             $ctx['isSearch'] = $case['template'] === 'tpl.search';
             $ctx['isShopBuilder'] = $case['builder'] ?? false;
@@ -187,6 +189,7 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
                 $ctx['urls']['includeLanguage'] = $language !== 'de';
             }
             $html = $twig->render($case['view'] ?? 'fixture', $ctx);
+            check((strpos($html, 'id="page-body" class="isHome"') !== false) === ($ctx['urls']['templateType'] === 'home'), 'Homepage card styles scoped to wrong page');
             preg_match_all('~<script\s+src="(/plugins/GuardiansBasicB2B/([^"]+))"([^>]*)>~', $html, $tags, PREG_SET_ORDER);
             $actual = array_map(function ($tag) { return html_entity_decode($tag[2], ENT_QUOTES, 'UTF-8'); }, $tags);
             $expected = [];

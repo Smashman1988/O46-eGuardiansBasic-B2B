@@ -135,7 +135,7 @@
                 </div>
             {% endif %}
             {% include getPartial('header') %}
-            <div id="page-body" {% if currentTemplate == "tpl.wish-list" %}class="isWishList"{% endif %}>    
+            <div id="page-body" {% if currentTemplate == "tpl.wish-list" %}class="isWishList"{% elseif urls.templateType == 'home' %}class="isHome"{% endif %}>
             {% endif %}
             {% block PageBody %}
                 <!-- inject content of inherited templates here -->
