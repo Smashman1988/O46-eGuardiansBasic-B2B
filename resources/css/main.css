@@ -11837,8 +11837,9 @@ opacity: 0.7;
 .cat-item.has-variations .cat-card-price > .font-12{color:#41464c;font-size:clamp(10px,7cqi,12px);font-weight:400;}
 .cat-item.has-variations .cat-rrp-price{text-decoration:line-through;}
 .cat-item.has-variations .cat-card-price > .outlet-green{color:#609b00;font-size:23px;font-weight:700;line-height:30px;}
-.cat-item.has-variations .linkabso{flex:none;width:auto;min-height:44px;margin-bottom:8px;padding:9px 5px;border:0;border-radius:4px;background:linear-gradient(#6aab00,#588f00);color:#fff;font-size:14px;font-weight:600;line-height:20px;white-space:normal;}
-.cat-item.has-variations .linkabso:hover{background:#4e8000;}
+/* Keep the gradient painted while the darker hover color fades in beneath it. */
+.cat-item.has-variations .linkabso{flex:none;width:auto;min-height:44px;margin-bottom:8px;padding:9px 5px;border:0;border-radius:4px;background:linear-gradient(#6aab00,#588f00);background-blend-mode:darken;transition:background-color .3s ease,box-shadow .3s ease;color:#fff;font-size:14px;font-weight:600;line-height:20px;white-space:normal;}
+.cat-item.has-variations .linkabso:hover{background-color:#4e8000;}
 .cat-item.has-variations .linkabso:focus-visible{outline:2px solid #263c00;outline-offset:-4px;}
 @media(max-width:767.98px),(min-width:1200px) and (max-width:1399.98px){
  .cat-item.has-variations > .cat-item-image{aspect-ratio:.82;}

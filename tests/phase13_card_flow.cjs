@@ -29,6 +29,14 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('.cat-item').count(),12);
    const geometry=()=>page.locator('.cat-item').evaluateAll(es=>es.map(e=>[e.getBoundingClientRect().width,e.getBoundingClientRect().height,e.querySelector('.cat-item-image').getBoundingClientRect().height,e.querySelector('.linkabso').getBoundingClientRect().height]));
    const first=await geometry();
+   if(width===1440){
+     const button=page.locator('.cat-item button.linkabso').first();
+     const gradient=el=>getComputedStyle(el).backgroundImage;
+     const restingGradient=await button.evaluate(gradient);
+     assert.match(restingGradient,/^linear-gradient\(/);
+     await button.hover();
+     assert.equal(await button.evaluate(gradient),restingGradient,'Hover must keep the gradient painted while the darker green fades in');
+   }
    if(width<992){
      const bounds=await page.locator('.cat-item').evaluateAll(cards=>cards.slice(0,2).map(card=>card.getBoundingClientRect().toJSON()));
      const [left,right]=bounds;

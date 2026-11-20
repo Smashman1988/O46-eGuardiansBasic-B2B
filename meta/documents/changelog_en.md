@@ -2,6 +2,7 @@
 
 ## Unreleased – Product cards (2026-11-20)
 
+- Product card cart buttons now fade smoothly to their existing hover green, eliminating the white flash on pointer entry.
 - Product cards in categories and search results hide their outer 1 px border on desktop and mobile, preserving card dimensions and internal dividers.
 
 ## Unreleased – Product gallery controls (2026-11-20)

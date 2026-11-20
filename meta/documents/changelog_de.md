@@ -2,6 +2,7 @@
 
 ## Unreleased – Produktkarten (2026-11-20)
 
+- Die grünen Warenkorbbuttons auf Produktkarten blenden beim Überfahren mit der Maus gleichmäßig in ihren bisherigen Hover-Farbton über. Das weiße Aufblitzen entfällt.
 - Der äußere 1-Pixel-Rahmen der Produktkarten ist in Kategorien und Suchergebnissen auf Desktop und Mobil unsichtbar. Kartenmaße und innere Trennlinien bleiben erhalten.
 
 ## Unreleased – Galeriebedienung (2026-11-20)
