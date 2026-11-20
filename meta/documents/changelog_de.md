@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Galeriebedienung (2026-11-20)
+
+- Die grünen Galerienavigationspfeile erhalten weiße, leicht transparente Kreise mit Schatten. Auf Mobilgeräten bleibt ihre Touch-Fläche 44 × 44 px groß. Die Zoomlupe enthält ein Pluszeichen. Die Darstellung liegt im PDP-Critical-CSS, die bisherigen Pfeilregeln entfallen mit Main-CSS v21.
+
 ## Unreleased – Artikeldetail und Filter (2026-11-19)
 
 - Die Galerie zählt gültige, unterschiedliche Bilder. Die mobile Anzeige folgt der Bildauswahl. Rabatt, Merkliste und Zoom liegen auf dem Bild. Der Bewertungsbereich entfällt bei bestätigten null Bewertungen.

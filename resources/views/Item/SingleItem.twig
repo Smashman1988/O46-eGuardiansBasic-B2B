@@ -253,11 +253,11 @@
 
                             <span class="eg-gallery-counter" data-eg-gallery-counter{% if galleryCount < 2 %} hidden{% endif %}>{% if galleryCount > 1 %}1 / {{ galleryCount }}{% endif %}</span>
                             <button type="button" class="eg-gallery-expand" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryExpand') }}">
-                                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="10" cy="10" r="7.5"/><path d="m16 16 6 6"/></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="10" cy="10" r="7.5"/><path d="M16 16l6 6M6 10h8M10 6v8"/></svg>
                                 <span>{{ trans('GuardiansBasicB2B::Template.galleryExpand') }}</span>
                             </button>
-                            <button type="button" class="zoombtnnav zoomnavleft" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryPrevious') }}"><span class="icon-left-open-big fontGreen"></span></button>
-                            <button type="button" class="zoombtnnav zoomnavright" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryNext') }}"><span class="icon-right-open-big fontGreen"></span></button>
+                            <button type="button" class="zoombtnnav zoomnavleft" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryPrevious') }}"><span class="icon-left-open-big" aria-hidden="true"></span></button>
+                            <button type="button" class="zoombtnnav zoomnavright" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryNext') }}"><span class="icon-right-open-big" aria-hidden="true"></span></button>
                         </div>
                     </div>
                 </div>

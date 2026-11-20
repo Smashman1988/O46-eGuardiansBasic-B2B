@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Product gallery controls (2026-11-20)
+
+- Green gallery arrows appear on translucent white circles with a subtle shadow. Mobile touch targets measure 44 × 44 px. The zoom icon now includes a plus sign. The product page supplies the controls in its critical CSS, and main stylesheet v21 drops the previous arrow rules.
+
 ## Unreleased – Product detail and filters (2026-11-19)
 
 - The gallery counts unique valid images and reflects the current selection on mobile. Discount, wishlist and zoom controls sit over the image. The server omits the review section when the confirmed count is zero.
