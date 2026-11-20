@@ -11801,6 +11801,28 @@ opacity: 0.7;
 .category-product-list > .post,.category-product-list > div:not(.copy-result-item){display:flex;height:auto;min-height:0;padding:0 var(--cat-cell-padding,5px) 10px!important;}
 .cat-item.has-variations{display:flex;flex-direction:column;width:100%;height:100%;padding:0;overflow:hidden;border:1px solid #dedede;border-radius:7px;background:#fff;}
 .isHome .cat-item.has-variations,.categoriegrid .category-product-list > * > .cat-item.has-variations{border-color:transparent;}
+/* The home slider and full-width code widgets have no Bootstrap card columns. */
+.isHome{--home-card-columns:4;--cat-grid-gap:10px;--home-card-inset:5px;--home-column-padding:15px;}
+/* The general critical stylesheet omits the Bootstrap .col around ShopBuilder product widgets. */
+:where(.isHome .row) > :where(.col:not([class*="col-"]):has(.cat-item.has-variations)){flex:1 1 0%;min-width:0;padding-inline:var(--home-column-padding);}
+@media(max-width:767.98px){.isHome{--home-column-padding:5px;}}
+@media(min-width:1200px){.isHome{--home-card-columns:6;}}
+.isHome .home-slider-items:not(.slick-initialized){
+ display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% + var(--cat-grid-gap)) / var(--home-card-columns) - var(--cat-grid-gap));
+ column-gap:var(--cat-grid-gap);padding-inline:var(--home-card-inset);overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-inline:var(--home-card-inset);
+ /* Leave room for the existing 8px hover shadow inside the scrollport. */
+ padding-block:8px;margin-block:-8px;
+}
+.isHome .home-slider-items:not(.slick-initialized) > div{min-width:0;scroll-snap-align:start;}
+/* Retain the slider's original slide class. Its important Bootstrap gutter is already included in the track gap. */
+.isHome .home-slider-items .col-12:has(> .cat-item.has-variations){padding-inline:var(--home-slide-padding,0px)!important;}
+.isHome .home-slider-items .col-12.slick-slide{--home-slide-padding:calc(var(--cat-grid-gap) / 2);}
+.isHome :is(.col:not([class*="col-"]),.col-12) > .widget-code > .widget-inner:has(> .cat-item.has-variations){
+ display:grid;grid-template-columns:repeat(var(--home-card-columns),minmax(0,1fr));column-gap:var(--cat-grid-gap);padding-inline:var(--home-card-inset);margin-inline:var(--home-widget-margin,0px);
+}
+.isHome :is(.col:not([class*="col-"]),.col-12) > .widget-code > .widget-inner:has(> .cat-item.has-variations) > :not(.cat-item.has-variations){grid-column:1/-1;}
+/* Legacy offer columns also match the theme's important mobile Bootstrap gutters. */
+.isHome .col-6:has(> .widget-code > .widget-inner > .cat-item.has-variations){padding-inline:var(--cat-cell-padding,5px)!important;}
 /* Ten equal intrinsic tracks reserve 70% of the actual badge/logo height.
    Both start at the same card edge; contain whitespace can reduce overlap to zero. */
 .cat-item.has-variations > .cat-item-image{position:relative;display:grid;grid-template-columns:minmax(0,1fr) fit-content(44%);grid-template-rows:repeat(10,auto) minmax(0,1fr);flex:none;contain:size;container-type:inline-size;width:100%;aspect-ratio:1;padding-top:4px;border-bottom:1px solid #ededed;}
@@ -11851,8 +11873,13 @@ opacity: 0.7;
 @media(max-width:991.98px){
  /* The search template's legacy column also needs its width during critical paint. */
  .categoriegrid > .row > .col-xs-12{flex:0 0 100%;padding-inline:5px;}
- .categoriegrid .category-product-list{--cat-cell-padding:0px;--cat-photo-row:9;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:6px;}
- .categoriegrid .category-product-list > .col-6{max-width:none;min-width:0;margin-bottom:0;}
+ .categoriegrid,.isHome{--cat-grid-gap:6px;}
+ .isHome{--home-card-columns:2;--home-card-inset:0px;}
+ .categoriegrid .category-product-list{--cat-photo-row:9;}
+ :is(.categoriegrid,.isHome) .category-product-list,.isHome .row:has(> .col-6 > .widget-code > .widget-inner > .cat-item.has-variations){--cat-cell-padding:0px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--cat-grid-gap);}
+ :is(.categoriegrid,.isHome) .category-product-list > .col-6,.isHome .row > .col-6:has(> .widget-code > .widget-inner > .cat-item.has-variations){max-width:none;min-width:0;margin-bottom:0;}
+ .isHome .home-slider-items.slick-initialized .slick-list{margin-inline:calc(var(--cat-grid-gap) / -2);}
+ .isHome .home-slider-items.slick-initialized .slick-slide{padding-inline:calc(var(--cat-grid-gap) / 2);}
  .categoriegrid .cat-item.has-variations{container-type:inline-size;}
  /* Keep portraits close to their full width and reserve eight tracks for upper overlays. */
  .categoriegrid .cat-item.has-variations > .cat-item-image{height:calc(114cqi + 45px);aspect-ratio:auto;}
@@ -11862,7 +11889,8 @@ opacity: 0.7;
 }
 @media(min-width:768px) and (max-width:991.98px){
  /* The surrounding listing column has a 15px tablet gutter and a 5px phone gutter. */
- .categoriegrid .col-12 > .category-product-list{margin-inline:-10px;}
+ .isHome{--home-widget-margin:-10px;}
+ .categoriegrid .col-12 > .category-product-list,.isHome .col-12 > .home-slider-items,.isHome .widget-code > .widget-inner > .category-product-list,.isHome .row:has(> .col-6 > .widget-code > .widget-inner > .cat-item.has-variations){margin-inline:-10px;}
 }
 /* End B2B card separators */
 .ptpb{padding-top:0px!important;padding-bottom:0px!important;}

@@ -136,7 +136,7 @@
   
         {# getProducer() |json_encode() #}
         <section class="section-items">
-            <div class="home-slider-title">
+            <div class="home-slider-title" id="home-products-title">
                 Sehr beliebt bei unseren Kunden
             </div>
             {# set itemListHomeTopSell = services.itemList.getItemList( "category", "41", "" ,10).documents #}
@@ -144,7 +144,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col-12">
-                        <div class="home-slider-items">
+                        <div class="home-slider-items" role="region" aria-labelledby="home-products-title" tabindex="0">
                         {% set tagListAttributeMaps = (cardAttributeMap ?? null) is null
                             ? getCardAttributeMaps(itemListHomeTopSell|default([])|map(item => item.data.variation.itemId))
                             : [] %}

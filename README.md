@@ -24,6 +24,8 @@ Keine Änderungen allein für eine Änderungszahl, keine unverhältnismäßige K
 
 ## Mobile Produktkarten (2026-11-18)
 
+Seit Main-CSS v25 verwenden LiveShopping und die Produktlisten aller fünf B2B-Startseiten die Kartenbreiten und horizontalen Abstände der Kategorie. Bis 991,98 px stehen zwei Karten mit 5 px Außenabstand und 6 px Lücke nebeneinander. Ab 992 px sind es vier, ab 1200 px sechs Spalten. Der Produktstreifen im Homepage-Template lässt sich ohne zusätzliches JavaScript horizontal bedienen. Die native Abnahme auf Pluginset 426 steht aus. [Lokaler Rastervergleich mit Messwerten und Bildschirmfotos](.cache/startseitenraster-df64690/Pruefbericht.html)
+
 Kategorie- und Suchlisten zeigen bis zum Desktop-Breakpoint bei 992 px zwei gleich breite Karten mit 5 px Außenrand und 6 px Spaltenabstand. Die Bildfläche nutzt die innere Kartenbreite. Hochformate erhalten Platz unter Rabatt und Markenlogo. Das Bild bleibt vollständig mit `object-fit: contain` sichtbar. Main-CSS v18. [Lokaler Vergleich mit Messwerten und Bildschirmfotos](.cache/mobile-produktkarten-b7bff3f/Pruefbericht.html)
 
 Mit Main-CSS v19 schließt der grüne Warenkorbbutton in beiden Listen bündig mit dem inneren Kartenrahmen ab. Er behält an allen vier Ecken seine bisherige Rundung von 4 px. An der Unterkante folgt die sichtbare Außenkontur dem Kartenrahmen. Symbol und übersetzte Beschriftung stehen zentriert auf mindestens 48 px Höhe. [Abnahme mit Vorher-/Nachher-Bildern und Ergebnissen aus Pluginset 426](.cache/endabnahme-d84b960/Pruefbericht.html)

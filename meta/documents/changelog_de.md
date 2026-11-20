@@ -2,6 +2,7 @@
 
 ## Unreleased – Produktkarten (2026-11-20)
 
+- LiveShopping, Startseitenlisten und Produktstreifen übernehmen die horizontalen Kartenmaße der Kategorie. Bei 768 px stehen jetzt zwei Karten mit 6 px Lücke nebeneinander. Der Produktstreifen unterstützt Tastatur und Wischgesten.
 - Auch auf allen fünf Sprachstartseiten ist der äußere 1-Pixel-Rahmen der Produktkarten transparent. Das gilt für LiveShopping, Produktlisten und einzeln eingebundene Karten.
 - Die grünen Warenkorbbuttons auf Produktkarten blenden beim Überfahren mit der Maus gleichmäßig in ihren bisherigen Hover-Farbton über. Das weiße Aufblitzen entfällt.
 - Der äußere 1-Pixel-Rahmen der Produktkarten ist in Kategorien und Suchergebnissen auf Desktop und Mobil unsichtbar. Kartenmaße und innere Trennlinien bleiben erhalten.
