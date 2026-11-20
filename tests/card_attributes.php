@@ -120,7 +120,7 @@ foreach (['category','content','simple'] as $template) {
 // Exercise the actual recommendation selection and card include, without the
 // unrelated product/matrix data loaders. Compare to each card's existing fallback.
 $single = file_get_contents(dirname(__DIR__).'/resources/views/Item/SingleItem.twig');
-check(preg_match('/\{% set currentCategory =.*?(?=\n\s*<\/div>\n\s*<div class="container">)/s', $single, $match) === 1, 'Recommendation region');
+check(preg_match('/\{% set currentCategory =.*?(?=\n\s*<\/div>\n\s*(?:<div class="container">|\{% if pdpFeedbackCount is null))/s', $single, $match) === 1, 'Recommendation region');
 $twig->getLoader()->setTemplate('recommendations', '{% if isQuickView %}'.$match[0].'{% endif %}');
 $recommendations = [];
 foreach (['de','en','fr','it','es'] as $language) {

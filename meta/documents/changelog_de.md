@@ -1,5 +1,12 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Artikeldetail und Filter (2026-11-19)
+
+- Die Galerie zählt gültige, unterschiedliche Bilder. Die mobile Anzeige folgt der Bildauswahl. Rabatt, Merkliste und Zoom liegen auf dem Bild. Der Bewertungsbereich entfällt bei bestätigten null Bewertungen.
+- Kategorie und Suche sperren die Trefferanzeige bei ungültigen oder abgelaufenen Antworten und bieten einen erneuten Versuch an.
+- Quickview lässt Dokumentmetadaten aus. Paginierte Titel erhalten korrekt dargestellte Sonderzeichen. Suchvorschläge lesen den Produktnamen einmal vor. Bildlose Karten fordern keine relative AVIF-Datei an.
+- Die verknüpfte Warenkorbseite lädt weder Newsletter-Popup noch Facettenmodul.
+
 ## Unreleased – Mobile Produktkarten (2026-11-18)
 
 - Kategorie und Suche nutzen bis 991,98 px zwei gleich breite Produktspalten mit 6 px Abstand. Die Fotos reichen bis an die Innenseite der Kartenrahmen. Hochformatige Produkte und Mengenaufdrucke erhalten mehr Platz unter den Overlays.

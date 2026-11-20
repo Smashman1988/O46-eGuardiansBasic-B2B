@@ -1,5 +1,11 @@
 # Outlet46 – eGuardiansBasic B2B
 
+### Lokaler Prüfstand vom 19. November 2026
+
+Die Artikeldetail-Galerie verwendet die bestehende MagicZoom-Instanz und deren aktive Vorschaubilder für den mobilen Zähler. Bei einer bekannten Bewertungsanzahl von null entfällt der Abschnitt bereits beim Rendern. Bei fehlender Anzahl entscheidet die vorhandene Feedback-Abfrage. Facettenantworten müssen eine gültige Gesamtzahl und gültige Facettenwerte enthalten. Fehler können im geöffneten Filter erneut abgefragt werden.
+
+Die neuen Assetversionen sind lokal gebaut. Die native Prüfung dieser Änderungen auf Pluginset 426 steht aus.
+
 Technische Baseline **1.0.7**, lokal vorbereitet am **2026-11-03** auf **develop**.
 Die aktuelle Live-Abnahme in Test-Pluginset 426 ist unten dokumentiert. Dies ist noch kein freigegebener Shop-Stand.
 

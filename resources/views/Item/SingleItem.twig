@@ -2,7 +2,12 @@
 {% extends getPartial('page-design') %}
 {% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
 {# === Basisdaten sammeln === #}
+{% set pdpQuickview = request.get('quickViewItem') is not empty %}
 {% set itemData = item.documents[0].data %}
+{% set rawFeedbackCount = itemData.item.feedbackCount ?? null %}
+{% set pdpFeedbackCount = rawFeedbackCount is not iterable and rawFeedbackCount is not same as(true) and rawFeedbackCount matches '/^[0-9]+$/D' ? rawFeedbackCount : null %}
+{% set ratingValue = itemData.item.feedbackDecimal ?? null %}
+{% set validRating = ratingValue is not iterable and ratingValue is not same as(true) and ratingValue matches '/^[1-5](?:[.][0-9]+)?$/D' and ratingValue <= 5 %}
 {# Detail properties and recommendation cards are omitted from Quickview. #}
 {% if request.get('quickViewItem') is empty %}
 {% set attributeCache = {
@@ -46,7 +51,17 @@
 {% endif %}
 {% set itemId = itemData.item.id %}
 {% set variationId = itemData.variation.id %}
-{% set sortedItemImages = itemData.images.all | orderByKey('position') %}{% set mainImg = sortedItemImages | first %}
+{% set sortedItemImages = [] %}
+{% set galleryUrls = [] %}
+{% for photo in itemData.images.all|default([])|orderByKey('position') %}
+    {% set full = photo.url|default(photo.urlLarge|default(photo.urlMiddle|default(photo.urlPreview|default('')))) %}
+    {% if full|trim is not empty and full not in galleryUrls %}
+        {% set galleryUrls = galleryUrls|merge([full]) %}
+        {% set sortedItemImages = sortedItemImages|merge([{'url': full, 'urlMiddle': photo.urlMiddle|default(full), 'urlSecondPreview': photo.urlSecondPreview|default(photo.urlPreview|default(photo.urlMiddle|default(full)))}]) %}
+    {% endif %}
+{% endfor %}
+{% set mainImg = sortedItemImages|first %}
+{% set galleryCount = sortedItemImages|length %}
 
 {# === Services & Daten === #}
 {% set detailurl = services.url.getCanonicalURL() %}
@@ -79,7 +94,6 @@
 <link rel="preload" href="{{ vendorlogo }}" as="image">    
 {% elseif itemData.item.manufacturer.logo and itemData.item.manufacturer.url is not empty %}
 <link rel="preload" href="{{ itemData.item.manufacturer.logo }}" as="image">{% endif %}
-{% endif %}
     {% embed getPartial('page-metadata') %}
         {% block title          ItemName.get(itemData | itemName, itemData.variation.bundleType) %}
         {% block description    itemData.texts.metaDescription %}
@@ -135,7 +149,7 @@
             {% if product.gtin13 is not defined and untypedGtin != '' %}
                 {% set product = product|merge({'gtin13': untypedGtin}) %}
             {% endif %}
-            {% if itemData.item.feedbackCount > 0 %}
+            {% if pdpFeedbackCount > 0 and validRating %}
                 {% set product = product|merge({'aggregateRating': {
                     '@type': 'AggregateRating', 'ratingValue': itemData.item.feedbackDecimal ~ '',
                     'ratingCount': itemData.item.feedbackCount ~ '', 'bestRating': '5', 'worstRating': '1'
@@ -144,6 +158,7 @@
             {{ product|json_encode(15)|raw }}
         {% endblock %}
     {% endembed %}
+{% endif %}
 {% endblock %}
 {% block PageBody %}
 {% if not isQuickView %}
@@ -168,7 +183,7 @@
             <div class="col-12 col-xl-6 pull-lg-left stickyarticle z-index1">
                 <div class="row eg-item-gallery">
                     <div class="col-md-2 col-lg-2 col-xl-2 d-none d-md-block eg-gallery-thumbnails">
-                        {% if itemData.images.all | length>1 %}
+
                          {% set stepIndex = 0 %}
                         <div class="single-prev-images d-none d-md-block">
                             {% for prevImg in sortedItemImages %}
@@ -178,11 +193,9 @@
                                 {% set stepIndex = stepIndex+1 %}
                             {% endfor %}
                         </div>
-                        {% endif %}
                     </div>
                     <div class="col-md-10 col-lg-10 col-xl-10">
-                        {% set image = item.data.images.all | first %}
-                        <div class="relative">
+                        <div class="relative eg-gallery-frame" data-eg-gallery-count="{{ galleryCount }}">
                             {% set storeSpecialClass = '' %}
                             {% set storeSpecialTxt = '' %}
                             {% if itemData.item.storeSpecial.id == 2 %}
@@ -203,10 +216,10 @@
                                                         {% endif %}
                                                         {% endfor %}
                                                         <span class="wishlist-info1">
-				<button aria-label="In die Merkliste" data-eg-event="click" data-eg-handler="watchListTrigger" class="btn btn-watch-h align-items-center justify-content-center btn-secondary wishlist-count1{% if isInWishList %} item-in-wishlist{% endif %}"><span class="icon-heart-o"></span></button>
+				<button type="button" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryWishlist') }}" aria-pressed="{{ isInWishList ? 'true' : 'false' }}" data-eg-event="click" data-eg-handler="watchListTrigger" class="btn btn-watch-h align-items-center justify-content-center btn-secondary wishlist-count1{% if isInWishList %} item-in-wishlist{% endif %}"><span class="icon-heart-o"></span></button>
                             </span>
-                            <a href="{{ mainImg.url }}" aria-label="{{ itemData | itemName }}" title="{{ itemData | itemName }}" id="ItemImgZoom" class="MagicZoomPlus" data-options="zoomMode: off; transitionEffect: false; lazyZoom: true; cssClass: white-bg; textBtnClose: Closes; textBtnNext: Nexts; textBtnPrev: Previouss; textHoverZoomHint: ; textClickZoomHint: ; textExpandHint:    " data-mobile-options="zoomMode: off; textTouchZoomHint: ; textClickZoomHint: ; textExpandHint: ">
-                                <img fetchpriority="high" src="{{ mainImg.urlMiddle }}" alt="{{ itemData | itemName }}" title="{{ itemData | itemName }}"  width="560px" height="560px">
+                            <a {% if galleryCount %}href="{{ mainImg.url }}"{% endif %} aria-label="{{ itemData | itemName }}" title="{{ itemData | itemName }}" id="ItemImgZoom" class="eg-pdp-photo {% if galleryCount %}MagicZoomPlus{% endif %}" data-options="zoomMode: off; transitionEffect: false; lazyZoom: true; cssClass: white-bg; textBtnClose: Closes; textBtnNext: Nexts; textBtnPrev: Previouss; textHoverZoomHint: ; textClickZoomHint: ; textExpandHint:    " data-mobile-options="zoomMode: off; textTouchZoomHint: ; textClickZoomHint: ; textExpandHint: ">
+                                <img fetchpriority="high" {% if galleryCount %}src="{{ mainImg.urlMiddle }}"{% endif %} alt="{{ itemData | itemName }}" title="{{ itemData | itemName }}"  width="560px" height="560px">
                             </a>
                             {# Modeldaten zwischenspeichern – nur ein Loop! #}
                             {% set modelHeight = null %}
@@ -238,13 +251,13 @@
                             </div>
                             {% endif %}
 
-                            <div class="lupe-1"><span class="" style=""><span class="" style=""><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="s-icon s-icon-icon-zoom-in" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="m14.473 13.526-2.453-2.453a5.975 5.975 0 0 0 1.314-3.74 6 6 0 1 0-6 6 5.975 5.975 0 0 0 3.74-1.313l2.453 2.453c.26.26.687.26.947 0a.672.672 0 0 0 0-.947ZM2.668 7.333a4.663 4.663 0 0 1 4.667-4.667A4.663 4.663 0 0 1 12 7.333a4.673 4.673 0 0 1-1.34 3.273.142.142 0 0 1-.033.02l-.007.007c-.006.007-.013.02-.02.027a4.663 4.663 0 0 1-7.933-3.327Zm7.333 0A.67.67 0 0 1 9.334 8H8v1.333C8 9.7 7.7 10 7.333 10a.669.669 0 0 1-.666-.667V8H5.334a.669.669 0 0 1-.667-.667c0-.367.3-.667.667-.667h1.333V5.333c0-.367.3-.667.667-.667.366 0 .666.3.666.667v1.333h1.334c.366 0 .666.3.666.667Z"/></svg></span></span></div>
-                            {% if itemData.images.all|length>1 %}
-                            <button class="zoombtnnav zoomnavleft" aria-label="Bild zurück"><span class="icon-left-open-big fontGreen"></span></button>
-                            <button class="zoombtnnav zoomnavright" aria-label="Bild vor"><span class="icon-right-open-big fontGreen"></span></button> 
-                            {% endif %}
-                            <div class="zoom-nav-list mt-3 mb-3 d-md-none"></div>
+                            <span class="eg-gallery-counter" data-eg-gallery-counter{% if galleryCount < 2 %} hidden{% endif %}>{% if galleryCount > 1 %}1 / {{ galleryCount }}{% endif %}</span>
+                            <button type="button" class="eg-gallery-expand" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryExpand') }}">
+                                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="10" cy="10" r="7.5"/><path d="m16 16 6 6"/></svg>
+                                <span>{{ trans('GuardiansBasicB2B::Template.galleryExpand') }}</span>
+                            </button>
+                            <button type="button" class="zoombtnnav zoomnavleft" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryPrevious') }}"><span class="icon-left-open-big fontGreen"></span></button>
+                            <button type="button" class="zoombtnnav zoomnavright" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryNext') }}"><span class="icon-right-open-big fontGreen"></span></button>
                         </div>
                     </div>
                 </div>
@@ -255,7 +268,7 @@
                 {% endif %}
                 <h1 class="item-title" data-eg-item-title>{{ itemData | itemName }}</h1>
                  {% if isQuickView %}
-                    {% if itemData.item.feedbackCount>0 %}
+                    {% if pdpFeedbackCount > 0 and validRating %}
                         {% set percentTotal = (itemData.item.feedbackDecimal / 5) * 100 %}
                     <div class="item-ratings-top item-ratings-head clearfix d-inline-block item-ratings-first bew-abstand display-flex-important">
                         <div class="rating-grey f-size14">
@@ -632,13 +645,9 @@
         {% endif %}
 
         </div>
-         <div class="container">
-        <div class="row">
-    <div class="col-12">
-        <hr class="hr-style2">
-        {% include "GuardiansBasicB2B::Containers.FeedbackContainer" with { 'itemId': itemData.item.id, 'longDescription' : false } %}
-        <hr class="hr-style2">
-    </div> </div> </div>
+        {% if pdpFeedbackCount is null or pdpFeedbackCount > 0 %}
+            {% include "GuardiansBasicB2B::Containers.FeedbackContainer" with { 'itemId': itemData.item.id, 'longDescription': false, 'pdpFeedback': true } %}
+        {% endif %}
     {% endif %} 
 </article>
 {% if isQuickView %}

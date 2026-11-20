@@ -121,7 +121,7 @@
 {% endif %}
 {# TITLE Tag mit Seitennummerierung #}
 {% if currentPage > 1 %}
-    <title>{{ title ~ ' – ' ~ pageText ~ ' ' ~ currentPage | raw }}</title>
+    <title>{{ title | raw }} – {{ pageText }} {{ currentPage }}</title>
 {% else %}
     <title>{{ title | raw }}</title>
 {% endif %}

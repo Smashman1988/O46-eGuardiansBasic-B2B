@@ -79,6 +79,10 @@ async function scenario(browser,version,lang) {
                         omit(item,'aria-selected',/^(true|false)$/);
                     }
                 }
+                // The earlier snapshot repeats the product link name on its thumbnail.
+                for(const img of copy.querySelectorAll('.list-autocomplete a img')){
+                    if(img.alt===img.closest('a').title) img.alt='';
+                }
                 return {html:copy.outerHTML,value:input.value};
             };
             document.addEventListener('click',e=>{if(e.target.closest('a'))e.preventDefault()});

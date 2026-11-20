@@ -136,7 +136,7 @@ $cases = [
     'product-with-category' => ['template' => 'tpl.item', 'category' => 100, 'page' => 'cat', 'matrix' => true, 'zoom' => true],
     'product' => ['template' => 'tpl.item', 'page' => 'item', 'matrix' => true, 'zoom' => true],
     'basket' => ['template' => 'tpl.category.content', 'category' => 9001, 'basketClass' => true,
-        'page' => 'vue', 'facets' => true, 'checkoutCss' => true, 'jquery' => false],
+        'page' => 'vue', 'facets' => false, 'checkoutCss' => true, 'jquery' => false],
     'login' => ['template' => 'tpl.login', 'page' => 'main', 'checkoutCss' => true],
     'register' => ['template' => 'tpl.register', 'page' => 'main', 'checkoutCss' => true],
     'checkout' => ['template' => 'tpl.checkout', 'page' => 'main', 'checkoutCss' => true],

@@ -1,7 +1,7 @@
 <?php
 // php tests/list_render_preparation.php <Twig autoload> <baseline resources/views> <report.json>
 require $argv[1];
-require __DIR__.'/card_markup_contract.php';
+require_once __DIR__.'/card_markup_contract.php';
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 function listCheck($ok, $message) { if (!$ok) throw new RuntimeException($message); }
 function blockWhitespace($html) { return preg_replace('/(?<=>)[\t ]*(?:\r?\n[\t ]*)+(?=<)/','',$html); }
@@ -65,12 +65,28 @@ foreach(['de','en','fr','it','es'] as $lang)foreach(['category'=>'Category.Item.
             '$1'.$paths[$lang].'$2', $expectedHtml, 1, $changed);
         listCheck($changed === 1, 'Missing original localized list-end link');
     }
-    listCheck(blockWhitespace($expectedHtml)===blockWhitespace($result['after']['html']),'Unexpected list markup difference '.$lang.'/'.$kind.'/'.$page.'/'.$scenario);
+    // In this fixture real Twig globals explicitly request priority images and a
+    // custom vendor path. The current list sets its own eager flag per position.
+    if ($scenario === 'true-globals' && $kind !== 'grid') {
+        $index = 0;
+        $expectedHtml = preg_replace_callback('~<div class="cat-item(?: |").*?(?=<div class="cat-item(?: |")|$)~s', function ($match) use (&$index,$page) {
+            $card = $match[0];
+            if ($page === 1 && ++$index <= 2) return $card;
+            $card = preg_replace('~(<img\b[^>]*\bwidth="225px"[^>]*?)(/?>)~', '$1 fetchpriority="high" loading="eager"$2', $card);
+            return preg_replace_callback('~<img\b[^>]*class="cat-logo"[^>]*>~', function ($logo) {
+                $tag = str_replace('class="cat-logo"','class="lozad cat-logo"',$logo[0]);
+                return preg_replace_callback('~\bsrc="([^"]*)"~', function ($src) {
+                    return 'src="" data-src="'.str_replace('/fixture/GuardiansBasicB2B/images/vendors/','/global/vendor/',$src[1]).'"';
+                }, $tag);
+            }, $card);
+        }, $expectedHtml);
+    }
+    listCheck(cardMarkupContract($expectedHtml,true)===cardMarkupContract(withoutCardResponsiveSources($result['after']['html'])),'Unexpected list markup difference '.$lang.'/'.$kind.'/'.$page.'/'.$scenario);
     $expectedCalls = $result['before']['calls'];
     if ($kind === 'grid') $expectedCalls['trans'] -= 2; // No lookup of unused labels in the isolated grid.
     if ($kind !== 'grid') $expectedCalls['itemName']--; // Removed unrelated product title from the list-end link.
     if (($expectedCalls['itemName'] ?? null) === 0) unset($expectedCalls['itemName']);
-    listCheck($expectedCalls===$result['after']['calls'],'Service/helper calls differ');
+    listCheck(cardHelperContract($expectedCalls,$result['after']['calls'],'plugin_path'),'Service/helper calls differ');
     listCheck(substr_count($result['after']['html'],'data-eg-item="')===$n,'Card count');
     $counts=[];foreach(['before','after'] as $version){$counts[$version]=['macroCalls'=>$result[$version]['profile']['macro:categoryItem']??0,'cardContextKeys'=>array_map('count',$result[$version]['contexts']['Category.Item.Partials.CategoryListItem']??[]),'attributeContextKeys'=>array_map('count',$result[$version]['contexts']['Category.Item.Partials.CategoryAttributes']??[])];}
     if($kind!=='grid'){listCheck($counts['before']['macroCalls']===$n,'Baseline macro count');listCheck($counts['after']['macroCalls']===0,'Internal macro calls removed');}
@@ -79,6 +95,6 @@ foreach(['de','en','fr','it','es'] as $lang)foreach(['category'=>'Category.Item.
 }
 // Public macro import and standalone card entry points retain their old context boundary.
 $compatibility=[];
-foreach(['de','en','fr','it','es'] as $lang)foreach([1,2] as $variant){$globals=['dezimalcount'=>2,'percent'=>33,'cardPriorityImage'=>true];$ctx=['item'=>fixtureItems(1,$lang)[0],'variant'=>$variant,'currencycheck'=>'USD','isShoeCategory'=>true,'translations'=>['tAvailSizes'=>'Sizes','tInBasket'=>'Buy'],'transLabels'=>['availsizeonesize'=>'One'],'cardAttributeMap'=>null,'dezimalcount'=>4,'cardEagerImages'=>false,'percent'=>55];$html=[];foreach(['before'=>$argv[2],'after'=>$root]as$v=>$base){$f=new ListPreparationFixture($lang);[$twig]=$pair=preparationEnvironment($base,$f,$globals);$twig->getLoader()->setTemplate('macro',"{% import 'GuardiansBasicB2B::Category.Item.CategoryItem' as c %}{{ c.categoryItem(item,variant,currencycheck,isShoeCategory,translations,transLabels,cardAttributeMap) }}");foreach(['macro','GuardiansBasicB2B::Category.Item.Partials.CategoryListItem','GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2']as$name)$html[$v][$name]=$twig->render($name,$ctx);}foreach ($html['before'] as $entry=>$output) listCheck(withoutInvalidCardComparisons($output,[100])===$html['after'][$entry],'Unexpected public/standalone difference outside invalid comparison price');$compatibility[]=['language'=>$lang,'variant'=>$variant,'equalExceptInvalidComparisonPrice'=>true,'entries'=>3];}
+foreach(['de','en','fr','it','es'] as $lang)foreach([1,2] as $variant){$globals=['dezimalcount'=>2,'percent'=>33,'cardPriorityImage'=>true];$ctx=['item'=>fixtureItems(1,$lang)[0],'variant'=>$variant,'currencycheck'=>'USD','isShoeCategory'=>true,'translations'=>['tAvailSizes'=>'Sizes','tInBasket'=>'Buy'],'transLabels'=>['availsizeonesize'=>'One'],'cardAttributeMap'=>null,'dezimalcount'=>4,'cardEagerImages'=>false,'percent'=>55];$html=[];foreach(['before'=>$argv[2],'after'=>$root]as$v=>$base){$f=new ListPreparationFixture($lang);[$twig]=$pair=preparationEnvironment($base,$f,$globals);$twig->getLoader()->setTemplate('macro',"{% import 'GuardiansBasicB2B::Category.Item.CategoryItem' as c %}{{ c.categoryItem(item,variant,currencycheck,isShoeCategory,translations,transLabels,cardAttributeMap) }}");foreach(['macro','GuardiansBasicB2B::Category.Item.Partials.CategoryListItem','GuardiansBasicB2B::Category.Item.Partials.CategoryListItem2']as$name)$html[$v][$name]=$twig->render($name,$ctx);}foreach ($html['before'] as $entry=>$output) listCheck(cardMarkupContract(withoutInvalidCardComparisons($output,[100]),true)===cardMarkupContract($html['after'][$entry]),'Unexpected public/standalone difference outside invalid comparison price');$compatibility[]=['language'=>$lang,'variant'=>$variant,'equalExceptInvalidComparisonPrice'=>true,'entries'=>3];}
 file_put_contents($argv[3],json_encode(['status'=>'PASS','twig'=>Twig\Environment::VERSION,'renders'=>$rows,'compatibility'=>$compatibility,'limits'=>['Profiler counts and explicit context widths use real Twig 2/3 with deterministic service fixtures. They are not native PHP/IO timings.','No customer-specific price, stock, tax or basket transformation changed.']],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 echo count($rows).' list comparisons including the intended list-end link change and '.count($compatibility).' public/standalone price and context comparisons PASS, Twig '.Twig\Environment::VERSION.PHP_EOL;

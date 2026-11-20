@@ -3,7 +3,7 @@
 // php tests/phase13_cards.php <autoload> <baseline views> <report.json>
 define('O46_CARD_FIXTURE_ONLY', true);
 require __DIR__.'/phase11_cards.php';
-require __DIR__.'/card_markup_contract.php';
+require_once __DIR__.'/card_markup_contract.php';
 function card13Contract($html) {
     $dom=cardMarkupDocument($html);$xp=new DOMXPath($dom);$out=[];
     foreach($xp->query('//div[@data-eg-item]') as $card) {
@@ -28,9 +28,9 @@ function card13Contract($html) {
 function card13Pair($twigs,$fixtures,$name,$ctx,$label) {
     $r=[];
     foreach(['before','after'] as $v){$fixtures[$v]->calls=[];$twigs[$v]->ratingLoads=0;$html=$twigs[$v]->render($name,$ctx);$r[$v]=['html'=>$html,'counts'=>cardMarkupCounts($html),'calls'=>$fixtures[$v]->calls,'ratingLoads'=>$twigs[$v]->ratingLoads];}
-    phase11Check(card13Contract($r['before']['html'])===card13Contract($r['after']['html']),'Content/image/action contract: '.$label);
+    phase11Check(card13Contract(cardProjectedHtml($r['before']['html']))===card13Contract($r['after']['html']),'Content/image/action contract: '.$label);
     if (in_array('--same-markup', $GLOBALS['argv'], true)) {
-        phase11Check(cardMarkupContract($r['before']['html']) === cardMarkupContract($r['after']['html']), 'Complete element/text/attribute contract: '.$label);
+        phase11Check(cardMarkupContract($r['before']['html'],true) === cardMarkupContract($r['after']['html']), 'Complete element/text/attribute contract: '.$label);
         $a=$r['before']['calls']; $b=$r['after']['calls'];
         phase11Check(($b['pluginPath'] ?? 0) <= ($a['pluginPath'] ?? 0), 'No extra logo path resolutions: '.$label);
         unset($a['pluginPath'], $b['pluginPath']);
@@ -71,7 +71,7 @@ foreach(['de','en','fr','it','es'] as $lang){
             if($macro){$entry='isolated-macro';$env->getLoader()->setTemplate($entry,"{% import 'GuardiansBasicB2B::".$changed."' as c %}{{ c.categoryItem(item,variant,currencycheck,false,translations,transLabels,null) }}");}
             $samples[$v]=$env->render($entry,$context);
         }
-        phase11Check(card13Contract($samples['before'])===card13Contract($samples['after']),'Isolated change contract: '.$changed);
+        phase11Check(card13Contract($changed==='Category.Item.Partials.CategoryListItem' ? cardProjectedHtml($samples['before']) : $samples['before'])===card13Contract($samples['after']),'Isolated change contract: '.$changed);
         $isolated[]=['template'=>$changed,'cards'=>$macro?1:60,'before'=>cardMarkupCounts($samples['before']),'after'=>cardMarkupCounts($samples['after'])];
     }
     // Visual data is explicit: public product photographs, varied local card fixtures.

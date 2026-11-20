@@ -213,7 +213,7 @@ this.initShopData = function () { return O46Core.basketHeader.start(); };
             if(!$(_this).hasClass('item-in-wishlist')){
                 eGuardians.item.watchList.add(variationId,function(response){
                     
-                    $(_this).addClass('item-in-wishlist');
+                    $(_this).addClass('item-in-wishlist').attr('aria-pressed', 'true');
                     eGuardians.ui.message.success.show({
                         'message'        : messageServiceTranslations["wishlistplus"],
                         'insertElement'  : '.item-actions-wrap',
@@ -231,7 +231,7 @@ this.initShopData = function () { return O46Core.basketHeader.start(); };
                
             }else{
                 eGuardians.item.watchList.remove(variationId,function(){
-                    $(_this).removeClass('item-in-wishlist');
+                    $(_this).removeClass('item-in-wishlist').attr('aria-pressed', 'false');
                     eGuardians.ui.message.success.show({
                         'message'        : messageServiceTranslations["wishlistminus"],
                         'insertElement'  : '.item-actions-wrap',
@@ -466,34 +466,20 @@ O46Core.apiservice.call(window);
                         }else{
                             $('.data-stock-warn').html(messageServiceTranslations["stockWarn3"])
                         }
-                        if(variationData.images.variation.length>0){
-                            var prevImagesHtml = '';
-                            //MagicZoom.update('ItemImgZoom',  variationData.images.variation[0].url,  variationData.images.variation[0].urlMiddle);
-                            var sortImages = variationData.images.variation.sort(function(a, b) {
-                                return a.position - b.position;
-                            });
-                            
-                            var zoomid = "ItemImgZoom";
-                            var prevImg = ".single-prev-images";
-                            if($('.modal-cross').hasClass('show')){
-                                //MagicZoom.update('ItemImgZoom2',  variationData.images.variation[0].url,  variationData.images.variation[0].urlMiddle);
-                                zoomid = "ItemImgZoom2";
-                                prevImg = ".modal-cross .single-prev-images";
+                        if (variationData.images && variationData.images.variation && variationData.images.variation.length) {
+                            var article = $itemElement[0];
+                            var selectedId = String(activeVariation.variationId);
+                            function updateGallery() {
+                                if (article.isConnected && article.getAttribute('data-eg-active-variation') === selectedId) {
+                                    O46Core.setVariationGallery(article, variationData.images);
+                                }
                             }
-                            MagicZoom.stop(zoomid);
-                            
-                            $('#'+zoomid).attr('href', sortImages[0].url);
-                            $('#'+zoomid+' img').attr('src', sortImages[0].urlMiddle)
-
-
-                            $(sortImages).each(function(tests, value){
-                                prevImagesHtml = '<a href="'+value["url"]+'" rel="zoom-id:'+zoomid+'" data-image="'+value["urlMiddle"]+'" title="">';
-                                prevImagesHtml += '<img src="'+value["urlPreview"]+'" alt="" />';
-                                prevImagesHtml += '</a>';
-                            });
-                            setTimeout(function(){
-                                 MagicZoom.start(zoomid);
-                            }, 50);
+                            if (O46Core.setVariationGallery && window.MagicZoom) updateGallery();
+                            else if (article.querySelector('#ItemImgZoom')) {
+                                Promise.all([O46Core.ensureMatrix(), O46Core.ensureMagicZoom()]).then(updateGallery).catch(function (error) {
+                                    console.warn('Variation gallery', error);
+                                });
+                            }
                         }
                         O46Core.updateVariationPrices($itemElement, variationData.prices);
 
@@ -678,76 +664,71 @@ $(document).on('click touchend', '.menuShowAll', function(e){
 
 $('body :not(.checkout) [data-toggle="tooltip"]').tooltip();
 
-$(document).on('click', '.zoom-nav-list > button', function(event){  
-    event.stopPropagation();
-    event.preventDefault();             
-    if(event.handled !== true) {
-        if($('.modal-cross').hasClass('show')){
-            MagicZoom.switchTo('ItemImgZoom2',$(this).index())
-        }else{
-            MagicZoom.switchTo('ItemImgZoom',$(this).index()) 
+$(document).on('click', '.eg-gallery-expand, .zoomnavleft, .zoomnavright', function (event) {
+    event.preventDefault();
+    var anchor = this.closest('.eg-gallery-frame')?.querySelector('#ItemImgZoom');
+    if (!anchor) return;
+    if (this.classList.contains('eg-gallery-expand')) {
+        if (anchor._egExpandPending) return;
+        function expand(zoom) {
+            if (!anchor.isConnected) return;
+            var figure = anchor.querySelector('.mz-figure');
+            if (figure && figure.classList.contains('mz-ready')) {
+                zoom.expand(anchor);
+                return;
+            }
+            // With lazyZoom the first expand loads the large image. Finish the
+            // same user action when the current figure becomes ready.
+            var source = anchor.href;
+            var observer = new MutationObserver(function () {
+                if (!anchor.isConnected || anchor.href !== source) return finish();
+                if (!anchor.querySelector('.mz-figure.mz-ready')) return;
+                finish();
+                if (!document.querySelector('.mz-expand')) zoom.expand(anchor);
+            });
+            function finish() {
+                clearTimeout(timer);
+                observer.disconnect();
+                delete anchor._egExpandPending;
+            }
+            var timer = setTimeout(finish, 15000);
+            anchor._egExpandPending = true;
+            observer.observe(anchor, {childList:true, subtree:true, attributes:true, attributeFilter:['class']});
+            zoom.expand(anchor);
         }
-        event.handled = true;
-    } else {
-        return false;
+        if (window.MagicZoom) expand(window.MagicZoom);
+        else if (window.O46Core && O46Core.ensureMagicZoom) {
+            anchor._egExpandPending = true;
+            O46Core.ensureMagicZoom().then(function (zoom) {
+                delete anchor._egExpandPending;
+                expand(zoom);
+            }, function () {
+                delete anchor._egExpandPending;
+                if (anchor.isConnected) window.location.assign(anchor.href);
+            });
+        }
+    } else if (window.MagicZoom) {
+        if (this.classList.contains('zoomnavleft')) MagicZoom.prev(anchor);
+        else MagicZoom.next(anchor);
     }
 });
-$(document).on( "click", ".zoomnavleft",function(){
-    if($('.modal-cross').hasClass('show')){
-        MagicZoom.prev('ItemImgZoom2');
-    }else{
-        MagicZoom.prev('ItemImgZoom');
+
+// MagicZoom marks the active thumbnail for every navigation path, including touch.
+function bindGalleryCounter(gallery) {
+    var strip = gallery.querySelector('.single-prev-images');
+    var counter = gallery.querySelector('[data-eg-gallery-counter]');
+    if (!strip || !counter || strip.hasAttribute('data-eg-counter-bound')) return;
+    strip.setAttribute('data-eg-counter-bound', '');
+    function update() {
+        var thumbs = Array.from(strip.querySelectorAll('a'));
+        var index = thumbs.findIndex(function (thumb) { return thumb.classList.contains('mz-thumb-selected'); });
+        counter.hidden = thumbs.length < 2;
+        counter.textContent = counter.hidden ? '' : (Math.max(0, index) + 1) + ' / ' + thumbs.length;
     }
-    setTimeout(function(){ 
-        var stepIndex = $('.mz-thumb-selected').data('stepindex');
-        console.log(stepIndex)
-        /*if($('.mz-thumb-selected').prev().length<=0){
-            stepIndex = $('.single-prev-img .slick-slide:last-child').data('stepindex');
-        }*/
-    }, 200);
-});
-
-
-var timoutZoomSlider;
-$(document).on( "click", ".zoomnavright",function(){
-    if($('.modal-cross').hasClass('show')){
-        MagicZoom.next('ItemImgZoom2');
-    }else{
-        MagicZoom.next('ItemImgZoom');
-    }
-    setTimeout(function(){ 
-        var stepIndex = $('.mz-thumb-selected').next().data('stepindex');
-        if($('.mz-thumb-selected').next().length<=0){
-            stepIndex = $('.single-prev-images').data('stepindex');
-        }
-        if(stepIndex<0){
-            stepIndex = 0;
-        }
-    }, 200);
-
-});
-function setActivePoint(){
-    $('.zoom-nav-list').html('')
-    $('.single-prev-images').each(function(i){
-        if(i==$('.mz-thumb-selected').index()){
-            $('.zoom-nav-list').append('<button class="activePoint" aria-label="Slider Pagination" />');
-        }
-        else{
-            $('.zoom-nav-list').append('<button />');
-        }
-    });
-} 
-var mzOptions = {};
-var zoomCounter = 1;//parseInt($(".single-prev-images .slick-active:first").index());
-mzOptions.onZoomReady = function(zoomparams) { 
-    setActivePoint();
-
-};
-
-mzOptions.onUpdate = function(zoomparams) { 
-    setActivePoint();     
-};
-
+    new MutationObserver(update).observe(strip, {childList: true, subtree: true, attributes: true, attributeFilter: ['class']});
+    update();
+}
+document.querySelectorAll('.eg-item-gallery').forEach(bindGalleryCounter);
 
 $(document).on('click', '.slideToRating, .item-ratings-top', function(event){    
     $('html, body').animate({

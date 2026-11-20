@@ -95,7 +95,12 @@
         clearTimeout(state.timer); state.sequence++;
         if (state.controller) state.controller.abort();
         buttons(root, true);
+        root.querySelector('[data-eg-facet-retry]')?.setAttribute('hidden', '');
         root.querySelector('.facet-status').textContent = '';
+    }
+    function countValue(raw) {
+        const value = typeof raw === 'string' && /^\d+$/.test(raw) ? Number(raw) : raw;
+        return Number.isSafeInteger(value) && value >= 0 ? value : null;
     }
     function updateValues(root, facets) {
         const state = states.get(root);
@@ -133,24 +138,33 @@
         const params = new URLSearchParams({query: root.dataset.egSearchstring || '', facets: [...state.selected].join(','),
             priceMin: target.searchParams.get('priceMin') || '', priceMax: target.searchParams.get('priceMax') || '', categoryId: root.dataset.egCatid || '', countsOnly: '1'});
         const controller = new AbortController(); state.controller = controller;
+        const timeout = setTimeout(() => controller.abort(), 15000);
         try {
             const response = await fetch('/rest/io/facet/?' + params, {credentials: 'same-origin', signal: controller.signal, headers: {Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest'}});
             if (!response.ok) throw new Error('HTTP ' + response.status);
             const result = (await response.json()).data;
             if (sequence !== state.sequence) return;
-            if (!result || !Array.isArray(result.facets) || !Number.isFinite(Number(result.itemList?.total))) throw new Error('Invalid facet response');
+            const total = countValue(result?.itemList?.total);
+            if (total === null || !Array.isArray(result.facets) || !result.facets.every(facet =>
+                facet && validId(facet.id) && typeof facet.name === 'string' && Array.isArray(facet.values) &&
+                facet.values.every(value => value && validId(value.id) && typeof value.name === 'string' && countValue(value.count) !== null)
+            )) throw new Error('Invalid facet response');
             updateValues(root, result.facets);
             root.setAttribute('aria-busy', 'false');
-            buttons(root, false, result.itemList.total, target.pathname + target.search);
+            buttons(root, false, total, target.pathname + target.search);
             state.controller = null;
             if (navigate) location.assign(target.pathname + target.search);
         } catch (error) {
-            if (error.name === 'AbortError' || sequence !== state.sequence) return;
+            if (sequence !== state.sequence) return;
             state.controller = null;
             // Never present a network failure as a successful zero-result response.
             root.setAttribute('aria-busy', 'false');
             root.querySelector('.facet-status').textContent = state.texts.error;
-            buttons(root, false, 'â€“', null);
+            buttons(root, false, '–', null);
+            state.retryNavigate = navigate;
+            root.querySelector('[data-eg-facet-retry]')?.removeAttribute('hidden');
+        } finally {
+            clearTimeout(timeout);
         }
     }
     function filter(root, navigate) {
@@ -169,6 +183,9 @@
             if (header) {
                 event.preventDefault(); event.stopImmediatePropagation();
                 toggle(root, header.closest('[data-eg-facet-group]'), header.getAttribute('aria-expanded') !== 'true'); return;
+            }
+            if (event.target.closest('[data-eg-facet-retry]')) {
+                filter(root, state.retryNavigate); return;
             }
             const apply = event.target.closest('[data-eg-btnfilter]');
             if (apply) {

@@ -10,24 +10,24 @@
       "sha256": "4a05763f573afab5904376a3be371f97990649329adf23a1228cd229a002d677"
     },
     "css/main.min.css": {
-      "version": 19,
-      "sha256": "be207bbdbfbf6bdd178d13fcf4a6961be82696bd9a87495251a38957699708a1"
+      "version": 20,
+      "sha256": "de39d2c60e417c0e4eabcbb41548f37d0e9654d1e07aef947100600aee2bcbdd"
     },
     "js/cat.min.js": {
       "version": 7,
       "sha256": "dd8d525e3c360b3d804bf4a32a639dc83ce6abbe94acccfcccbbaedce1f9971a"
     },
     "js/core.min.js": {
-      "version": 15,
-      "sha256": "ba919e1e4b809cea64c490b087f0f6b3ad10b622e050a48fc3a57aefc8990500"
+      "version": 16,
+      "sha256": "54e134ca5186d7946b367220b886989df8acb8c86e86a89d7a9a39402a79ba71"
     },
     "js/facets.min.js": {
-      "version": 1,
-      "sha256": "2160eff770cf7ed5e091d7d78174ba141c6f28633f4f789c029bbae14ee41e45"
+      "version": 2,
+      "sha256": "838495844a40d52b99cc50f1e7ef69be19dcaa27a5d3ec4591c0bc8b462cd2f3"
     },
     "js/item.min.js": {
-      "version": 7,
-      "sha256": "7815f0887726b96a17b85c92ea5106997a54f77f1073b3317758e2041586543d"
+      "version": 8,
+      "sha256": "c5701734ee5284b6eee9b011c89faa04d781a9346260e94d3573bb1b2202767e"
     },
     "js/jquery-3.7.1.min.js": {
       "version": 1,
@@ -42,8 +42,8 @@
       "sha256": "4e5371abd46da38264def028bb22448f728f256b0932fa4d30d27c9a2b66e64c"
     },
     "js/matrix.min.js": {
-      "version": 3,
-      "sha256": "384730be2f491ffe350ebfd996ca296eb176cd6dec5dfad67aa8a0c0cdd35d76"
+      "version": 4,
+      "sha256": "401e7e008de26760a7d38d088835410e0fc72ef0efb5b163c66735baae991a17"
     },
     "js/vue.min.js": {
       "version": 5,

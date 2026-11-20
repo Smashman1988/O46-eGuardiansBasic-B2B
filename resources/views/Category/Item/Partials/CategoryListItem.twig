@@ -20,7 +20,7 @@
 {% set rawLogo = cardManufacturer.logo -%}
 {% set vendorPrefix = 'https://cdn02.outlet46.de/frontend/vendor/' -%}
 {% set vendorlogo = vendorPrefix in (rawLogo ?? '') ? (rawLogo | replace({(vendorPrefix): cardEagerImages ? plugin_path('GuardiansBasicB2B') ~ '/images/vendors/' : (cardVendorLogoBase ?? (plugin_path('GuardiansBasicB2B') ~ '/images/vendors/'))}) | default(rawLogo)) : rawLogo -%}
-<div class="cat-item{% if hasRRP %} has-rrp{% endif %} has-variations" data-eg-item="{{ item.data.variation.itemId }}"><div class="article-body cat-item-image text-center {% if isShoeCategory %}cat-item-shoe{% endif %}"><a class="product-list article a" href="{{ cardUrl }}" title="{{ itemName }}"><picture>
+<div class="cat-item{% if hasRRP %} has-rrp{% endif %} has-variations" data-eg-item="{{ item.data.variation.itemId }}"><div class="article-body cat-item-image text-center {% if isShoeCategory %}cat-item-shoe{% endif %}"><a class="product-list article a" href="{{ cardUrl }}" title="{{ itemName }}">{%- if img is not empty -%}<picture>
 {%- if cardHasResponsiveImage -%}
 <source type="image/avif" media="(min-width: {{ cardImageMinViewport }}px)" srcset="{{ img }}.avif"><source media="(min-width: {{ cardImageMinViewport }}px)" srcset="{{ img }}">
 {%- endif -%}
@@ -29,7 +29,7 @@
 {%- else -%}
 <source srcset="{% if cardHasPriorityImage %}{{ img }}.avif{% endif %}" type="image/avif"{% if not cardHasPriorityImage %} data-srcset="{{ img }}.avif" class="lozad"{% endif %}><img src="{% if cardHasPriorityImage %}{{ img }}{% endif %}" decoding="async"{% if cardHasPriorityImage %} loading="eager" fetchpriority="high"{% else %}{% if cardHasResponsiveImage %} loading="lazy"{% endif %} data-src="{{ img }}"{% endif %} width="225px" height="300px"{% if not cardHasPriorityImage %} class="lozad"{% endif %} alt="{{ itemName }}" title="{{ itemName }}">
 {%- endif -%}
-</picture></a>
+</picture>{%- endif -%}</a>
 {%- if hasRRP or isSustainable -%}<span class="cat-badges">{% if hasRRP %}<span class="item-action i-action-sale">{{ percent }}%</span>{% endif %}{% if isSustainable %}<span class="item-action i-action-nachhaltig-cat">{{ translations.tSustainability }}</span>{% endif %}</span>{%- endif -%}
 {%- if vendorlogo is not empty -%}
 <img src="{% if cardEagerImages %}{{ vendorlogo }}{% endif %}"{% if not cardEagerImages %} data-src="{{ vendorlogo }}"{% endif %} class="{% if not cardEagerImages %}lozad {% endif %}cat-logo" width="50px" height="50px" alt="{{ cardManufacturer.name }} Logo" title="{{ cardManufacturer.name }}">

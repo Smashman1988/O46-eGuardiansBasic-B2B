@@ -3,7 +3,7 @@
 // Real Twig renders: media selection and image fallbacks may change; all other
 // card content, prices, URLs, order, attributes and service calls must not.
 require $argv[1];
-require __DIR__.'/card_markup_contract.php';
+require_once __DIR__.'/card_markup_contract.php';
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 function imageCheck($condition, $message) { if (!$condition) throw new RuntimeException($message); }
 class ImageCardFixture {
@@ -52,9 +52,7 @@ function imageContractWithoutResponsiveSources($html) {
     // libxml's HTML4 parser nests HTML5 <source> elements. Remove only the
     // intended opening tags before parsing, so removing a source cannot also
     // remove its following image or fallback from the invariant comparison.
-    $html=preg_replace('/<source\b[^>]*\bmedia="\(min-width: (?:768|1200)px\)"[^>]*>/','',$html);
-    $html=preg_replace('/(<img\b[^>]*?)\sloading="lazy"/','$1',$html);
-    return cardMarkupContract($html);
+    return cardMarkupContract(withoutCardResponsiveSources($html));
 }
 $rows=[];$current=__DIR__.'/../resources/views';
 foreach(['de','en','fr','it','es'] as $lang)foreach(['category'=>'Category.Item.CategoryItem','content'=>'Category.Item.CategoryItemContent','home'=>'Category.Item.Partials.CategoryGridOnly'] as $kind=>$name)foreach([1,2] as $page)foreach([false,true] as $missingThird){
@@ -62,9 +60,9 @@ foreach(['de','en','fr','it','es'] as $lang)foreach(['category'=>'Category.Item.
     $ctx=['lang'=>$lang,'itemList'=>$items,'services'=>new ImageCardServices($lang),'category'=>['id'=>44,'parentCategoryId'=>0,'details'=>[['name'=>'Fixture category']]],'currentPage'=>$page,'pageMax'=>3,'itemCountTotal'=>$count,'request'=>new class {function get($key){return null;}},'prioritizeFirstCardImage'=>true,'isQuickView'=>true];
     $html=[];$calls=[];
     foreach(['before'=>$argv[2],'after'=>$current] as $version=>$base){$fixture=new ImageCardFixture($lang);$twig=imageEnvironment($base,$fixture);$html[$version]=$twig->render('GuardiansBasicB2B::'.$name,$ctx);$calls[$version]=$fixture->calls;}
-    imageCheck($calls['before']===$calls['after'],'Service/helper calls changed '.$lang.'/'.$kind.'/'.$page);
-    imageCheck(cardMarkupContract($html['before'])===imageContractWithoutResponsiveSources($html['after']),'Business markup or old image fallback changed '.$lang.'/'.$kind.'/'.$page);
-    if($kind==='home')imageCheck($html['before']===$html['after'],'Home 60-card HTML must be byte-identical');
+    imageCheck(cardHelperContract($calls['before'],$calls['after'],'path'),'Service/helper calls changed '.$lang.'/'.$kind.'/'.$page);
+    imageCheck(cardMarkupContract($html['before'],true)===imageContractWithoutResponsiveSources($html['after']),'Business markup or old image fallback changed '.$lang.'/'.$kind.'/'.$page);
+    if($kind==='home')imageCheck(cardMarkupContract($html['before'],true)===cardMarkupContract($html['after']),'Home 60-card content, controls and image contract');
     $dom=cardMarkupDocument($html['after']);$xpath=new DOMXPath($dom);$cards=$xpath->query('//*[@data-eg-item]');imageCheck($cards->length===$count,'Card count changed');$mediaSources=0;
     foreach($cards as $index=>$card){
         imageCheck($card->getAttribute('data-eg-item')===(string)(100+$index),'Article order changed');
@@ -87,7 +85,7 @@ foreach(['de','en','fr','it','es'] as $lang)foreach(['category'=>'Category.Item.
 }
 // Direct shared-card consumers keep their existing lazy, priority and eager modes.
 $standalone=[];
-foreach(['de','en','fr','it','es'] as $lang)foreach(['lazy','priority','eager'] as $mode){$output=[];foreach(['before'=>$argv[2],'after'=>$current] as $version=>$base){$fixture=new ImageCardFixture($lang);$twig=imageEnvironment($base,$fixture);$output[$version]=$twig->render('GuardiansBasicB2B::Category.Item.Partials.CategoryListItem'.($mode==='eager'?'2':''),['item'=>imageItems(1,$lang)[0],'cardPriorityImage'=>$mode==='priority','translations'=>[],'transLabels'=>[]]);}imageCheck($output['before']===$output['after'],'Standalone card changed '.$lang.'/'.$mode);$standalone[]=['language'=>$lang,'mode'=>$mode,'byteIdentical'=>true];}
+foreach(['de','en','fr','it','es'] as $lang)foreach(['lazy','priority','eager'] as $mode){$output=[];foreach(['before'=>$argv[2],'after'=>$current] as $version=>$base){$fixture=new ImageCardFixture($lang);$twig=imageEnvironment($base,$fixture);$output[$version]=$twig->render('GuardiansBasicB2B::Category.Item.Partials.CategoryListItem'.($mode==='eager'?'2':''),['item'=>imageItems(1,$lang)[0],'cardPriorityImage'=>$mode==='priority','translations'=>[],'transLabels'=>[]]);}imageCheck(cardMarkupContract($output['before'],true)===cardMarkupContract($output['after']),'Standalone card changed '.$lang.'/'.$mode);$standalone[]=['language'=>$lang,'mode'=>$mode,'cardMarkupContractEqual'=>true];}
 $report=['status'=>'PASS','twig'=>Twig\Environment::VERSION,'listCases'=>$rows,'standaloneCases'=>$standalone,'limits'=>['Deterministic service fixtures with real Twig 2/3. No native network, customer-class or live deployment acceptance.','Page 2 first two images intentionally retain their existing Lozad policy.']];
 file_put_contents($argv[3],json_encode($report,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 echo count($rows).' list image/markup contracts and '.count($standalone).' unchanged standalone cards PASS; Twig '.Twig\Environment::VERSION.PHP_EOL;

@@ -90,7 +90,7 @@ $newsletterPaths = [
     'de' => '/content/newsletter/', 'en' => '/en/content/newsletter/', 'fr' => '/fr/content/Bulletin/',
     'it' => '/it/content/newsletter/', 'es' => '/es/content/newsletter/',
 ];
-$newsletterBundles = ['home' => 'main', 'category.item' => 'cat', 'item' => 'item', 'vue-category' => 'vue'];
+$newsletterBundles = ['home' => 'main', 'category.item' => 'cat', 'item' => 'item', 'vue-category' => 'main'];
 $cases = [];
 $assetCacheContracts = [];
 function ownThemeAssetUrls($html, $pluginBase) {

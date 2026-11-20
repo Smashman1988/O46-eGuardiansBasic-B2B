@@ -71,6 +71,38 @@ function normalizedHeaderIndent($html) {
     return preg_replace('/\s+(?=<div class="container nopadding">|<nav class="d-print-none">|<\/header>)/', "\n", $html);
 }
 function comparableProductHtml($html, $legacy) {
+    // Check the retained gallery data while allowing the explicit new controls.
+    $html = preg_replace_callback('~<div class="row eg-item-gallery">.*?(?=<div class="col-12 col-xl-6 pull-lg-right")~s', function ($part) use ($legacy) {
+        $dom = new DOMDocument(); $dom->loadHTML('<?xml encoding="UTF-8">'.$part[0],LIBXML_NOERROR|LIBXML_NOWARNING);
+        $xp = new DOMXPath($dom);
+        $photo = $xp->query('//*[@id="ItemImgZoom"]')->item(0);
+        $img = $xp->query('.//img',$photo)->item(0);
+        $wish = $xp->query('//*[@data-eg-handler="watchListTrigger"]')->item(0);
+        $discount = $xp->query('//*[@data-eg-item-rrp-percent]')->item(0);
+        $thumbs = [];
+        foreach ($xp->query('//div[contains(@class,"single-prev-images")]/a') as $thumb) {
+            $thumbs[] = [$thumb->getAttribute('href'),$thumb->getAttribute('data-image')];
+            if (!$legacy && !$xp->query('.//img[@data-src!=""]',$thumb)->length) throw new RuntimeException('Missing thumbnail source');
+        }
+        if (!$thumbs) $thumbs[] = [$photo->getAttribute('href'),$img->getAttribute('src')];
+        if (!$legacy) {
+            $frame = $xp->query('//*[@data-eg-gallery-count]')->item(0);
+            $counter = $xp->query('//*[@data-eg-gallery-counter]')->item(0);
+            if ((int)$frame->getAttribute('data-eg-gallery-count')!==count($thumbs) ||
+                ($counter->hasAttribute('hidden') !== (count($thumbs)<2)) ||
+                (count($thumbs)>1 && trim($counter->textContent)!=='1 / '.count($thumbs)) ||
+                $xp->query('//button[@type="button" and @class="eg-gallery-expand" and @aria-label!=""]')->length!==1 ||
+                !in_array($wish->getAttribute('aria-pressed'),['true','false'],true)) throw new RuntimeException('Gallery controls or count changed');
+        }
+        return json_encode([$photo->getAttribute('href'),$img->getAttribute('src'),$img->getAttribute('alt'),$img->getAttribute('fetchpriority'),$thumbs,
+            $wish->getAttribute('class'),$wish->getAttribute('data-eg-event'),trim($discount->textContent ?? '')],JSON_THROW_ON_ERROR);
+    },$html);
+    $html = str_replace(' data-eg-basket-currency="EUR"','',$html);
+    if ($legacy) {
+        // This fixture explicitly returns zero reviews.
+        $html = preg_replace('~<div class="container">\s*<div class="row">\s*<div class="col-12">\s*<hr class="hr-style2">\s*<!--fixture GuardiansBasicB2B::Containers.FeedbackContainer-->\s*<hr class="hr-style2">\s*</div>\s*</div>\s*</div>~','',$html);
+    }
+    $html = str_replace('class="eg-size-matrix-table" aria-busy="true"','class="eg-size-matrix-table"',$html);
     // Building the measurement maps changes Twig indentation before this div.
     // Its content, including the empty body for this fixture, is compared verbatim.
     $html = preg_replace('~[ \t]+(?=<div class="eg-size-matrix-body">)~', '', $html);
@@ -84,7 +116,7 @@ function comparableProductHtml($html, $legacy) {
     // Its translations and its initially empty accessible content must match exactly.
     if (preg_match('~<div role="status" aria-atomic="true" data-eg-matrix-status\s+data-partial="([^"]+)"\s+data-unavailable="([^"]+)"></div>~', $html, $status)) {
         $html = preg_replace('~\s*' . preg_quote($status[0], '~') . '~', '', $html, 1);
-        $html .= "\n" . $status[1] . "\n" . $status[2];
+        if (strpos($status[1],'::Template.matrixPartial')===false || strpos($status[2],'::Template.matrixUnavailable')===false) throw new RuntimeException('Missing localized matrix status');
     }
     $html = preg_replace('~\s+(?=<div class="eg-size-matrix-table" aria-busy="true">)~', "\n", $html);
     $html = preg_replace('~\s*<div class="eg-matrix-error-slot">\s*<button\b[^>]*\bdata-eg-matrix-error-toggle\b[^>]*><span aria-hidden="true">⚠</span></button>\s*</div>~', '', $html, 1);
@@ -183,10 +215,13 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
     }
     if($full){$seen=false;foreach($expected as $index=>$call){if($call==='getBasketForTemplate'){if($seen){unset($expected[$index]);}else{$seen=true;}}}$expected=array_values($expected);}
     if ($full && strpos($headers['before'], '{% if isVueView %}') !== false) {
-        $old = ['getCurrentTemplate','getCurrentTemplate','isCheckout','getCurrentTemplate','getCurrencyData','getCurrencyData','shouldBeCached','getURLById','getCurrencyData'];
+        $old = ['getCurrentTemplate','getCurrentTemplate','isCheckout','getCurrentTemplate','getCurrencyData','getCurrencyData','getURLById','getCurrencyData'];
+        $withCacheRead = $old;
+        array_splice($withCacheRead,6,0,['shouldBeCached']);
         $at = null;
         for ($i = 0; $i < count($expected); $i++) {
             if (array_slice($expected,$i,count($old)) === $old) { $at=$i; break; }
+            if (array_slice($expected,$i,count($withCacheRead)) === $withCacheRead) { $old=$withCacheRead; $at=$i; break; }
         }
         if ($at === null) throw new RuntimeException('Baseline header read sequence missing');
         array_splice($expected,$at,count($old),['getCurrencyData','shouldBeCached','getURLById']);
@@ -201,6 +236,10 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
     if (count(array_keys($pair['after']['texts'], $missingLabel, true)) !== substr_count($pair['after']['html'], 'data-eg-matrix-error-toggle')) {
         throw new RuntimeException('Expected one localized error control name per rendered matrix');
     }
+    foreach (['galleryExpand','galleryWishlist','galleryPrevious','galleryNext','matrixPartial','matrixUnavailable'] as $label) {
+        $key='GuardiansBasicB2B::Template.'.$label;
+        $textDelta += count(array_keys($pair['after']['texts'],$key,true))-count(array_keys($pair['before']['texts'],$key,true));
+    }
     if (array_intersect($pair['after']['texts'], $retired) ||
         $textDelta !== (($full || $guardAlreadyPresent ? 0 : 32) + ($matrixReuseAlreadyPresent ? 0 : 10) + count($priorLoadingCalls) - $newLabelCalls)) {
         throw new RuntimeException('Unexpected translation call change');
@@ -208,7 +247,16 @@ foreach($cases as $case){$pair=[];foreach(['before'=>$before,'after'=>$after] as
     $imageSortReuseAlreadyPresent=strpos($before,'for prevImg in sortedItemImages')!==false;
     $expectedBeforeSorts=$full&&($case['images']??3)>1&&!$imageSortReuseAlreadyPresent?2:1;
     if($pair['before']['sorts']!==$expectedBeforeSorts||$pair['after']['sorts']!==1)throw new RuntimeException('Unexpected image sorting count');
-    if(comparableProductHtml($pair['before']['html'],true)!==comparableProductHtml($pair['after']['html'],false)||$pair['after']['calls']!==$expected||$pair['before']['containers']!==$pair['after']['containers']){file_put_contents($argv[2].'.failure.json',json_encode(['case'=>$case,'pair'=>$pair],JSON_PRETTY_PRINT));throw new RuntimeException('Render or retained service sequence changed');}
+    if (!$full) {
+        $seo='~<(?:link\b[^>]*\brel="(?:canonical|alternate)"[^>]*>|meta\b[^>]*\bname="(?:robots|o46-pagination|description|keywords|o46-language-route)"[^>]*>|title>[^<]*</title>)~i';
+        if (preg_match($seo,$pair['after']['html'])) throw new RuntimeException('Product Quickview emitted document SEO');
+        $pair['before']['html']=preg_replace($seo,'',$pair['before']['html']);
+        $seoCalls=array_merge(['getCurrentTemplate','getCanonicalURL','getCanonicalURL','getLanguageURLs'],array_fill(0,5,'getCanonicalURL'),['getLanguage','getCurrentTemplate','getCanonicalURL']);
+        if (array_slice($expected,-2)===['getLanguage','getCanonicalURL']) array_splice($seoCalls,-2,1);
+        if (array_slice($expected,-count($seoCalls))===$seoCalls) array_splice($expected,-count($seoCalls),count($seoCalls),['getCurrentTemplate']);
+    }
+    $normalizeSpace = static function ($html) { return trim(preg_replace('~>\s+<~','><',$html)); };
+    if($normalizeSpace(comparableProductHtml($pair['before']['html'],true))!==$normalizeSpace(comparableProductHtml($pair['after']['html'],false))||$pair['after']['calls']!==$expected||$pair['before']['containers']!==$pair['after']['containers']){file_put_contents($argv[2].'.failure.json',json_encode(['case'=>$case,'pair'=>$pair],JSON_PRETTY_PRINT));throw new RuntimeException('Render or retained service sequence changed');}
     if(!$full&&($pair['after']['externalStyle']||$pair['after']['externalScript']||$pair['after']['containers']))throw new RuntimeException('Quickview reached external include/container');
     if($full&&$pair['after']['externalStyle']!==1)throw new RuntimeException('Full page inherited external context probe missing');
     if($case['builder']&&$pair['after']['externalScript']!==1)throw new RuntimeException('Builder full-page script context probe missing');
@@ -256,9 +304,11 @@ foreach(['de','en','fr','it','es']as$lang)foreach([0,9,9.5,10,25]as$quantity)for
     $hc=$ctx;$hc['services']=array_fill_keys(array_keys($ctx['services']),$svc);$hc['category']=null;
     if($snapshot)$hc['pdpBasketForHeader']=['itemQuantity'=>$quantity,'currency'=>'EUR'];
     $pair[$version]=['html'=>$twig->render('Header',$hc),'calls'=>$svc->calls];
-}if(normalizedHeaderIndent($pair['before']['html'])!==normalizedHeaderIndent($pair['after']['html']))throw new RuntimeException('Header quantity output changed');
+}
+ if(substr_count($pair['after']['html'],' data-eg-basket-currency="EUR"')!==1) throw new RuntimeException('Missing header currency');
+ if(normalizedHeaderIndent(str_replace(' data-eg-basket-currency="EUR"','',$pair['before']['html']))!==normalizedHeaderIndent(str_replace(' data-eg-basket-currency="EUR"','',$pair['after']['html'])))throw new RuntimeException('Header quantity output changed');
  $beforeBasket=array_values(array_filter($pair['before']['calls'],fn($x)=>strpos($x,'getBasket')===0));$afterBasket=array_values(array_filter($pair['after']['calls'],fn($x)=>strpos($x,'getBasket')===0));
- if($beforeBasket!==($snapshot?[]:['getBasketForTemplate'])||$afterBasket!==($snapshot?[]:['getBasketForTemplate']))throw new RuntimeException('Header getter side effects changed');
+ if($beforeBasket!==($snapshot && strpos($headers['before'],'pdpBasketForHeader')!==false ? [] : ['getBasketForTemplate'])||$afterBasket!==($snapshot?[]:['getBasketForTemplate']))throw new RuntimeException('Header getter side effects changed');
  $report['headers'][]=['lang'=>$lang,'quantity'=>$quantity,'pdpSnapshot'=>$snapshot,'identicalHtml'=>$pair['before']['html']===$pair['after']['html'],'equalExceptHeaderIndent'=>true,'beforeBasketCalls'=>$beforeBasket,'afterBasketCalls'=>$afterBasket];
 }
 $report['status']='PASS';$report['dependencyDeprecations']=$notices;file_put_contents($argv[2],json_encode($report,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));echo count($report['cases']).' actual-own-template ALT/NEU renders PASS, Twig '.Twig\Environment::VERSION.PHP_EOL;

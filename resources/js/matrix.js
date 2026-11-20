@@ -820,13 +820,15 @@ O46Core.matrix = function () {
     if (!arr || !arr.length) return [];
 
     var out = [];
+    var seen = new Set();
 
     for (var i = 0; i < arr.length; i++) {
       var im = arr[i];
-      if (!im) continue;
-
+      var full = im && (im.url || im.urlLarge || im.urlMiddle || im.urlPreview);
+      if (!full || seen.has(full)) continue;
+      seen.add(full);
       out.push({
-        url: im.url || im.urlLarge || null,
+        url: full,
         urlMiddle: im.urlMiddle || im.url || null,
         urlPreview: im.urlPreview || im.urlMiddle || im.url || null,
         position: (typeof im.position === "number") ? im.position : 9999
@@ -1498,6 +1500,8 @@ O46Core.matrix = function () {
       }
     }
 
+    var frame = a.closest(".eg-gallery-frame");
+    if (frame) frame.dataset.egGalleryCount = String(images.length);
     setMainImageNow(zoomId, firstFull, firstMiddle, ttl);
 
     // Rebuild this gallery from the current anchor and selectors without a click.
@@ -1528,6 +1532,11 @@ O46Core.matrix = function () {
 
     row.classList.add("eg-active");
   }
+
+  O46Core.setVariationGallery = function (article, images) {
+    var context = getZoomContextFromMatrix(article);
+    updateMagicZoomWithGallery(article, context.zoomId, pickImages(images));
+  };
 
   function previewVariationFromRow(matrix, row, force, expand) {
     if (!matrix || !row) return;

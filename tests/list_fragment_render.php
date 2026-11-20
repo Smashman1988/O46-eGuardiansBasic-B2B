@@ -3,7 +3,7 @@
 // php tests/list_fragment_render.php <Twig autoload> <baseline views> <report.json>
 define('O46_CARD_FIXTURE_ONLY', true);
 require __DIR__.'/phase11_cards.php';
-require __DIR__.'/card_markup_contract.php';
+require_once __DIR__.'/card_markup_contract.php';
 class FragmentRenderQuery {
     private $params;
     function __construct($params) { $this->params=$params; }
@@ -30,7 +30,7 @@ foreach (['de','en','fr','it','es'] as $lang) foreach (['category','search','con
             if($next->length){parse_str(parse_url($next->item(0)->getAttribute('href'),PHP_URL_QUERY),$query);phase11Check($query['page']==$page+1 && $query['quickViewItem']==='true' && $query['facets']==='11' && $query['sorting']===$params['sorting'] && ($kind!=='search'||$query['query']===$params['query']),'Next URL preserves listing state');}
             $row[$v]=['bytes'=>strlen($html),'gzip9'=>strlen(gzencode($html,9)),'elements'=>cardMarkupCounts($html)['elements'],'calls'=>$f->calls];
             if($old && $fragment)$status->item(0)->parentNode->removeChild($status->item(0));
-            $root=$dom->getElementById('card-contract-root');$contract[$v]=cardMarkupContract($dom->saveHTML($root));
+            $root=$dom->getElementById('card-contract-root');$contract[$v]=cardMarkupContract($dom->saveHTML($root),$old);
         }
         phase11Check($contract['before']===$contract['after'],'Entire markup except unused fragment status: '.$lang.'/'.$kind.'/'.$page);
         $a=$row['before']['calls'];$b=$row['after']['calls'];foreach(['pluginPath','translation'] as $key){phase11Check(($a[$key]??0)>=($b[$key]??0),'No extra helpers');unset($a[$key],$b[$key]);}phase11Check($a===$b,'Identical remaining helper calls');$rows[]=$row;

@@ -21,17 +21,69 @@ function withoutInvalidCardComparisons($html, array $ids) {
     }
     return implode('', $chunks);
 }
+// Project the approved card layout changes on historical expected markup only.
+// Preserve link targets, live images, text, prices, badges, control attributes and order.
+function projectHistoricalCardLayout($dom) {
+    $xpath = new DOMXPath($dom);
+    foreach ($xpath->query('//picture') as $picture) {
+        $image = $xpath->query('.//img', $picture)->item(0);
+        if (!$image || trim($image->getAttribute('src').$image->getAttribute('data-src')) !== '') continue;
+        $invalid = false;
+        foreach ($xpath->query('.//source', $picture) as $source) {
+            $url = $source->getAttribute('srcset').$source->getAttribute('data-srcset');
+            if ($url === '.avif') $invalid = true;
+            elseif ($url !== '') continue 2;
+        }
+        if ($invalid) $picture->parentNode->removeChild($picture);
+    }
+    foreach ($xpath->query('//*[@data-eg-item]') as $card) {
+        $header = $xpath->query('./div[contains(@class,"cat-article-header-info")]', $card)->item(0);
+        $body = $xpath->query('./div[contains(@class,"cat-item-image")]', $card)->item(0);
+        if (!$header || !$body) continue;
+        $badges = $dom->createElement('span');
+        $badges->setAttribute('class','cat-badges');
+        foreach ($xpath->query('.//span[contains(@class,"i-action-")]', $header) as $badge) $badges->appendChild($badge);
+        if ($badges->hasChildNodes()) $body->appendChild($badges);
+        foreach ($xpath->query('.//img[contains(@class,"cat-logo")]', $header) as $logo) $body->appendChild($logo);
+        foreach ($xpath->query('.//span[@class="item-action2"]', $header) as $rating) $body->appendChild($rating);
+        if (trim(str_replace("\xc2\xa0",'',$header->textContent)) !== '' || $xpath->query('.//a|.//button|.//img',$header)->length)
+            throw new RuntimeException('Unexpected content in historical card header');
+        $card->removeChild($header);
+        $footer = $xpath->query('./div[contains(@class,"cat-item-data")]', $card)->item(0);
+        if (!$footer) continue;
+        $footer->setAttribute('class',str_replace(' ptpb','',$footer->getAttribute('class')));
+        foreach ($xpath->query('./hr[@class="m-0"]',$footer) as $hr) $footer->removeChild($hr);
+        foreach ($xpath->query('./div[@class="tcenter" or @class="tcenter cat-item-sizes"]',$footer) as $sizes) $sizes->setAttribute('class','cat-item-sizes');
+        foreach ($xpath->query('.//div[@class="no-cat-at"]',$footer) as $wrapper) {
+            while ($wrapper->firstChild) $wrapper->parentNode->insertBefore($wrapper->firstChild,$wrapper);
+            $wrapper->parentNode->removeChild($wrapper);
+        }
+        foreach ($xpath->query('./div[@class="col-12 paddinlr"]',$footer) as $prices) $prices->setAttribute('class','cat-card-price');
+    }
+}
+// Responsive candidates are asserted by card_image_loading.php for each index,
+// viewport, page and image state. Keep the original fallback in full DOM comparisons.
+function withoutCardResponsiveSources($html) {
+    $html = preg_replace('/<source\b[^>]*\bmedia="\(min-width: (?:768|1200)px\)"[^>]*>/', '', $html);
+    return preg_replace('/(<img\b[^>]*?)\sloading="lazy"/', '$1', $html);
+}
+function cardProjectedHtml($html) {
+    $dom = cardMarkupDocument($html);
+    projectHistoricalCardLayout($dom);
+    $out = '';
+    foreach ($dom->getElementById('card-contract-root')->childNodes as $child) $out .= $dom->saveHTML($child);
+    return $out;
+}
+function cardHelperContract($before, $after, $key) {
+    // The logo path is now resolved once for a shared base or for an actual vendor image.
+    if (($after[$key] ?? 0) > ($before[$key] ?? 0)) return false;
+    unset($before[$key], $after[$key]);
+    return $before === $after;
+}
 function cardMarkupContract($html, $oldMarkup = false) {
     $dom = cardMarkupDocument($html);
     $xpath = new \DOMXPath($dom);
-    if ($oldMarkup) {
-        foreach ($xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " cat-item-data ")]/hr[@class="m-0"]') as $rule) $rule->parentNode->removeChild($rule);
-        foreach ($xpath->query('//span[@class="item-action2 invisible"]') as $placeholder) {
-            if (trim(str_replace("\xc2\xa0", '', $placeholder->textContent)) !== '') throw new \RuntimeException('Rating placeholder unexpectedly contains content');
-            $placeholder->parentNode->removeChild($placeholder);
-        }
-        foreach ($xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " cat-item-data ")]/div[@class="tcenter"]') as $sizes) $sizes->setAttribute('class', 'tcenter cat-item-sizes');
-    }
+    if ($oldMarkup) projectHistoricalCardLayout($dom);
     $visit = function ($node) use (&$visit) {
         if ($node instanceof \DOMText) {
             $text = trim(preg_replace('/\s+/u', ' ', $node->textContent));

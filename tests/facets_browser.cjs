@@ -17,8 +17,10 @@ const startHashes = hashes();
 const records = [], requests = [], errors = [], consoleErrors = [], responses = [];
 let origin, responseMode = 'normal', responseSerial = 0;
 const file = name => fs.readFileSync(name);
-const reference = fs.readFileSync('.cache/native-acceptance-543ee87-20261112/facet-all-1440.html','utf8');
-const criticalStyles = (reference.match(/<style[^>]*>[\s\S]*?<\/style>/g)||[]).join('');
+// Use the current theme's static critical rules for this isolated listing.
+const headSource = fs.readFileSync('resources/views/PageDesign/Partials/Head.twig','utf8');
+const criticalStyles = (headSource.match(/<style[^>]*>[\s\S]*?<\/style>/g) || [])
+    .filter(style => !style.includes('{{') && !style.includes('{%')).join('');
 function render(options) {
     return JSON.parse(execFileSync(php, ['tests/facets.php',autoload,'--render'], {input:JSON.stringify(options),maxBuffer:10*1024*1024,windowsHide:true}).toString());
 }

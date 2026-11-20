@@ -54,7 +54,7 @@ foreach (['de', 'en', 'fr', 'it', 'es'] as $lang) {
                     $twig = new Twig\Environment(new Twig\Loader\ArrayLoader(['preparation' => preparation($source)]), ['strict_variables' => true]);
                     $twig->addFunction(new Twig\TwigFunction('getBasePriceList', [$service, 'basePrices']));
                     $twig->addFunction(new Twig\TwigFunction('config', [$service, 'config']));
-                    $prices = ['default' => ['unitPrice' => ['value' => $customerFixture ? 4.123456789 : 5.987654321]], 'rrp' => ['price' => ['value' => 9.99]]];
+                    $prices = ['default' => ['unitPrice' => ['value' => $customerFixture ? 4.123456789 : 5.987654321]], 'rrp' => ['price' => ['value' => 9.99], 'unitPrice' => ['value' => 9.99]]];
                     $html = $twig->render('preparation', ['itemId' => 42, 'variationId' => 1001, 'isQuickView' => $fullPage, 'request' => new PdpRequestFixture($fullPage),
                         'services' => array_fill_keys(['item','url','basket','localizationRepository','wishList'], $service), 'itemData' => ['prices' => $prices]]);
                     $results[$version] = ['data' => json_decode(trim($html), true, 512, JSON_THROW_ON_ERROR), 'calls' => $service->calls];

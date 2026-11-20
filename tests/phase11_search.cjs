@@ -72,13 +72,38 @@ async function scenario(browser, version, lang) {
             document.addEventListener('click', event => {
                 if (event.target.closest('a')) event.preventDefault();
             });
-            window.snapshot = () => ({
-                html: document.querySelector('[data-eg-search]').outerHTML,
+            window.snapshot = () => {
+                const copy=document.querySelector('[data-eg-search]').cloneNode(true);
+                // The later Escape fix deliberately adds combobox metadata. Compare
+                // all pre-existing markup unchanged; search_escape.cjs tests real ARIA.
+                const omit=(node,name,expected)=>{if(expected.test(node.getAttribute(name)||''))node.removeAttribute(name)};
+                for(const node of copy.querySelectorAll('[data-eg-livesearch]')){
+                    omit(node,'role',/^combobox$/);omit(node,'aria-autocomplete',/^list$/);
+                    omit(node,'aria-expanded',/^(true|false)$/);omit(node,'aria-controls',/^eg-autocomplete-\d+$/);
+                    omit(node,'aria-activedescendant',/^eg-autocomplete-\d+-\d+$/);
+                }
+                for(const node of copy.querySelectorAll('.row-search-wrap')){
+                    omit(node,'role',/^listbox$/);omit(node,'id',/^eg-autocomplete-\d+$/);
+                }
+                for(const node of copy.querySelectorAll('.list-autocomplete, .list-autocomplete-suggestion')){
+                    omit(node,'role',/^group$/);
+                    for(const item of node.children){
+                        omit(item,'role',/^option$/);omit(item,'id',/^eg-autocomplete-\d+-\d+$/);
+                        omit(item,'aria-selected',/^(true|false)$/);
+                    }
+                }
+                // The earlier snapshot repeats the product link name on its thumbnail.
+                for(const img of copy.querySelectorAll('.list-autocomplete a img')){
+                    if(img.alt===img.closest('a').title) img.alt='';
+                }
+                return {
+                html: copy.outerHTML,
                 value: input.value,
                 requests: pending.map(({ url, params }) => ({ url, params })),
                 inputHandlers: $._data(input, 'events').input.length,
                 keydownHandlers: $._data(input, 'events').keydown.length
-            });
+                };
+            };
         }, { search: method(version.search, 'initLiveSearch'), helper: method(version.core, 'autoCompleteReg'), lang });
         await page.locator('input').fill('alpha');
         await page.waitForFunction(() => pending.length === 1);
@@ -93,7 +118,7 @@ async function scenario(browser, version, lang) {
             operations.render = counts;
             const rendered = snapshot();
             counts = {};
-            for (const keyCode of [65, 66, 67, 32, 8, 46, 9, 16, 37, 39, 27, 229]) {
+            for (const keyCode of [65, 66, 67, 32, 8, 46, 9, 16, 37, 39, 35, 229]) {
                 $(input).trigger($.Event('keydown', { keyCode }));
             }
             operations.ordinaryKeys = counts;

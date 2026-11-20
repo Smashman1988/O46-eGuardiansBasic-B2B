@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/card_markup_contract.php';
 // php tests/phase11_cards.php <Twig autoload> <before views directory> <report.json>
 // Byte-for-byte real Twig comparisons; platform services are local fixtures.
 require $argv[1];
@@ -102,8 +103,8 @@ function phase11Compare($twig, $fixture, $template, $context, $label) {
         $html=$twig[$version]->render($template,$context);
         $result[$version]=['html'=>$html,'calls'=>$fixture[$version]->calls,'ratingLoads'=>$twig[$version]->ratingLoads];
     }
-    phase11Check($result['before']['html']===$result['after']['html'],'HTML bytes changed: '.$label);
-    phase11Check($result['before']['calls']===$result['after']['calls'],'Service/helper calls changed: '.$label);
+    phase11Check(cardMarkupContract($result['before']['html'],true)===cardMarkupContract($result['after']['html']),'Card DOM contract changed: '.$label);
+    phase11Check(cardHelperContract($result['before']['calls'],$result['after']['calls'],'pluginPath'),'Service/helper calls changed: '.$label);
     return $result;
 }
 if (defined('O46_CARD_FIXTURE_ONLY')) return;
@@ -141,7 +142,7 @@ foreach ([0,6,60] as $count) {
         $counts=['manufacturer'=>0,'feedbackDecimal'=>0];foreach($reads as $read)foreach($counts as $key=>$value)$counts[$key]+=$read->reads[$key]??0;
         $row[$version]=$counts+['ratingImports'=>$twig->ratingLoads];
     }
-    phase11Check($html['before']===$html['after'],'Diagnostic property fixture output');
+    phase11Check(cardMarkupContract($html['before'],true)===cardMarkupContract($html['after']),'Diagnostic property fixture output');
     phase11Check($row['after']['manufacturer']===$count,'Manufacturer parent must be resolved once/card');
     $probes[]=$row;
 }

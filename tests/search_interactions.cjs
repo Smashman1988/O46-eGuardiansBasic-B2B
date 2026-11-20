@@ -128,7 +128,8 @@ async function scenario(browser, asset, code, l, width, full) {
         assert.deepEqual(await textLinks.locator('strong').allTextContents(),[sku,sku,sku,sku]);
         assert.deepEqual(await productLinks.locator('strong').allTextContents(),[sku,sku]);
         assert.equal(await textLinks.nth(2).getAttribute('title'),quotedLabel);
-        assert.equal(await productLinks.nth(1).locator('img').getAttribute('alt'),quotedLabel);
+        assert.equal(await productLinks.nth(1).locator('img').getAttribute('alt'),'');
+        assert.equal(await productLinks.nth(1).getAttribute('title'),quotedLabel);
         assert.equal(await page.locator('.row-search-wrap [onerror], .list-autocomplete-suggestion img').count(),0);
         const pick = link => mobile ? link.tap() : link.click();
         await nav(()=>pick(textLinks.nth(1)),action,{query:'009885396'});

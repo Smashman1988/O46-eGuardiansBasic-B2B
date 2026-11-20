@@ -1,5 +1,12 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Product detail and filters (2026-11-19)
+
+- The gallery counts unique valid images and reflects the current selection on mobile. Discount, wishlist and zoom controls sit over the image. The server omits the review section when the confirmed count is zero.
+- Category and search filters disable the result action for invalid responses or timeouts and allow a retry.
+- Quickview omits document metadata. Paginated titles preserve special characters, suggestions announce the product name once and cards with missing photos skip the image request.
+- The linked basket page skips the newsletter popup and facets module.
+
 ## Unreleased – Mobile product cards (2026-11-18)
 
 - Category and search listings use two equal columns with a 6 px gap on screens below 992 px. Photos extend to the inside edge of each card. Portrait products and printed pack sizes have more room beneath the overlays.

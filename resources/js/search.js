@@ -131,7 +131,7 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
             if (!label) return;
 
             const $link = $('<a>').attr({ href: item.url, title: label });
-            const $image = $('<img>').attr({ src: item.image || '', alt: label });
+            const $image = $('<img>').attr({ src: item.image || '', alt: '' });
             $link.append($('<span>').append($image), eGuardians.helper.autoCompleteReg($input, label, highlighting));
             $ulItem.append($('<li>').attr({
                 id: listId + '-' + $ulItem[0].childElementCount,

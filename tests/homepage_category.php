@@ -45,7 +45,7 @@ namespace Plenty\Modules\Webshop\ItemSearch\Services {
 }
 namespace {
 require $argv[1];
-require __DIR__.'/card_markup_contract.php';
+require_once __DIR__.'/card_markup_contract.php';
 require dirname(__DIR__) . '/src/Extensions/Base_Extension.php';
 $deprecations = [];
 set_error_handler(function ($level, $message, $file, $line) use (&$deprecations) {
@@ -140,7 +140,7 @@ foreach (['de','en','fr','it','es'] as $language) foreach (['EUR','USD'] as $cur
         $fixture=build($version,$language,$currency,[101],[]); $GLOBALS['activeSearch']=$fixture['search'];
         $ctx=['item'=>$fixture['search']->documents[0],'cardAttributeMap'=>['attributes'=>[]],'currencycheck'=>$currency,'translations'=>['tSustainability'=>'s','tAvailSizes'=>'sizes','tStatt'=>'rrp','tInBasket'=>'basket'],'transLabels'=>['availsizeonesize'=>'onesize']];
         $html[$version]=$fixture['renderer']->environment->render('GuardiansBasicB2B::Category.Item.Partials.CategoryListItem',$ctx);
-        check($fixture['calls']->pluginPath===1,'Standalone fallback lookup changed');
+        check($fixture['calls']->pluginPath===($version==='before'?1:0),'Standalone card without a logo must skip the unused path lookup');
     }
     check(cardMarkupContract($html['before'], true)===cardMarkupContract($html['after']),'Standalone card contract differs'); $standalone[]=['language'=>$language,'currency'=>$currency,'cardMarkupContractEqual'=>true];
 }

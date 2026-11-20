@@ -57,7 +57,7 @@
     and currentPath not in newsletterPaths|map(path => path|lower)
     and not isShopBuilder
     and not services.template.isCheckout()
-    and currentTemplate not in ['tpl.basket', 'tpl.confirmation']
+    and not isBasketPage and currentTemplate != 'tpl.confirmation'
     and 'amazon' not in currentRequestUri
     and 'expressCheckoutReview' not in currentRequestUri %}
 {% if currentTemplate in vuePages|keys or isBasketCategory or "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or isShopBuilder or category.id in contentVuePages %}
@@ -409,8 +409,8 @@
     </div>
 </div>    
             {# The brands directory explicitly renders no product grid or facets. #}
-            {% if (category.id or isSearch) and not isItem and (rendersItemGrid is not defined or rendersItemGrid) %}
-                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/facets.min.js?v=1" defer></script>
+            {% if (category.id or isSearch) and not isItem and not isBasketPage and (rendersItemGrid is not defined or rendersItemGrid) %}
+                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/facets.min.js?v=2" defer></script>
             {% endif %}
             {# Keep the existing page selection and Ceres-owned jQuery exception. #}
             {# Asset URLs are generated from asset-versions.json by npm run build. #}
@@ -425,16 +425,16 @@
             {% elseif category.id or isSearch %}
                 {% set themePageScript = 'cat.min.js?v=7' %}
             {% elseif isItem %}
-                {% set themePageScript = 'item.min.js?v=7' %}
+                {% set themePageScript = 'item.min.js?v=8' %}
                 {% set matrixInPageScript = true %}
             {% endif %}
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=15" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=3" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=16" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
             {% if isItem and not matrixInPageScript %}
                 {# A PDP routed to another page bundle still needs the matrix before it. #}
-                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=3" data-eg-matrix defer></script>
+                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" data-eg-matrix defer></script>
             {% endif %}
             <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}"{% if not themeNeedsJquery %} data-eg-vue-logout{% endif %}{% if matrixInPageScript %} data-eg-matrix{% endif %} defer></script>
             {% if isItem %}

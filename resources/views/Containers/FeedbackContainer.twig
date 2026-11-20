@@ -3,7 +3,7 @@
 {% import "GuardiansBasicB2B::Category.Macros.render-rating" as Rating %}
 
 
-{# Nur ein API-Aufruf für Feedbacks #}
+{# Read existing comments and their aggregate once each. #}
 {% set itemFeedbacks = getFeedbackItemList(itemId, 1, 20) %}
 {% set ratingsAverage = getListFeedbackAverages(itemId)  %}
 
@@ -11,7 +11,16 @@
 {% set ratingsCount = [0, 0, 0, 0, 0] %}
 {% set ratingsPercent = [0, 0, 0, 0, 0] %}
 
-{% if ratingsAverage is not null and ratingsAverage.ratingsCountTotal > 0 %}
+{% set averageTotal = ratingsAverage.ratingsCountTotal ?? null %}
+{% set hasAverage = averageTotal is not iterable and averageTotal is not same as(true) and averageTotal matches '/^[0-9]+$/D' and averageTotal > 0 %}
+{% set listTotal = itemFeedbacks.totalsCount ?? null %}
+{% set hasList = listTotal is not iterable and listTotal is not same as(true) and listTotal matches '/^[0-9]+$/D' and listTotal > 0 %}
+{% if pdpFeedback|default(false) and not hasList %}
+    {% for entry in itemFeedbacks.entries|default([]) %}
+        {% if entry.isVisible == 'true' %}{% set hasList = true %}{% endif %}
+    {% endfor %}
+{% endif %}
+{% if hasAverage %}
     {% set ratingsCount = [
         ratingsAverage.ratingsCountOf1,
         ratingsAverage.ratingsCountOf2,
@@ -28,6 +37,9 @@
     ] %}
 {% endif %}
 
+{% set hasFeedback = hasAverage or hasList or pdpFeedbackCount|default(0) > 0 %}
+{% if not pdpFeedback|default(false) or hasFeedback %}
+{% if pdpFeedback|default(false) %}<div class="container"><div class="row"><div class="col-12"><hr class="hr-style2">{% endif %}
 <section class="feedback-container">
     <div class="container-rating">
         <div class="row">
@@ -36,11 +48,12 @@
                     <div class="d-inline-block hhdh" id="quickrating">
                         {{ trans("GuardiansBasicB2B::Template.ratingtitle") }}
                     </div>
-                    {{ Rating.renderRating(ratingsAverage.averageValue, 5) }}
+                    {% if not pdpFeedback|default(false) or hasAverage %}{{ Rating.renderRating(ratingsAverage.averageValue, 5) }}{% endif %}
                 </div>
             </div>
         </div>
 
+        {% if not pdpFeedback|default(false) or hasAverage %}
         <div class="row {% if longDescription %}openable-feedback{% endif %}">
             <div class="{% if longDescription %}col-12 col-md-6{% else %}col-12 col-lg-6 col-xlg-4{% endif %}">
                 <div class="feedback-container">
@@ -63,6 +76,7 @@
 
         </div>
 
+        {% endif %}
         {% if longDescription %}
             <div class="row">
                 <div class="col-12">
@@ -73,7 +87,7 @@
             </div>
         {% endif %}
 
-        {% if itemFeedbacks is not empty and itemFeedbacks.totalsCount > 0 %}
+        {% if hasList %}
             <div class="row">
                 <div class="col-xs-12 px-3">
                     <div class="feedback-list mt-3">
@@ -84,3 +98,5 @@
         {% endif %}
     </div>
 </section>
+{% if pdpFeedback|default(false) %}<hr class="hr-style2"></div></div></div>{% endif %}
+{% endif %}

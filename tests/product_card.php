@@ -1,7 +1,7 @@
 <?php
 // php tests/product_card.php <Twig autoload> <ac1138b-card-template-directory> <report.json>
 require $argv[1];
-require __DIR__.'/card_markup_contract.php';
+require_once __DIR__.'/card_markup_contract.php';
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 class ProductCardFixture {
     public $language, $dictionary = [], $maps = [], $lookups = 0, $pluginCalls = 0;
@@ -56,9 +56,9 @@ foreach (['de','en','fr','it','es'] as $language) {
         foreach (['before','after'] as $version) { $fixture->pluginCalls=$fixture->lookups=0; $html[$version]=$twig[$version]->render($template,$context); $calls[$version]=[$fixture->pluginCalls,$fixture->lookups]; }
         $expected = withoutInvalidCardComparisons($html['before'], $item['data']['prices']['rrp']['unitPrice']['value'] === null ? [$id] : []);
         cardCheck(cardMarkupContract($expected,true)===cardMarkupContract($html['after']), 'Card semantics differ '.$language.'/'.$currency.'/'.$mode.'/'.$id);
-        cardCheck($calls['before']===$calls['after'], 'Card service/helper calls changed');
+        cardCheck(cardHelperContract($calls['before'],$calls['after'],0), 'Card service/helper calls changed');
         $before=cardMarkupCounts($html['before']); $expectedCounts=cardMarkupCounts($expected); $after=cardMarkupCounts($html['after']);
-        cardCheck($expectedCounts['elements']-$after['elements']===2+($item['data']['item']['feedbackCount']?0:1),'Unexpected element delta');
+        cardCheck(cardMarkupCounts(cardProjectedHtml($expected))['elements']===$after['elements'],'Unexpected element delta');
         $rows[]=['language'=>$language,'currency'=>$currency,'mode'=>$mode,'itemId'=>$id,'before'=>$before,'after'=>$after,'semantics'=>'PASS','helperCalls'=>$calls['after']];
     }
     $checkout=new ProductCardCurrency(); $checkout->currency='EUR';

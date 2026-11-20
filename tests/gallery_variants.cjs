@@ -17,14 +17,18 @@ function functions(source){const found={};function walk(n){if(!n?.type)return;if
  const outcome=await p.evaluate(async id=>{
  const matrix=document.getElementById('matrix'),rows=[...matrix.children];
  const result=n=>({images:[{url:'https://gallery-fixture.invalid/'+n+'-large',urlMiddle:'https://gallery-fixture.invalid/'+n+'-middle',urlPreview:'https://gallery-fixture.invalid/'+n+'-thumb'}]});
- // Both warmed variants finish on each switch, exposing the old timer race.
- for(let i=0;i<50;i++){previewVariationFromRow(matrix,rows[i%2],true);pending.shift().cb(result(i%2))}
- await new Promise(r=>setTimeout(r,300));
+ vCache[1]=result(0);vCache[2]=result(1);
+ for(let i=0;i<50;i++) previewVariationFromRow(matrix,rows[i%2],true);
+ assertNoRequests();
+ function assertNoRequests(){if(pending.length)throw new Error('Cached preview made a network request');}
  const rapid={clicks:linkClicks,href:document.getElementById(id).href,calls:calls.slice()};
- calls.length=0;previewVariationFromRow(matrix,rows[0],true);previewVariationFromRow(matrix,rows[1],true);
- pending.pop().cb(result('new'));pending.pop().cb(result('stale'));
+ calls.length=0;delete vCache[1];rows[0].dataset.egVariationState='loading';
+ previewVariationFromRow(matrix,rows[0],true);
+ vCache[2]=result('new');previewVariationFromRow(matrix,rows[1],true);
+ vCache[1]=result('stale');
+ if(matrix._egPendingPreview===rows[0]) previewVariationFromRow(matrix,rows[0],true);
  const late={href:document.getElementById(id).href,calls:calls.slice()};
- calls.length=0;previewVariationFromRow(matrix,rows[0],true);matrix.remove();pending.pop().cb(result('detached'));
+ calls.length=0;matrix.remove();previewVariationFromRow(matrix,rows[0],true);assertNoRequests();
  return {rapid,late,detachedCalls:calls,href:document.getElementById(id).href};
  },id);
  assert.equal(outcome.rapid.clicks,0,'no synthesized image link click');

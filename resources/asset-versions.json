@@ -1,14 +1,14 @@
 {
   "css/checkout.min.css": 1,
   "css/contact-widget.css": 1,
-  "css/main.min.css": 19,
+  "css/main.min.css": 20,
   "js/cat.min.js": 7,
-  "js/core.min.js": 15,
-  "js/facets.min.js": 1,
-  "js/item.min.js": 7,
+  "js/core.min.js": 16,
+  "js/facets.min.js": 2,
+  "js/item.min.js": 8,
   "js/jquery-3.7.1.min.js": 1,
   "js/magiczoom.min.js": 1,
   "js/main.min.js": 6,
-  "js/matrix.min.js": 3,
+  "js/matrix.min.js": 4,
   "js/vue.min.js": 5
 }

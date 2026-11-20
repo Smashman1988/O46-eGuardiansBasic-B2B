@@ -8614,12 +8614,12 @@ CUSTOM THEME STYLE ITEM
 }
 @media (max-width: 767px) {
 .dsx{display:none;}
-body div#vue-app div#page-body article div div div div div div a#ItemImgZoom:not(.mz-no-rt-width-css) > .mz-figure:not(.mz-no-rt-width-css) > img,
-a#ItemImgZoom >img{
+body div#vue-app div#page-body article div div div div div div a#ItemImgZoom:not(.eg-pdp-photo):not(.mz-no-rt-width-css) > .mz-figure:not(.mz-no-rt-width-css) > img,
+a#ItemImgZoom:not(.eg-pdp-photo) >img{
     max-height: 320px !important;
 }}
-body div#vue-app div#page-body article div div div div div div a#ItemImgZoom:not(.mz-no-rt-width-css) > .mz-figure:not(.mz-no-rt-width-css) > img,
-a#ItemImgZoom >img{
+body div#vue-app div#page-body article div div div div div div a#ItemImgZoom:not(.eg-pdp-photo):not(.mz-no-rt-width-css) > .mz-figure:not(.mz-no-rt-width-css) > img,
+a#ItemImgZoom:not(.eg-pdp-photo) >img{
     max-width: 100% !important;
     width: auto !important
 }
@@ -9088,8 +9088,8 @@ a#ItemImgZoom >img{
         height: 450px;
         line-height: 450px;
     }
-    body div#vue-app div#page-body article div div div div div div a#ItemImgZoom > .mz-figure > img,
-    a#ItemImgZoom >img{
+    body div#vue-app div#page-body article div div div div div div a#ItemImgZoom:not(.eg-pdp-photo) > .mz-figure > img,
+    a#ItemImgZoom:not(.eg-pdp-photo) >img{
         max-height: 450px !important;
     }
     
@@ -9167,8 +9167,8 @@ a#ItemImgZoom >img{
         height: 600px;
         line-height: 450px;
     }
-    body div#vue-app div#page-body article div div div div div div a#ItemImgZoom > .mz-figure > img,
-    a#ItemImgZoom >img{
+    body div#vue-app div#page-body article div div div div div div a#ItemImgZoom:not(.eg-pdp-photo) > .mz-figure > img,
+    a#ItemImgZoom:not(.eg-pdp-photo) >img{
         max-height: 450px !important;
     }
     .single .item-details-table{
@@ -9261,8 +9261,8 @@ a#ItemImgZoom >img{
         height: 630px;
         line-height: 560px;
     }
-    body div#vue-app div#page-body article div div div div div div a#ItemImgZoom > .mz-figure > img,
-    a#ItemImgZoom >img{
+    body div#vue-app div#page-body article div div div div div div a#ItemImgZoom:not(.eg-pdp-photo) > .mz-figure > img,
+    a#ItemImgZoom:not(.eg-pdp-photo) >img{
         max-height: 670px !important;
     }
     .btn-watch span,
