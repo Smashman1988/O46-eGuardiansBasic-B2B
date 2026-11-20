@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Produktkarten (2026-11-20)
+
+- Der äußere 1-Pixel-Rahmen der Produktkarten ist in Kategorien und Suchergebnissen auf Desktop und Mobil unsichtbar. Kartenmaße und innere Trennlinien bleiben erhalten.
+
 ## Unreleased – Galeriebedienung (2026-11-20)
 
 - Die grünen Galerienavigationspfeile erhalten weiße, leicht transparente Kreise mit Schatten. Auf Mobilgeräten bleibt ihre Touch-Fläche 44 × 44 px groß. Die Zoomlupe enthält ein Pluszeichen. Die Darstellung liegt im PDP-Critical-CSS, die bisherigen Pfeilregeln entfallen mit Main-CSS v21.

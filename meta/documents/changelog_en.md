@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Product cards (2026-11-20)
+
+- Product cards in categories and search results hide their outer 1 px border on desktop and mobile, preserving card dimensions and internal dividers.
+
 ## Unreleased – Product gallery controls (2026-11-20)
 
 - Green gallery arrows appear on translucent white circles with a subtle shadow. Mobile touch targets measure 44 × 44 px. The zoom icon now includes a plus sign. The product page supplies the controls in its critical CSS, and main stylesheet v21 drops the previous arrow rules.
