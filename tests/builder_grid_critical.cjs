@@ -9,7 +9,8 @@ const main=fs.readFileSync('resources/css/main.min.css','utf8');
 const configs=['col-md-6 col-lg-6 col-xl-6','col-md-6 col-lg-12 col-xl-12','col-md-12 col-lg-6 col-xl-6','col-md-6 col-lg-6 col-xl-12'];
 const rows=[];
 async function verifyHomeCards(page) {
-    const cells = '<div class="col-6 col-md-3 col-xl-2"><div class="cat-item has-variations"></div></div>'.repeat(12);
+    const footer = '<div class="cat-item-data"><button class="btn-primary linkabso"><span class="icon-online-shopping-cart mr-2"></span>In den Warenkorb</button></div>';
+    const cells = ('<div class="col-6 col-md-3 col-xl-2"><div class="cat-item has-variations">' + footer + '</div></div>').repeat(12);
     const list = '<div class="row category-product-list">' + cells + '</div>';
     const category = '<section class="container categoriegrid"><div class="row"><div class="col-12">' + list + '</div></div></section>';
     const home = '<main class="isHome"><div class="container-max"><div class="row"><div class="col"><div class="widget-code"><div class="widget-inner">' + list + '</div></div></div></div></div></main>';
@@ -18,19 +19,26 @@ async function verifyHomeCards(page) {
         const firstTop = cards[0].getBoundingClientRect().top;
         return cards.map(card => {
             const rect = card.getBoundingClientRect();
-            return [rect.x, rect.width, rect.top === firstTop];
+            const button = card.querySelector('.linkabso').getBoundingClientRect();
+            return [rect.x, rect.width, rect.top === firstTop, button.x, button.width];
         });
     });
     const firstPaint = await bounds('.isHome');
+    const homeTextInset = () => page.locator('.isHome .linkabso').first().evaluate(button => {
+        const style = getComputedStyle(button);
+        return ['Left', 'Right'].map(side => parseFloat(style['padding' + side]) + parseFloat(style['margin' + side]));
+    });
+    assert.deepEqual(await homeTextInset(), [13, 13], 'Critical CSS preserves the label wrapping width');
     await page.addStyleTag({content: main});
     const reference = await bounds('.categoriegrid');
     assert.deepEqual(await bounds('.isHome'), reference, 'Home product grid matches category columns and gutters');
+    assert.deepEqual(await homeTextInset(), [13, 13], 'Loaded CSS preserves the label wrapping width');
     assert.deepEqual(firstPaint, reference, 'Home product grid has final widths at first paint');
 }
 const snap=page=>page.evaluate(()=>[...document.querySelectorAll('[data-test-col]')].map(e=>({id:e.dataset.testCol,x:e.getBoundingClientRect().x,width:e.getBoundingClientRect().width,flex:getComputedStyle(e).flex,maxWidth:getComputedStyle(e).maxWidth,matched:e.matches(':where(#page-body .widget-two-col)>.col-md-6:where(.col-lg-6.col-xl-6)')})));
 (async()=>{
     const browser=await chromium.launch({headless:true,executablePath:process.env.O46_BROWSER_EXECUTABLE});
-    try{for(const width of [320,375,390,428,768,1024,1440,1920]){
+    try{for(const width of [320,360,375,390,428,430,768,1024,1440,1920]){
         const page=await browser.newPage({viewport:{width,height:900}});
         try{
             await page.route('**/*',r=>r.abort());

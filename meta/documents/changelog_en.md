@@ -2,6 +2,7 @@
 
 ## Unreleased – Product cards (2026-11-20)
 
+- Up to 991.98 px, homepage cart buttons span the inner width of their product cards. The visible gap between buttons now matches category and search results.
 - Homepage product lists, LiveShopping offers and the product slider now use the category grid's card widths and gutters. At 768 px, two cards share a row with a 6 px gap. The product slider supports keyboard navigation and swiping.
 - Product cards on all five language homepages now have a transparent 1 px outer border, including LiveShopping, product grids and individually embedded cards.
 - Product card cart buttons now fade smoothly to their existing hover green, eliminating the white flash on pointer entry.

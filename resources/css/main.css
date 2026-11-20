@@ -11886,6 +11886,8 @@ opacity: 0.7;
  .categoriegrid .cat-item.has-variations .cat-item-image picture{padding:4px 0 2px;}
  /* The card clips the footer to the inside edge of its rounded border. */
  .categoriegrid .cat-item.has-variations .linkabso{display:block;min-height:48px;margin:0;padding-block:4px;text-align:center;}
+ /* Move the 8px side margins inside the button so its label keeps the same wrapping width. */
+ .isHome .cat-item.has-variations > .cat-item-data > .linkabso{margin-inline:0;padding-inline:13px;}
 }
 @media(min-width:768px) and (max-width:991.98px){
  /* The surrounding listing column has a 15px tablet gutter and a 5px phone gutter. */

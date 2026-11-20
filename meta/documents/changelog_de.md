@@ -2,6 +2,7 @@
 
 ## Unreleased – Produktkarten (2026-11-20)
 
+- Bis 991,98 px reichen die Warenkorbbuttons auf den Startseiten über die innere Kartenbreite. Ihr sichtbarer Abstand entspricht damit dem in Kategorie und Suche.
 - LiveShopping, Startseitenlisten und Produktstreifen übernehmen die horizontalen Kartenmaße der Kategorie. Bei 768 px stehen jetzt zwei Karten mit 6 px Lücke nebeneinander. Der Produktstreifen unterstützt Tastatur und Wischgesten.
 - Auch auf allen fünf Sprachstartseiten ist der äußere 1-Pixel-Rahmen der Produktkarten transparent. Das gilt für LiveShopping, Produktlisten und einzeln eingebundene Karten.
 - Die grünen Warenkorbbuttons auf Produktkarten blenden beim Überfahren mit der Maus gleichmäßig in ihren bisherigen Hover-Farbton über. Das weiße Aufblitzen entfällt.
