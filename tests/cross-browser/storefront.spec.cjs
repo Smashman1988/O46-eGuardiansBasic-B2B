@@ -147,8 +147,17 @@ test('Galerie, Richtung, Vorschaubild, Zähler und Zoom',async({page,shop,hasTou
     const counter=page.locator('[data-eg-gallery-counter]');
     await expect(counter).toHaveText('1 / 3');
     await expect(page.locator('#ItemImgZoom .mz-figure')).toBeVisible();
-    await act(page.locator('.zoomnavright'),hasTouch);await expect(counter).toHaveText('2 / 3');
-    await act(page.locator('.zoomnavleft'),hasTouch);await expect(counter).toHaveText('1 / 3');
+    const expectImage=async index=>{
+        const thumb=page.locator('.single-prev-images a').nth(index);
+        await expect(thumb).toHaveClass(/mz-thumb-selected/);
+        const expected=await thumb.getAttribute('data-image');
+        await expect.poll(()=>page.locator('#ItemImgZoom .mz-figure > img').evaluateAll(imgs=>
+            imgs.filter(img=>img.complete && img.naturalWidth>0 && img.getClientRects().length && getComputedStyle(img).opacity!=='0')
+                .map(img=>new URL(img.currentSrc).pathname))).toContain(expected);
+        await expect(counter).toHaveText((index+1)+' / 3');
+    };
+    await act(page.locator('.zoomnavright'),hasTouch);await expectImage(1);
+    await act(page.locator('.zoomnavleft'),hasTouch);await expectImage(0);
     const thumb=page.locator('.single-prev-images a').last();
     if(await thumb.isVisible()){await act(thumb,hasTouch);await expect(counter).toHaveText('3 / 3');}
     const expand = page.locator('.eg-gallery-expand');

@@ -116,6 +116,7 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           path: |
+            .cache/cross-browser/planned.json
             .cache/cross-browser/profile.json
             .cache/cross-browser/browser.json
             .cache/cross-browser/report/

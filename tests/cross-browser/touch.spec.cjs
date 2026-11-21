@@ -1,6 +1,6 @@
 const {test,expect} = require('./storefront.cjs');
 
-test('Wischgeste wechselt das Galeriebild im Touchprofil', async ({page,context,shop,browserName,hasTouch})=>{
+test('Wischgeste wechselt das Galeriebild im Touchprofil', async ({page,context,shop,browserName,hasTouch},info)=>{
     if(!hasTouch) test.info().annotations.push({type:'not-applicable',description:'Desktopprofil ohne Touch'});
     test.skip(!hasTouch,'Touchprofil erforderlich');
     await shop.open('/product-10001/');
@@ -14,6 +14,15 @@ test('Wischgeste wechselt das Galeriebild im Touchprofil', async ({page,context,
     const box=await figure.boundingBox();
     const y=Math.round(box.y+box.height/2),start=Math.round(box.x+box.width*.8),end=Math.round(box.x+box.width*.2);
     const points=Array.from({length:7},(_,i)=>({x:Math.round(start+(end-start)*i/6),y}));
+    const inputEvents = await figure.evaluateHandle(node=>{
+        const events=[];
+        for (const type of ['touchstart','touchmove','touchend','touchcancel','pointerdown','pointermove','pointerup','pointercancel']) {
+            document.addEventListener(type,e=>{
+                if (node.contains(e.target) && (!e.pointerType || e.pointerType==='touch')) events.push(type);
+            },{capture:true,passive:true});
+        }
+        return events;
+    });
     if(browserName==='chromium'){
         const input=await context.newCDPSession(page);
         try {
@@ -34,6 +43,15 @@ test('Wischgeste wechselt das Galeriebild im Touchprofil', async ({page,context,
             await target.dispatchEvent(type,{touches:active,targetTouches:active,changedTouches:contacts});
         }
     }
+    const events=await inputEvents.jsonValue();
+    await inputEvents.dispose();
+    await info.attach('gallery-input',{body:JSON.stringify(events),contentType:'application/json'});
+    expect(events.filter(e=>e==='touchstart')).toHaveLength(1);
+    expect(events.filter(e=>e==='touchend')).toHaveLength(1);
+    expect(events).not.toContain('touchcancel');
+    const pointers=events.filter(e=>e==='pointerdown').length;
+    expect(pointers).toBeLessThanOrEqual(1);
+    expect(events.filter(e=>e==='pointerup'||e==='pointercancel')).toHaveLength(pointers);
     await expect(page.locator('[data-eg-gallery-counter]')).toHaveText('2 / 3');
     await expect.poll(()=>figure.locator(':scope > img').evaluateAll(imgs=>imgs.map(img=>new URL(img.currentSrc).pathname))).toContain(nextImage);
 });
