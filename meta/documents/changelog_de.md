@@ -1,5 +1,17 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Quickview, Artikeltexte und Ballberater (2026-11-21)
+
+- Nach dem Schließen der Produktansicht mit Escape oder der Schließen-Schaltfläche kehrt der Fokus auf die auslösende Karte zurück.
+- Die Herstelleranschrift auf der Artikelseite erhält eine Überschrift in allen fünf Shopsprachen.
+- Das Cross-Selling-Partial zeigt in jeder Shopsprache die vorhandene Empfehlungsüberschrift. Im deutschen Ballberater sind die sieben Jugendklassen beschriftet.
+- Der Ballberater übernimmt Apostrophe und Zeilenumbrüche aus konfigurierten Texten korrekt.
+
+## Unreleased – Navigation und Galerie (2026-11-20)
+
+- Beim Wechsel ins Desktoplayout erscheinen Filterleiste und Menütexte direkt in ihrer vorgesehenen Größe und Position. Der mobile Filter behält seine Schiebebewegung.
+- In der Bildvergrößerung tragen die Schaltflächen für Schließen, Weiter und Zurück die Bezeichnungen der jeweiligen Shopsprache.
+
 ## Unreleased – Produktkarten (2026-11-20)
 
 - Bis 991,98 px reichen die Warenkorbbuttons auf den Startseiten über die innere Kartenbreite. Ihr sichtbarer Abstand entspricht damit dem in Kategorie und Suche.

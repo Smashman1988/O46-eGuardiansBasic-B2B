@@ -30,10 +30,7 @@
 
       {# include "GuardiansBasicB2B::Category.Item.Partials.FacetFilter" with { 'facets': filterOfCat.facets } #}
       <script>
-          {% set configAllEncode = configAll | json_encode %}
-          {% set configAllprg = configAllEncode|replace({"'": ""}) %}
-          var configGlobal = JSON.parse('{{ configAllprg | raw }} ');
-          console.log(configGlobal)
+          var configGlobal = JSON.parse('{{ configAll | json_encode | escape('js') }}');
       </script>
     <section class="ball-berater">   
         <h1>Unser Ballberater – mit wenigen Klicks zum passenden Fussball</h1>

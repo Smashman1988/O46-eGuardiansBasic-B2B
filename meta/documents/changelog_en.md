@@ -1,5 +1,17 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Quickview, product labels and ball adviser (2026-11-21)
+
+- Closing the product dialog with Escape or the close button returns keyboard focus to the card that opened it.
+- The manufacturer address on the product page now has a heading in all five shop languages.
+- The cross-selling partial uses the recommendation heading in each shop language. All seven youth age groups have labels in the German ball adviser.
+- The ball adviser preserves apostrophes and line breaks in configured text.
+
+## Unreleased – Navigation and gallery (2026-11-20)
+
+- When switching to the desktop layout, the filter bar and menu labels immediately take their intended size and position. The mobile filter retains its slide animation.
+- The expanded product gallery uses the current shop language for its close, next and previous controls.
+
 ## Unreleased – Product cards (2026-11-20)
 
 - Up to 991.98 px, homepage cart buttons span the inner width of their product cards. The visible gap between buttons now matches category and search results.

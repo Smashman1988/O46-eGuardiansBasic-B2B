@@ -61,6 +61,7 @@ O46Core.openQuickview = function (trigger, bindDelay) {
     var view = O46Core.quickview;
     if (!view) {
         var modal = $('.modal-cross');
+        var opener;
         view = O46Core.quickview = { phase: 'hidden', current: null, reads: Object.create(null) };
         view.apply = function () {
             // Bootstrap ignores show/hide during transitions. Reconcile only
@@ -73,6 +74,7 @@ O46Core.openQuickview = function (trigger, bindDelay) {
             }
             if (!request.html || request.rendered) return;
             request.rendered = true;
+            opener = request.trigger;
             $('.modal-cross .modal-body').html(request.html);
             MagicZoom.start();
             modal.modal('show');
@@ -84,7 +86,15 @@ O46Core.openQuickview = function (trigger, bindDelay) {
         modal.on('show.bs.modal.o46Quickview', function () { view.phase = 'opening'; })
             .on('shown.bs.modal.o46Quickview', function () { view.phase = 'shown'; view.apply(); })
             .on('hide.bs.modal.o46Quickview', function () { view.phase = 'closing'; cancel(); })
-            .on('hidden.bs.modal.o46Quickview', function () { view.phase = 'hidden'; view.apply(); })
+            .on('hidden.bs.modal.o46Quickview', function () {
+                view.phase = 'hidden';
+                if (!view.current && opener && opener.isConnected &&
+                    (document.activeElement === document.body || this.contains(document.activeElement))) {
+                    opener.focus({ preventScroll: true });
+                }
+                opener = null;
+                view.apply();
+            })
             // A dismiss click during opening is ignored by Bootstrap too.
             // Remember it even when no hide event is emitted; shown will hide.
             .on('click.o46Quickview', '[data-dismiss="modal"]', cancel)
@@ -98,7 +108,7 @@ O46Core.openQuickview = function (trigger, bindDelay) {
     var url = new URL($(trigger).data('href'), window.location.href);
     url.searchParams.set('quickViewItem', 'true');
     if (view.current && view.current.url === url.href) return false;
-    var request = view.current = { url: url.href, bindDelay: bindDelay };
+    var request = view.current = { url: url.href, bindDelay: bindDelay, trigger: trigger };
     // Share only in-flight reads, including a close/reopen before the response.
     // Completed HTML is not cached across openings or language changes.
     var html = view.reads[url.href];

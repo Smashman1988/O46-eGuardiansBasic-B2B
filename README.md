@@ -1,10 +1,14 @@
 # Outlet46 – eGuardiansBasic B2B
 
+Beim Schließen der Produkt-Quickview kehrt der Tastaturfokus zur auslösenden Produktkarte zurück. Ein während des Schließens bereits gewähltes anderes Fokusziel bleibt erhalten. Der lokale Build enthält die Änderung ab Core v17.
+
+Die Sprachdateien enthalten die Überschriften für Hersteller und Cross-Selling in allen fünf Sprachen sowie die sieben deutschen Jugendklassen des Ballberaters. Der Ballberater übernimmt konfigurierte Texte einschließlich Apostrophen und Zeilenumbrüchen.
+
 ### Lokaler Prüfstand vom 20. November 2026
 
 Die Artikeldetail-Galerie verwendet die bestehende MagicZoom-Instanz und deren aktive Vorschaubilder für den mobilen Zähler. Bei einer bekannten Bewertungsanzahl von null entfällt der Abschnitt bereits beim Rendern. Bei fehlender Anzahl entscheidet die vorhandene Feedback-Abfrage. Facettenantworten müssen eine gültige Gesamtzahl und gültige Facettenwerte enthalten. Fehler können im geöffneten Filter erneut abgefragt werden.
 
-Die Galerienavigation sitzt auf weißen Kreisen mit grünen Pfeilen. Auf Mobilgeräten sind die Kreise 38 px groß und über eine Fläche von 44 × 44 px bedienbar. Die Lupe mit Plus verwendet das vorhandene Inline-SVG. Main-CSS v21 ist lokal gebaut. Die native Prüfung dieser Änderungen auf Pluginset 426 steht aus.
+Die Galerienavigation sitzt auf weißen Kreisen mit grünen Pfeilen. Auf Mobilgeräten sind die Kreise 38 px groß und über eine Fläche von 44 × 44 px bedienbar. Die Lupe mit Plus verwendet das vorhandene Inline-SVG. Auf Pluginset 426 mit v27 sind Pfeile, Zähler, Vorschaubilder, Variantenbildwechsel sowie Öffnen und Schließen der Vergrößerung bestätigt. Die drei Schaltflächen der Vergrößerung verwenden lokal die vorhandenen Übersetzungen für Schließen, Vor und Zurück.
 
 Technische Baseline **1.0.7**, lokal vorbereitet am **2026-11-03** auf **develop**.
 Die aktuelle Live-Abnahme in Test-Pluginset 426 ist unten dokumentiert. Dies ist noch kein freigegebener Shop-Stand.
@@ -26,7 +30,9 @@ Keine Änderungen allein für eine Änderungszahl, keine unverhältnismäßige K
 
 Auf Pluginset 426 mit Main-CSS v25 stimmen die Kartenbreiten und Rasterabstände beider Produktlisten auf allen fünf Sprachstartseiten mit der Kategorie überein. Bis 991,98 px stehen zwei Karten mit 5 px Außenabstand und 6 px Lücke nebeneinander. Ab 992 px sind es vier, ab 1200 px sechs Spalten. Der Produktstreifen im Homepage-Template lässt sich ohne zusätzliches JavaScript horizontal bedienen. [Lokaler Rastervergleich mit Messwerten und Bildschirmfotos](.cache/startseitenraster-df64690/Pruefbericht.html)
 
-Main-CSS v27 verschiebt im zweispaltigen Startseitenraster die 8 px Seitenrand des Warenkorbbuttons in dessen Innenabstand. So reicht die grüne Fläche bis zur inneren Kartenkante und der Text behält seine Umbruchbreite. Die Regel gilt bereits im Critical-CSS. Die native Abnahme von v27 auf Pluginset 426 steht aus.
+Main-CSS v27 verschiebt im zweispaltigen Startseitenraster die 8 px Seitenrand des Warenkorbbuttons in dessen Innenabstand. Auf Pluginset 426 betrug der sichtbare Buttonabstand auf allen fünf Sprachstartseiten und in der Kategorie bei 390 px jeweils 7,07 px. Die Kartenlücke betrug 6 px.
+
+Beim Wechsel ins Desktop-Raster animierte v27 die Schriftgröße im Hauptmenü und die Breite und Position der Filterleiste. Main-CSS v28 begrenzt den Menüeffekt auf die Farbe und die Schiebebewegung der Filterleiste auf den mobilen Bereich. Die native Nachprüfung von v28 und der übersetzten Zoom-Schaltflächen steht aus. [Endabnahme von v27 mit Messwerten und lokalen Gegenproben](.cache/endabnahme-f53376e-v27/Endabnahme.html)
 
 Kategorie- und Suchlisten zeigen bis zum Desktop-Breakpoint bei 992 px zwei gleich breite Karten mit 5 px Außenrand und 6 px Spaltenabstand. Die Bildfläche nutzt die innere Kartenbreite. Hochformate erhalten Platz unter Rabatt und Markenlogo. Das Bild bleibt vollständig mit `object-fit: contain` sichtbar. Main-CSS v18. [Lokaler Vergleich mit Messwerten und Bildschirmfotos](.cache/mobile-produktkarten-b7bff3f/Pruefbericht.html)
 
@@ -2507,7 +2513,7 @@ Diese Pfade sind relativ zu `resources/views/`. Die sieben Syntaxbefunde sind
 inzwischen wie oben beschrieben behoben und unter Twig 2 sowie Twig 3 geprüft.
 Die PlentyONE-Laufzeitabnahme bleibt separat offen.
 
-### Weitere unveränderte Bestandsprobleme
+### Weitere Bestandsprobleme zum Zeitpunkt der Baselineprüfung
 
 Der ServiceProvider referenziert bei aktivierten Overrides vier nicht vorhandene
 Templates: `StaticPages.CancellationRights`, `StaticPages.LegalDisclosure`,

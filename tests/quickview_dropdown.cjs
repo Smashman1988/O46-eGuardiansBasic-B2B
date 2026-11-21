@@ -99,6 +99,8 @@ async function exercise(browser, asset) {
                     facet: $('.cat-facet').hasClass('isOpen'), unrelated: seen.unrelated - unrelated,
                     handlers: $._data(document, 'events').mouseup.length, product: seen.product, local: seen.local };
             });
+            assert.equal(await page.locator('.linkabso').nth(index).evaluate(button => document.activeElement === button),
+                true, asset + ' restores focus to the product that opened Quickview');
             assert.deepEqual(result, { inside: true, outside: true, facet: true, unrelated: 2,
                 handlers: 2, product: index ? '/B' : '/A', local: i }, asset + ' opening ' + i);
         }
