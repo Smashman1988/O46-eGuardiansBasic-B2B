@@ -658,6 +658,14 @@ $(document).on('click', '.eg-gallery-expand, .zoomnavleft, .zoomnavright', funct
         if (anchor._egExpandPending) return;
         function expand(zoom) {
             if (!anchor.isConnected) return;
+            if (!galleryFocusBound) {
+                zoom.registerCallback('onExpandClose', function (id) {
+                    if (id !== 'ItemImgZoom' || document.activeElement !== document.body) return;
+                    const button = document.getElementById(id)?.closest('.eg-gallery-frame')?.querySelector('.eg-gallery-expand');
+                    if (button) button.focus({preventScroll: true});
+                });
+                galleryFocusBound = true;
+            }
             var figure = anchor.querySelector('.mz-figure');
             if (figure && figure.classList.contains('mz-ready')) {
                 zoom.expand(anchor);
@@ -698,6 +706,8 @@ $(document).on('click', '.eg-gallery-expand, .zoomnavleft, .zoomnavright', funct
         else MagicZoom.next(anchor);
     }
 });
+
+let galleryFocusBound = false;
 
 // The vendor handles pointer gestures on its close button. Keyboard activation emits a native click.
 document.addEventListener('click', function (event) {

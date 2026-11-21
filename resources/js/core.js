@@ -26,6 +26,7 @@ O46Core.mobilePanels = O46Core.mobilePanels || (function () {
     const desktop = window.matchMedia('(min-width: 992px)');
     const panels = {'menu-open': '.top-menu-wrapper', 'filter-open': '.wrap-filter-mobile'};
     let opener = null;
+    let desktopFocus = null;
 
     function setState(name, open) {
         root.classList.toggle(name, open);
@@ -49,16 +50,38 @@ O46Core.mobilePanels = O46Core.mobilePanels || (function () {
         const name = Object.keys(panels).find(name => root.classList.contains(name));
         const panel = name && document.querySelector(panels[name]);
         const focus = document.activeElement;
+        const mobileOpener = opener;
         close(false);
         document.querySelectorAll(".top-menu-wrapper, .wrap-filter-mobile").forEach(el => { el.inert = false; });
-        if (panel && (focus === document.body || (panel.contains(focus) && !focus.getClientRects().length))) {
+        if (!panel || !mobileOpener) return;
+        if (panel.contains(focus) && focus.getClientRects().length) {
+            desktopFocus = {target: focus, mobileOpener};
+        } else if (focus === document.body || panel.contains(focus)) {
             const target = Array.from(panel.querySelectorAll('a[href], [tabindex="0"]')).find(el => el.getClientRects().length);
-            if (target) target.focus({preventScroll: true});
+            if (target) {
+                desktopFocus = {target, mobileOpener};
+                target.focus({preventScroll: true});
+            }
         }
     }
     desktop.addEventListener('change', event => {
         root.removeAttribute("data-eg-panel-animated");
-        if (event.matches) enterDesktop();
+        if (event.matches) {
+            enterDesktop();
+        } else if (opener) {
+            // A hidden tab can deliver only the return to mobile after crossing the breakpoint twice.
+            const focus = document.activeElement;
+            close(focus === document.body || !!focus.closest('.top-menu-wrapper, .wrap-filter-mobile'));
+        } else if (desktopFocus) {
+            const {target, mobileOpener} = desktopFocus;
+            desktopFocus = null;
+            if ((document.activeElement === target || document.activeElement === document.body) && mobileOpener.getClientRects().length) {
+                mobileOpener.focus({preventScroll: true});
+            }
+        }
+    });
+    document.addEventListener('focusin', event => {
+        if (desktopFocus && event.target !== desktopFocus.target) desktopFocus = null;
     });
     // A hidden mobile control can lose focus before the browser dispatches the breakpoint change.
     document.addEventListener('focusout', event => {

@@ -81,6 +81,29 @@ test('Menü, Untermenü, Filter, Fokus und offene Größenwechsel',async({page,s
             await page.setViewportSize({width:768,height:900});await frames(page);
             await expect(opener).toHaveAttribute('aria-expanded','false');
             await expect(nav).toBeHidden();await expect(drawer).toBeHidden();
+            await expect(opener).toBeFocused();
+        }
+        for (const [opener, target] of [
+            [menu(page), nav.locator('.top-menu > li > a:visible').first()],
+            [filter(page), drawer.locator('[data-eg-facet-toggle]').first()]
+        ]) {
+            await opener.press('Enter');
+            await target.focus();
+            await expect(target).toBeFocused();
+            await page.setViewportSize({width:1024,height:900});
+            await expect(page.locator('html')).not.toHaveClass(/menu-open|filter-open/);
+            await expect(target).toBeFocused();
+            await page.setViewportSize({width:768,height:900});
+            await expect(opener).toBeFocused();
+            await expect(opener).toBeInViewport();
+
+            await opener.press('Enter');
+            await page.setViewportSize({width:1024,height:900});
+            await expect(page.locator('html')).not.toHaveClass(/menu-open|filter-open/);
+            const outside = page.locator('.wishlist-link:visible').first();
+            await outside.focus();
+            await page.setViewportSize({width:768,height:900});
+            await expect(outside).toBeFocused();
         }
         for(const [opener,x] of [[menu(page),730],[filter(page),24]]) {
             await act(opener);
@@ -102,6 +125,37 @@ test('Menü, Untermenü, Filter, Fokus und offene Größenwechsel',async({page,s
     }
 });
 
+
+test('Einzeln zugestellter Rückwechsel schließt Panels und erhält bewusst gesetzten Fokus',async({page,shop})=>{
+    await page.addInitScript(() => {
+        const matchMedia = window.matchMedia.bind(window);
+        const breakpoint = matchMedia('(min-width: 992px)');
+        window.matchMedia = query => query === breakpoint.media ? breakpoint : matchMedia(query);
+    });
+    await page.setViewportSize({width:768,height:900});
+    await shop.open();
+    // Replay the final media event observed after a real hidden-tab round trip.
+    const deliverMobile = () => page.evaluate(() => {
+        const media = window.matchMedia('(min-width: 992px)');
+        media.dispatchEvent(new MediaQueryListEvent('change',{media:media.media,matches:false}));
+    });
+    for (const opener of [menu(page), filter(page)]) {
+        await opener.press('Enter');
+        await page.evaluate(() => document.activeElement.blur());
+        await deliverMobile();
+        await expect(opener).toHaveAttribute('aria-expanded','false');
+        await expect(opener).toBeFocused();
+        expect(await page.evaluate(() => [document.documentElement,document.body].map(el=>getComputedStyle(el).overflowY))).not.toContain('hidden');
+
+        const outside = page.locator('.wishlist-link:visible').first();
+        await opener.press('Enter');
+        await outside.focus();
+        await deliverMobile();
+        await deliverMobile();
+        await expect(opener).toHaveAttribute('aria-expanded','false');
+        await expect(outside).toBeFocused();
+    }
+});
 
 test('Panelkanten, Scrollsperre und Schließziele je Mobilbreite',async({page,shop,hasTouch},info)=>{
     await shop.open();await page.evaluate(installRecorder);

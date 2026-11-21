@@ -88,17 +88,21 @@ test('Galerie, Richtung, Vorschaubild, Zähler und Zoom',async({page,shop,hasTou
     await act(page.locator('.zoomnavleft'),hasTouch);await expect(counter).toHaveText('1 / 3');
     const thumb=page.locator('.single-prev-images a').last();
     if(await thumb.isVisible()){await act(thumb,hasTouch);await expect(counter).toHaveText('3 / 3');}
-    await act(page.locator('.eg-gallery-expand'),hasTouch);await expect(page.locator('.mz-expand')).toBeVisible();
-    await act(page.locator('.mz-expand .mz-button-close'),hasTouch);await expect(page.locator('.mz-expand')).toHaveCount(0);
+    const expand = page.locator('.eg-gallery-expand');
+    const close = page.locator('.mz-expand .mz-button-close');
     await page.evaluate(() => {
         window.zoomOpenCount = 0;
         MagicZoom.registerCallback('onExpandOpen', () => { window.zoomOpenCount++; });
     });
-    for (const [index, key] of ['Enter', 'Space'].entries()) {
-        await page.locator('.eg-gallery-expand').press('Enter');
+    for (const [index, key] of ['pointer', 'Enter', 'Space', 'Escape'].entries()) {
+        if (key === 'pointer') await act(expand, hasTouch);
+        else await expand.press('Enter');
         await expect.poll(() => page.evaluate(() => window.zoomOpenCount)).toBe(index + 1);
-        await page.locator('.mz-expand .mz-button-close').press(key);
+        if (key === 'pointer') await act(close, hasTouch);
+        else await close.press(key);
         await expect(page.locator('.mz-expand')).toHaveCount(0);
+        await expect(expand).toBeFocused();
+        await expect(expand).toBeInViewport();
     }
 });
 test('Variantenwahl aktualisiert das Galeriebild',async({page,shop,hasTouch})=>{

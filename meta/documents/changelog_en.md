@@ -2,6 +2,8 @@
 
 ## Unreleased – Mobile category filter and Quickview (2026-11-21)
 
+- Closing the expanded product gallery restores lost focus to its expand button. When returning to the mobile layout, focus moves from the desktop panel target back to the original mobile opener. This also covers a menu link or filter heading that already had focus when entering the desktop layout. If a background tab delivers only the return to mobile, the previously open panel closes and releases the scroll lock.
+
 - Mobile navigation and filter controls use the selected shop language. When switching to desktop, a visible control in the previously open panel receives keyboard focus if the browser has already released it. Enter and Space activate the close button in the expanded product gallery.
 - The closed mobile menu stays off screen when resizing. Opening navigation or filters closes the other panel. At 992 px, open panels and submenus reset. The controls expose their expanded state and closing with Escape, the close button or the backdrop returns focus to the opener.
 - The closed filter stays off screen when a desktop window is resized to the mobile layout. Using the mobile filter control still slides the drawer open and closed.
