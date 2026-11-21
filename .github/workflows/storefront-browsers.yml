@@ -5,6 +5,7 @@ on:
   push:
     tags:
       - 'b2b-browser-test-*'
+      - 'b2b-browser-iphone-*'
 
 permissions:
   contents: read
@@ -36,7 +37,9 @@ jobs:
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
           printf 'Tag: %s\n\nVerified develop commit: %s\n' "$GITHUB_REF_NAME" "$commit" >> "$GITHUB_STEP_SUMMARY"
       - id: projects
-        run: echo "matrix=$(node tests/cross-browser/profiles.cjs)" >> "$GITHUB_OUTPUT"
+        run: |
+          matrix=$(node tests/cross-browser/profiles.cjs "$GITHUB_REF_NAME")
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   storefront:
     name: Fixture · ${{ matrix.project }}
@@ -139,7 +142,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: .cache/browser-overview
-      - name: Summarize all ten expected profiles
+      - name: Summarize scheduled browser profiles
         if: always()
         run: node tests/cross-browser/cloud-report.cjs overview
       - uses: actions/upload-artifact@v4

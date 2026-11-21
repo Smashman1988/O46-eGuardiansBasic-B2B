@@ -140,13 +140,17 @@ function classify() {
 function overview() {
     fs.mkdirSync(overviewDir,{recursive:true});
     const tag=env.GITHUB_REF_NAME, commit=env.TEST_COMMIT;
-    const rows=Object.keys(profiles).map(name=>{
+    const selected=require('./profile-selection.cjs')(tag,profiles);
+    const single=selected.length===1;
+    const mode=single?'Einzelprofil iPhone':'Vollständige Matrix';
+    const notScheduled=Object.keys(profiles).filter(name=>!selected.includes(name));
+    const rows=selected.map(name=>{
         const dir=path.join(overviewDir,'storefront-'+name);
         const row=read(path.join(dir,'profile.json'));
         if (!row || row.project!==name || row.commit!==commit || row.tag!==tag ||
             !Array.isArray(row.issues) || !Array.isArray(row.findings) ||
             !Object.keys(labels).every(key=>Number.isSafeInteger(row.totals?.[key]) && row.totals[key]>=0)) {
-            return {project:name,status:INCOMPLETE,planned:0,totals:null,issues:['Passendes Profil-Artefakt fehlt'],findings:[]};
+            return {project:name,status:'BLOCKIERT',planned:0,totals:null,issues:['Eingeplantes Profil ohne gültiges Profil-Artefakt'],findings:[]};
         }
         for (const file of ['browser.json','planned.json','results.json','report/index.html']) {
             if (!fs.existsSync(path.join(dir,file))) row.issues.push('Artefakt fehlt: '+file);
@@ -157,7 +161,7 @@ function overview() {
         else if (row.totals.limited && row.status===PASS) row.status=INCOMPLETE;
         return row;
     });
-    const preview=read(path.join(overviewDir,'preview-identification','preview.json'));
+    const preview=single?null:read(path.join(overviewDir,'preview-identification','preview.json'));
     const total=counts();
     for(const row of rows) if(row.totals) for(const key of Object.keys(total)) total[key]+=row.totals[key];
     let status=PASS;
@@ -168,10 +172,12 @@ function overview() {
     const totalsText=Object.entries(labels).map(([key,label])=>label+' '+total[key]).join(' · ');
     const unplanned=rows.filter(row=>!row.planned).length;
     const started=rows.filter(r=>r.stages?.launch==='success' && r.browser?.version).length;
-    const scope='Funktionsprüfungen mit Twig-Fixtures. Fünf Desktopprofile und fünf emulierte Mobilgeräte. Native Shopfunktionen und physische Geräte wurden in dieser Matrix nicht geprüft.';
+    const scope=single?(rows[0].totals?.passed ? 'Keine vollständige Cross-Browser-Freigabe – nur iPhone geprüft (WebKit-Geräteemulation).' : 'Einzelprofil iPhone eingeplant. Der Funktionsnachweis und eine vollständige Cross-Browser-Freigabe stehen aus.'):'Funktionsprüfungen mit Twig-Fixtures. Fünf Desktopprofile und fünf emulierte Mobilgeräte. Native Shopfunktionen und physische Geräte wurden in dieser Matrix nicht geprüft.';
     const known=rows.flatMap(r=>r.findings.filter(f=>f.kind==='Bestätigte Browserinkompatibilität').map(f=>r.project+' · '+f.title));
     const coverage=total.limited ? 'Eingeschränkte Testabdeckung: '+total.limited+' Hintergrundtab-Prüfung(en) ohne bestätigtes hidden.' : 'Dokumentierte Einschränkungen: 0.';
-    const tech='GitHub-Matrix '+env.MATRIX_RESULT+' · Browserstarts '+started+'/10';
+    const plannedTests=rows.reduce((sum,row)=>sum+(row.planned||0),0);
+    const tech=mode+' · Profile '+selected.length+' · '+(unplanned?'Testplan unvollständig':'Geplante Tests '+plannedTests)+' · GitHub-Matrix '+env.MATRIX_RESULT+' · Browserstarts '+started+'/'+selected.length;
+    const excluded=single?'Nicht eingeplant: '+notScheduled.join(', ')+'.':'';
     const table=rows.map(r=>{
         const rel='storefront-'+r.project+'/report/index.html';
         const name=fs.existsSync(path.join(overviewDir,rel))?'<a href="'+rel+'">'+r.project+'</a>':r.project;
@@ -197,12 +203,12 @@ function overview() {
         '<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B2B-Browserprüfung</title>',
         '<style>body{font:16px/1.5 system-ui;margin:3vw;color:#193b38}table{border-collapse:collapse}th,td{text-align:left;padding:.55em;border-bottom:1px solid #ccd}article{overflow:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere}summary{cursor:pointer}a{color:#156359}.coverage{border-left:4px solid #886020;padding:.4em 1em}</style>',
         '<h1>B2B-Browserprüfung · '+status+'</h1><p>'+escape(tech)+'</p><p>'+escape(totalsText)+'</p><p class="coverage"><b>'+escape(coverage)+'</b></p>',
-        '<p>Tag <b>'+escape(tag)+'</b> · Commit <code>'+escape(commit)+'</code> · develop</p><p>'+escape(scope)+'</p><p>Bestätigte Browserinkompatibilitäten: '+escape(known.join(', ')||'keine ausgewiesen')+'. Vorschauerkennung: '+escape([preview?.status||'nicht ausgeführt',preview?.reason].filter(Boolean).join(' · '))+'.</p>',
+        '<p><strong>'+escape(scope)+'</strong></p>'+(excluded?'<p>'+escape(excluded)+'</p>':'')+'<p>Tag <b>'+escape(tag)+'</b> · Commit <code>'+escape(commit)+'</code> · develop</p><p>Bestätigte Browserinkompatibilitäten: '+escape(known.join(', ')||'keine ausgewiesen')+'. Vorschauerkennung: '+escape([preview?.status||'nicht ausgeführt',preview?.reason].filter(Boolean).join(' · '))+'.</p>',
         '<article><table><tr>'+headings.map(v=>'<th>'+escape(v)+'</th>').join('')+'</tr>'+table+'</table></article>'+notes+'</html>'
     ].join('');
     fs.writeFileSync(path.join(overviewDir,'index.html'),html);
-    write(path.join(overviewDir,'overview.json'),{status,tag,commit,totals:total,profilesWithoutPlan:unplanned,preview,rows});
-    summary('## B2B · '+status+'\n\n**'+coverage+'**\n\n'+tech+'\n\n'+totalsText+'\n\n'+scope+'\n\n'+escape(tag)+' · '+escape(commit)+'\n\n'+rows.map(r=>'- '+r.project+' · '+r.status).join('\n')+'\n\nArtefakt **b2b-browser-report** entpacken und **index.html** öffnen.');
+    write(path.join(overviewDir,'overview.json'),{status,mode,selectedProfiles:selected,notScheduled,plannedTests,tag,commit,totals:total,profilesWithoutPlan:unplanned,preview,rows});
+    summary('## B2B · '+status+'\n\n**'+coverage+'**\n\n'+tech+'\n\n'+totalsText+'\n\n'+scope+'\n\n'+excluded+'\n\n'+escape(tag)+' · '+escape(commit)+'\n\n'+rows.map(r=>'- '+r.project+' · '+r.status).join('\n')+'\n\nArtefakt **b2b-browser-report** entpacken und **index.html** öffnen.');
     if(total.limited) console.log('::warning::'+coverage);
     if(!successful(status)) process.exitCode=1;
 }

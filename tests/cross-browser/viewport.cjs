@@ -3,29 +3,40 @@ const {test, expect} = require('@playwright/test');
 // Keep the observation in the document so resize delivery and rendering are sampled
 // together, independently of the time a runner needs for a Playwright round trip.
 function observeViewport(width) {
-    const exact = matchMedia('(width: ' + width + 'px)');
+    let exact = matchMedia('(width: ' + width + 'px)');
     const desktop = matchMedia('(min-width: 992px)');
     const events = [];
     let generation = 0;
+    const meta=document.querySelector('meta[name=viewport]');
     const measure = () => ({
         time: performance.now(), media: exact.matches, desktop: desktop.matches,
         layout: document.documentElement.clientWidth, inner: innerWidth,
         visual: window.visualViewport?.width, screen: screen.width, dpr: devicePixelRatio,
-        meta: document.querySelector('meta[name=viewport]')?.content
+        meta: meta?.content
     });
     const onChange = event => {
         generation++;
         events.push({source: event.currentTarget === window.visualViewport ? 'visualViewport' : event.type, ...measure()});
     };
-    const sources = [[window,'resize'],[window.visualViewport,'resize'],[exact,'change'],[desktop,'change']];
+    const sources = [[window,'resize'],[window.visualViewport,'resize'],[desktop,'change']];
     for (const [target,type] of sources) target?.addEventListener(type,onChange);
-    const before = measure();
+    exact.addEventListener('change',onChange);
+    let before = measure();
+    function reset(nextWidth) {
+        exact.removeEventListener('change',onChange);
+        width=nextWidth;
+        exact=matchMedia('(width: '+width+'px)');
+        exact.addEventListener('change',onChange);
+        generation=0;
+        events.length=0;
+        before=measure();
+    }
 
     // Two paints with the same CSS metrics and no intervening resize or media
     // event establish a stable layout. A stable previous layout can be retried once.
-    function settle() {
+    function settle(holdMs=0, strictClient=true) {
         return new Promise(resolve => {
-            let previous, frame, samples = 0;
+            let previous, stableSince, frame, samples = 0;
             function finish(stable, last) {
                 cancelAnimationFrame(frame);
                 clearTimeout(timer);
@@ -35,7 +46,10 @@ function observeViewport(width) {
                 const last = measure();
                 samples++;
                 const signature = [generation,last.media,last.desktop,last.layout].join('/');
-                if (signature === previous) return finish(true,last);
+                if (signature === previous) {
+                    stableSince ??= last.time;
+                    if (!last.media || (strictClient && last.layout!==width) || last.time-stableSince>=holdMs) return finish(true,last);
+                } else stableSince=undefined;
                 previous = signature;
                 frame = requestAnimationFrame(paint);
             }
@@ -44,7 +58,8 @@ function observeViewport(width) {
             frame = requestAnimationFrame(paint);
         });
     }
-    return {before, events, settle, dispose() {
+    return {get before(){return before;}, events, settle, reset, dispose() {
+        exact.removeEventListener('change',onChange);
         for (const [target,type] of sources) target?.removeEventListener(type,onChange);
     }};
 }
@@ -71,27 +86,39 @@ async function setViewport(page, size, mobileWebKit) {
         return;
     }
     const observer = await page.evaluateHandle(observeViewport,size.width);
-    const target = {stable:true, last:{media:true, desktop:size.width>=992, layout:size.width}};
     const observations = [];
+    let primaryError;
     try {
-        await page.setViewportSize(size);
-        const sample = () => observer.evaluate(o=>o.settle());
-        let result = await sample();
-        observations.push(result);
-        if (result.stable && (!result.last.media || result.last.layout !== size.width)) {
-            // WebKit may still lay out at the previous screen width. Invalidate that
-            // layout at the requested width, then restore the exact requested height.
-            await page.setViewportSize({...size,height:size.height+1});
-            await page.setViewportSize(size);
-            result = await sample();
+        await resizeAndMeasure(page,size,true,async()=>{
+            const result=await observer.evaluate(o=>o.settle());
             observations.push(result);
-        }
-        expect(result,'WebKit CSS-Viewport nach Resize auf '+size.width+' px').toMatchObject(target);
+            return result;
+        });
+    } catch (error) {
+        primaryError=error;
+        throw error;
     } finally {
         try {
-            const evidence = await observer.evaluate(o=>{o.dispose();return {before:o.before,events:o.events};});
-            await test.info().attach('viewport-'+size.width,{body:JSON.stringify({size,...evidence,observations}),contentType:'application/json'});
-        } finally { await observer.dispose(); }
+            if (!page.isClosed()) {
+                const evidence = await observer.evaluate(o=>{o.dispose();return {before:o.before,events:o.events};});
+                await test.info().attach('viewport-'+size.width,{body:JSON.stringify({size,...evidence,observations}),contentType:'application/json'});
+            }
+        } catch (error) {
+            if (!primaryError && !test.info().errors.length && test.info().status!=='timedOut') throw error;
+        } finally { await observer.dispose().catch(()=>{}); }
     }
 }
-module.exports = {setViewport};
+
+async function resizeAndMeasure(page,size,mobileWebKit,sample) {
+    await page.setViewportSize(size);
+    let result=await sample();
+    if (mobileWebKit && result.stable && (!result.last.media || result.last.layout!==size.width)) {
+        await page.setViewportSize({...size,height:size.height+1});
+        await page.setViewportSize(size);
+        result=await sample();
+    }
+    const last={media:true,desktop:size.width>=992};
+    if (mobileWebKit) last.layout=size.width;
+    expect(result,'CSS-Viewport nach Resize auf '+size.width+' px').toMatchObject({stable:true,last});
+}
+module.exports = {setViewport,observeViewport,resizeAndMeasure};

@@ -1,21 +1,56 @@
 const {test,expect} = require('./storefront.cjs');
-const {setViewport} = require('./viewport.cjs');
+const {setViewport,observeViewport,resizeAndMeasure} = require('./viewport.cjs');
 
-function installRecorder() {
-    window.panelFrames = [];
-    window.observePanels = label => {
-        const root=document.documentElement, focus=document.activeElement;
-        const panel = (selector,state) => {
-            const node=document.querySelector(selector), r=node.getBoundingClientRect(), css=getComputedStyle(node);
-            const trigger=document.querySelector('[data-eg-param="html,'+state+'"]');
-            return {x:r.x,right:r.right,y:r.y,bottom:r.bottom,transform:css.transform,visible:css.visibility,opacity:css.opacity,
-                pointer:css.pointerEvents,z:css.zIndex,expanded:trigger.getAttribute('aria-expanded'),open:root.classList.contains(state)};
+function installRecorder(closed=false) {
+    const root=document.documentElement, body=document.body;
+    const desktop=matchMedia('(min-width: 992px)');
+    const initialFocus=document.activeElement;
+    function panelReader(selector,state) {
+        const node=document.querySelector(selector);
+        const triggers=[...document.querySelectorAll('[data-eg-param="html,'+state+'"]')];
+        return () => {
+            const r=node.getBoundingClientRect(), css=getComputedStyle(node);
+            const panel={x:r.x,right:r.right,visible:css.visibility,pointer:css.pointerEvents,
+                expanded:triggers[0].getAttribute('aria-expanded'),open:root.classList.contains(state)};
+            if (closed) panel.collapsed=triggers.every(trigger=>trigger.getAttribute('aria-expanded')==='false');
+            if (!closed) Object.assign(panel,{y:r.y,bottom:r.bottom,transform:css.transform,opacity:css.opacity,z:css.zIndex});
+            return panel;
         };
-        return {label,time:performance.now(),width:innerWidth,desktop:matchMedia('(min-width: 992px)').matches,visual:visualViewport?.width,screen:screen.width,dpr:devicePixelRatio,client:root.clientWidth,overflow:root.scrollWidth-root.clientWidth,
-            lock:[getComputedStyle(root).overflowY,getComputedStyle(document.body).overflowY],focus:focus.id||focus.getAttribute('aria-label')||focus.tagName,
-            nav:panel('.top-menu-wrapper','menu-open'),filter:panel('.wrap-filter-mobile','filter-open')};
+    }
+    const nav=panelReader('.top-menu-wrapper','menu-open'), filter=panelReader('.wrap-filter-mobile','filter-open');
+    window.panelFrames=[];
+    window.observePanels=label=>{
+        const focus=document.activeElement, client=root.clientWidth;
+        return {label,width:innerWidth,desktop:desktop.matches,visual:window.visualViewport?.width,screen:screen.width,dpr:devicePixelRatio,
+            client,overflow:root.scrollWidth-client,lock:[getComputedStyle(root).overflowY,getComputedStyle(body).overflowY],
+            focus:focus.id||focus.getAttribute('aria-label')||focus.tagName,focusRetained:focus===initialFocus,nav:nav(),filter:filter()};
     };
-    function frame(){window.panelFrames.push(window.observePanels(window.panelPhase));window.panelRAF=requestAnimationFrame(frame);}
+    let previousSignature, readMs=0;
+    window.takePanelFrames=()=>{
+        const rows=window.panelFrames;
+        window.panelFrames=[];
+        previousSignature=undefined;
+        const cost=readMs;
+        readMs=0;
+        return {rows,readMs:cost};
+    };
+    function frame(){
+        const time=performance.now(), row=window.observePanels(window.panelPhase);
+        readMs+=performance.now()-time;
+        // Compare all measured fields. A single anomalous frame creates its own row.
+        if (closed) {
+            const signature=JSON.stringify(row);
+            if (signature===previousSignature) {
+                const last=window.panelFrames.at(-1);
+                last.until=time;
+                last.frames++;
+            } else {
+                window.panelFrames.push({...row,time,until:time,frames:1});
+                previousSignature=signature;
+            }
+        } else window.panelFrames.push({...row,time});
+        window.panelRAF=requestAnimationFrame(frame);
+    }
     frame();
 }
 const menu = page => page.getByRole('button',{name:'Menü öffnen',exact:true});
@@ -23,36 +58,71 @@ const filter = page => page.getByRole('button',{name:'Filter öffnen',exact:true
 async function frames(page,ms=330) {
     await page.evaluate(ms=>new Promise(resolve=>{const start=performance.now();function next(){performance.now()-start>=ms?resolve():requestAnimationFrame(next);}requestAnimationFrame(next);}),ms);
 }
-async function attach(page,info) {
-    const data=await page.evaluate(()=>{cancelAnimationFrame(window.panelRAF);return window.panelFrames || [];});
-    await info.attach('panel-frames',{body:JSON.stringify(data),contentType:'application/json'});
-    return data;
+async function attach(page,info,priorError) {
+    const alreadyFailed=()=>priorError || info.errors.length || info.status==='timedOut';
+    if (page.isClosed() && alreadyFailed()) return [];
+    try {
+        const data=await page.evaluate(()=>{cancelAnimationFrame(window.panelRAF);return window.panelFrames || [];});
+        await info.attach('panel-frames',{body:JSON.stringify(data),contentType:'application/json'});
+        return data;
+    } catch (error) {
+        if (alreadyFailed()) return [];
+        throw error;
+    }
 }
 const reference = name => ['chromium','firefox','webkit'].includes(name);
-// Keep the width sweep separate from consecutive resize sequences. Both record
-// all animation frames, including those between the individual size changes.
+// Retain the original order, including consecutive equal widths. Verify each
+// occurrence and retain each checkpoint on the runner before requesting the next.
 for (const sweep of [true,false]) {
     test(sweep?'Geschlossene Panels bei Profil- und Referenzbreiten':'Geschlossene Panels bei schnellen Größenwechseln',async({page,shop,browserName,isMobile},info)=>{
         await shop.open();
-        await page.evaluate(installRecorder);
+        const focusTarget=page.locator('.cat-item .linkabso').first();
+        await focusTarget.evaluate(el=>el.focus({preventScroll:true}));
+        await expect(focusTarget).toBeFocused();
         const widths=sweep
             ? (reference(info.project.name)?[320,360,390,430,767,768,769,991,992,1024,1440,1920]:[page.viewportSize().width,768,1024])
             : [390,1024,390,768,992,768,768,1024,768,1024,768,1024,1440,390,1440];
+        const sequence=[...widths,768];
+        const mobileWebKit=browserName==='webkit' && isMobile;
+        const recorded=[];
+        await page.evaluate(installRecorder,true);
+        const observer=await page.evaluateHandle(observeViewport,sequence[0]);
         try {
-            for(const width of widths){
-                await setViewport(page,{width,height:820},browserName==='webkit' && isMobile);
-                await frames(page,sweep?330:25);
+            for(const [index,width] of sequence.entries()) {
+                const next=sequence[index+1], holdMs=sweep||next===undefined?330:25;
+                const attempts=[];
+                try {
+                    await resizeAndMeasure(page,{width,height:820},mobileWebKit,async()=>{
+                        const batch=await observer.evaluate(async(o,{next,holdMs,width,mobileWebKit})=>{
+                            const result=await o.settle(holdMs,mobileWebKit);
+                            const complete=result.stable && result.last.media && (!mobileWebKit || result.last.layout===width);
+                            const evidence={before:o.before,events:o.events.slice(),result,...window.takePanelFrames()};
+                            if (complete) {
+                                if (next!==undefined) o.reset(next);
+                                else { cancelAnimationFrame(window.panelRAF); o.dispose(); }
+                            }
+                            return evidence;
+                        },{next,holdMs,width,mobileWebKit});
+                        attempts.push(batch);
+                        recorded.push(...batch.rows);
+                        return batch.result;
+                    });
+                } finally {
+                    await info.attach('viewport-'+width,{body:JSON.stringify({index,width,attempts}),contentType:'application/json'});
+                }
+                const rows=attempts.flatMap(a=>a.rows);
+                expect(rows.some(r=>r.width===width && r.desktop===(width>=992)),'Zielposition '+(index+1)+' bei '+width+' px').toBe(true);
+                const invalid=rows.find(r=>r.overflow>1 || !r.focusRetained || r.lock.includes('hidden') || r.lock.includes('clip') ||
+                    r.nav.open || r.filter.open || !r.nav.collapsed || !r.filter.collapsed ||
+                    (!r.desktop && (r.nav.right>1 || r.filter.x<r.client-1 || r.nav.visible!=='hidden' ||
+                        r.filter.visible!=='hidden' || r.nav.pointer!=='none' || r.filter.pointer!=='none')));
+                expect(invalid,'Panelzustand während Wechsel '+(index+1)).toBeUndefined();
             }
-            await setViewport(page,{width:768,height:820},browserName==='webkit' && isMobile);
-            await frames(page);
             await info.attach('geschlossen-768',{body:await page.screenshot(),contentType:'image/png'});
-            const data=await page.evaluate(()=>window.panelFrames);
-            for(const width of new Set(widths)) expect(data.some(row=>row.width===width),'sample '+width).toBeTruthy();
-            const mobile=data.filter(r=>!r.desktop);
-            expect(mobile.filter(r=>r.nav.right>1 || r.filter.x<r.client-1 || r.nav.visible!=='hidden' || r.filter.visible!=='hidden' || r.nav.pointer!=='none' || r.filter.pointer!=='none').slice(0,2)).toEqual([]);
-            expect(data.filter(r=>r.overflow>1).slice(0,2)).toEqual([]);
         } finally {
-            await attach(page,info);
+            // Already returned batches survive a timeout or a closed browser.
+            await info.attach('panel-frames',{body:JSON.stringify(recorded),contentType:'application/json'});
+            await observer.dispose().catch(()=>{});
         }
     });
 }
@@ -218,5 +288,9 @@ test('Panelkanten, Scrollsperre und Schließziele je Mobilbreite',async({page,sh
                 await expect(page.locator(selector)).toBeHidden();
             }
         }
-    } finally {await attach(page,info);}
+    } catch (error) {
+        await attach(page,info,error);
+        throw error;
+    }
+    await attach(page,info);
 });

@@ -12,6 +12,8 @@ const profiles = {
 };
 module.exports = profiles;
 if (require.main === module) {
-    const include = Object.entries(profiles).map(([project, p]) => ({project, install:p.channel || p.engine}));
+    const tag=process.argv[2] ?? process.env.GITHUB_REF_NAME;
+    const names=tag===undefined && !process.env.GITHUB_ACTIONS ? Object.keys(profiles) : require('./profile-selection.cjs')(tag,profiles);
+    const include=names.map(project=>({project,install:profiles[project].channel || profiles[project].engine}));
     console.log(JSON.stringify({include}));
 }

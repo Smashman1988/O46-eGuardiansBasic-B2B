@@ -50,3 +50,47 @@ for (const [name,project,result,want,key,title=background] of scenarios) test(na
     assert.equal(row.totals[key],key==='passed'?2:1);
     assert.equal(run.status,want.startsWith('BESTANDEN')?0:1);
 });
+
+test('Explizite Test-Tags wählen nur die vorgesehene Browserinstallation',()=>{
+    const matrix=tag=>spawnSync(process.execPath,[require.resolve('./cross-browser/profiles.cjs'),tag],{encoding:'utf8'});
+    const one=matrix('b2b-browser-iphone-001'), all=matrix('b2b-browser-test-004');
+    assert.equal(one.status,0);assert.equal(all.status,0);
+    assert.deepEqual(JSON.parse(one.stdout).include,[{project:'iphone',install:'webkit'}]);
+    assert.deepEqual(JSON.parse(all.stdout).include.map(p=>p.project),Object.keys(profiles));
+    for(const name of ['develop','refs/heads/develop','b2b-browser-ipad-001','']) assert.notEqual(matrix(name).status,0);
+});
+
+for(const [name,tag,scope,result,expected] of [
+    ['iPhone bestanden','b2b-browser-iphone-001',1,'BESTANDEN','BESTANDEN'],
+    ['iPhone eingeschränkt','b2b-browser-iphone-001',1,'BESTANDEN MIT EINSCHRÄNKUNGEN','BESTANDEN MIT EINSCHRÄNKUNGEN'],
+    ['iPhone fehlgeschlagen','b2b-browser-iphone-001',1,'FEHLGESCHLAGEN','FEHLGESCHLAGEN'],
+    ['iPhone-Artefakt fehlt','b2b-browser-iphone-001',1,null,'UNVOLLSTÄNDIG'],
+    ['Vollmatrix mit nur einem Artefakt','b2b-browser-test-004',10,'BESTANDEN','UNVOLLSTÄNDIG']
+]) test(name,t=>{
+    const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'o46-selection-'));
+    t.after(()=>fs.rmSync(tmp,{recursive:true,force:true}));
+    const output=path.join(tmp,'.cache/browser-overview'), dir=path.join(output,'storefront-iphone');
+    fs.mkdirSync(path.join(dir,'report'),{recursive:true});
+    if(result) {
+        const limited=Number(result==='BESTANDEN MIT EINSCHRÄNKUNGEN'), failed=Number(result==='FEHLGESCHLAGEN');
+        const row={project:'iphone',commit:'fixture',tag,status:result,planned:23,stages:{launch:'success'},
+            browser:{version:'26.5'},totals:{passed:23-failed-limited,skipped:0,limited,failed,blocked:0},issues:[],findings:[]};
+        fs.writeFileSync(path.join(dir,'profile.json'),JSON.stringify(row));
+        for(const file of ['browser.json','planned.json','results.json','report/index.html']) fs.writeFileSync(path.join(dir,file),'{}');
+    }
+    const run=spawnSync(process.execPath,[cli,'overview'],{cwd:tmp,encoding:'utf8',env:{...process.env,
+        GITHUB_REF_NAME:tag,TEST_COMMIT:'fixture',MATRIX_RESULT:'success',GITHUB_STEP_SUMMARY:path.join(tmp,'summary.md')}});
+    const overview=JSON.parse(fs.readFileSync(path.join(output,'overview.json')));
+    assert.equal(overview.status,expected);
+    assert.equal(overview.selectedProfiles.length,scope);
+    assert.equal(overview.rows.length,scope);
+    assert.equal(overview.notScheduled.length,10-scope);
+    assert.equal(overview.profilesWithoutPlan,scope-Number(Boolean(result)));
+    assert.equal(overview.rows.filter(r=>r.status==='BLOCKIERT').length,scope-Number(Boolean(result)));
+    assert.equal(run.status,expected.startsWith('BESTANDEN')?0:1);
+    for(const content of [fs.readFileSync(path.join(output,'index.html'),'utf8'),fs.readFileSync(path.join(tmp,'summary.md'),'utf8')]) {
+        assert.ok(content.includes(expected));
+        assert.ok(content.includes(overview.mode));
+        if(scope===1) assert.ok(content.includes('Nicht eingeplant: chromium') && content.includes('Cross-Browser-Freigabe'));
+    }
+});
