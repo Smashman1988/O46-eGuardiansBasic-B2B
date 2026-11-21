@@ -1,4 +1,5 @@
 const {test,expect} = require('./storefront.cjs');
+const {setViewport} = require('./viewport.cjs');
 
 function installRecorder() {
     window.panelFrames = [];
@@ -10,7 +11,7 @@ function installRecorder() {
             return {x:r.x,right:r.right,y:r.y,bottom:r.bottom,transform:css.transform,visible:css.visibility,opacity:css.opacity,
                 pointer:css.pointerEvents,z:css.zIndex,expanded:trigger.getAttribute('aria-expanded'),open:root.classList.contains(state)};
         };
-        return {label,time:performance.now(),width:innerWidth,client:root.clientWidth,overflow:root.scrollWidth-root.clientWidth,
+        return {label,time:performance.now(),width:innerWidth,desktop:matchMedia('(min-width: 992px)').matches,visual:visualViewport?.width,screen:screen.width,dpr:devicePixelRatio,client:root.clientWidth,overflow:root.scrollWidth-root.clientWidth,
             lock:[getComputedStyle(root).overflowY,getComputedStyle(document.body).overflowY],focus:focus.id||focus.getAttribute('aria-label')||focus.tagName,
             nav:panel('.top-menu-wrapper','menu-open'),filter:panel('.wrap-filter-mobile','filter-open')};
     };
@@ -28,33 +29,41 @@ async function attach(page,info) {
     return data;
 }
 const reference = name => ['chromium','firefox','webkit'].includes(name);
-test('Overlay-Geometrie bei Profilbreite und schnellen Wechseln',async({page,shop},info)=>{
+test('Overlay-Geometrie bei Profilbreite und schnellen Wechseln',async({page,shop,browserName,isMobile},info)=>{
     await shop.open();await page.evaluate(installRecorder);
     const widths=reference(info.project.name) ? [320,360,390,430,767,768,769,991,992,1024,1440,1920] : [page.viewportSize().width,768,1024];
     const sequences=[[390,1024,390],[768,992,768],[768,1024,768],[1024,768,1024],[1440,390,1440]];
-    for(const width of widths){await page.setViewportSize({width,height:820});await frames(page);}
-    for(const seq of sequences) for(const width of seq){await page.setViewportSize({width,height:820});await frames(page,25);}
-    await page.setViewportSize({width:768,height:820});await frames(page);
+    for(const width of widths){await setViewport(page,{width,height:820},browserName==='webkit' && isMobile);await frames(page);}
+    for(const seq of sequences) for(const width of seq){await setViewport(page,{width,height:820},browserName==='webkit' && isMobile);await frames(page,25);}
+    await setViewport(page,{width:768,height:820},browserName==='webkit' && isMobile);await frames(page);
     await info.attach('geschlossen-768',{body:await page.screenshot(),contentType:'image/png'});
     const data=await attach(page,info);
     for(const width of widths) expect(data.some(row=>row.width===width),'sample '+width).toBeTruthy();
-    const mobile=data.filter(r=>r.width<992);
+    const mobile=data.filter(r=>!r.desktop);
     expect(mobile.filter(r=>r.nav.right>1 || r.filter.x<r.client-1 || r.nav.visible!=='hidden' || r.filter.visible!=='hidden' || r.nav.pointer!=='none' || r.filter.pointer!=='none').slice(0,2)).toEqual([]);
     expect(data.filter(r=>r.overflow>1).slice(0,2)).toEqual([]);
 });
-test('Menü, Untermenü, Filter, Fokus und offene Größenwechsel',async({page,shop,hasTouch},info)=>{
+test('Menü, Untermenü, Filter, Fokus und offene Größenwechsel',async({page,shop,hasTouch,browserName,isMobile},info)=>{
     const act=l=>hasTouch?l.tap():l.click();
-    await page.setViewportSize({width:768,height:900});await shop.open();await page.evaluate(installRecorder);
+    await setViewport(page,{width:768,height:900},browserName==='webkit' && isMobile);await shop.open();await page.evaluate(installRecorder);
     try {
         await page.evaluate(()=>{window.panelPhase='Menü öffnen';});
         await act(menu(page));await expect(menu(page)).toHaveAttribute('aria-expanded','true');
         const nav=page.locator('.top-menu-wrapper'), drawer=page.locator('.wrap-filter-mobile');
+        const checkOpen=async name=>{
+            const row=await page.evaluate(()=>window.observePanels('offen'));
+            expect(row[name]).toMatchObject({pointer:'auto',visible:'visible',expanded:'true',open:true});
+            expect(row.lock).toContain('hidden');
+        };
         await expect(nav.locator('.close')).toBeFocused();
         const sub=nav.locator('[data-eg-open-ddown]:visible').first();
         await act(sub);await expect(nav.locator('.ddown-open')).toHaveCount(1);
-        await act(nav.locator('.ddown-open [data-eg-back-ddown]:visible').first());
+        const back=nav.locator('.ddown-open [data-eg-back-ddown]:visible').first();
+        await back.evaluate(el=>el.scrollIntoView({block:'start',behavior:'instant'}));
+        await act(back);
         await expect(nav.locator('.ddown-open')).toHaveCount(0);
         await frames(page);
+        await checkOpen('nav');
         await expect(nav.locator('.close')).toBeInViewport();
         expect(await nav.locator('.close').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})).toBe(true);
         await info.attach('navigation-768',{body:await page.screenshot(),contentType:'image/png'});
@@ -62,24 +71,25 @@ test('Menü, Untermenü, Filter, Fokus und offene Größenwechsel',async({page,s
         await act(filter(page));await expect(filter(page)).toHaveAttribute('aria-expanded','true');
         await act(drawer.locator('[data-eg-facet-toggle]').first());await expect(drawer.locator('[data-eg-facet-toggle]').first()).toHaveAttribute('aria-expanded','true');
         await frames(page);
+        await checkOpen('filter');
         await expect(drawer.locator('.close')).toBeInViewport();
         await info.attach('filter-768',{body:await page.screenshot(),contentType:'image/png'});
         await act(drawer.locator('.close'));await expect(filter(page)).toBeFocused();
         for (const [opener,panel] of [[menu(page),nav],[filter(page),drawer]]) {
             await act(opener);await page.keyboard.press('Escape');await expect(opener).toBeFocused();
             await act(opener);
-            await page.setViewportSize({width:992,height:900});
+            await setViewport(page,{width:992,height:900},browserName==='webkit' && isMobile);
             expect(await panel.locator('.close').evaluate(button=>button.getClientRects().length)).toBe(0);
-            await page.setViewportSize({width:768,height:900});
+            await setViewport(page,{width:768,height:900},browserName==='webkit' && isMobile);
             await expect(opener).toHaveAttribute('aria-expanded','false');
             await act(opener);
             // Chromium can blur the mobile close button before delivering the media-query event.
             await panel.locator('.close').evaluate(button=>button.blur());
-            await page.setViewportSize({width:1024,height:900});
+            await setViewport(page,{width:1024,height:900},browserName==='webkit' && isMobile);
             await expect(page.locator('html')).not.toHaveClass(/menu-open|filter-open/);
             await expect.poll(()=>panel.evaluate(node=>node.contains(document.activeElement) &&
                 document.activeElement.getClientRects().length > 0)).toBe(true);
-            await page.setViewportSize({width:768,height:900});await frames(page);
+            await setViewport(page,{width:768,height:900},browserName==='webkit' && isMobile);await frames(page);
             await expect(opener).toHaveAttribute('aria-expanded','false');
             await expect(nav).toBeHidden();await expect(drawer).toBeHidden();
             await expect(opener).toBeFocused();
@@ -91,19 +101,19 @@ test('Menü, Untermenü, Filter, Fokus und offene Größenwechsel',async({page,s
             await opener.press('Enter');
             await target.focus();
             await expect(target).toBeFocused();
-            await page.setViewportSize({width:1024,height:900});
+            await setViewport(page,{width:1024,height:900},browserName==='webkit' && isMobile);
             await expect(page.locator('html')).not.toHaveClass(/menu-open|filter-open/);
             await expect(target).toBeFocused();
-            await page.setViewportSize({width:768,height:900});
+            await setViewport(page,{width:768,height:900},browserName==='webkit' && isMobile);
             await expect(opener).toBeFocused();
             await expect(opener).toBeInViewport();
 
             await opener.press('Enter');
-            await page.setViewportSize({width:1024,height:900});
+            await setViewport(page,{width:1024,height:900},browserName==='webkit' && isMobile);
             await expect(page.locator('html')).not.toHaveClass(/menu-open|filter-open/);
             const outside = page.locator('.wishlist-link:visible').first();
             await outside.focus();
-            await page.setViewportSize({width:768,height:900});
+            await setViewport(page,{width:768,height:900},browserName==='webkit' && isMobile);
             await expect(outside).toBeFocused();
         }
         for(const [opener,x] of [[menu(page),730],[filter(page),24]]) {
@@ -116,24 +126,20 @@ test('Menü, Untermenü, Filter, Fokus und offene Größenwechsel',async({page,s
         await menu(page).press('Enter');await filter(page).press('Enter');
         await expect(page.locator('html')).toHaveClass(/filter-open/);await expect(nav).toBeHidden();
         await page.keyboard.press('Escape');
+        expect((await page.evaluate(()=>window.panelFrames)).filter(r=>r.nav.open && r.filter.open || r.overflow>1).slice(0,1)).toEqual([]);
     } finally {
-        const data=await attach(page,info);
-        expect(data.filter(r=>r.nav.open && r.filter.open || r.overflow>1).slice(0,1)).toEqual([]);
-        for (const name of ['nav','filter']) {
-            const opened=data.filter(r=>r.width<992 && r[name].open);
-            expect(opened.some(r=>r[name].pointer==='auto' && r[name].visible==='visible' && r[name].expanded==='true' && r.lock.includes('hidden'))).toBe(true);
-        }
+        await attach(page,info);
     }
 });
 
 
-test('Einzeln zugestellter Rückwechsel schließt Panels und erhält bewusst gesetzten Fokus',async({page,shop})=>{
+test('Einzeln zugestellter Rückwechsel schließt Panels und erhält bewusst gesetzten Fokus',async({page,shop,browserName,isMobile})=>{
     await page.addInitScript(() => {
         const matchMedia = window.matchMedia.bind(window);
         const breakpoint = matchMedia('(min-width: 992px)');
         window.matchMedia = query => query === breakpoint.media ? breakpoint : matchMedia(query);
     });
-    await page.setViewportSize({width:768,height:900});
+    await setViewport(page,{width:768,height:900},browserName==='webkit' && isMobile);
     await shop.open();
     // Replay the final media event observed after a real hidden-tab round trip.
     const deliverMobile = () => page.evaluate(() => {
@@ -158,12 +164,12 @@ test('Einzeln zugestellter Rückwechsel schließt Panels und erhält bewusst ges
     }
 });
 
-test('Panelkanten, Scrollsperre und Schließziele je Mobilbreite',async({page,shop,hasTouch},info)=>{
+test('Panelkanten, Scrollsperre und Schließziele je Mobilbreite',async({page,shop,hasTouch,browserName,isMobile},info)=>{
     await shop.open();await page.evaluate(installRecorder);
     try {
         const widths=reference(info.project.name) ? [320,360,390,430,767,768,769,991] : new Set([Math.min(page.viewportSize().width,991),768]);
         for(const width of widths) {
-            await page.setViewportSize({width,height:850});
+            await setViewport(page,{width,height:850},browserName==='webkit' && isMobile);
             for(const [name,opener,selector] of [['nav',menu(page),'.top-menu-wrapper'],['filter',filter(page),'.wrap-filter-mobile']]) {
                 await page.evaluate(label=>{window.panelPhase=label;},name+' '+width);
                 if(hasTouch) await opener.tap(); else await opener.click();

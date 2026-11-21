@@ -2,6 +2,7 @@
 
 ## Unreleased – Mobiler Kategoriefilter und Quickview (2026-11-21)
 
+- Das Schließen-Kreuz des mobilen Menüs bleibt nach dem Rücksprung aus einem Untermenü erreichbar. Beim Absenden der Suche wird eine noch ausstehende Vorschlagsabfrage verworfen.
 - Nach dem Schließen der vergrößerten Artikelgalerie erhält die Vergrößern-Taste den verlorenen Fokus zurück. Bei der Rückkehr vom Desktop ins mobile Layout wird der Fokus vom zuvor ausgewählten Desktop-Panelelement zum ursprünglichen mobilen Öffner zurückgeführt. Das gilt auch, wenn beim Wechsel auf Desktop bereits ein Menülink oder eine Filterüberschrift fokussiert war. Liefert ein Hintergrundtab nur den Rückwechsel auf Mobil, schließt sich das zuvor offene Panel und gibt die Scrollsperre frei.
 
 - Die mobilen Tasten für Navigation und Filter verwenden die gewählte Shopsprache. Beim Wechsel auf Desktop erhält ein sichtbares Element im zuvor geöffneten Panel den Tastaturfokus, wenn der Browser den Fokus bereits freigegeben hat. In der vergrößerten Artikelgalerie lässt sich die Schließen-Taste mit Eingabe und Leertaste bedienen.

@@ -41,6 +41,7 @@ function cases(report) {
     return list;
 }
 function failureKind(run, annotations) {
+    if (annotations.some(a=>a.type==='browser-setup')) return 'Browserstart oder CDP-Verbindung';
     if (run.status === 'timedOut' || /Timeout(?:Error| .*exceeded)/i.test(run.error?.message || '')) return 'Timeout';
     if (annotations.some(a=>a.type==='theme-defect')) return 'Bestätigter Theme-Fehler';
     if (annotations.some(a=>a.type==='browser-incompatibility')) return 'Bestätigte Browserinkompatibilität';

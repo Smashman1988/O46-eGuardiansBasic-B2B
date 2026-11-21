@@ -82,7 +82,10 @@ const test = base.extend({
         const open=async (pathname='/alle-artikel/')=>{await page.goto(origin+pathname);await expect(page.locator('body')).toHaveAttribute('data-ready','1');};
         try { await use({open,requests,groups:f.groups}); }
         finally {
-            await info.attach('browser-diagnostics',{body:JSON.stringify({project:info.project.name,browser:info.project.use.browserName,version:context.browser()?.version(),viewport:page.viewportSize(),url:page.url(),requests,errors,failures},null,2),contentType:'application/json'});
+            const layout=page.isClosed()?null:await page.evaluate(()=>({inner:innerWidth,client:document.documentElement.clientWidth,
+                visual:visualViewport?.width,screen:screen.width,dpr:devicePixelRatio,touch:navigator.maxTouchPoints,
+                desktop:matchMedia('(min-width: 992px)').matches,meta:document.querySelector('meta[name=viewport]')?.content})).catch(()=>null);
+            await info.attach('browser-diagnostics',{body:JSON.stringify({project:info.project.name,browser:info.project.use.browserName,version:context.browser()?.version(),viewport:page.viewportSize(),layout,url:page.url(),requests,errors,failures},null,2),contentType:'application/json'});
             expect(errors,'Page, console and unexpected request errors').toEqual([]);
             expect(failures.filter(r=>!/ABORTED|cancelled|canceled|NS_BINDING_ABORTED/i.test(r.message||'')),'Failed requests').toEqual([]);
         }

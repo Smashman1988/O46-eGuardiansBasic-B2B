@@ -1,63 +1,49 @@
 const {test:base,expect} = require('./storefront.cjs');
 const {chromium} = require('playwright');
-const {spawn} = require('node:child_process');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const os = require('node:os');
+const {setViewport} = require('./viewport.cjs');
 
-// The normal Chromium automation context forces foreground focus. Use a disposable
-// default context without those overrides, leaving the regular functional projects intact.
-const test = base.extend({
-    context: async ({context,browserName,channel},use) => {
+// Use Playwright's verified launcher and lifecycle on every OS. A second CDP
+// connection uses the browser's default profile without Playwright's focus override.
+const test=base.extend({
+    context: async ({context,browserName,channel},use,info)=>{
         if(browserName!=='chromium') return use(context);
-        let executable=chromium.executablePath();
-        if(channel) {
-            const filename=channel==='msedge'?'Microsoft/Edge/Application/msedge.exe':'Google/Chrome/Application/chrome.exe';
-            const candidates=process.platform==='win32'
-                ? [process.env.LOCALAPPDATA,process.env.PROGRAMFILES,process.env['PROGRAMFILES(X86)']].filter(Boolean).map(dir=>path.join(dir,filename))
-                : [channel==='msedge'?'/opt/microsoft/msedge/msedge':'/opt/google/chrome/chrome'];
-            executable=candidates.find(file=>require('node:fs').existsSync(file));
-            if(!executable) throw Error('Installed browser missing: '+channel);
-        }
-        const profile=await fs.mkdtemp(path.join(os.tmpdir(),'o46-browser-test-'));
-        let child, browser;
+        let owner, observer, observedContext;
         try {
-            child=spawn(executable,['--headless=new','--no-first-run','--no-default-browser-check','--disable-background-networking',
-                '--disable-sync','--remote-debugging-port=0','--remote-debugging-address=127.0.0.1','--user-data-dir='+profile,'about:blank'],
-                {windowsHide:true,stdio:'ignore'});
-            let launchError;
-            child.once('error',e=>{launchError=e;});
-            const endpoint=path.join(profile,'DevToolsActivePort');
-            await expect.poll(async()=>launchError?launchError.message:fs.access(endpoint).then(()=>true,()=>false),{timeout:10000}).toBe(true);
-            const [port,route]=(await fs.readFile(endpoint,'utf8')).trim().split(/\r?\n/);
-            browser=await chromium.connectOverCDP('ws://127.0.0.1:'+Number(port)+route,{noDefaults:true});
-            const ctx=browser.contexts()[0];
-            await use(ctx);
-        } finally {
-            if(browser) {
-                const control=await browser.newBrowserCDPSession().catch(()=>null);
-                await control?.send('Browser.close').catch(()=>{});
-                await browser.close().catch(()=>{});
+            try {
+                owner=await chromium.launch({channel:channel || 'chromium',headless:true,args:['--enable-automation','--remote-debugging-address=127.0.0.1','--remote-debugging-port=0']});
+                const control=await owner.newBrowserCDPSession();
+                const command=await control.send('Browser.getBrowserCommandLine');
+                await control.detach();
+                const arg=command.arguments.find(arg=>arg.startsWith('--user-data-dir='));
+                if(!arg) throw Error('Playwright browser profile missing');
+                const endpoint=await fs.readFile(path.join(arg.slice('--user-data-dir='.length),'DevToolsActivePort'),'utf8');
+                const [port,route]=endpoint.trim().split(/\r?\n/);
+                observer=await chromium.connectOverCDP('ws://127.0.0.1:'+Number(port)+route,{noDefaults:true});
+                observedContext=observer.contexts()[0];
+                if(!observedContext) throw Error('Default browser context missing');
+            } catch(error) {
+                info.annotations.push({type:'browser-setup',description:'Chromium-Start oder CDP-Verbindung fehlgeschlagen'});
+                throw error;
             }
-            if(child?.pid && child.exitCode===null && child.signalCode===null) child.kill();
-            if(path.dirname(profile)!==path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('o46-browser-test-')) throw Error('Unexpected test profile');
-            await fs.rm(profile,{recursive:true,force:true,maxRetries:8,retryDelay:200});
+            await use(observedContext);
+        } finally {
+            try { await observer?.close(); } finally { await owner?.close(); }
         }
     }
 });
 
-test('Echter Hintergrundtab mit und ohne Breakpointwechsel',async({page,context,shop,browserName,hasTouch,isMobile,deviceScaleFactor,userAgent},info)=>{
+test('Echter Hintergrundtab mit und ohne Breakpointwechsel',async({page,context,shop,browserName,isMobile,hasTouch,userAgent,deviceScaleFactor},info)=>{
     test.setTimeout(90000);
     const measurements=[];
     const cdp=browserName==='chromium'?await context.newCDPSession(page):null;
-    const size=async width=>{
-        if(!cdp) return page.setViewportSize({width,height:900});
-        await cdp.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:deviceScaleFactor||1,mobile:!!isMobile});
-    };
     if(cdp) {
         if(userAgent) await cdp.send('Network.setUserAgentOverride',{userAgent});
         await cdp.send('Emulation.setTouchEmulationEnabled',{enabled:!!hasTouch});
     }
+    const size=width=>cdp?cdp.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:deviceScaleFactor||1,mobile:!!isMobile})
+        :setViewport(page,{width,height:900},browserName==='webkit' && isMobile);
     await size(768);
     await shop.open();
     const popup=page.waitForEvent('popup');

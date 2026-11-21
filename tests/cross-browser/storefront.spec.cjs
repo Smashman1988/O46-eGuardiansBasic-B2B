@@ -122,15 +122,16 @@ test('Quickview schließt per X und Escape, wechselt Produkt und gibt Fokus zur�
     const buttons=page.locator('.cat-item .linkabso'), modal=page.locator('.modal-cross');
     await page.evaluate(()=>{
         document.addEventListener('pointerdown',e=>{
-            if(e.target.closest('.modal-cross .close')) window.closePhase=O46Core.quickview.phase;
+            if(e.target.closest('.modal-cross .close')) window.closePhase={phase:O46Core.quickview.phase,trusted:e.isTrusted};
         },true);
     });
     for(const [index,mode] of [[0,'schnell'],[1,'escape'],[0,'x']]){
-        const trigger=buttons.nth(index);await act(trigger,hasTouch);
+        const trigger=buttons.nth(index);
         if(mode==='schnell') {
-            await pressCloseDuringEntrance(page,hasTouch);
-            expect(await page.evaluate(()=>window.closePhase)).toBe('opening');
+            await pressCloseDuringEntrance(page,hasTouch,()=>act(trigger,hasTouch));
+            expect(await page.evaluate(()=>window.closePhase)).toEqual({phase:'opening',trusted:true});
         } else {
+            await act(trigger,hasTouch);
             await expect(modal.locator('h1')).toHaveText('Artikel /product-'+(10001+index)+'/');
             await expect(page.locator('.modal.show')).toHaveCount(1);
             await expect.poll(()=>page.evaluate(()=>O46Core.quickview.phase)).toBe('shown');
@@ -208,8 +209,15 @@ test('Markenfilter einzeln anwenden und nach Reload lesen',async({page,shop})=>{
     await page.getByRole('button',{name:'Filter öffnen'}).press('Enter');
     const brand=shop.groups.find(group=>group.name==='Marke');
     const group=page.locator('[data-eg-facet-group="'+brand.id+'"]');
-    await group.locator('[data-eg-facet-toggle]').press('Enter');
-    const input=group.locator('input[type=checkbox]').first();
+    const header=group.locator('[data-eg-facet-toggle]');
+    await expect(page.locator('#o46-filter .close')).toBeFocused();
+    await expect(header).toBeVisible();
+    await header.focus();
+    await expect(header).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(header).toHaveAttribute('aria-expanded','true');
+    await expect(page.locator('#o46-filter .close')).toBeVisible();
+    const input=group.locator('input[type=checkbox][data-eg-facetvalueid="'+brand.values[0].id+'"]');
     await group.locator('label[for="'+await input.getAttribute('id')+'"]').click();
     const apply=page.locator('.btnfilter-mobile-bottom');
     await expect(apply).toBeEnabled();await apply.click();

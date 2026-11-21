@@ -6075,6 +6075,10 @@ CUSTOM THEME STYLE HEADER
     transform: none;
 }
 @media (max-width: 991.98px) {
+    /* The lists scroll independently. Keep submenu focus from scrolling the drawer header away. */
+    .top-menu-wrapper{
+        overflow: clip;
+    }
     .menu-open .top-menu-wrapper{
         transform: translateX(100%);
     }

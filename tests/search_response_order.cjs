@@ -12,16 +12,15 @@ function handlers(file){
         if(!node?.type)return;
         if(node.type==='AssignmentExpression'&&node.left.type==='MemberExpression'){
             const key=node.left.property.name;
-            if((key==='events'&&node.right.type==='NewExpression')||key==='autoCompleteReg'){
+            if((key==='initLiveSearch'||key==='autoCompleteReg') && node.right.type==='FunctionExpression'){
                 assert.ok(!found[key]);found[key]=source.slice(node.right.start,node.right.end);
-                if(key==='events')found.owner=node.left.object.name;
             }
         }
         for(const child of Object.values(node)){if(Array.isArray(child))child.forEach(walk);else if(child?.type)walk(child);}
     }
-    walk(acorn.parse(source,{ecmaVersion:'latest'}));assert.ok(found.events&&found.autoCompleteReg&&found.owner);
-    return `window.pending=[];window.eGuardians={helper:{autoCompleteReg:(${found.autoCompleteReg})},apiservice:{get:(url,params,cb)=>pending.push({url,params,cb})}};
-        (function(${found.owner}){eGuardians.events=${found.events}})(eGuardians);
+    walk(acorn.parse(source,{ecmaVersion:'latest'}));assert.ok(found.initLiveSearch&&found.autoCompleteReg);
+    return `window.pending=[];window.eGuardians={events:{},helper:{autoCompleteReg:(${found.autoCompleteReg})},apiservice:{get:(url,params,cb)=>pending.push({url,params,cb})}};
+        eGuardians.events.initLiveSearch=(${found.initLiveSearch});
         eGuardians.events.initLiveSearch(document.querySelector('input'));`;
 }
 async function scenario(browser,file,code,lang){

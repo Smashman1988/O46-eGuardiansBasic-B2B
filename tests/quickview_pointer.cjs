@@ -4,24 +4,36 @@ const path = require('node:path');
 const { chromium } = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
 const resources = path.join(__dirname, '../resources');
 
-async function pressCloseDuringEntrance(page, touch = false) {
-    const point = await page.waitForFunction(() => {
-        const button = document.querySelector('.modal-cross button.close');
-        const box = button.getBoundingClientRect();
-        const x = box.left + box.width / 2;
-        const y = Math.max(0, box.top) + 5;
-        return box.width && box.bottom > y && button.contains(document.elementFromPoint(x, y)) ? { x, y } : false;
+async function pressCloseDuringEntrance(page, touch, open) {
+    // Arm the hit test before opening. Returning the point directly avoids an extra
+    // remote handle lookup and a separate mouse-move round trip during the transition.
+    await page.evaluate(() => {
+        window.earlyQuickviewPoint = new Promise(resolve => {
+            const start = performance.now();
+            function sample() {
+                const button = document.querySelector('.modal-cross button.close');
+                const box = button?.getBoundingClientRect();
+                if (box?.width && O46Core.quickview?.phase === 'opening') {
+                    const x = box.left + box.width / 2;
+                    const y = Math.max(0, box.top) + 5;
+                    if (box.bottom > y && button.contains(document.elementFromPoint(x,y))) {
+                        resolve({x,y});
+                        return;
+                    }
+                }
+                if (performance.now() - start > 4500) resolve(null);
+                else requestAnimationFrame(sample);
+            }
+            sample();
+        });
     });
-    const { x, y } = await point.jsonValue();
-    if (touch) {
-        await page.touchscreen.tap(x, y);
-        return y;
-    }
-    await page.mouse.move(x, y);
-    await page.mouse.down();
-    // Hold the pointer at the original screen coordinates during Bootstrap's entrance.
-    await page.waitForTimeout(160);
-    await page.mouse.up();
+    const pointer = page.evaluate(() => window.earlyQuickviewPoint).then(async point => {
+        assert.ok(point,'Close target never hittable during opening');
+        if (touch) await page.touchscreen.tap(point.x,point.y);
+        else await page.mouse.click(point.x,point.y,{delay:160});
+        return point.y;
+    });
+    const [y] = await Promise.all([pointer,open()]);
     return y;
 }
 
@@ -56,8 +68,7 @@ async function main() {
         });
         for (const width of [1024, 390]) {
             await page.setViewportSize({ width, height: 840 });
-            await page.locator('#opener').press('Enter');
-            const y = await pressCloseDuringEntrance(page);
+            const y = await pressCloseDuringEntrance(page,false,()=>page.locator('#opener').press('Enter'));
             const targets = await page.evaluate(() => closeTargets.splice(0));
             assert.deepEqual(targets, [['pointerdown', true], ['pointerup', true]], width + 'px close target at ' + y);
             await page.locator('.modal-cross').waitFor({ state: 'hidden', timeout: 2000 });

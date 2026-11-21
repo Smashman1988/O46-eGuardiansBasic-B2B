@@ -214,6 +214,12 @@ async function scenario(browser, version, lang, mobile) {
         check('idempotent initialization keeps one keyboard/input listener', await page.evaluate(() => ['header', 'missing'].map(id => {
             const events = $._data(document.getElementById(id), 'events'); return [events.keydown.length, events.input.length];
         })), [[1, 1], [1, 1]]);
+        const beforeSubmit=await page.evaluate(()=>pending.length);
+        await input.fill('form-pending');
+        await input.press('Enter');
+        check('form submission cancels its pending autocomplete',await page.evaluate(()=>[
+            navigation.at(-1).kind,navigation.at(-1).value,flush(),pending.length
+        ]),['form','form-pending',0,beforeSubmit]);
         check('no JavaScript exceptions', errors, []);
     } finally {
         report.rows.push({ version: version.name, lang, viewport: mobile ? 'mobile-touch' : 'desktop-mouse', checks, errors });

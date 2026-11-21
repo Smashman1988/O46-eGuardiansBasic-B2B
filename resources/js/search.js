@@ -40,6 +40,12 @@ O46Core.initLiveSearch = O46Core.initLiveSearch || function(_this){
     let searchTimer;
     let searchPending = false;
 
+    // A submitted GET leaves this document. Its delayed suggestion request is obsolete.
+    _this.form?.addEventListener('submit', function (event) {
+        if (event.defaultPrevented) return;
+        clearTimeout(searchTimer);
+    });
+
     // Input-Handler (ausgelagert)
     function handleLiveSearchInput(inputVersion) {
         const query = $.trim($input.val());
