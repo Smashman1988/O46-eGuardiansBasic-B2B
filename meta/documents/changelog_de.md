@@ -2,6 +2,7 @@
 
 ## Unreleased – Mobiler Kategoriefilter und Quickview (2026-11-21)
 
+- Die mobilen Tasten für Navigation und Filter verwenden die gewählte Shopsprache. Beim Wechsel auf Desktop erhält ein sichtbares Element im zuvor geöffneten Panel den Tastaturfokus, wenn der Browser den Fokus bereits freigegeben hat. In der vergrößerten Artikelgalerie lässt sich die Schließen-Taste mit Eingabe und Leertaste bedienen.
 - Das geschlossene mobile Menü bleibt beim Verkleinern des Fensters außerhalb des Bildes. Navigation und Filter schließen einander. Ab 992 px werden offene Panels und Untermenüs zurückgesetzt. Die Tasten melden den Öffnungszustand. Nach dem Schließen mit Escape, Schließen-Taste oder Hintergrund kehrt der Fokus zur auslösenden Taste zurück.
 - Beim Verkleinern eines Desktopfensters bleibt der geschlossene Filter außerhalb des Bildes. Die Schiebebewegung beim Öffnen und Schließen über die mobile Filtertaste bleibt erhalten.
 - Die Quickview blendet an ihrer endgültigen Position ein. Die Schließen-Taste bleibt zwischen Drücken und Loslassen der Maustaste unter dem Zeiger.

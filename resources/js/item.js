@@ -699,6 +699,13 @@ $(document).on('click', '.eg-gallery-expand, .zoomnavleft, .zoomnavright', funct
     }
 });
 
+// The vendor handles pointer gestures on its close button. Keyboard activation emits a native click.
+document.addEventListener('click', function (event) {
+    if (event.detail !== 0 || !event.target.closest('.mz-expand button.mz-button-close')) return;
+    const gallery = document.querySelector('.eg-gallery-frame #ItemImgZoom');
+    if (gallery && window.MagicZoom) window.MagicZoom.close(gallery);
+}, true);
+
 // MagicZoom marks the active thumbnail for every navigation path, including touch.
 function bindGalleryCounter(gallery) {
     var strip = gallery.querySelector('.single-prev-images');

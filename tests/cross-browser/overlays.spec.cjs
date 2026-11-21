@@ -64,10 +64,20 @@ test('Menü, Untermenü, Filter, Fokus und offene Größenwechsel',async({page,s
         await expect(drawer.locator('.close')).toBeInViewport();
         await info.attach('filter-768',{body:await page.screenshot(),contentType:'image/png'});
         await act(drawer.locator('.close'));await expect(filter(page)).toBeFocused();
-        for (const opener of [menu(page),filter(page)]) {
+        for (const [opener,panel] of [[menu(page),nav],[filter(page),drawer]]) {
             await act(opener);await page.keyboard.press('Escape');await expect(opener).toBeFocused();
-            await act(opener);await page.setViewportSize({width:1024,height:900});
+            await act(opener);
+            await page.setViewportSize({width:992,height:900});
+            expect(await panel.locator('.close').evaluate(button=>button.getClientRects().length)).toBe(0);
+            await page.setViewportSize({width:768,height:900});
+            await expect(opener).toHaveAttribute('aria-expanded','false');
+            await act(opener);
+            // Chromium can blur the mobile close button before delivering the media-query event.
+            await panel.locator('.close').evaluate(button=>button.blur());
+            await page.setViewportSize({width:1024,height:900});
             await expect(page.locator('html')).not.toHaveClass(/menu-open|filter-open/);
+            await expect.poll(()=>panel.evaluate(node=>node.contains(document.activeElement) &&
+                document.activeElement.getClientRects().length > 0)).toBe(true);
             await page.setViewportSize({width:768,height:900});await frames(page);
             await expect(opener).toHaveAttribute('aria-expanded','false');
             await expect(nav).toBeHidden();await expect(drawer).toBeHidden();

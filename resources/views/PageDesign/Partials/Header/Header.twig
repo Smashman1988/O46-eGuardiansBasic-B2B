@@ -56,7 +56,7 @@
                 </div> 
                 <div class="col-7 col-sm-7 col-md-7 col-lg-4">
                     <div class="d-flex justify-content-between justify-content-lg-end">
-                        <button data-eg-event="click" data-eg-handler="tgClass" data-eg-param="html,menu-open" aria-controls="o46-menu" aria-expanded="false" class="d-lg-none btn-mobile-nav text-black" aria-label="Menü öffnen">
+                        <button data-eg-event="click" data-eg-handler="tgClass" data-eg-param="html,menu-open" aria-controls="o46-menu" aria-expanded="false" class="d-lg-none btn-mobile-nav text-black" aria-label="{{ trans('GuardiansBasicB2B::Template.openMenu') }}">
                             <span class="icon-menu1 fs35"></span>
                             <span class="mobile-btn-txt">{{ trans("GuardiansBasicB2B::Template.menu") }}</span>
                         </button>
@@ -124,7 +124,7 @@
                     <div class="top-menu-wrapper" id="o46-menu"  data-eg-event="click" data-eg-target="[data-eg-open-ddown]">
                         <div class="basket-prev-title clearfix modal-header d-lg-none">
                             <span class="modal-title">{{ trans("GuardiansBasicB2B::Template.categories") }}</span>
-                            <button class="basket-prev-close close" data-eg-handler="tgClass" data-eg-param="html,menu-open" aria-controls="o46-menu" aria-expanded="false" data-eg-event="click" aria-label="Close">
+                            <button class="basket-prev-close close" data-eg-handler="tgClass" data-eg-param="html,menu-open" aria-controls="o46-menu" aria-expanded="false" data-eg-event="click" aria-label="{{ trans('GuardiansBasicB2B::Template.facetClose') }}">
                                 <span aria-hidden="true">×</span>
                             </button>
                         </div>                        

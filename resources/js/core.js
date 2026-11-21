@@ -45,16 +45,26 @@ O46Core.mobilePanels = O46Core.mobilePanels || (function () {
         if (restoreFocus && opener && opener.getClientRects().length) opener.focus({preventScroll: true});
         opener = null;
     }
-    desktop.addEventListener('change', event => {
-        root.removeAttribute("data-eg-panel-animated");
-        if (!event.matches) return;
-        const panel = document.activeElement.closest('.top-menu-wrapper, .wrap-filter-mobile');
+    function enterDesktop() {
+        const name = Object.keys(panels).find(name => root.classList.contains(name));
+        const panel = name && document.querySelector(panels[name]);
+        const focus = document.activeElement;
         close(false);
         document.querySelectorAll(".top-menu-wrapper, .wrap-filter-mobile").forEach(el => { el.inert = false; });
-        if (panel && !document.activeElement.getClientRects().length) {
+        if (panel && (focus === document.body || (panel.contains(focus) && !focus.getClientRects().length))) {
             const target = Array.from(panel.querySelectorAll('a[href], [tabindex="0"]')).find(el => el.getClientRects().length);
             if (target) target.focus({preventScroll: true});
         }
+    }
+    desktop.addEventListener('change', event => {
+        root.removeAttribute("data-eg-panel-animated");
+        if (event.matches) enterDesktop();
+    });
+    // A hidden mobile control can lose focus before the browser dispatches the breakpoint change.
+    document.addEventListener('focusout', event => {
+        if (!opener || event.relatedTarget || !desktop.matches || !event.target.closest('.top-menu-wrapper, .wrap-filter-mobile')) return;
+        root.removeAttribute('data-eg-panel-animated');
+        enterDesktop();
     });
     document.addEventListener('keydown', event => {
         const active = Object.keys(panels).find(name => root.classList.contains(name));
