@@ -4769,6 +4769,10 @@ html:not([data-magic-ua="ie"]) body:not(.hold-transition) .top-menu > li > a spa
     body:not(.hold-transition) .wrap-filter-mobile [data-eg-facet-toggle]{
         transition: all 300ms ease, visibility 0s;
     }
+    /* Allow keyboard input as soon as the header search starts sliding in. */
+    .search-open body:not(.hold-transition) .search-box{
+        transition: all 300ms ease, visibility 0s;
+    }
     html:is(.menu-open, .filter-open)[data-eg-panel-animated] body :is(.top-menu-wrapper, .wrap-filter-mobile){
         transition-delay: 0s;
     }

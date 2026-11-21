@@ -109,9 +109,17 @@ O46Core.mobilePanels = O46Core.mobilePanels || (function () {
     return {
         toggle: function (button) {
             const [selector, name] = button.dataset.egParam.split(',');
+            if (selector === 'html' && name === 'search-open') {
+                if (root.classList.toggle(name)) {
+                    const input = button.closest('.header-wrap')?.querySelector('.search-box [data-eg-livesearch]');
+                    if (input?.getClientRects().length && getComputedStyle(input).visibility === 'visible') {
+                        input.focus({preventScroll: true});
+                    }
+                }
+                return;
+            }
             if (selector !== 'html' || !Object.hasOwn(panels, name)) {
                 $(selector).toggleClass(name);
-                if (name === 'search-open') setTimeout(() => $('.input-ff-search').focus(), 100);
                 return;
             }
             if (desktop.matches) return;

@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Mobile header search (2026-11-21)
+
+- Opening the mobile header search immediately focuses the input, so it accepts the first character while the panel is sliding in.
+
 ## Unreleased – Mobile category filter and Quickview (2026-11-21)
 
 - In the mobile filter, pressing Tab immediately after opening reaches the first filter group even while the drawer is sliding in.

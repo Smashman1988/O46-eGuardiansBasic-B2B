@@ -49,6 +49,33 @@ test('LiveShopping-Karten, Raster, Bilder, Logo, Bewertung und Fokus',async({pag
     if(!hasTouch){await action.hover();expect(await action.evaluate(el=>el.matches(':hover'))).toBe(true);}
     expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+test('Mobile Headersuche nimmt das erste Zeichen beim Öffnen an',async({page,shop,hasTouch})=>{
+    await page.setViewportSize({width:390,height:680});
+    await shop.open();
+    const opener=page.getByRole('button',{name:'Suche öffnen',exact:true});
+    const input=page.locator('.search-box [data-eg-livesearch]');
+    // Read the focus in the same activation, even when the test runner is slow.
+    const atOpen=await opener.evaluateHandle(button=>{
+        const states=[];
+        const field=button.closest('.header-wrap').querySelector('[data-eg-livesearch]');
+        button.addEventListener('click',()=>{
+            if(document.documentElement.classList.contains('search-open')) states.push(document.activeElement===field);
+        });
+        return states;
+    });
+    await act(opener,hasTouch);
+    await page.keyboard.type('a');
+    await expect(input).toHaveValue('a');
+    await opener.press('Space');
+    await expect(page.locator('html')).not.toHaveClass(/search-open/);
+    await opener.press('Enter');
+    await page.keyboard.press('End');
+    await page.keyboard.type('b');
+    await expect(input).toHaveValue('ab');
+    expect(await atOpen.jsonValue()).toEqual([true,true]);
+    await atOpen.dispose();
+});
+
 test('Header-Suche, Vorschlag, Ergebnisse, Nulltreffer und History',async({page,shop,hasTouch})=>{
     await shop.open();
     const input=page.locator('[data-eg-livesearch]');

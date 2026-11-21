@@ -19,7 +19,8 @@ const captured = process.env.O46_SEARCH_CAPTURE ? JSON.parse(readAsset(process.e
 const results = [];
 
 function handlers(asset) {
-    const source = readAsset(path.join(process.env.O46_SEARCH_ASSETS || dir, asset), 'utf8');
+    const assetDir = process.env.O46_SEARCH_ASSETS || dir;
+    const source = readAsset(path.join(assetDir, asset), 'utf8');
     const found = {};
     function walk(n) {
         if (!n?.type) return;
@@ -38,7 +39,10 @@ function handlers(asset) {
     }
     walk(acorn.parse(source, {ecmaVersion:'latest'}));
     assert.ok(found.events && found.autoCompleteReg && found.owner);
-    return `window.eGuardians={helper:{autoCompleteReg:(${found.autoCompleteReg})},
+    // Current page constructors bind shared panel handlers during startup.
+    const core = /\bO46Core\b/.test(found.events)
+        ? readAsset(path.join(assetDir, asset.endsWith('.min.js') ? 'core.min.js' : 'core.js'), 'utf8') : '';
+    return `${core}\nwindow.eGuardians={helper:{autoCompleteReg:(${found.autoCompleteReg})},
         apiservice:{get:(url,params,cb)=>$.getJSON(url,params,cb)}};
         (function(${found.owner}){eGuardians.events=${found.events}})(eGuardians);
         eGuardians.events.bindEvents();`;

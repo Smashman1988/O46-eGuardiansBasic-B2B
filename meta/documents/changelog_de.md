@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Mobile Headersuche (2026-11-21)
+
+- Das Suchfeld erhält beim Öffnen sofort den Tastaturfokus. Das erste eingegebene Zeichen bleibt erhalten, auch während der Einblendung.
+
 ## Unreleased – Mobiler Kategoriefilter und Quickview (2026-11-21)
 
 - Im mobilen Filter erreicht die erste Tab-Taste nach dem Öffnen sofort die erste Filtergruppe, auch während der Einblendung.
