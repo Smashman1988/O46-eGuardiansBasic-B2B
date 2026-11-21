@@ -160,10 +160,19 @@ test.describe('Mobile Panels',()=>{
         await expect(nav.locator('.ddown-open')).toHaveCount(0);
         await frames(page);
         await checkOpen('nav');
-        await expect(nav.locator('.close')).toBeInViewport();
-        expect(await nav.locator('.close').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})).toBe(true);
+        const closeButton=nav.locator('.close');
+        await expect(closeButton).toBeInViewport({ratio:1});
+        const closeGeometry=await closeButton.evaluate(button=>{
+            const r=button.getBoundingClientRect(), header=button.closest('.modal-header').getBoundingClientRect();
+            const points=[[r.left+1,r.top+1],[r.right-1,r.top+1],[r.left+1,r.bottom-1],[r.right-1,r.bottom-1],[r.x+r.width/2,r.y+r.height/2]];
+            return {
+                insideHeader:r.top>=header.top && r.bottom<=header.bottom && r.left>=header.left && r.right<=header.right,
+                allPointsReachable:points.every(([x,y])=>button.contains(document.elementFromPoint(x,y)))
+            };
+        });
+        expect(closeGeometry).toEqual({insideHeader:true,allPointsReachable:true});
         await info.attach('navigation-768',{body:await page.screenshot(),contentType:'image/png'});
-        await act(nav.locator('.close'));await expect(menu(page)).toBeFocused();
+        await act(closeButton);await expect(menu(page)).toBeFocused();
         await act(filter(page));await expect(filter(page)).toHaveAttribute('aria-expanded','true');
         await act(drawer.locator('[data-eg-facet-toggle]').first());await expect(drawer.locator('[data-eg-facet-toggle]').first()).toHaveAttribute('aria-expanded','true');
         await frames(page);
@@ -181,6 +190,40 @@ test.describe('Mobile Panels',()=>{
         await menu(page).press('Enter');await filter(page).press('Enter');
         await expect(page.locator('html')).toHaveClass(/filter-open/);await expect(nav).toBeHidden();
         await page.keyboard.press('Escape');
+    });
+
+    test('Filtergruppen sind ab dem ersten Tab per Tastatur bedienbar',async({page})=>{
+        const opener=filter(page), panel=page.locator('#o46-filter');
+        const close=panel.locator('.close'), groups=panel.locator('[data-eg-facet-toggle]');
+        const first=groups.first(), last=groups.last();
+        // Sample at initial focus. Waiting for a locator can skip the first animation frame.
+        const opening=await close.evaluateHandle(button=>{
+            const state={};
+            button.addEventListener('focus',()=>{
+                const firstGroup=button.closest('#o46-filter').querySelector('[data-eg-facet-toggle]');
+                state.visibility=getComputedStyle(firstGroup).visibility;
+            },{once:true});
+            return state;
+        });
+        await opener.press('Enter');
+        await page.keyboard.press('Tab');
+        await expect(first).toBeFocused();
+        expect(await opening.jsonValue()).toEqual({visibility:'visible'});
+
+        await page.keyboard.press('Shift+Tab');await expect(close).toBeFocused();
+        await page.keyboard.press('Shift+Tab');await expect(last).toBeFocused();
+        await page.keyboard.press('Tab');await expect(close).toBeFocused();
+        await page.keyboard.press('Tab');await expect(first).toBeFocused();
+
+        await page.keyboard.press('Enter');await expect(first).toHaveAttribute('aria-expanded','true');
+        await page.keyboard.press('Tab');
+        await expect(panel.getByRole('checkbox').first()).toBeFocused();
+        await page.keyboard.press('Shift+Tab');await expect(first).toBeFocused();
+        await page.keyboard.press('Space');await expect(first).toHaveAttribute('aria-expanded','false');
+        await page.keyboard.press('Tab');await expect(groups.nth(1)).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(opener).toHaveAttribute('aria-expanded','false');
+        await expect(opener).toBeFocused();
     });
 
     for (const name of ['Menü','Filter']) {

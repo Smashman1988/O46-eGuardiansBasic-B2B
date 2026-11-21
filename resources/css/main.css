@@ -4765,6 +4765,10 @@ html:not([data-magic-ua="ie"]) body:not(.hold-transition) .top-menu > li > a spa
         visibility: visible;
         pointer-events: auto;
     }
+    /* Facet headings must inherit the drawer's visibility before the first Tab. */
+    body:not(.hold-transition) .wrap-filter-mobile [data-eg-facet-toggle]{
+        transition: all 300ms ease, visibility 0s;
+    }
     html:is(.menu-open, .filter-open)[data-eg-panel-animated] body :is(.top-menu-wrapper, .wrap-filter-mobile){
         transition-delay: 0s;
     }
@@ -6078,6 +6082,13 @@ CUSTOM THEME STYLE HEADER
     /* The lists scroll independently. Keep submenu focus from scrolling the drawer header away. */
     .top-menu-wrapper{
         overflow: clip;
+    }
+    /* Keep the hit area centered above the sliding submenu, which starts at 41px. */
+    .top-menu-wrapper > .modal-header .close{
+        align-self: stretch;
+        height: auto;
+        margin: -6px -6px -6px auto;
+        padding-block: 0;
     }
     .menu-open .top-menu-wrapper{
         transform: translateX(100%);

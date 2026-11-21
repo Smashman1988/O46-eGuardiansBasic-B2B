@@ -273,17 +273,18 @@ test('Galerie mit nur einem Bild bleibt bedienbar',async({page,shop})=>{
     await expect(page.locator('.mz-expand')).toHaveCount(0);await expect(expand).toBeFocused();
 });
 const labels = {
-    de:['Menü öffnen','Filter öffnen','Schließen','Artikel filtern'],
-    en:['Open menu','Open filters','Close','Filter articles'],
-    fr:['Ouvrir le menu','Ouvrir les filtres','Fermer','Filtrer les articles'],
-    it:['Apri il menu','Apri i filtri','Chiudi','Filtra articoli'],
-    es:['Abrir el menú','Abrir los filtros','Cerrar','Filtrar artículos']
+    de:['Menü öffnen','Filter öffnen','Schließen','Artikel filtern','Suche öffnen'],
+    en:['Open menu','Open filters','Close','Filter articles','Open search'],
+    fr:['Ouvrir le menu','Ouvrir les filtres','Fermer','Filtrer les articles','Ouvrir la recherche'],
+    it:['Apri il menu','Apri i filtri','Chiudi','Filtra articoli','Apri la ricerca'],
+    es:['Abrir el menú','Abrir los filtros','Cerrar','Filtrar artículos','Abrir búsqueda']
 };
 test('Sichtbare Filtertexte, ARIA-Namen und Fokus in fünf Sprachen',async({page,shop})=>{
     await page.setViewportSize({width:768,height:900});
-    for(const [lang,[menu,filter,close,caption]] of Object.entries(labels)) {
+    for(const [lang,[menu,filter,close,caption,search]] of Object.entries(labels)) {
         await shop.open(lang==='de'?'/category/':'/'+lang+'/category/');
         await expect(page.locator('html')).toHaveAttribute('lang',lang);
+        await expect(page.locator('[data-eg-param="html,search-open"]')).toHaveAccessibleName(search);
         await expect(page.getByRole('button',{name:filter,exact:true})).toHaveText(caption);
         for(const [label,id] of [[menu,'o46-menu'],[filter,'o46-filter']]) {
             const opener=page.getByRole('button',{name:label,exact:true});

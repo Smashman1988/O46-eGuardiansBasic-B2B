@@ -2,6 +2,8 @@
 
 ## Unreleased – Mobile category filter and Quickview (2026-11-21)
 
+- In the mobile filter, pressing Tab immediately after opening reaches the first filter group even while the drawer is sliding in.
+- Screen readers announce the mobile search button in the selected shop language. The entire close button fits inside the green category header.
 - The mobile menu close button remains reachable after returning from a submenu. Submitting the search form cancels the pending suggestion timer.
 - Closing the expanded product gallery restores lost focus to its expand button. When returning to the mobile layout, focus moves from the desktop panel target back to the original mobile opener. This also covers a menu link or filter heading that already had focus when entering the desktop layout. If a background tab delivers only the return to mobile, the previously open panel closes and releases the scroll lock.
 

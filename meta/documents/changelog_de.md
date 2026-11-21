@@ -2,6 +2,8 @@
 
 ## Unreleased – Mobiler Kategoriefilter und Quickview (2026-11-21)
 
+- Im mobilen Filter erreicht die erste Tab-Taste nach dem Öffnen sofort die erste Filtergruppe, auch während der Einblendung.
+- Screenreader benennen den mobilen Suchöffner in der gewählten Shopsprache. Die gesamte Schließen-Taste liegt innerhalb des grünen Kategorieheaders.
 - Das Schließen-Kreuz des mobilen Menüs bleibt nach dem Rücksprung aus einem Untermenü erreichbar. Beim Absenden der Suche wird eine noch ausstehende Vorschlagsabfrage verworfen.
 - Nach dem Schließen der vergrößerten Artikelgalerie erhält die Vergrößern-Taste den verlorenen Fokus zurück. Bei der Rückkehr vom Desktop ins mobile Layout wird der Fokus vom zuvor ausgewählten Desktop-Panelelement zum ursprünglichen mobilen Öffner zurückgeführt. Das gilt auch, wenn beim Wechsel auf Desktop bereits ein Menülink oder eine Filterüberschrift fokussiert war. Liefert ein Hintergrundtab nur den Rückwechsel auf Mobil, schließt sich das zuvor offene Panel und gibt die Scrollsperre frei.
 

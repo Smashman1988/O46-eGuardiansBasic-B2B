@@ -62,7 +62,7 @@
                         </button>
                         {% if category.id in vuejs %}
                             {% else %}
-                        <button class="d-lg-none btn-mobile-nav text-black" data-eg-event="click" data-eg-param="html,search-open" data-eg-handler="tgClass" aria-label="Suche öffnen">
+                        <button class="d-lg-none btn-mobile-nav text-black" data-eg-event="click" data-eg-param="html,search-open" data-eg-handler="tgClass" aria-label="{{ trans('GuardiansBasicB2B::Template.openSearch') }}">
                             <span class="icon-search-1 fs35"></span>
                             <span class="mobile-btn-txt">{{ trans("GuardiansBasicB2B::Template.search") }}</span>
                         </button>
