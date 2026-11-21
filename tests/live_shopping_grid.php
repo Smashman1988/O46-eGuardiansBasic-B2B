@@ -137,6 +137,10 @@ function runRender($templates,$name,$lang,$currency,$scenario,$omit=false) {
     $html=$twig->render($name,['services'=>['checkout'=>$checkout,'LiveShopping'=>$live],'category'=>['id'=>60,'parentCategoryId'=>0]]);
     return ['html'=>$html,'cards'=>cardFragments($html),'liveCalls'=>$live->calls,'visibleIds'=>$live->visibleIds,'singleFactories'=>$attributes->singles,'batches'=>$attributes->batches,'translations'=>count($card->translationCalls),'currencyGetters'=>$checkout->calls,'currencyPreparations'=>$checkout->underlyingPreparations,'pluginPaths'=>$card->pluginPathCalls];
 }
+if (($argv[2] ?? '') === '--render-browser') {
+    echo runRender($templates, $prefix.'LiveShoppingGrid', 'de', 'EUR', 'active')['html'];
+    exit;
+}
 $rows=[];
 foreach (['de','en','fr','it','es'] as $lang) foreach (['EUR','USD','CHF'] as $currency) foreach (['active','no-offer','no-item','expired','mixed','duplicates','expired-first','no-first-image','no-images'] as $scenario) {
     $old=runRender($templates,'old',$lang,$currency,$scenario);$new=runRender($templates,$prefix.'LiveShoppingGrid',$lang,$currency,$scenario);

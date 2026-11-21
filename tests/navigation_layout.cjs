@@ -65,7 +65,7 @@ function mainHeader(html) {
                 });
                 await page.setContent('<!doctype html><html><head><base href="https://navigation.test/"><meta charset="utf-8"><style>'+fontCss+css+'</style></head><body class="hold-transition">'+header+'<main style="height:1000px"></main></body></html>');
                 await page.locator('.top-menu').evaluate((el,html)=>{el.innerHTML=html},fs.readFileSync(path.join(artifacts,`navigation-${lang}-eur-${version}.html`),'utf8'));
-                await page.addScriptTag({content:jquery}); await page.addScriptTag({content:methodSetup});
+                await page.addScriptTag({content:jquery}); await page.addScriptTag({path:path.join(root, "resources/js/core.js")}); await page.addScriptTag({content:methodSetup});
                 await page.evaluate(()=>document.fonts.ready);
                 assert.equal(await page.evaluate(()=>document.fonts.check('15px "Open Sans"') && document.fonts.check('35px icomoon')),true,'Actual fonts loaded');
                 await page.waitForFunction(()=>[...document.images].every(i=>i.complete));

@@ -1,0 +1,87 @@
+name: B2B storefront browsers
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Identify anonymous preview references
+        run: node tests/cross-browser/preview-check.cjs >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preview-identification
+          include-hidden-files: true
+          path: .cache/cross-browser/preview.json
+  storefront:
+    needs: preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, chrome, edge, firefox, webkit, android, android-small, android-large, iphone, ipad]
+    env:
+      O46_TWIG_AUTOLOAD: ${{ github.workspace }}/.cache/browser-twig/vendor/autoload.php
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Locate optional branded browser
+        id: browser
+        env:
+          PROJECT: ${{ matrix.project }}
+        run: |
+          available=true
+          case "$PROJECT" in
+            chrome) test -x /opt/google/chrome/chrome || available=false ;;
+            edge) test -x /opt/microsoft/msedge/msedge || available=false ;;
+          esac
+          echo "available=$available" >> "$GITHUB_OUTPUT"
+          if [ "$available" = false ]; then
+            mkdir -p .cache/cross-browser
+            echo "$PROJECT · BLOCKED · browser unavailable on hosted runner" | tee .cache/cross-browser/status.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Install fixture tooling
+        if: steps.browser.outputs.available == 'true'
+        run: |
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --ignore-scripts
+          mkdir -p .cache/browser-twig
+          composer --working-dir=.cache/browser-twig require --no-interaction --no-plugins --no-scripts --prefer-dist twig/twig:3.30.0
+      - name: Install the selected engine on this hosted runner
+        if: steps.browser.outputs.available == 'true'
+        env:
+          PROJECT: ${{ matrix.project }}
+        run: |
+          case "$PROJECT" in
+            chrome|edge) ;;
+            android*) npx --no-install playwright install --with-deps chromium ;;
+            iphone|ipad) npx --no-install playwright install --with-deps webkit ;;
+            *) npx --no-install playwright install --with-deps "$PROJECT" ;;
+          esac
+      - name: Exercise storefront fixtures
+        if: steps.browser.outputs.available == 'true'
+        env:
+          PROJECT: ${{ matrix.project }}
+        run: npm run test:cross -- --project="$PROJECT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storefront-${{ matrix.project }}
+          include-hidden-files: true
+          path: |
+            .cache/cross-browser/status.txt
+            .cache/cross-browser/report/
+            .cache/cross-browser/results/
+            .cache/cross-browser/results.json
+

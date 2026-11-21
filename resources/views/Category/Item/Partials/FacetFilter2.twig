@@ -13,12 +13,12 @@
 <section data-eg-facets data-eg-compact-facets data-eg-catid="{{ category.id }}" data-eg-searchstring="{{ request.get('query') }}" data-eg-defaultitemsperpage="{{ searchOptions.defaultItemsPerPage }}">
     <script type="application/json" data-eg-facet-data>{{ {values: facetView.values, selected: facetView.selected, texts: facetTexts}|json_encode(15)|raw }}</script>
     <div class="filter-container">
-        <div class="wrap-filter-mobile">
+        <div class="wrap-filter-mobile" id="o46-filter">
             <div class="row filter-no-mobile"><div class="col-12 text-center">
                 <button type="button" class="btn btn-primary btn-big mt-2 filter-no-desktop btnfilter-mobile-top" data-eg-btnfilter><span></span></button>
             </div></div>
             <div class="row"><div class="col-12 text-center"><div class="light-big-txt filter-head mt-xl-0">
-                <button type="button" class="basket-prev-close close d-lg-none" data-eg-handler="tgClass" data-eg-event="click" data-eg-param="html,filter-open" aria-label="{{ trans('GuardiansBasicB2B::Template.facetClose') }}"><span aria-hidden="true">×</span></button>
+                <button type="button" class="basket-prev-close close d-lg-none" data-eg-handler="tgClass" data-eg-event="click" data-eg-param="html,filter-open" aria-controls="o46-filter" aria-expanded="false" aria-label="{{ trans('GuardiansBasicB2B::Template.facetClose') }}"><span aria-hidden="true">×</span></button>
             </div></div></div>
             <div class="wrap-filter-mobile-scrollable">
                 <div class="row rowFilter">

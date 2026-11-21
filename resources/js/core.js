@@ -20,6 +20,84 @@ O46Core.updateVariationPrices = function ($item, prices) {
     $item.find('[data-eg-item-rrp-percent]').text(sale ? -Math.round((1 - price / rrp) * 100) : '');
 };
 
+// Root classes are also read by the backdrop, newsletter and scroll lock.
+O46Core.mobilePanels = O46Core.mobilePanels || (function () {
+    const root = document.documentElement;
+    const desktop = window.matchMedia('(min-width: 992px)');
+    const panels = {'menu-open': '.top-menu-wrapper', 'filter-open': '.wrap-filter-mobile'};
+    let opener = null;
+
+    function setState(name, open) {
+        root.classList.toggle(name, open);
+        const panel = document.querySelector(panels[name]);
+        if (panel) panel.inert = !open && !desktop.matches;
+        document.querySelectorAll('[data-eg-param="html,' + name + '"]').forEach(function (button) {
+            button.setAttribute('aria-expanded', String(open));
+        });
+        if (!open && name === 'menu-open') {
+            document.querySelectorAll('.top-menu-wrapper .ddown-open').forEach(el => el.classList.remove('ddown-open'));
+        }
+    }
+    function close(restoreFocus) {
+        for (const name of Object.keys(panels)) {
+            if (root.classList.contains(name)) setState(name, false);
+        }
+        if (restoreFocus && opener && opener.getClientRects().length) opener.focus({preventScroll: true});
+        opener = null;
+    }
+    desktop.addEventListener('change', event => {
+        root.removeAttribute("data-eg-panel-animated");
+        if (!event.matches) return;
+        const panel = document.activeElement.closest('.top-menu-wrapper, .wrap-filter-mobile');
+        close(false);
+        document.querySelectorAll(".top-menu-wrapper, .wrap-filter-mobile").forEach(el => { el.inert = false; });
+        if (panel && !document.activeElement.getClientRects().length) {
+            const target = Array.from(panel.querySelectorAll('a[href], [tabindex="0"]')).find(el => el.getClientRects().length);
+            if (target) target.focus({preventScroll: true});
+        }
+    });
+    document.addEventListener('keydown', event => {
+        const active = Object.keys(panels).find(name => root.classList.contains(name));
+        if (!active || desktop.matches) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            close(true);
+        } else if (event.key === 'Tab') {
+            const panel = document.querySelector(panels[active]);
+            const visible = Array.from(panel.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), [tabindex="0"]'))
+                .filter(el => el.tabIndex >= 0 && el.getClientRects().length && getComputedStyle(el).visibility === 'visible');
+            const first = visible[0], last = visible[visible.length - 1];
+            if (first && (event.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+                event.preventDefault();
+                (event.shiftKey ? last : first).focus();
+            }
+        }
+    });
+    return {
+        toggle: function (button) {
+            const [selector, name] = button.dataset.egParam.split(',');
+            if (selector !== 'html' || !Object.hasOwn(panels, name)) {
+                $(selector).toggleClass(name);
+                if (name === 'search-open') setTimeout(() => $('.input-ff-search').focus(), 100);
+                return;
+            }
+            if (desktop.matches) return;
+            root.setAttribute("data-eg-panel-animated", "");
+            if (root.classList.contains(name)) { close(true); return; }
+            const panel = document.querySelector(panels[name]);
+            if (!panel) return;
+            close(false);
+            opener = button;
+            setState(name, true);
+            panel.querySelector('.close')?.focus({preventScroll: true});
+        },
+        closeBackdrop: function () {
+            close(true);
+            root.classList.remove('basket-preview-open');
+        }
+    };
+})();
+
 /* vendors: shared by main, cat, item, vue. */
 O46Core.vendors = O46Core.vendors || function () {
     if (O46Core.installed.vendors) return;

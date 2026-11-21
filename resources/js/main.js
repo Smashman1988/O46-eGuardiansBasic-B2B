@@ -111,22 +111,8 @@ this.addItemToBasket = function (_this) {
         this.openBasket = function(){
             console.log('open wh')
         };
-        this.tgClass = function(_this){
-            var arr = $(_this).data('eg-param').split(',');
-        
-            $(arr[0]).toggleClass(arr[1]);
-            if(arr[1]=="search-open"){
-                setTimeout(function(){
-                    $('.input-ff-search').focus()
-                }, 100);
-                
-            }
-        };
-        this.closeBackdrop = function(_this){
-            $('html').removeClass('menu-open');
-            $('html').removeClass('basket-preview-open');
-            $('html').removeClass('filter-open');
-        };
+        this.tgClass = O46Core.mobilePanels.toggle;
+        this.closeBackdrop = O46Core.mobilePanels.closeBackdrop;
         this.ddownOpen = function(_this){
             $(_this).closest('.eg-ddown').addClass('ddown-open')
         };

@@ -414,7 +414,7 @@
             {% endif %}
             {# Keep the existing page selection and Ceres-owned jQuery exception. #}
             {# Asset URLs are generated from asset-versions.json by npm run build. #}
-            {% set themePageScript = 'main.min.js?v=6' %}
+            {% set themePageScript = 'main.min.js?v=7' %}
             {% set themeNeedsJquery = true %}
             {% set matrixInPageScript = false %}
             {% if "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or (not isBasketCategory and category.id in mainjs) %}
@@ -423,15 +423,15 @@
             {% elseif currentTemplate in vuePages|keys or category.id in nojs %}
             {% elseif rendersItemGrid is defined and not rendersItemGrid %}
             {% elseif category.id or isSearch %}
-                {% set themePageScript = 'cat.min.js?v=7' %}
+                {% set themePageScript = 'cat.min.js?v=8' %}
             {% elseif isItem %}
-                {% set themePageScript = 'item.min.js?v=8' %}
+                {% set themePageScript = 'item.min.js?v=9' %}
                 {% set matrixInPageScript = true %}
             {% endif %}
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=17" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=18" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
             {% if isItem and not matrixInPageScript %}
                 {# A PDP routed to another page bundle still needs the matrix before it. #}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" data-eg-matrix defer></script>

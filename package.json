@@ -2,6 +2,7 @@
   "name": "outlet46-b2b-theme-assets",
   "private": true,
   "scripts": {
+    "test:cross": "playwright test --config=playwright.config.cjs",
     "build": "node scripts/build-matrix-assets.cjs",
     "check:assets": "node scripts/build-matrix-assets.cjs --check",
     "test:asset-versioning": "node tests/asset_versioning.cjs",
@@ -13,6 +14,7 @@
     "test:bundles": "node tests/theme_bundles.cjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "acorn": "8.15.0",
     "clean-css": "5.3.3",
     "postcss": "8.5.6",

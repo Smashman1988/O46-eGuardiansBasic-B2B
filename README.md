@@ -4,6 +4,22 @@ Beim Schließen der Produkt-Quickview kehrt der Tastaturfokus zur auslösenden P
 
 Die Sprachdateien enthalten die Überschriften für Hersteller und Cross-Selling in allen fünf Sprachen sowie die sieben deutschen Jugendklassen des Ballberaters. Der Ballberater übernimmt konfigurierte Texte einschließlich Apostrophen und Zeilenumbrüchen.
 
+Ab Main-CSS v29 bleibt der geschlossene Filter auch beim Wechsel vom Desktop ins mobile Layout außerhalb des sichtbaren Bereichs. Öffnen und Schließen im mobilen Layout behalten die Schiebeanimation. In der Quickview bleibt die Schließen-Taste während des Einblendens an ihrer Position, sodass auch ein früher Mausklick am selben Ziel endet.
+
+Ab Main-CSS v30 und Core v18 bleibt auch die geschlossene Navigation beim Größenwechsel außerhalb des Fensters. Die vorhandenen Menü- und Filtertasten steuern jeweils ein Panel. Escape, Schließen und der Hintergrund geben den Fokus an die auslösende Taste zurück. Beim Wechsel ab 992 CSS-Pixeln werden mobile Öffnungszustände und die Scrollsperre aufgehoben.
+
+### Browser- und Geräteprüfungen
+
+Der Workflow **B2B storefront browsers** prüft deutsche Twig-Ausgaben mit den gebauten Theme-Assets. Facetten, Produktbilder und Antworten der Shopdienste kommen aus Testdaten. Jede Browseranfrage wird im Testkontext abgefangen. Der separate Vorschaucheck liest die Assetreferenzen eines frischen anonymen HTML-Abrufs. Die Funktionsprüfungen verwenden immer die Fixtures.
+
+1. Sobald die Workflowdatei auf dem GitHub-Standardbranch verfügbar ist, unter **Actions → B2B storefront browsers → Run workflow** den Branch **develop** auswählen und starten. Der Workflow hat ausschließlich den manuellen Auslöser `workflow_dispatch`.
+2. Pro Projekt entstehen ein HTML-Bericht, das JSON-Ergebnis und bei Fehlern ein Screenshot und ein Trace. Das Artefakt **preview-identification** enthält den Pluginsetbefund. Ein fehlender vorinstallierter Chrome oder Edge erhält ein Statusartefakt mit **BLOCKED**.
+3. Chromium, Firefox und WebKit werden auf dem temporären Linux-Runner installiert. Die fünf mobilen Projekte simulieren Pixel 5, Galaxy S9+, Pixel 7 Pro, iPhone 13 und iPad (7. Generation). Für iOS dient WebKit als Safari-Annäherung. Beim Wischen verwendet Chromium Browser-Toucheingaben und WebKit synthetische DOM-Touchereignisse.
+
+Der Runner verwendet `npm ci --ignore-scripts`, PHP mit Twig 3.30.0 und `npm run test:cross -- --project=firefox` (Projektname entsprechend der Matrix). Zur lokalen Diagnose mit einem bereits installierten Chrome funktioniert auch `node node_modules/@playwright/test/cli.js test --config=playwright.config.cjs --project=chrome`. Unter Windows verwendet das Fixture standardmäßig die vorhandene PHP-/Twig-Testumgebung unter `.cache`. Andere Pfade lassen sich mit `O46_PHP` und `O46_TWIG_AUTOLOAD` angeben. Die lokale Konfiguration bietet Chrome und Edge sowie mit `O46_SYSTEM_CHROME=1` Android-Profile im installierten Chrome an.
+
+Ein nativer Nachtest benötigt eine bestätigte Vorschau auf Pluginset 426 mit den erwarteten Assetversionen. Für die Geräteabnahme bleiben Safari auf iPhone/iPad und Chrome auf Android mit realen Eingaben vorgesehen.
+
 ### Lokaler Prüfstand vom 20. November 2026
 
 Die Artikeldetail-Galerie verwendet die bestehende MagicZoom-Instanz und deren aktive Vorschaubilder für den mobilen Zähler. Bei einer bekannten Bewertungsanzahl von null entfällt der Abschnitt bereits beim Rendern. Bei fehlender Anzahl entscheidet die vorhandene Feedback-Abfrage. Facettenantworten müssen eine gültige Gesamtzahl und gültige Facettenwerte enthalten. Fehler können im geöffneten Filter erneut abgefragt werden.

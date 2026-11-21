@@ -1,5 +1,11 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Mobiler Kategoriefilter und Quickview (2026-11-21)
+
+- Das geschlossene mobile Menü bleibt beim Verkleinern des Fensters außerhalb des Bildes. Navigation und Filter schließen einander. Ab 992 px werden offene Panels und Untermenüs zurückgesetzt. Die Tasten melden den Öffnungszustand. Nach dem Schließen mit Escape, Schließen-Taste oder Hintergrund kehrt der Fokus zur auslösenden Taste zurück.
+- Beim Verkleinern eines Desktopfensters bleibt der geschlossene Filter außerhalb des Bildes. Die Schiebebewegung beim Öffnen und Schließen über die mobile Filtertaste bleibt erhalten.
+- Die Quickview blendet an ihrer endgültigen Position ein. Die Schließen-Taste bleibt zwischen Drücken und Loslassen der Maustaste unter dem Zeiger.
+
 ## Unreleased – Quickview, Artikeltexte und Ballberater (2026-11-21)
 
 - Nach dem Schließen der Produktansicht mit Escape oder der Schließen-Schaltfläche kehrt der Fokus auf die auslösende Karte zurück.
