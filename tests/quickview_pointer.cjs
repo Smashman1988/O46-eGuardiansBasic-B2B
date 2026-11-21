@@ -4,7 +4,7 @@ const path = require('node:path');
 const { chromium } = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
 const resources = path.join(__dirname, '../resources');
 
-async function pressCloseDuringEntrance(page) {
+async function pressCloseDuringEntrance(page, touch = false) {
     const point = await page.waitForFunction(() => {
         const button = document.querySelector('.modal-cross button.close');
         const box = button.getBoundingClientRect();
@@ -13,6 +13,10 @@ async function pressCloseDuringEntrance(page) {
         return box.width && box.bottom > y && button.contains(document.elementFromPoint(x, y)) ? { x, y } : false;
     });
     const { x, y } = await point.jsonValue();
+    if (touch) {
+        await page.touchscreen.tap(x, y);
+        return y;
+    }
     await page.mouse.move(x, y);
     await page.mouse.down();
     // Hold the pointer at the original screen coordinates during Bootstrap's entrance.

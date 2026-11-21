@@ -1,87 +1,151 @@
 name: B2B storefront browsers
+run-name: B2B browsers · ${{ github.ref_name }}
+
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'b2b-browser-test-*'
 
 permissions:
   contents: read
 
 jobs:
-  preview:
+  revision:
+    name: Verify new tag against develop
+    if: github.event.created && !github.event.deleted
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
+    outputs:
+      commit: ${{ steps.check.outputs.commit }}
+      matrix: ${{ steps.projects.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-      - name: Identify anonymous preview references
-        run: node tests/cross-browser/preview-check.cjs >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: preview-identification
-          include-hidden-files: true
-          path: .cache/cross-browser/preview.json
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin '+refs/heads/develop:refs/remotes/origin/develop'
+          commit=$(git rev-parse --verify "${GITHUB_SHA}^{commit}")
+          test "$(git rev-parse HEAD)" = "$commit"
+          if ! git merge-base --is-ancestor "$commit" refs/remotes/origin/develop; then
+            echo "::error::Tag commit $commit is outside the history of origin/develop"
+            exit 1
+          fi
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          printf 'Tag: %s\n\nVerified develop commit: %s\n' "$GITHUB_REF_NAME" "$commit" >> "$GITHUB_STEP_SUMMARY"
+      - id: projects
+        run: echo "matrix=$(node tests/cross-browser/profiles.cjs)" >> "$GITHUB_OUTPUT"
+
   storefront:
-    needs: preview
+    name: Fixture · ${{ matrix.project }}
+    needs: revision
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     strategy:
       fail-fast: false
-      matrix:
-        project: [chromium, chrome, edge, firefox, webkit, android, android-small, android-large, iphone, ipad]
+      matrix: ${{ fromJSON(needs.revision.outputs.matrix) }}
     env:
+      PROJECT: ${{ matrix.project }}
+      INSTALL: ${{ matrix.install }}
+      TEST_COMMIT: ${{ needs.revision.outputs.commit }}
       O46_TWIG_AUTOLOAD: ${{ github.workspace }}/.cache/browser-twig/vendor/autoload.php
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.revision.outputs.commit }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - name: Locate optional branded browser
-        id: browser
-        env:
-          PROJECT: ${{ matrix.project }}
+      - id: tooling
+        name: Prepare locked Playwright and list planned tests
         run: |
-          available=true
-          case "$PROJECT" in
-            chrome) test -x /opt/google/chrome/chrome || available=false ;;
-            edge) test -x /opt/microsoft/msedge/msedge || available=false ;;
-          esac
-          echo "available=$available" >> "$GITHUB_OUTPUT"
-          if [ "$available" = false ]; then
-            mkdir -p .cache/cross-browser
-            echo "$PROJECT · BLOCKED · browser unavailable on hosted runner" | tee .cache/cross-browser/status.txt >> "$GITHUB_STEP_SUMMARY"
-          fi
-      - name: Install fixture tooling
-        if: steps.browser.outputs.available == 'true'
-        run: |
+          mkdir -p .cache/cross-browser .cache/browser-twig
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --ignore-scripts
-          mkdir -p .cache/browser-twig
-          composer --working-dir=.cache/browser-twig require --no-interaction --no-plugins --no-scripts --prefer-dist twig/twig:3.30.0
-      - name: Install the selected engine on this hosted runner
-        if: steps.browser.outputs.available == 'true'
-        env:
-          PROJECT: ${{ matrix.project }}
+          npx --no-install playwright test --list --project="$PROJECT" --reporter=json > .cache/cross-browser/planned.json
+          composer --working-dir=.cache/browser-twig require --no-interaction --no-plugins --no-scripts --prefer-dist \
+            twig/twig:3.30.0 symfony/deprecation-contracts:3.6.0 symfony/polyfill-mbstring:1.33.0 symfony/polyfill-ctype:1.33.0
+      - id: install
+        name: Provide browser on hosted runner
+        shell: bash
         run: |
-          case "$PROJECT" in
-            chrome|edge) ;;
-            android*) npx --no-install playwright install --with-deps chromium ;;
-            iphone|ipad) npx --no-install playwright install --with-deps webkit ;;
-            *) npx --no-install playwright install --with-deps "$PROJECT" ;;
+          set -euo pipefail
+          case "$INSTALL" in
+            chrome) binary=/opt/google/chrome/chrome ;;
+            msedge) binary=/opt/microsoft/msedge/msedge ;;
+            *) binary='' ;;
           esac
-      - name: Exercise storefront fixtures
-        if: steps.browser.outputs.available == 'true'
+          if [[ -n "$binary" && -x "$binary" ]]; then
+            npx --no-install playwright install-deps chromium
+          else
+            npx --no-install playwright install --with-deps "$INSTALL"
+          fi
+      - id: launch
+        name: Launch and identify browser
+        run: xvfb-run -a node tests/cross-browser/cloud-report.cjs launch
+      - name: Identify anonymous preview from a fresh browser
+        if: matrix.project == 'chromium'
+        run: node tests/cross-browser/preview-check.cjs >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.project == 'chromium'
+        with:
+          name: preview-identification
+          overwrite: true
+          include-hidden-files: true
+          if-no-files-found: warn
+          path: .cache/cross-browser/preview.json
+      - id: suite
+        name: Run functional tests
+        run: xvfb-run -a npm run test:cross -- --project="$PROJECT" --headed
+      - name: Classify profile results
+        if: always()
         env:
-          PROJECT: ${{ matrix.project }}
-        run: npm run test:cross -- --project="$PROJECT"
+          TOOLING: ${{ steps.tooling.outcome }}
+          INSTALLATION: ${{ steps.install.outcome }}
+          LAUNCH: ${{ steps.launch.outcome }}
+          SUITE: ${{ steps.suite.outcome }}
+        run: node tests/cross-browser/cloud-report.cjs profile
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: storefront-${{ matrix.project }}
+          overwrite: true
           include-hidden-files: true
+          if-no-files-found: error
           path: |
-            .cache/cross-browser/status.txt
+            .cache/cross-browser/profile.json
+            .cache/cross-browser/browser.json
             .cache/cross-browser/report/
             .cache/cross-browser/results/
             .cache/cross-browser/results.json
 
+  overview:
+    name: Consolidated browser report
+    needs: [revision, storefront]
+    if: always() && needs.revision.result == 'success'
+    runs-on: ubuntu-24.04
+    env:
+      TEST_COMMIT: ${{ needs.revision.outputs.commit }}
+      MATRIX_RESULT: ${{ needs.storefront.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.revision.outputs.commit }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          path: .cache/browser-overview
+      - name: Summarize all ten expected profiles
+        if: always()
+        run: node tests/cross-browser/cloud-report.cjs overview
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: b2b-browser-report
+          overwrite: true
+          include-hidden-files: true
+          if-no-files-found: error
+          path: .cache/browser-overview/

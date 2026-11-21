@@ -10,15 +10,31 @@ Ab Main-CSS v30 und Core v18 bleibt auch die geschlossene Navigation beim Größ
 
 ### Browser- und Geräteprüfungen
 
-Der Workflow **B2B storefront browsers** prüft deutsche Twig-Ausgaben mit den gebauten Theme-Assets. Facetten, Produktbilder und Antworten der Shopdienste kommen aus Testdaten. Jede Browseranfrage wird im Testkontext abgefangen. Der separate Vorschaucheck liest die Assetreferenzen eines frischen anonymen HTML-Abrufs. Die Funktionsprüfungen verwenden immer die Fixtures.
+Der Workflow **B2B storefront browsers** prüft den getaggten B2B-Stand auf temporären Ubuntu-Runnern. Nach dem eigenen Commit und Push auf `develop` diese Befehle im Projektverzeichnis ausführen:
 
-1. Sobald die Workflowdatei auf dem GitHub-Standardbranch verfügbar ist, unter **Actions → B2B storefront browsers → Run workflow** den Branch **develop** auswählen und starten. Der Workflow hat ausschließlich den manuellen Auslöser `workflow_dispatch`.
-2. Pro Projekt entstehen ein HTML-Bericht, das JSON-Ergebnis und bei Fehlern ein Screenshot und ein Trace. Das Artefakt **preview-identification** enthält den Pluginsetbefund. Ein fehlender vorinstallierter Chrome oder Edge erhält ein Statusartefakt mit **BLOCKED**.
-3. Chromium, Firefox und WebKit werden auf dem temporären Linux-Runner installiert. Die fünf mobilen Projekte simulieren Pixel 5, Galaxy S9+, Pixel 7 Pro, iPhone 13 und iPad (7. Generation). Für iOS dient WebKit als Safari-Annäherung. Beim Wischen verwendet Chromium Browser-Toucheingaben und WebKit synthetische DOM-Touchereignisse.
+```bash
+git switch develop
+git pull --ff-only origin develop
+git tag b2b-browser-test-001
+git push origin b2b-browser-test-001
+```
 
-Der Runner verwendet `npm ci --ignore-scripts`, PHP mit Twig 3.30.0 und `npm run test:cross -- --project=firefox` (Projektname entsprechend der Matrix). Zur lokalen Diagnose mit einem bereits installierten Chrome funktioniert auch `node node_modules/@playwright/test/cli.js test --config=playwright.config.cjs --project=chrome`. Unter Windows verwendet das Fixture standardmäßig die vorhandene PHP-/Twig-Testumgebung unter `.cache`. Andere Pfade lassen sich mit `O46_PHP` und `O46_TWIG_AUTOLOAD` angeben. Die lokale Konfiguration bietet Chrome und Edge sowie mit `O46_SYSTEM_CHROME=1` Android-Profile im installierten Chrome an.
+Für weitere Läufe jeweils einen freien Namen verwenden, etwa `b2b-browser-test-002` oder `b2b-browser-test-003`. Der einzige Auslöser ist ein Tag-Push mit dem Muster `b2b-browser-test-*`. Der Prüfjob startet die Matrix nur für neu erstellte Tags. Es lädt `origin/develop`, löst das Ereignis bis zum Commit auf und prüft dessen Zugehörigkeit mit `git merge-base --is-ancestor`. Alle Folgejobs checken diese SHA aus. Ein normaler Branch-Push löst die Prüfung nicht aus. Die Workflowdatei muss im getaggten Commit enthalten sein. [GitHub-Dokumentation zu Tag-Filtern](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushbranchestagsbranches-ignoretags-ignore)
 
-Ein nativer Nachtest benötigt eine bestätigte Vorschau auf Pluginset 426 mit den erwarteten Assetversionen. Für die Geräteabnahme bleiben Safari auf iPhone/iPad und Chrome auf Android mit realen Eingaben vorgesehen.
+**Lauf und Berichte**
+
+1. Im Repository unter **Actions → B2B storefront browsers** den Lauf mit dem eigenen Tag öffnen. **Verify new tag against develop** zeigt die verifizierte Commit-SHA. Ein abgelehnter Ursprung beendet die Prüfung vor der Matrix.
+2. Jeder Job **Fixture · Profilname** installiert die gesperrten npm-Abhängigkeiten und die passende Browserlaufzeit. Chrome und Edge verwenden den Markenbrowser auf dem Runner, bei Bedarf installiert Playwright `chrome` bzw. `msedge`. Ein separater Start erfasst die echte Browserversion. Die zehn Jobs laufen unabhängig weiter, wenn ein Profil scheitert. [Playwright-Browserinstallation](https://playwright.dev/docs/browsers#google-chrome--microsoft-edge)
+3. Unter **Summary → Artifacts** das Archiv **b2b-browser-report** herunterladen, vollständig entpacken und **index.html** öffnen. Es enthält Tag, SHA, Gesamtstatus, Versions- und Ergebnistabelle sowie Links in die Playwright-Einzelberichte. Die Artefakte **storefront-…** sind auch einzeln verfügbar. Fehlgeschlagene Tests liefern Screenshots und Traces, die Fixture-Diagnostik enthält Konsolenfehler und Requests. Für den interaktiven Trace-Viewer kann ein Rechner mit der vorhandenen Projektinstallation den entpackten Einzelbericht mit `npx --no-install playwright show-report <Pfad-zum-report-Ordner>` lokal bereitstellen. Ein vorhandener Webbrowser genügt.
+4. **FEHLGESCHLAGEN** bezeichnet mindestens eine fehlgeschlagene Testausführung. **UNVOLLSTÄNDIG/BLOCKIERT** weist etwa auf Installation, Browserstart, fehlende Ergebnisse oder einen unbestätigten Hintergrundtab hin. Beides verhindert einen grünen Gesamtlauf. Nur der ausdrücklich profilfremde Wischtest auf einem Desktop ohne Touch wird als **übersprungen** akzeptiert. Bei Abweichungen den ersten fehlgeschlagenen Schritt und Trace prüfen, bevor ein Theme- oder Browserfehler zugeordnet wird.
+
+**Testumfang und Nachweisgrenzen**
+
+Die zehn Projekte stehen zentral in `tests/cross-browser/profiles.cjs`. Chromium, Chrome, Edge, Firefox und WebKit prüfen Desktopfunktionen. Pixel 5, Galaxy S9+, Pixel 7 Pro, iPhone 13 und iPad (7. Generation) verwenden Playwright-Geräteprofile. Die drei Referenz-Engines messen zwölf Breiten zwischen 320 und 1920 px. Weitere Profile ergänzen ihre Gerätebreite und die schnellen Wechsel an 992 und 1024 px. Zur Hintergrundprüfung gehören ein echter Tabwechsel mit gemessenem `hidden`, die Rückkehr zu `visible` mit Fokus sowie ein Kontrollwechsel ohne Resize. Das separate Nachspielen eines Media-Query-Ereignisses zählt allein als deterministische Regression. Android verwendet Browser-Toucheingaben. Die WebKit-Wischprüfung sendet DOM-Touchereignisse an das Galerie-Widget.
+
+Die Funktionsmatrix rendert echte Twig-Komponenten und lädt CSS und JavaScript aus dem getaggten Checkout. Testdaten ersetzen Shopdienste, Bilder und Nutzerdaten. Alle Requests der Funktionsprüfungen werden lokal abgefangen. Die anonyme Vorschauerkennung im Chromium-Job liest ausschließlich die öffentliche Kategorie und bei nachgewiesenen 426-Referenzen eine verlinkte Artikelseite. Sie prüft Versionen sowie SHA-256 der erkannten Theme-Assets. Fremde Pluginsets, Redirects, fehlende Dateien oder abweichende Hashes stoppen die Identifikation. Befund und Messwerte stehen in **preview-identification/preview.json**. Eine bestätigte Dokumentauslieferung ist ein eigener Befund. Die native Funktionsabnahme von Pluginset 426 sowie Eingaben auf physischen iOS-, iPadOS- und Android-Geräten bleiben separat zu prüfen.
+
+Der Testbefehl bleibt `npm run test:cross -- --project=firefox` (Projektname je Lauf). GitHub verwendet das npm-Lockfile, Playwright 1.62.1 und eine fest versionierte Twig-3.30.0-Umgebung. Für lokale Diagnosen mit bereits installiertem Chrome oder Edge stehen die entsprechenden Projekte zur Verfügung. Mit `O46_SYSTEM_CHROME=1` können die drei Android-Profile den vorhandenen Chrome verwenden. Die Windows-Fixtures nutzen die bestehende PHP-/Twig-Umgebung unter `.cache` oder die Pfade aus `O46_PHP` und `O46_TWIG_AUTOLOAD`.
 
 ### Lokaler Prüfstand vom 20. November 2026
 

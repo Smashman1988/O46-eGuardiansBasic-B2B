@@ -1,6 +1,7 @@
 const {test,expect} = require('./storefront.cjs');
 
 test('Wischgeste wechselt das Galeriebild im Touchprofil', async ({page,context,shop,browserName,hasTouch})=>{
+    if(!hasTouch) test.info().annotations.push({type:'not-applicable',description:'Desktopprofil ohne Touch'});
     test.skip(!hasTouch,'Touchprofil erforderlich');
     await shop.open('/product-10001/');
     const figure=page.locator('#ItemImgZoom .mz-figure');

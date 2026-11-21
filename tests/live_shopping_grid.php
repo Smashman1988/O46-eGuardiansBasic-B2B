@@ -62,6 +62,11 @@ class CurrencyFixture {
 class LiveDataFixture {
     public $calls=[], $lang, $currency, $scenario, $visibleIds=[];
     function __construct($lang,$currency,$scenario) { $this->lang=$lang;$this->currency=$currency;$this->scenario=$scenario; }
+    function getItemList($type, $id, $sort, $limit) {
+        $items = [];
+        foreach (range(1, $limit) as $n) $items[] = ['data'=>$this->getLiveShoppingData($n)['item']];
+        return ['documents'=>$items];
+    }
     function getLiveShoppingData($id) {
         $this->calls[]=$id;
         if ($this->scenario==='throw'&&$id===3) throw new \RuntimeException('Live data failure');
@@ -126,7 +131,7 @@ $templates['old']= <<<'TWIG'
 {% include "GuardiansBasicB2B::Category.Item.Partials.LiveShoppingItem" with {'liveshoppingid':liveshoppingid,'currencycheck':currencycheck,'isShoeCategory':false,'translations':translations,'transLabels':transLabels} %}
 {% endfor %}
 TWIG;
-function runRender($templates,$name,$lang,$currency,$scenario,$omit=false) {
+function runRender($templates,$name,$lang,$currency,$scenario,$omit=false,$listLimit=6) {
     $GLOBALS['attributeService']=$attributes=new AttributeFixture();$attributes->omit=$omit;
     $extension=(new \ReflectionClass(\GuardiansBasicB2B\Extensions\Base_Extension::class))->newInstanceWithoutConstructor();
     $card=new CardFixture($lang);$checkout=new CurrencyFixture($currency);$live=new LiveDataFixture($lang,$currency,$scenario);
@@ -134,8 +139,26 @@ function runRender($templates,$name,$lang,$currency,$scenario,$omit=false) {
     foreach (['trans'=>'trans','plugin_path'=>'path'] as $fn=>$method) $twig->addFunction(new \Twig\TwigFunction($fn,[$card,$method]));
     foreach (['getAttributesWithImages','getCardAttributeMaps'] as $fn) $twig->addFunction(new \Twig\TwigFunction($fn,[$extension,$fn]));
     foreach (['itemURL'=>'url','itemName'=>'name','orderByKey'=>'order'] as $fn=>$method) $twig->addFilter(new \Twig\TwigFilter($fn,[$card,$method]));
-    $html=$twig->render($name,['services'=>['checkout'=>$checkout,'LiveShopping'=>$live],'category'=>['id'=>60,'parentCategoryId'=>0]]);
+    $context=['services'=>['checkout'=>$checkout,'LiveShopping'=>$live,'itemList'=>$live],'category'=>['id'=>60,'parentCategoryId'=>0]];
+    if (str_starts_with($name,'browser-list')) {
+        $context['itemList']=$live->getItemList('category',60,'',$listLimit)['documents'];
+        if ($name==='browser-list-desc') $context['itemList']=array_reverse($context['itemList']);
+        $context['currentPage']=1;
+    }
+    $html=$twig->render($name,$context);
     return ['html'=>$html,'cards'=>cardFragments($html),'liveCalls'=>$live->calls,'visibleIds'=>$live->visibleIds,'singleFactories'=>$attributes->singles,'batches'=>$attributes->batches,'translations'=>count($card->translationCalls),'currencyGetters'=>$checkout->calls,'currencyPreparations'=>$checkout->underlyingPreparations,'pluginPaths'=>$card->pluginPathCalls];
+}
+if (in_array($argv[2] ?? '', ['--render-strip','--render-list','--render-list-desc'], true)) {
+    $strip = $argv[2] === '--render-strip';
+    $file = $strip ? 'Homepage/Homepage.twig' : 'Category/Item/CategoryItemContent.twig';
+    $source = file_get_contents(__DIR__.'/../resources/views/'.$file);
+    $start = strpos($source, $strip ? '<section class="section-items">' : '<div class="category-product-list row"');
+    $end = $start === false ? false : strpos($source, $strip ? '</section>' : '{# The active page', $start);
+    if ($end === false) throw new RuntimeException('Listing template boundary changed');
+    $name = $strip ? 'browser-strip' : ($argv[2] === '--render-list-desc' ? 'browser-list-desc' : 'browser-list');
+    $templates[$name] = substr($source,$start,$end-$start+($strip ? strlen('</section>') : 0));
+    echo runRender($templates,$name,'de','EUR','active',false,(int)($argv[3] ?? 6))['html'];
+    exit;
 }
 if (($argv[2] ?? '') === '--render-browser') {
     echo runRender($templates, $prefix.'LiveShoppingGrid', 'de', 'EUR', 'active')['html'];

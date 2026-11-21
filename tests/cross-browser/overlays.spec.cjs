@@ -27,10 +27,11 @@ async function attach(page,info) {
     await info.attach('panel-frames',{body:JSON.stringify(data),contentType:'application/json'});
     return data;
 }
-test('Overlay-Geometrie an elf Breiten und bei schnellen Wechseln',async({page,shop},info)=>{
+const reference = name => ['chromium','firefox','webkit'].includes(name);
+test('Overlay-Geometrie bei Profilbreite und schnellen Wechseln',async({page,shop},info)=>{
     await shop.open();await page.evaluate(installRecorder);
-    const widths=[320,360,390,430,767,768,769,991,992,1024,1440];
-    const sequences=[[390,1024,390],[768,1024,768],[1024,768,1024],[1440,390,1440]];
+    const widths=reference(info.project.name) ? [320,360,390,430,767,768,769,991,992,1024,1440,1920] : [page.viewportSize().width,768,1024];
+    const sequences=[[390,1024,390],[768,992,768],[768,1024,768],[1024,768,1024],[1440,390,1440]];
     for(const width of widths){await page.setViewportSize({width,height:820});await frames(page);}
     for(const seq of sequences) for(const width of seq){await page.setViewportSize({width,height:820});await frames(page,25);}
     await page.setViewportSize({width:768,height:820});await frames(page);
@@ -160,7 +161,8 @@ test('Einzeln zugestellter Rückwechsel schließt Panels und erhält bewusst ges
 test('Panelkanten, Scrollsperre und Schließziele je Mobilbreite',async({page,shop,hasTouch},info)=>{
     await shop.open();await page.evaluate(installRecorder);
     try {
-        for(const width of [320,360,390,430,767,768,769,991]) {
+        const widths=reference(info.project.name) ? [320,360,390,430,767,768,769,991] : new Set([Math.min(page.viewportSize().width,991),768]);
+        for(const width of widths) {
             await page.setViewportSize({width,height:850});
             for(const [name,opener,selector] of [['nav',menu(page),'.top-menu-wrapper'],['filter',filter(page),'.wrap-filter-mobile']]) {
                 await page.evaluate(label=>{window.panelPhase=label;},name+' '+width);

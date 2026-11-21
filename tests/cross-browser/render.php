@@ -11,7 +11,8 @@ foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($views)) a
 }
 $twig = new Twig\Environment(new Twig\Loader\ArrayLoader($templates));
 $service = new class {
-    function getLanguage() { return 'de'; }
+    public $lang='de';
+    function getLanguage() { return $this->lang; }
     function getCurrencyData() { return ['name'=>'EUR','symbol'=>'€']; }
     function shouldBeCached() { return true; }
     function getURLById($id) { return '/category-'.$id.'/'; }
@@ -19,9 +20,16 @@ $service = new class {
     function getURL($category) { return '/category-'.$category['id'].'/'; }
 };
 $labels = parse_ini_file($root.'/resources/lang/de/Template.properties', false, INI_SCANNER_RAW);
-$twig->addFunction(new Twig\TwigFunction('trans', fn($key) => $labels[substr(strrchr($key,'.'),1)] ?? $key));
+$twig->addFunction(new Twig\TwigFunction('trans', function ($key) use (&$labels) {return $labels[substr(strrchr($key,'.'),1)] ?? $key;}));
 $twig->addFunction(new Twig\TwigFunction('plugin_path', fn($name) => '/plugin/'.$name));
-$twig->addFunction(new Twig\TwigFunction('config', fn($key) => ''));
+$settings=[];
+foreach ([1,2] as $i) {
+    foreach (['ImageDesktop','ImageMobile'] as $size) $settings['GuardiansBasicB2B.homeSlider'.$size.'_'.$i]='/image/slide-'.$i.'.svg';
+    $settings['GuardiansBasicB2B.homeSliderLink_'.$i]='/category-'.$i.'/';
+    $settings['GuardiansBasicB2B.homeSliderLinkTxt_'.$i]='Kategorie '.$i;
+}
+$twig->addFunction(new Twig\TwigFunction('config', fn($key) => $settings[$key] ?? ''));
+$twig->addFunction(new Twig\TwigFunction('queryString',fn($params) => '?'.http_build_query($params)));
 $twig->addFilter(new Twig\TwigFilter('itemName', fn($item) => 'Laufschuh'));
 $context = ['services'=>array_fill_keys(['localizationRepository','checkout','template','category'], $service),
     'lang'=>'de','pdpBasketForHeader'=>[],'vuejs'=>[],'category'=>['id'=>1],'newsletterUrl'=>'/newsletter/','consentRequired'=>false];
@@ -72,5 +80,23 @@ $matrix = divSource($pdp, '<div class="eg-size-matrix"');
 $colors = [['id'=>1,'name'=>'Grün','imageUrl'=>'/image/green.svg'],['id'=>2,'name'=>'Rot','imageUrl'=>'/image/red.svg']];
 $result['variations'] = array_map(fn($c) => ['variationId'=>100+$c['id'],'attributes'=>[['attributeId'=>9,'attributeValueId'=>$c['id']]]], $colors);
 $result['matrix'] = $twig->createTemplate($matrix)->render(['mode'=>'color','hasColor'=>true,'colorAttr'=>['attributeId'=>9,'values'=>$colors], 'variationsWithAttributes'=>$result['variations']]);
+$result['singleGallery']=$twig->createTemplate($gallery)->render(['sortedItemImages'=>[$images[0]],'mainImg'=>$images[0],'galleryCount'=>1,'itemData'=>[]]);
+$homepage=$templates['GuardiansBasicB2B::Homepage.Homepage'];
+$result['slider']=$twig->createTemplate(fragment($homepage,'<section class="section-slider-wrap">','<section class="section-banner-first">'))->render($context);
+$sortMenu=divSource($category,'<div class="eg-dropdown eg-dropdown-sort');
+$sortOptions=['relevance'=>'Relevanz','name_desc'=>'Name Z–A'];
+foreach (array_keys($sortOptions) as $sort) {
+    $result['sorting'][$sort]=$twig->createTemplate($sortMenu)->render(['query'=>['sorting'=>$sort],'canonicalURL'=>'/search/',
+        'searchOptions'=>['defaultSorting'=>'relevance','sorting'=>$sortOptions]]);
+}
+foreach (['de','en','fr','it','es'] as $lang) {
+    $service->lang=$lang;
+    $context['lang']=$lang;
+    $labels=parse_ini_file($root.'/resources/lang/'.$lang.'/Template.properties',false,INI_SCANNER_RAW);
+    $result['languages'][$lang]=[
+        'header'=>$twig->render('GuardiansBasicB2B::PageDesign.Partials.Header.Header',$context),
+        'controls'=>$twig->createTemplate(fragment($category,'<div class="row d-lg-none">','{% include'))->render($context)
+    ];
+}
 echo json_encode($result,JSON_THROW_ON_ERROR);
 
