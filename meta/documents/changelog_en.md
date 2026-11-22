@@ -3,6 +3,7 @@
 ## Unreleased – Currency selection
 
 - The currency dialog shares the compact language picker layout. The new template for category 5638 shows the current currency, labels the native select in all five languages, and applies the choice through the existing GET form.
+- “Apply currency” uses the same green and hover highlight as “Add to basket”. A dark green text outline makes the white label easier to read.
 
 ## Unreleased – Language selection
 

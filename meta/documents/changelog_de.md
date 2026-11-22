@@ -3,6 +3,7 @@
 ## Unreleased – Währungsauswahl
 
 - Der Währungsdialog verwendet denselben kompakten Rahmen wie die Sprachauswahl. Die neue Vorlage für Kategorie 5638 zeigt die aktive Währung, benennt das Auswahlfeld in allen fünf Sprachen und übernimmt die Auswahl über das bestehende GET-Formular.
+- „Währung übernehmen“ verwendet das Grün und die Hover-Aufhellung von „In den Warenkorb“. Eine dunkelgrüne Schriftkontur verbessert die Lesbarkeit der weißen Beschriftung.
 
 ## Unreleased – Sprachauswahl
 
