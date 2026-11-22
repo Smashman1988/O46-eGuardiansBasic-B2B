@@ -59,8 +59,8 @@ const content = {
     language:{description1:'<nav data-result="language"><a href="/en/">English</a></nav>'},
     info:{description1:'<section data-result="info">Information</section>'}
 };
-async function fixture(browser,lang,width,{early=false,single=false}={}) {
-    const context = await browser.newContext({viewport:{width,height:850},serviceWorkers:'block'});
+async function fixture(browser,lang,width,{early=false,single=false,height=850,stylesheet}={}) {
+    const context = await browser.newContext({viewport:{width,height},serviceWorkers:'block'});
     const page = await context.newPage();
     page.setDefaultTimeout(4000);
     const pending = [], requests = [], errors = [], failed = [];
@@ -84,7 +84,7 @@ async function fixture(browser,lang,width,{early=false,single=false}={}) {
         if(u.hostname!=='fixture.test') {errors.push('Unexpected host '+u.hostname);return route.abort();}
         if(p.startsWith('/assets/')) {
             const css=p.endsWith('.css');
-            return route.fulfill({contentType:css?'text/css':'application/javascript',body:source('resources/'+(css?'css/':'js/')+path.basename(p))});
+            return route.fulfill({contentType:css?'text/css':'application/javascript',body:css && stylesheet ? stylesheet : source('resources/'+(css?'css/':'js/')+path.basename(p))});
         }
         if(req.resourceType()==='font') return route.fulfill({path:path.resolve('resources/documents/fonts',path.basename(p))});
         if(p.endsWith('/loginPreview/') || p.endsWith('/getShopBuilderContent/')) {
@@ -434,4 +434,5 @@ async function afterChecks(check) {
     for(const width of [390,1440]) await check('Vier Varianten und Abbrechen','de',width,{},picker);
     await check('Einzelvariante mit lokaler API','en',1024,{single:true},single);
 }
-run().catch(e=>{console.error(e);process.exitCode=1;});
+module.exports = {fixture, races};
+if (require.main === module) run().catch(e=>{console.error(e);process.exitCode=1;});

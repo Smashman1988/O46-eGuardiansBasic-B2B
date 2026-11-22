@@ -2,6 +2,7 @@
 
 ## Unreleased – Wish list (2026-11-22)
 
+- The close button stays in place while dialog content loads. Content dialogs and the wish list picker have even side margins and a subtle outline. The header search takes its final column width immediately when switching to the desktop layout.
 - Account, language and information dialogs show a loading message immediately and discard late responses. The product-page wish list button becomes available as soon as its click handler is ready.
 - The product-page heart now offers a variation picker for items with multiple variations. It identifies saved and unavailable variations. Shop dialogs share a responsive layout and keyboard navigation.
 - Inactive wish list entries now show the availability status and variation ID labels in Italian and Spanish.
