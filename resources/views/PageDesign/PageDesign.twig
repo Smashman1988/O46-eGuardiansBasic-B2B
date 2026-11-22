@@ -161,14 +161,7 @@
                         <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
-                <div class="modal-body"> 
-                    <div class="loading-modal--wrap">
-                        <div>
-                            <span class="icon-spinner9 loader-basket"></span>
-                        </div>
-                        <div class="text-center">{{ trans("GuardiansBasicB2B::Template.loadinginfo") }}</div>
-                    </div>
-                </div>
+                <div class="modal-body" data-loading="{{ trans('GuardiansBasicB2B::Template.dialogLoading') }}" data-load-error="{{ trans('GuardiansBasicB2B::Template.dialogLoadError') }}"></div>
               </div>
             </div>
         </div>              
@@ -443,13 +436,13 @@
             {% elseif category.id or isSearch %}
                 {% set themePageScript = 'cat.min.js?v=8' %}
             {% elseif isItem %}
-                {% set themePageScript = 'item.min.js?v=12' %}
+                {% set themePageScript = 'item.min.js?v=13' %}
                 {% set matrixInPageScript = true %}
             {% endif %}
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=26" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=27" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
             {% if isItem and not matrixInPageScript %}
                 {# A PDP routed to another page bundle still needs the matrix before it. #}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" data-eg-matrix defer></script>

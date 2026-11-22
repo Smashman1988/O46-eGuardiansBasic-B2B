@@ -10,6 +10,13 @@ var eGuardians = (function(eGuardians) {
 eGuardians.initialize = function () {
     // 🔁 Event-Bindings aktivieren
     this.events.bindEvents();
+    const heart = document.querySelector('article.single button[data-eg-handler="watchListTrigger"][disabled]');
+    if (heart) {
+        heart.querySelector('.icon-spinner9')?.classList.replace('icon-spinner9', 'icon-heart-o');
+        heart.removeAttribute('aria-busy');
+        heart.removeAttribute('title');
+        heart.disabled = false;
+    }
 };
 
   eGuardians.events = new function() {

@@ -2,6 +2,7 @@
 
 ## Unreleased – Merkliste (2026-11-22)
 
+- Beim Öffnen von Konto-, Sprach- und Informationsdialogen erscheint sofort der passende Ladezustand. Verspätete Antworten überschreiben den aktuellen Inhalt nicht mehr. Das Merklistenherz wird bedienbar, sobald sein Klick-Handler bereitsteht.
 - Auf der Artikelseite lassen sich konkrete Varianten vormerken. Bei mehreren Varianten öffnet das Herz eine Auswahl. Bereits vorgemerkte und nicht verfügbare Varianten sind gekennzeichnet. Die Shopdialoge erhalten ein gemeinsames responsives Layout mit Tastaturbedienung.
 - Inaktive Merklisteneinträge zeigen Verfügbarkeit und Varianten-ID auch auf Italienisch und Spanisch mit lesbaren Beschriftungen.
 - Der Leerhinweis erscheint erst nach dem Laden, wenn weder aktive noch inaktive Varianten vorgemerkt sind. Inaktive Varianten bleiben auf der Merkliste und werden als „Nicht verfügbar“ angezeigt.

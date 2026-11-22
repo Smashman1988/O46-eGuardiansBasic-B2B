@@ -176,7 +176,7 @@ O46Core.apiservice = O46Core.apiservice || function () {
 
         var callApi = function(url, method, params, callback, dataType, timeoutMs){
             dataType = dataType || "json";
-            $.ajax({
+            return $.ajax({
                 url: url,
                 method: method,
                 timeout: timeoutMs,
@@ -227,7 +227,7 @@ O46Core.apiservice = O46Core.apiservice || function () {
             callApi(url, 'POST', data, callback, dataType, timeoutMs);
           };
           this.get = function(url, data, callback, dataType, timeoutMs) {
-            callApi(url, 'GET', data, callback, dataType, timeoutMs);
+            return callApi(url, 'GET', data, callback, dataType, timeoutMs);
           };
           this.put = function(url, data){
             callApi(url,'PUT',data);
@@ -274,30 +274,48 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
         }
         this.egOpener = null;
     });
+    let dialogGeneration = 0;
+    let dialogRequest;
+    function invalidateDialog() {
+        ++dialogGeneration;
+        dialogRequest?.abort?.();
+        dialogRequest = null;
+    }
+    $(document).on('hide.bs.modal', '.dynamicModal', invalidateDialog);
     eGuardians.ui = new function () {
         this.modal = {
             show: function(content, title){
 
             },
             modalRestContent: function(route,data,title,modalType,languageMessage){
-                $('.dynamicModal .loader-basket').addClass('load-rotate');
-                modalType = modalType || "";
-                $('.dynamicModal').find('.modal-dialog').removeClass('modal-sm modal-lg modal-xl').addClass(modalType);
-                $('.dynamicModal').find('.modal-title').text(title);
-                $('.dynamicModal').modal('show');
-                
-                eGuardians.apiservice.get(route, data, function(response){
-                    if(response.data.hasOwnProperty("description1")){
-                        $('.dynamicModal').find('.modal-body').html(response.data["description1"]);
-                    }else{
-                        $('.dynamicModal').find('.modal-body').html(response.data);
+                const modal = document.querySelector('.dynamicModal');
+                if (!modal) return;
+                invalidateDialog();
+                const generation = dialogGeneration;
+                const body = modal.querySelector('.modal-body');
+                const status = document.createElement('p');
+                status.className = 'mb-0';
+                status.setAttribute('role', 'status');
+                status.textContent = body.dataset.loading;
+                if (body.contains(document.activeElement)) modal.querySelector('.close').focus();
+                body.replaceChildren(status);
+                $(modal).find('.modal-dialog').removeClass('modal-sm modal-lg modal-xl').addClass(modalType || '');
+                $(modal).find('.modal-title').text(title);
+                if (clickOpener && !modal.contains(clickOpener)) modal.egOpener = clickOpener;
+                $(modal).modal('show');
+                if (generation !== dialogGeneration) return;
+                dialogRequest = eGuardians.apiservice.get(route, data, function(response, code){
+                    if (generation !== dialogGeneration) return;
+                    dialogRequest = null;
+                    const html = response?.data?.description1 ?? response?.data;
+                    if (!(code >= 200 && code < 300) || response?.error || typeof html !== 'string' || !html.trim()) {
+                        status.setAttribute('role', 'alert');
+                        status.textContent = body.dataset.loadError;
+                        return;
                     }
-                    
-                    if(typeof callback === 'function') {
-                        callback(response);
-                    }
+                    $(body).html(html);
                     if (languageMessage !== undefined) {
-                        eGuardians.ui.modal.languageLinks(document.querySelector('.dynamicModal'), languageMessage);
+                        eGuardians.ui.modal.languageLinks(modal, languageMessage);
                     }
                     eGuardians.events.bindEvents('.dynamicModal [data-eg-event]');
                 });
