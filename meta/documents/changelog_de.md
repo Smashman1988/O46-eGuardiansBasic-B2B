@@ -2,6 +2,8 @@
 
 ## Unreleased – Seitenauswahl in Kategorien
 
+- Kontakt-Schaltfläche und Nach-oben-Pfeil lassen auf Mobilgeräten Platz für die Seitenleiste. Auch bei geöffnetem Kontaktfenster bleiben die Seitenlinks erreichbar.
+
 - Mobil bleibt die Seitenauswahl beim Scrollen durch die Kategorie am unteren Bildschirmrand erreichbar. Am Desktop erscheint sie dort, sobald die Seitenauswahl neben der Sortierung aus dem Bild scrollt. Die Markierung folgt der sichtbaren Ergebnisseite.
 
 ## Unreleased – Währungsauswahl

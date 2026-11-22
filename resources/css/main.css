@@ -11739,6 +11739,20 @@ body.modal-open [data-category-pager] {
     outline: 2px solid #263c00;
     outline-offset: -2px;
 }
+@media (max-width: 991.98px) {
+    html:not(.filter-open, .menu-open, .search-open) body:not(.modal-open):has([data-category-pager]) {
+        --o46-floating-bottom: max(env(safe-area-inset-bottom, 0px), var(--category-pager-bottom, calc(37px + env(safe-area-inset-bottom, 0px))));
+        --o46-floating-top: max(env(safe-area-inset-top, 0px), var(--category-pager-top, 0px));
+    }
+    /* The mobile backdrops still intercept clicks during their 300ms exit. */
+    body:not(.hold-transition) [data-category-pager] {
+        transition: visibility 0s linear 300ms;
+    }
+    html:is(.menu-open, .filter-open, .search-open) body [data-category-pager],
+    body.modal-open:not(.hold-transition) [data-category-pager] {
+        transition-delay: 0s;
+    }
+}
 @container (max-width: 345px) {
     .paging-many .paging-neighbor { display: none; }
 }

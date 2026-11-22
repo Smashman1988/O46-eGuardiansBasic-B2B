@@ -592,6 +592,7 @@ $(document).on('click', '.linkabso', function () {
                 const docked = anchor.getClientRects().length > 0 && anchorBottom <= 0 && host.getBoundingClientRect().bottom > 0;
                 const focused = document.activeElement;
                 pager.toggleAttribute('data-paging-docked', docked);
+                updatePagerClearance();
                 if (docked && anchor.contains(focused)) restoreFocus(pager, focused.href);
                 if (!docked && anchorBottom > 0 && pager.contains(focused) && anchor.getClientRects().length) restoreFocus(anchor, focused.href);
             });
@@ -634,15 +635,52 @@ document.addEventListener('DOMContentLoaded', () => {
 //Get the button:
 mybutton = document.getElementById("totop");
 
+// The sticky bar travels through the viewport as its category gives way to the footer.
+// Float the controls on the roomier side and leave the open panel room to scroll.
+const mobilePagers = document.querySelectorAll('[data-category-pager]');
+const mobilePagerWidth = window.matchMedia('(max-width: 991.98px)');
+const categoryContact = document.getElementById('o46-b2b-contact-widget');
+function updateContactPanelClearance() {
+    if (!mobilePagers.length || !categoryContact || !mybutton) return;
+    const clearance = mybutton.offsetHeight
+        ? Math.max(0, categoryContact.getBoundingClientRect().top - mybutton.getBoundingClientRect().top)
+        : 0;
+    categoryContact.style.setProperty('--o46-contact-top-clearance', clearance + 'px');
+}
+function updatePagerClearance() {
+    if (!mobilePagers.length || !mobilePagerWidth.matches) return;
+    const height = document.documentElement.clientHeight;
+    let bottom = 0;
+    let top = 0;
+    for (const pager of mobilePagers) {
+        const rect = pager.getBoundingClientRect();
+        if (!rect.height || rect.bottom <= 0 || rect.top >= height) continue;
+        if (rect.top >= height - rect.bottom) bottom = Math.max(bottom, height - rect.top);
+        else top = Math.max(top, rect.bottom);
+    }
+    const style = document.body.style;
+    if (style.getPropertyValue('--category-pager-bottom') !== bottom + 'px') style.setProperty('--category-pager-bottom', bottom + 'px');
+    if (style.getPropertyValue('--category-pager-top') !== top + 'px') style.setProperty('--category-pager-top', top + 'px');
+}
+if (mobilePagers.length) {
+    updatePagerClearance();
+    updateContactPanelClearance();
+    window.addEventListener('resize', () => {
+        updatePagerClearance();
+        updateContactPanelClearance();
+    });
+}
+
 // When the user scrolls down 20px from the top of the document, show the button
 window.onscroll = function() {scrollFunction()};
 
 function scrollFunction() {
-  if (document.body.scrollTop > 2000 || document.documentElement.scrollTop > 2000) {
-    mybutton.style.display = "block";
-  } else {
-    mybutton.style.display = "none";
-  }
+    updatePagerClearance();
+    const display = document.body.scrollTop > 2000 || document.documentElement.scrollTop > 2000 ? 'block' : 'none';
+    if (mybutton.style.display !== display) {
+        mybutton.style.display = display;
+        updateContactPanelClearance();
+    }
 }
 
 // When the user clicks on the button, scroll to the top of the document

@@ -6,16 +6,16 @@
       "sha256": "41f592064ca08cc70901df6d1eb62a2850d28a7dbe554382504a9a54863a7f8f"
     },
     "css/contact-widget.css": {
-      "version": 2,
-      "sha256": "6f7bc93b662ed451ee0ad98c43695e66c5463bfed13342efa6fea55d74998599"
+      "version": 3,
+      "sha256": "89b76b4c91f2127ee9d06a90faaa711ccdba5708ae01b59bd872a994664f34cf"
     },
     "css/main.min.css": {
-      "version": 41,
-      "sha256": "d4930448ece0e3ac0295009445b90364bf62172397087d6a370a1ca67cfdf4aa"
+      "version": 42,
+      "sha256": "af929037c715628b6412353dabfad915117eb87e9f0e59b0d71b4100b07e6120"
     },
     "js/cat.min.js": {
-      "version": 9,
-      "sha256": "4813c4ebd971886f0afcca5d12b5df099aa191b2f737357201c630b3ff1f874e"
+      "version": 10,
+      "sha256": "350304cc7aacb381988a2b677d2af02793af19fffe9638cd5fff331efd71857a"
     },
     "js/core.min.js": {
       "version": 31,

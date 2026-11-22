@@ -171,7 +171,7 @@
         {% if isItem %}
             {{ LayoutContainer.show("Ceres::SingleItem.Styles") }}
         {% endif %}
-        <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/contact-widget.css?v=2">
+        <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/contact-widget.css?v=3">
         {% endif %}
     </head>
     <body class="hold-transition{% if isQuickView %} o46-b2b-contact-page{% endif %}" {% if isVueView %}id="isVueView"{% endif %}{% if isBasketPage %} data-o46-basket-sync{% endif %}{% if not isBasketPage and currentTemplate != 'tpl.checkout' and category.id not in wkbkasse|default([]) %} data-eg-shop-dialogs{% endif %}>
@@ -500,7 +500,7 @@
             {% elseif currentTemplate in vuePages|keys or category.id in nojs %}
             {% elseif rendersItemGrid is defined and not rendersItemGrid %}
             {% elseif category.id or isSearch %}
-                {% set themePageScript = 'cat.min.js?v=9' %}
+                {% set themePageScript = 'cat.min.js?v=10' %}
             {% elseif isItem %}
                 {% set themePageScript = 'item.min.js?v=15' %}
                 {% set matrixInPageScript = true %}

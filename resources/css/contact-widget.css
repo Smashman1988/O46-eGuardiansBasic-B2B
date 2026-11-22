@@ -3,7 +3,7 @@
     --o46-b2b-contact-size: 56px;
     position: fixed;
     right: calc(var(--o46-b2b-contact-edge) + env(safe-area-inset-right, 0px));
-    bottom: calc(var(--o46-b2b-contact-edge) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--o46-b2b-contact-edge) + var(--o46-floating-bottom, env(safe-area-inset-bottom, 0px)));
     z-index: 990; /* Below the existing basket backdrop (997) and shop modals. */
     max-width: calc(100vw - 2 * var(--o46-b2b-contact-edge) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     color: #20251b;
@@ -74,11 +74,12 @@
 .o46-b2b-contact-widget .o46-b2b-contact-panel {
     position: absolute;
     right: 0;
-    bottom: calc(100% + 12px);
+    bottom: calc(100% + 12px + var(--o46-contact-top-clearance, 0px));
     width: 380px;
     max-width: calc(100vw - 2 * var(--o46-b2b-contact-edge) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
-    max-height: calc(100vh - var(--o46-b2b-contact-size) - 2 * var(--o46-b2b-contact-edge) - 12px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-    max-height: calc(100dvh - var(--o46-b2b-contact-size) - 2 * var(--o46-b2b-contact-edge) - 12px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    --panel-reserved: calc(var(--o46-b2b-contact-size) + 2 * var(--o46-b2b-contact-edge) + 12px + var(--o46-contact-top-clearance, 0px) + var(--o46-floating-top, env(safe-area-inset-top, 0px)) + var(--o46-floating-bottom, env(safe-area-inset-bottom, 0px)));
+    max-height: calc(100vh - var(--panel-reserved));
+    max-height: calc(100dvh - var(--panel-reserved));
     overflow: auto;
     overscroll-behavior: contain;
     border: 1px solid #aab39e;
@@ -221,7 +222,7 @@
 
 /* Keep the theme's existing back-to-top control above the launcher. */
 .o46-b2b-contact-page #totop {
-    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(92px + var(--o46-floating-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
 @media (hover: hover) {
