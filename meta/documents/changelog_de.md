@@ -33,6 +33,7 @@
 
 ## Unreleased – Mobile Headersuche (2026-11-21)
 
+- Das mobile Suchfeld verwendet schon beim Öffnen mindestens 16 px Schriftgröße, damit das iPhone den eingegebenen Text ohne automatisches Heranzoomen anzeigen kann.
 - Das Suchfeld erhält beim Öffnen sofort den Tastaturfokus. Das erste eingegebene Zeichen bleibt erhalten, auch während der Einblendung.
 
 ## Unreleased – Mobiler Kategoriefilter und Quickview (2026-11-21)

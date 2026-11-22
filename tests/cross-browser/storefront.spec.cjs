@@ -103,6 +103,7 @@ test('Mobile Headersuche nimmt das erste Zeichen beim Öffnen an',async({page,sh
     await act(opener,hasTouch);
     await page.keyboard.type('a');
     await expect(input).toHaveValue('a');
+    expect(await input.evaluate(field=>parseFloat(getComputedStyle(field).fontSize))).toBeGreaterThanOrEqual(16);
     await opener.press('Space');
     await expect(page.locator('html')).not.toHaveClass(/search-open/);
     await opener.press('Enter');

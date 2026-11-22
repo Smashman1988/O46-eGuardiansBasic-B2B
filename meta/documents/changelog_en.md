@@ -33,6 +33,7 @@
 
 ## Unreleased – Mobile header search (2026-11-21)
 
+- The mobile search field uses a font size of at least 16 px from the moment it opens so iPhone users can type without the page automatically zooming in.
 - Opening the mobile header search immediately focuses the input, so it accepts the first character while the panel is sliding in.
 
 ## Unreleased – Mobile category filter and Quickview (2026-11-21)

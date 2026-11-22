@@ -13084,8 +13084,14 @@ body:has(#shop-mode-modal:not(.smm-hidden), .o46-b2b-contact-toggle[aria-expande
 }
 /* End B2B newsletter card */
 
-/* B2B first-paint geometry: existing PDP and ShopBuilder layout.
+/* B2B first-paint geometry: header, PDP and ShopBuilder layout.
    Company images retain their loaded ratio; payment logos keep their 120 x 50 frame. */
+@media (max-width: 991.98px) {
+    /* iOS uses the field's font size when zooming to the focused search input. */
+    .search-box [data-eg-livesearch] {
+        font-size: max(1rem, 16px);
+    }
+}
 /* Keep both star layers in the same intrinsic-width grid cell. The translated
    review link owns the other cell, so it cannot shrink or wrap individual stars. */
 .single .item-ratings-first.display-flex-important {
