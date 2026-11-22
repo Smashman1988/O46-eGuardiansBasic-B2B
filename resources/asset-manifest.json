@@ -10,12 +10,12 @@
       "sha256": "6f7bc93b662ed451ee0ad98c43695e66c5463bfed13342efa6fea55d74998599"
     },
     "css/main.min.css": {
-      "version": 40,
-      "sha256": "c86a7e636c4d87d299c1c0be177cfa164b068e8bae5043edd3d6b876fb96baf1"
+      "version": 41,
+      "sha256": "d4930448ece0e3ac0295009445b90364bf62172397087d6a370a1ca67cfdf4aa"
     },
     "js/cat.min.js": {
-      "version": 8,
-      "sha256": "decc781e89899f6950d4c4b2536028ce7307a3ed7b11487cdbe067c0b901f9b3"
+      "version": 9,
+      "sha256": "4813c4ebd971886f0afcca5d12b5df099aa191b2f737357201c630b3ff1f874e"
     },
     "js/core.min.js": {
       "version": 31,

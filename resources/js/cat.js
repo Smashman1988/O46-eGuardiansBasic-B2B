@@ -551,33 +551,72 @@ $(document).on('click', '.linkabso', function () {
     };
 
     // Patch 2: setHistory → Scroll-Verlauf beim Zurückscrollen
-    const originalSetHistory = InfiniteScroll.prototype.setHistory;
+    const categoryPagers = new WeakMap();
     InfiniteScroll.prototype.setHistory = function (title, path) {
         try {
             const url = new URL(path, window.location.origin);
             url.searchParams.delete('quickViewItem');
             history.replaceState({ path: url.href }, title || document.title, url.href);
+            categoryPagers.get(this)?.();
         } catch (err) {
             // Fehler wird geschluckt, um die Konsole sauber zu halten
         }
     };
 
     // Infinite Scroll Initialisierung
-    if (!$('.pagination__next').length) return;
-    $('.category-product-list').infiniteScroll({
-        path: '.pagination__next',
-        append: '.post',
-        history: 'push',
-        button: '.view-more-button',
-        scrollThreshold: 1200,
-        status: '.scroller-status'
-    });
+    if ($('.pagination__next').length) {
+        $('.category-product-list').infiniteScroll({
+            path: '.pagination__next',
+            append: '.post',
+            history: 'push',
+            button: '.view-more-button',
+            scrollThreshold: 1200,
+            status: '.scroller-status'
+        }).on('append.infiniteScroll', function () {
+            eGuardians.events.observeLazyImages();
+        });
+    }
 
-    // Lazyload nach Append
-    $('.category-product-list').on('append.infiniteScroll', function () {
-        // Append has already inserted the complete cards. Both former branches
-        // refreshed the same observer; no per-card search or delayed retry needed.
-        eGuardians.events.observeLazyImages();
+    // Use the server-rendered links associated with the page Infinite Scroll actually displays.
+    document.querySelectorAll('[data-category-pager]').forEach(pager => {
+        const host = pager.closest('.category-paging-host');
+        const anchor = host.querySelector('[data-category-paging-anchor]');
+        function restoreFocus(container, href) {
+            const links = Array.from(container.querySelectorAll('a[href]')).filter(link => link.getClientRects().length);
+            const target = links.find(link => link.href === href) || links.find(link => link.matches('[aria-current="page"]'));
+            target?.focus({preventScroll: true});
+        }
+        if (anchor && 'IntersectionObserver' in window) {
+            const observer = new IntersectionObserver(() => {
+                const anchorBottom = anchor.getBoundingClientRect().bottom;
+                const docked = anchor.getClientRects().length > 0 && anchorBottom <= 0 && host.getBoundingClientRect().bottom > 0;
+                const focused = document.activeElement;
+                pager.toggleAttribute('data-paging-docked', docked);
+                if (docked && anchor.contains(focused)) restoreFocus(pager, focused.href);
+                if (!docked && anchorBottom > 0 && pager.contains(focused) && anchor.getClientRects().length) restoreFocus(anchor, focused.href);
+            });
+            observer.observe(anchor);
+            observer.observe(host);
+        }
+        const list = host.querySelector('.category-product-list');
+        const feed = InfiniteScroll.data(list);
+        if (!feed?.scrollPages?.length) return;
+        const original = pager.querySelector('.pagination');
+        feed.scrollPages[0].categoryPager = original;
+        function showVisiblePage() {
+            const next = feed.scrollPage?.categoryPager;
+            if (!next || next.parentNode === pager) return;
+            const focused = pager.contains(document.activeElement) ? document.activeElement.href : null;
+            pager.replaceChildren(next);
+            if (focused) restoreFocus(next, focused);
+        }
+        feed.on('append', (response, path, items) => {
+            if (!items.length) return;
+            const selector = '[data-category-pager="' + CSS.escape(pager.dataset.categoryPager) + '"] .pagination';
+            const links = response.querySelector(selector);
+            if (links) feed.scrollPages[feed.scrollPages.length - 1].categoryPager = document.importNode(links, true);
+        });
+        categoryPagers.set(feed, showVisiblePage);
     });
 })();
 

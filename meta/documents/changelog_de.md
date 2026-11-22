@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Seitenauswahl in Kategorien
+
+- Mobil bleibt die Seitenauswahl beim Scrollen durch die Kategorie am unteren Bildschirmrand erreichbar. Am Desktop erscheint sie dort, sobald die Seitenauswahl neben der Sortierung aus dem Bild scrollt. Die Markierung folgt der sichtbaren Ergebnisseite.
+
 ## Unreleased – Währungsauswahl
 
 - Der Währungsdialog verwendet denselben kompakten Rahmen wie die Sprachauswahl. Die neue Vorlage für Kategorie 5638 zeigt die aktive Währung, benennt das Auswahlfeld in allen fünf Sprachen und übernimmt die Auswahl über das bestehende GET-Formular.

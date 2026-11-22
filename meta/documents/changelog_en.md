@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Category pagination
+
+- On mobile, the page selector stays at the bottom of the screen while browsing a category. On desktop, it appears there once the page links beside the sorting control scroll out of view. The highlight follows the visible results page.
+
 ## Unreleased – Currency selection
 
 - The currency dialog shares the compact language picker layout. The new template for category 5638 shows the current currency, labels the native select in all five languages, and applies the choice through the existing GET form.

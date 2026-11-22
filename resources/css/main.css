@@ -11671,6 +11671,94 @@ a[data-zoom-id] img,
 .eg-pagination {
     text-align: right;
 }
+.category-pager-footer {
+    position: sticky;
+    bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 8;
+    margin-inline: -5px;
+    padding: 2px 6px;
+    border-top: 1px solid #dce0d8;
+    background: #fff;
+    container-type: inline-size;
+}
+[data-category-pager]::after {
+    content: "";
+    position: absolute;
+    inset: 100% 0 auto;
+    height: env(safe-area-inset-bottom, 0px);
+    background: inherit;
+    pointer-events: none;
+}
+html:is(.filter-open, .menu-open, .search-open) [data-category-pager],
+body.modal-open [data-category-pager] {
+    visibility: hidden;
+}
+[data-category-pager] .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    margin: 0;
+}
+[data-category-pager] .page-item a,
+[data-category-pager] .paging-limit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 30px;
+    height: 32px;
+    padding-inline: 4px;
+    border-radius: 4px;
+    color: #252525;
+    background: transparent;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+[data-category-pager] .page-item.active a {
+    color: #152000;
+    background: #6b9f01;
+}
+[data-category-pager] .page-item:not(.active) a:hover {
+    color: #161616;
+    background: #f4f5f2;
+    box-shadow: none;
+}
+[data-category-pager] .page-nextprev,
+[data-category-pager] .paging-limit {
+    margin: 0;
+}
+[data-category-pager] .paging-limit {
+    color: #8a8d87;
+}
+[data-category-pager] .page-item.page-link {
+    color: #60645d;
+    font-size: 13px;
+}
+[data-category-pager] a:focus-visible {
+    outline: 2px solid #263c00;
+    outline-offset: -2px;
+}
+@container (max-width: 345px) {
+    .paging-many .paging-neighbor { display: none; }
+}
+@container (max-width: 280px) {
+    [data-category-pager] .paging-neighbor { display: none; }
+}
+@media (min-width: 992px) {
+    .category-pager-footer[data-paging-docked] {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        width: max-content;
+        min-width: 310px;
+        margin: 0;
+        border: 1px solid #dce0d8;
+        border-bottom: 0;
+        border-radius: 5px 5px 0 0;
+        container-type: normal;
+    }
+}
 .inBasketBtnDisabled{
 opacity: 0.7;
 }
@@ -13086,6 +13174,11 @@ body:has(#shop-mode-modal:not(.smm-hidden), .o46-b2b-contact-toggle[aria-expande
 
 /* B2B first-paint geometry: header, PDP and ShopBuilder layout.
    Company images retain their loaded ratio; payment logos keep their 120 x 50 frame. */
+@media (min-width: 992px) {
+    .category-pager-footer:not([data-paging-docked]) {
+        display: none;
+    }
+}
 @media (max-width: 991.98px) {
     /* iOS uses the field's font size when zooming to the focused search input. */
     .search-box [data-eg-livesearch] {

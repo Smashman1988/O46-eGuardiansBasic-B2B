@@ -133,7 +133,8 @@
             </div>
         </div>
                 {% endif %}
-        <div class="col-12">
+        {% set hasCategoryPager = category.id is defined and not isSearch|default(false) and currentPage > 0 and currentPage <= pageMax and pageMax > 1 %}
+        <div class="col-12{% if hasCategoryPager %} category-paging-host{% endif %}">
              <div class="row align-items-center m-b-25">
                 <div class="col-12">
                     <div class="d-flex justify-content-between">
@@ -156,7 +157,7 @@
                             </div>                                
                         </div>
                         {% endif %}
-                        <div class="eg-pagination">
+                        <div class="eg-pagination{% if hasCategoryPager %} d-none d-lg-block{% endif %}"{% if hasCategoryPager %} data-category-paging-anchor{% endif %}>
                             {% include "GuardiansBasicB2B::Category.Item.Partials.Pagination" %}
                         </div>
                     </div>
@@ -203,6 +204,11 @@
                         <br><br>{{ trans("GuardiansBasicB2B::Template.iscrollinfo5") }} {% include 'GuardiansBasicB2B::Category.Item.Partials.AllItemsLink' with {'language': lang, 'currency': currencycheck} only %}</p>
                     <p class="infinite-scroll-error tcenter">{{ trans("GuardiansBasicB2B::Template.iscrollinfo7") }}</p>
                 </div>
+                {% endif %}
+                {% if hasCategoryPager %}
+                <nav class="category-pager-footer" data-category-pager="{{ category.id }}" aria-label="{{ trans('GuardiansBasicB2B::Template.page') }}">
+                    {% include "GuardiansBasicB2B::Category.Item.Partials.Pagination" with {'compactPagination': true} %}
+                </nav>
                 {% endif %}
         </div>     
     </div>
