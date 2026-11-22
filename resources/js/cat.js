@@ -523,6 +523,7 @@ $(document).mouseup(function(e) {
     }
 });
 
+const categoryPagerObservers = new Set();
 $(document).on('click', '.linkabso', function () {
     return O46Core.openQuickview(this, 10);
 });
@@ -588,16 +589,23 @@ $(document).on('click', '.linkabso', function () {
         }
         if (anchor && 'IntersectionObserver' in window) {
             const observer = new IntersectionObserver(() => {
+                if (!pager.isConnected) {
+                    observer.disconnect();
+                    categoryPagerObservers.delete(observer);
+                    schedulePagerClearance();
+                    return;
+                }
                 const anchorBottom = anchor.getBoundingClientRect().bottom;
                 const docked = anchor.getClientRects().length > 0 && anchorBottom <= 0 && host.getBoundingClientRect().bottom > 0;
                 const focused = document.activeElement;
                 pager.toggleAttribute('data-paging-docked', docked);
-                updatePagerClearance();
+                schedulePagerClearance();
                 if (docked && anchor.contains(focused)) restoreFocus(pager, focused.href);
                 if (!docked && anchorBottom > 0 && pager.contains(focused) && anchor.getClientRects().length) restoreFocus(anchor, focused.href);
             });
             observer.observe(anchor);
             observer.observe(host);
+            categoryPagerObservers.add(observer);
         }
         const list = host.querySelector('.category-product-list');
         const feed = InfiniteScroll.data(list);
@@ -637,9 +645,12 @@ mybutton = document.getElementById("totop");
 
 // The sticky bar travels through the viewport as its category gives way to the footer.
 // Float the controls on the roomier side and leave the open panel room to scroll.
-const mobilePagers = document.querySelectorAll('[data-category-pager]');
+const mobilePagers = Array.from(document.querySelectorAll('[data-category-pager]'));
 const mobilePagerWidth = window.matchMedia('(max-width: 991.98px)');
 const categoryContact = document.getElementById('o46-b2b-contact-widget');
+let trackingPagers = mobilePagers.length > 0;
+let clearanceFrame = 0;
+let panelClearanceDirty = true;
 function updateContactPanelClearance() {
     if (!mobilePagers.length || !categoryContact || !mybutton) return;
     const clearance = mybutton.offsetHeight
@@ -648,39 +659,78 @@ function updateContactPanelClearance() {
     categoryContact.style.setProperty('--o46-contact-top-clearance', clearance + 'px');
 }
 function updatePagerClearance() {
-    if (!mobilePagers.length || !mobilePagerWidth.matches) return;
-    const height = document.documentElement.clientHeight;
+    if (!mobilePagerWidth.matches) return;
+    const viewport = window.visualViewport;
+    const visibleTop = viewport?.offsetTop ?? 0;
+    const visibleBottom = visibleTop + (viewport?.height ?? window.innerHeight);
+    // Use the same client coordinates as the sticky bar. Safari can move the
+    // fixed containing block independently of documentElement.clientHeight.
+    const widget = categoryContact?.getBoundingClientRect();
+    const fixedBottom = widget?.height
+        ? widget.bottom + parseFloat(getComputedStyle(categoryContact).bottom)
+        : visibleBottom;
     let bottom = 0;
     let top = 0;
     for (const pager of mobilePagers) {
         const rect = pager.getBoundingClientRect();
-        if (!rect.height || rect.bottom <= 0 || rect.top >= height) continue;
-        if (rect.top >= height - rect.bottom) bottom = Math.max(bottom, height - rect.top);
-        else top = Math.max(top, rect.bottom);
+        if (!rect.height || rect.bottom <= visibleTop || rect.top >= visibleBottom) continue;
+        if (rect.top - visibleTop >= visibleBottom - rect.bottom) bottom = Math.max(bottom, fixedBottom - rect.top);
+        else top = Math.max(top, rect.bottom - visibleTop);
     }
     const style = document.body.style;
     if (style.getPropertyValue('--category-pager-bottom') !== bottom + 'px') style.setProperty('--category-pager-bottom', bottom + 'px');
     if (style.getPropertyValue('--category-pager-top') !== top + 'px') style.setProperty('--category-pager-top', top + 'px');
 }
-if (mobilePagers.length) {
-    updatePagerClearance();
-    updateContactPanelClearance();
-    window.addEventListener('resize', () => {
+function schedulePagerClearance() {
+    if (!trackingPagers || clearanceFrame || (!mobilePagerWidth.matches && !panelClearanceDirty)) return;
+    clearanceFrame = requestAnimationFrame(() => {
+        clearanceFrame = 0;
+        if (!mobilePagers.some(pager => pager.isConnected)) {
+            stopPagerTracking();
+            return;
+        }
         updatePagerClearance();
-        updateContactPanelClearance();
+        if (panelClearanceDirty) {
+            updateContactPanelClearance();
+            panelClearanceDirty = false;
+        }
     });
+}
+function resizePagerClearance() {
+    panelClearanceDirty = true;
+    schedulePagerClearance();
+}
+function stopPagerTracking() {
+    trackingPagers = false;
+    cancelAnimationFrame(clearanceFrame);
+    window.removeEventListener('resize', resizePagerClearance);
+    window.visualViewport?.removeEventListener('resize', resizePagerClearance);
+    window.visualViewport?.removeEventListener('scroll', schedulePagerClearance);
+    window.removeEventListener('pagehide', stopPagerTracking);
+    for (const observer of categoryPagerObservers) observer.disconnect();
+    categoryPagerObservers.clear();
+    document.body.style.removeProperty('--category-pager-bottom');
+    document.body.style.removeProperty('--category-pager-top');
+    categoryContact?.style.removeProperty('--o46-contact-top-clearance');
+}
+if (trackingPagers) {
+    window.addEventListener('resize', resizePagerClearance);
+    window.visualViewport?.addEventListener('resize', resizePagerClearance);
+    window.visualViewport?.addEventListener('scroll', schedulePagerClearance);
+    window.addEventListener('pagehide', stopPagerTracking);
+    schedulePagerClearance();
 }
 
 // When the user scrolls down 20px from the top of the document, show the button
 window.onscroll = function() {scrollFunction()};
 
 function scrollFunction() {
-    updatePagerClearance();
     const display = document.body.scrollTop > 2000 || document.documentElement.scrollTop > 2000 ? 'block' : 'none';
     if (mybutton.style.display !== display) {
         mybutton.style.display = display;
-        updateContactPanelClearance();
+        panelClearanceDirty = true;
     }
+    schedulePagerClearance();
 }
 
 // When the user clicks on the button, scroll to the top of the document

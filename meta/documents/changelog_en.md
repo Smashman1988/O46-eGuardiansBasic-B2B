@@ -2,6 +2,8 @@
 
 ## Unreleased – Category pagination
 
+- As the mobile browser toolbar expands or collapses, the gap between the contact widget and category pagination follows the measured widget position.
+
 - On mobile, the contact launcher and back-to-top button leave room for category pagination. Page links remain accessible while the contact panel is open.
 
 - On mobile, the page selector stays at the bottom of the screen while browsing a category. On desktop, it appears there once the page links beside the sorting control scroll out of view. The highlight follows the visible results page.

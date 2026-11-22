@@ -500,7 +500,7 @@
             {% elseif currentTemplate in vuePages|keys or category.id in nojs %}
             {% elseif rendersItemGrid is defined and not rendersItemGrid %}
             {% elseif category.id or isSearch %}
-                {% set themePageScript = 'cat.min.js?v=10' %}
+                {% set themePageScript = 'cat.min.js?v=11' %}
             {% elseif isItem %}
                 {% set themePageScript = 'item.min.js?v=15' %}
                 {% set matrixInPageScript = true %}
