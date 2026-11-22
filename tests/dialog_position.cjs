@@ -9,7 +9,7 @@ const {fixture, races} = require('./dialog_switch.cjs');
 const out = path.resolve('.cache/popup-modernisierung-wishlist/position');
 const reference = '4c7556c8b7edac1f5d1bf7a3a1e4f6244b718db1';
 const widths = [[320,568],[390,360],[390,780],[768,800],[1024,768],[1440,900]];
-const triggers = {language:'[data-eg-language-switch]',account:'.btn-login-open',info:'[data-eg-title="Currency"]'};
+const triggers = {language:'[data-eg-language-switch]',account:'.btn-login-open',info:'[data-eg-href$="categoryId=5638"]'};
 const language = '<nav data-result="language">'+['Deutsch','English','Français','Italiano','Español'].map((name,i)=>
     '<p><a href="/'+['de','en','fr','it','es'][i]+'/">'+name+'</a></p>').join('')+'</nav>';
 function metrics(modal, point) {

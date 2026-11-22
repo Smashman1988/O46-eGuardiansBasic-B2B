@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Currency dialog
+
+- The currency dialog shows its title in the selected shop language as soon as it opens.
+
 ## Unreleased – Sign-out
 
 - Signing out from the account preview keeps the current public page, language, search and filters. Signing out on a personal page opens the home page in the selected language. Returning to a protected page checks the session again.

@@ -53,14 +53,15 @@ function pageHtml(lang,single) {
     return html;
 }
 const heartSelector = '.btn-watch-h';
-const triggers = {account:'.btn-login-open', language:'[data-eg-language-switch]', info:'[data-eg-title="Currency"]'};
+const triggers = {account:'.btn-login-open', language:'[data-eg-language-switch]', info:'[data-eg-href$="categoryId=5638"]'};
 const content = {
     account:'<form data-result="account"><label>E-Mail<input type="email"></label><input type="password"><button type="button" data-eg-event="click" data-eg-handler="fixtureAccount">Login</button></form>',
     language:{description1:'<nav data-result="language"><a href="/en/">English</a></nav>'},
     info:{description1:'<section data-result="info">Information</section>'}
 };
-async function fixture(browser,lang,width,{early=false,single=false,height=850,stylesheet}={}) {
+async function fixture(browser,lang,width,{early=false,single=false,height=850,stylesheet,beforeScripts}={}) {
     const context = await browser.newContext({viewport:{width,height},serviceWorkers:'block'});
+    if (beforeScripts) await context.addInitScript(beforeScripts);
     const page = await context.newPage();
     page.setDefaultTimeout(4000);
     const pending = [], requests = [], errors = [], failed = [];

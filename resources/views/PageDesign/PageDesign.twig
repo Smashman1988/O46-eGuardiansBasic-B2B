@@ -502,16 +502,16 @@
             {% elseif category.id or isSearch %}
                 {% set themePageScript = 'cat.min.js?v=8' %}
             {% elseif isItem %}
-                {% set themePageScript = 'item.min.js?v=13' %}
+                {% set themePageScript = 'item.min.js?v=14' %}
                 {% set matrixInPageScript = true %}
             {% endif %}
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=28" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=28" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=5" defer></script>
             {% if isItem and not matrixInPageScript %}
                 {# A PDP routed to another page bundle still needs the matrix before it. #}
-                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" data-eg-matrix defer></script>
+                <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=5" data-eg-matrix defer></script>
             {% endif %}
             <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/{{ themePageScript }}"{% if not themeNeedsJquery %} data-eg-vue-logout{% endif %}{% if matrixInPageScript %} data-eg-matrix{% endif %} defer></script>
             {% if isItem %}

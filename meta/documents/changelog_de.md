@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Währungsdialog
+
+- Der Währungsdialog zeigt seine Überschrift schon beim Öffnen in der gewählten Shopsprache.
+
 ## Unreleased – Abmeldung
 
 - Nach der Abmeldung über die Kontovorschau bleibt die aktuelle öffentliche Shopseite mit Sprache, Suche und Filtern erhalten. Von persönlichen Seiten führt die Abmeldung zur Startseite der gewählten Sprache. Beim Zurückgehen in einen geschützten Bereich prüft der Shop die Sitzung erneut.

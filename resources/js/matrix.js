@@ -149,10 +149,10 @@ O46Core.matrix = function () {
 
   function detectCurrencySymbolFromHeader() {
     var selectors = [
+      '[data-eg-currency]',
       '[data-eg-title="Currency"]',
       '[data-eg-handler="modalContent"][data-eg-title="Currency"]',
       '[data-title="Currency"]',
-      '[data-eg-currency]',
       '[data-currency]'
     ];
 
@@ -257,8 +257,8 @@ O46Core.matrix = function () {
   (function watchCurrencySymbol() {
     if (!window.MutationObserver) return;
 
-    var btn = document.querySelector('[data-eg-title="Currency"]') ||
-              document.querySelector('[data-eg-handler="modalContent"][data-eg-title="Currency"]');
+    var btn = document.querySelector('[data-eg-currency]') ||
+              document.querySelector('[data-eg-title="Currency"]');
 
     if (!btn) return;
 
