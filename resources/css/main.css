@@ -13249,6 +13249,152 @@ body.modal-open .btnfilter-mobile { visibility: hidden; }
     overflow-y: auto;
     overscroll-behavior: contain;
 }
+/* ShopBuilder settings dialogs use the same frame during loading and after
+   insertion. Their bodies scroll independently when the viewport is short. */
+.dynamicModal.eg-modal--language {
+    --eg-language-row: 54px;
+    --eg-language-gap: 8px;
+}
+.dynamicModal:is(.eg-modal--language, .eg-modal--currency)[data-eg-dialog] .modal-dialog {
+    max-width: 540px;
+    min-height: calc(100% - 2 * var(--eg-dialog-gap));
+}
+.dynamicModal.eg-modal--language .modal-body {
+    height: calc(5 * var(--eg-language-row) + 4 * var(--eg-language-gap) + 2 * var(--eg-dialog-padding));
+}
+.dynamicModal:is(.eg-modal--language, .eg-modal--currency) .modal-body > .mb-4.pb-4 {
+    /* DynamicRestTemplate adds both Bootstrap utilities to every response. */
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+:is(.eg-modal--language, .eg-modal--currency) .modal-body > [role="status"]:only-child {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    margin: 0;
+}
+.eg-modal--language .eg-language-list {
+    display: grid;
+    gap: var(--eg-language-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.eg-modal--language .eg-language-choice {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) 24px;
+    align-items: center;
+    gap: 14px;
+    min-height: var(--eg-language-row);
+    padding: 8px 14px;
+    border: 1px solid #d6ddd6;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--eg-dialog-ink);
+    font-size: 1rem;
+    line-height: 1.4;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+.eg-modal--language .eg-language-choice img {
+    display: block;
+    width: 28px;
+    height: 21px;
+    border-radius: 3px;
+    object-fit: contain;
+}
+@media (hover: hover) {
+    .eg-modal--language .eg-language-choice:hover {
+        border-color: #a9b8a7;
+        background: #f5f7f4;
+    }
+}
+.eg-modal--language .eg-language-choice[aria-current="page"] {
+    border-color: var(--eg-dialog-accent);
+    background: #f1f6e9;
+    color: #304b14;
+    font-weight: 600;
+}
+.eg-modal--language .eg-language-mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    color: #59675c;
+}
+.eg-modal--language .eg-language-mark::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border: solid currentColor;
+    border-width: 2px 2px 0 0;
+    transform: rotate(45deg);
+}
+.eg-modal--language [aria-current="page"] .eg-language-mark {
+    border-radius: 50%;
+    color: #fff;
+    background: var(--eg-dialog-accent);
+}
+.eg-modal--language [aria-current="page"] .eg-language-mark::after {
+    width: 10px;
+    height: 6px;
+    border-width: 0 0 2px 2px;
+    transform: translateY(-1px) rotate(-45deg);
+}
+.dynamicModal.eg-modal--currency .modal-body {
+    height: calc(16rem + 2 * var(--eg-dialog-padding));
+}
+.eg-modal--currency .eg-currency-form {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+}
+.eg-modal--currency .eg-currency-hint {
+    margin: 0;
+    color: #47554c;
+    line-height: 1.45;
+}
+.eg-modal--currency .eg-currency-current {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 12px;
+    margin: 0;
+    padding: 10px 14px;
+    border: 1px solid #dce5d7;
+    border-radius: 10px;
+    background: #f5f8f1;
+}
+.eg-modal--currency .eg-currency-current dt { font-weight: 400; }
+.eg-modal--currency .eg-currency-current dd { margin: 0; font-weight: 600; color: #304b14; }
+.eg-modal--currency .eg-currency-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+.eg-modal--currency .eg-currency-field label { margin: 0; font-weight: 600; }
+.eg-modal--currency .eg-currency-field select,
+.eg-modal--currency .eg-currency-submit {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #a9b8a7;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font: inherit;
+    line-height: 1.4;
+}
+.eg-modal--currency .eg-currency-field select { color: var(--eg-dialog-ink); background-color: #fff; }
+.eg-modal--currency .eg-currency-submit {
+    background: var(--eg-dialog-accent);
+    border-color: var(--eg-dialog-accent);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+@media (hover: hover) {
+    .eg-modal--currency .eg-currency-submit:hover { background: #36590f; }
+}
 .modal-cross[data-eg-dialog] .modal-body { padding: clamp(8px, 2vw, 16px); }
 .modal[data-eg-dialog] .modal-footer {
     flex: none;

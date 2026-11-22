@@ -1,5 +1,13 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Currency selection
+
+- The currency dialog shares the compact language picker layout. The new template for category 5638 shows the current currency, labels the native select in all five languages, and applies the choice through the existing GET form.
+
+## Unreleased – Language selection
+
+- The language dialog is centered and capped at 540 px. The new ShopBuilder template for category 5640 displays five large language links and marks the current language with a check.
+
 ## Unreleased – Quickview
 
 - Quickview closes once all selected quantities have been added and the basket header has updated. The confirmation appears over the product list. Quickview stays open on errors or quantity adjustments.

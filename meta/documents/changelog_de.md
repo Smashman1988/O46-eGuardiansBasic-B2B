@@ -1,5 +1,13 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Währungsauswahl
+
+- Der Währungsdialog verwendet denselben kompakten Rahmen wie die Sprachauswahl. Die neue Vorlage für Kategorie 5638 zeigt die aktive Währung, benennt das Auswahlfeld in allen fünf Sprachen und übernimmt die Auswahl über das bestehende GET-Formular.
+
+## Unreleased – Sprachauswahl
+
+- Der Sprachdialog ist zentriert und auf 540 px begrenzt. Die neue ShopBuilder-Vorlage für Kategorie 5640 zeigt fünf große Sprachlinks und kennzeichnet die aktive Sprache mit einem Häkchen.
+
 ## Unreleased – Artikelvorschau
 
 - Nach dem vollständigen Hinzufügen der gewählten Varianten schließt sich die Artikelvorschau, sobald der Warenkorb im Header aktualisiert ist. Die Bestätigung erscheint über der Produktliste. Bei Fehlern oder angepassten Mengen bleibt die Vorschau geöffnet.

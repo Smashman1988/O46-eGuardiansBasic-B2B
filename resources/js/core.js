@@ -269,6 +269,7 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
             (event.shiftKey ? last : first)?.focus();
         }
     }).on('hidden.bs.modal', dialogs, function () {
+        if (this.matches('.dynamicModal')) this.classList.remove('eg-modal--language', 'eg-modal--currency');
         if (this.egOpener?.isConnected && (document.activeElement === document.body || this.contains(document.activeElement))) {
             this.egOpener.focus({preventScroll:true});
         }
@@ -299,6 +300,10 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
                 status.textContent = body.dataset.loading;
                 if (body.contains(document.activeElement)) modal.querySelector('.close').focus();
                 body.replaceChildren(status);
+                modal.classList.toggle('eg-modal--language', languageMessage !== undefined);
+                const currencyRoute = document.querySelector('[data-eg-currency]')?.getAttribute('data-eg-href');
+                const isCurrency = !!currencyRoute && route === currencyRoute;
+                modal.classList.toggle('eg-modal--currency', isCurrency);
                 $(modal).find('.modal-dialog').removeClass('modal-sm modal-lg modal-xl').addClass(modalType || '');
                 $(modal).find('.modal-title').text(title);
                 if (clickOpener && !modal.contains(clickOpener)) modal.egOpener = clickOpener;
@@ -314,6 +319,11 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
                         return;
                     }
                     $(body).html(html);
+                    if (isCurrency) {
+                        const select = body.querySelector('select[data-eg-current-currency]');
+                        // An unlisted code leaves this required native select empty.
+                        if (select) select.value = select.dataset.egCurrentCurrency;
+                    }
                     if (languageMessage !== undefined) {
                         eGuardians.ui.modal.languageLinks(modal, languageMessage);
                     }
