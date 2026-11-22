@@ -44,6 +44,8 @@
     ? 'category-basket' in bodyClasses
     : (category.id|default(0) > 0 and category.id == config('IO.routing.category_basket'))) %}
 {% set isBasketPage = currentTemplate == 'tpl.basket' or isBasketCategory %}
+{% set isWishListPage = currentTemplate == 'tpl.wish-list' or (currentTemplate == 'tpl.category.content'
+    and category.id|default(0) > 0 and category.id == config('IO.routing.category_wish-list')) %}
 {% set currentRequestUri = request.getRequestUri() %}
 {% set newsletterPaths = {
     'de': 'content/newsletter',
@@ -60,7 +62,7 @@
     and not isBasketPage and currentTemplate != 'tpl.confirmation'
     and 'amazon' not in currentRequestUri
     and 'expressCheckoutReview' not in currentRequestUri %}
-{% if currentTemplate in vuePages|keys or isBasketCategory or "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or isShopBuilder or category.id in contentVuePages %}
+{% if currentTemplate in vuePages|keys or isBasketCategory or isWishListPage or "amazon" in currentRequestUri or "expressCheckoutReview" in currentRequestUri or isShopBuilder or category.id in contentVuePages %}
     {% set isVueView = true %}
 {% endif %}
 {% if isVueView %}
@@ -240,6 +242,9 @@
             </script>
             
             {{ Loader.include_components() }}
+            {% if isWishListPage %}
+                {% include "GuardiansBasicB2B::WishList.Components.WishList" %}
+            {% endif %}
             {{ LayoutContainer.show("Ceres::Script.Loader") }}
             {{ Translations.add( "Ceres", "Template" ) }}
             {{ get_json_data() }}

@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Wish list (2026-11-22)
+
+- The empty message appears after loading when the wish list contains neither active nor inactive variations. Inactive variations remain on the list and are marked as unavailable.
+
 ## Unreleased – Mobile header search (2026-11-21)
 
 - Opening the mobile header search immediately focuses the input, so it accepts the first character while the panel is sliding in.

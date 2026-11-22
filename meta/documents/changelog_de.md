@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Merkliste (2026-11-22)
+
+- Der Leerhinweis erscheint erst nach dem Laden, wenn weder aktive noch inaktive Varianten vorgemerkt sind. Inaktive Varianten bleiben auf der Merkliste und werden als „Nicht verfügbar“ angezeigt.
+
 ## Unreleased – Mobile Headersuche (2026-11-21)
 
 - Das Suchfeld erhält beim Öffnen sofort den Tastaturfokus. Das erste eingegebene Zeichen bleibt erhalten, auch während der Einblendung.
