@@ -7,6 +7,8 @@
 
 ## Unreleased – Language selection
 
+- Switching languages preserves the currency from the language link when neither the current URL nor the localized route specifies a valid currency. The language picker opens while the remaining page resources are loading.
+
 - The language dialog is centered and capped at 540 px. The new ShopBuilder template for category 5640 displays five large language links and marks the current language with a check.
 
 ## Unreleased – Quickview

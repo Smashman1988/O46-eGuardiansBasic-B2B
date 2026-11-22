@@ -7,6 +7,8 @@
 
 ## Unreleased – Sprachauswahl
 
+- Beim Sprachwechsel bleibt die Währung aus dem Sprachlink erhalten, wenn weder die aktuelle URL noch das lokalisierte Routenziel eine gültige Währung vorgibt. Die Sprachauswahl reagiert bereits, während die übrigen Seitenressourcen laden.
+
 - Der Sprachdialog ist zentriert und auf 540 px begrenzt. Die neue ShopBuilder-Vorlage für Kategorie 5640 zeigt fünf große Sprachlinks und kennzeichnet die aktive Sprache mit einem Häkchen.
 
 ## Unreleased – Artikelvorschau

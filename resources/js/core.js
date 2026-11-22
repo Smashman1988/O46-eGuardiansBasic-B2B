@@ -253,6 +253,10 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
         clickOpener = event.target.closest?.('[data-eg-handler="modalContent"]');
         if (clickOpener) queueMicrotask(() => { clickOpener = null; });
     }, true);
+    // The language picker is usable before the page-wide window.load bindings.
+    $(document).on('click', '.lang-switcher [data-eg-language-switch]', function () {
+        eGuardians.events.modalContent(this);
+    });
     $(document).on('show.bs.modal', dialogs, function (event) {
         this.egOpener = event.relatedTarget || clickOpener || document.activeElement;
     }).on('shown.bs.modal', dialogs, function () {
@@ -340,6 +344,16 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
                     if (code !== 'x') routes.set(code, link.dataset.egLanguageUrl || link.getAttribute('content') || link.href);
                 });
                 const current = new URL(location.href);
+                const knownCurrencies = Intl.supportedValuesOf?.('currency');
+                const currencyCode = params => {
+                    for (const key of ['currency', 'Currency']) {
+                        for (const value of params.getAll(key)) {
+                            const code = value.toUpperCase();
+                            if (/^[A-Za-z]{3}$/.test(value) && (!knownCurrencies || knownCurrencies.includes(code))) return code;
+                        }
+                    }
+                };
+                const pageCurrency = currencyCode(current.searchParams);
                 const item = [...document.querySelectorAll('article.single[data-item]')].find(node => !node.closest('.modal'));
                 const positiveId = value => /^[1-9][0-9]*$/.test(String(value || ''));
                 let selectedVariation = null;
@@ -356,15 +370,18 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
                     }
                 }
                 for (const link of modal.querySelectorAll('a[href]')) {
-                    const path = new URL(link.getAttribute('href'), location.href).pathname;
-                    const match = path.match(/^\/(de|en|fr|it|es)?\/?$/);
-                    const code = link.dataset.egFacetLanguage || (match ? match[1] || 'de' : null);
+                    const match = link.pathname.match(/^\/(de|en|fr|it|es)?\/?$/);
+                    const code = link.dataset.egFacetLanguage || link.hreflang || (match ? match[1] || 'de' : null);
                     if (!code) continue;
                     link.dataset.egFacetLanguage = code;
                     const target = routes.get(code);
-                    let url = target ? new URL(target, location.href) : null;
-                    if (url && !/^https?:$/.test(url.protocol)) url = null;
-                    if (url) {
+                    let url;
+                    if (target && link.origin === current.origin) {
+                        try { url = new URL(target, current); } catch { /* Use the existing unavailable-language state. */ }
+                    }
+                    if (url && url.origin === current.origin && /^https?:$/.test(url.protocol)) {
+                        // Preserve the page choice and IO route first; the widget carries the session currency.
+                        const currency = pageCurrency || currencyCode(url.searchParams) || currencyCode(new URLSearchParams(link.search));
                         if (!item && window.egFacets) url = window.egFacets.languageURL(url.href) || url;
                         if (item && selectedVariation) {
                             // IO's registered itemId_variationId route accepts both IDs.
@@ -374,14 +391,16 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
                         }
                         // Only supported explicit checkout context crosses languages.
                         // Never carry Lang, quickViewItem, arbitrary variationId, tracking or search parameters onto a PDP.
-                        const currency = current.searchParams.get('currency') || current.searchParams.get('Currency');
                         const country = current.searchParams.get('ShipToCountry');
-                        if (currency && /^[A-Z]{3}$/.test(currency.toUpperCase())) url.searchParams.set('currency', currency.toUpperCase());
+                        url.searchParams.delete('Currency');
+                        if (currency) url.searchParams.set('currency', currency);
+                        else url.searchParams.delete('currency');
                         if (positiveId(country)) url.searchParams.set('ShipToCountry', country);
                         link.href = url.href;
                         link.removeAttribute('aria-disabled');
                         link.removeAttribute('title');
                     } else {
+                        if (link.origin !== current.origin) link.removeAttribute('href');
                         link.setAttribute('aria-disabled', 'true');
                         link.title = unavailable;
                     }
