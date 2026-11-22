@@ -246,7 +246,20 @@
                 {% include "GuardiansBasicB2B::WishList.Components.WishList" %}
             {% endif %}
             {{ LayoutContainer.show("Ceres::Script.Loader") }}
-            {{ Translations.add( "Ceres", "Template" ) }}
+            {% if isWishListPage and lang in ['it', 'es'] %}
+                {# Use the Ceres translation block for both wishlist components. Store translations take precedence. #}
+                {% set wishListFallbacks = {
+                    wishListInactiveItemAvailability: trans('GuardiansBasicB2B::Template.wishListInactiveItemAvailability'),
+                    wishListInactiveItemId: trans('GuardiansBasicB2B::Template.wishListInactiveItemId')
+                } %}
+                <!-- SSR:global(translations.Ceres.Template) -->
+                <script type="application/json" data-translation="Ceres::Template">
+                    {{ wishListFallbacks|merge(services.localization.getTranslations('Ceres', 'Template')|default({}))|json_encode(15)|raw }}
+                </script>
+                <!-- /SSR -->
+            {% else %}
+                {{ Translations.add( "Ceres", "Template" ) }}
+            {% endif %}
             {{ get_json_data() }}
             
             {% set minSuffix = ceresConfig.log.performanceLevel == 'development' ? '' : '.min' %}

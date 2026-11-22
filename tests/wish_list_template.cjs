@@ -1,4 +1,4 @@
-// node tests/wish_list_template.cjs <Ceres root> <Twig autoloader> <Vue 2.6.12 basic SSR renderer> [results.json]
+// node tests/wish_list_template.cjs <Ceres root> <Twig autoloader> <Vue 2.6.12 SSR renderer> [results.json] [IT capture.html] [ES capture.html]
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -6,19 +6,23 @@ const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const { chromium } = require(process.env.O46_PLAYWRIGHT_MODULE || 'playwright');
 
-const [reference, twig, renderer, output] = process.argv.slice(2);
+const [reference, twig, renderer, output, itCapture, esCapture] = process.argv.slice(2);
 const read = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 const resource = file => read(path.join(reference, 'resources', file));
 const phpFlags = process.env.O46_PHP_EXT ? ['-d', 'extension_dir=' + process.env.O46_PHP_EXT, '-d', 'extension=mbstring'] : [];
-const layout = JSON.parse(execFileSync(process.env.O46_PHP || 'php', [...phpFlags, '-d', 'display_errors=stderr',
-    path.join(__dirname, 'wish_list_layout.php'), twig], {encoding:'utf8'}));
+function renderLayout(lang, dictionary) {
+    return JSON.parse(execFileSync(process.env.O46_PHP || 'php', [...phpFlags, '-d', 'display_errors=stderr',
+        path.join(__dirname, 'wish_list_layout.php'), twig, reference, lang], {encoding:'utf8',input:JSON.stringify(dictionary)}));
+}
+function readGroup(html) {
+    const tags = [...html.matchAll(/<script\b[^>]*data-translation="Ceres::Template"[^>]*>([\s\S]*?)<\/script>/g)];
+    assert.equal(tags.length,1,'Expected a single Ceres dictionary');
+    return JSON.parse(tags[0][1]);
+}
 const sfc = resource('js/src/app/components/wishList/WishList.vue');
 const template = sfc.match(/<template>\n([\s\S]*?)\n<\/template>/)[1].replace(/^  /gm, '');
 const original = '|| inactiveVariationIds.length !== 0';
 assert.equal(template.split(original).length, 2, 'Review the override against the new Ceres version');
-assert.equal(layout.template, template.replace(original, '&& inactiveVariationIds.length === 0')
-    .replace('Ceres::Template.wishListInactiveItems','Ceres::Template.wishListInactiveItemAvailability'),
-    'Review upstream changes outside the empty condition and unresolved-entry label');
 
 function exposeLoader(file, entry) {
     const source = resource('js/dist/' + file);
@@ -36,17 +40,46 @@ for (const lang of ['de','en','fr']) {
     dictionaries[lang] = Object.fromEntries([...resource('lang/' + lang + '/Template.properties')
         .matchAll(/^(\w+)\s*=\s*"(.*)"\s*$/gm)].map(m => [m[1], m[2]]));
 }
-for (const lang of ['it','es']) {
-    // These two merchant dictionaries are outside the Ceres distribution. Test key forwarding explicitly.
-    dictionaries[lang] = Object.fromEntries(Object.keys(dictionaries.de).map(key => [key, lang + '/' + key]));
+// Offline subset from the 426 Ceres dictionaries, or use full archived storefront responses.
+dictionaries.it = itCapture ? readGroup(read(itCapture)) : {
+    wishListNoItems:'Non hai articoli nella tua lista dei desideri.',wishListAvailability:'Disponibilità',wishListDelete:'Elimina'
+};
+dictionaries.es = esCapture ? readGroup(read(esCapture)) : {
+    wishListNoItems:'No tienes ningún artículo en tu lista de deseos.',wishListAvailability:'Disponibilidad',wishListDelete:'Eliminar'
+};
+const labels = {
+    de:['Nicht verfügbar','Varianten ID'],en:['Not available','Variation ID'],fr:['Non disponible','ID des variantes'],
+    it:['Non disponibile','ID variante'],es:['No disponible','ID de variante']
+};
+const layouts = {};
+for (const [lang,dictionary] of Object.entries(dictionaries)) {
+    const rendered = layouts[lang] = renderLayout(lang,dictionary);
+    assert.deepEqual(readGroup(rendered.originalTranslations),dictionary);
+    const [availability,id] = labels[lang];
+    assert.deepEqual(readGroup(rendered.translations),{
+        ...dictionary,wishListInactiveItemAvailability:availability,wishListInactiveItemId:id
+    },'Only missing labels may change: '+lang);
+    assert.equal(rendered.template, template.replace(original, '&& inactiveVariationIds.length === 0')
+        .replace('Ceres::Template.wishListInactiveItems','Ceres::Template.wishListInactiveItemAvailability'),
+        'Review upstream changes outside the empty condition and unresolved-entry label');
 }
+for (const lang of ['it','es']) {
+    const defaults = {wishListInactiveItemAvailability:labels[lang][0],wishListInactiveItemId:labels[lang][1]};
+    for (const key of Object.keys(defaults)) {
+        const merchant = {...dictionaries[lang],[key]:'Merchant wording'};
+        assert.deepEqual(readGroup(renderLayout(lang,merchant).translations),{...defaults,...merchant},
+            'Keep the configured '+key+' label for '+lang);
+    }
+}
+const layout=layouts.de;
 
 // This runs in the browser and, for hydration controls, in the Ceres server bundle's own JS realm.
 function initialise({active, inactive, sessionIds, dictionary, lang, serverSide, count = false, heart = false}) {
     const req = globalThis.ceresRequire;
     globalThis.App = {urls:{wishList:'/wish'}, templateType:'wish-list', isSSR:!!serverSide, language:lang, decimalSeparator:'.',
         config:{item:{},global:{shippingCostsCategoryId:0},log:{data:[]}}};
-    globalThis.translations = {Ceres:{Template:dictionary}};
+    // The server gets the SSR:global payload. The client service reads the actual rendered script tag.
+    if (serverSide) globalThis.translations = {Ceres:{Template:dictionary}};
     const Vue = req('./node_modules/vue/dist/vue.js');
     const hooks = req('./resources/js/src/mount.js');
     if (serverSide) Vue.component = hooks.component;
@@ -86,7 +119,7 @@ function initialise({active, inactive, sessionIds, dictionary, lang, serverSide,
     globalThis.fixture = {app, store, problems, rows, Vue};
     if (!serverSide) window.ceresStore = store;
 }
-const results = {routes:layout.routes, matrix:[], languages:[], hydration:[], buttons:[], persistence:[]};
+const results = {routes:layout.routes, matrix:[], languages:[], translationBaseline:[], hydration:[], buttons:[], persistence:[]};
 function serverMarkup(input) {
     const scope = vm.createContext({module:{exports:{}},require,process:{env:{VUE_ENV:'server'}},console,setTimeout,clearTimeout,
         templates:{'wish-list':layout.template}, translations:{}, input:{...input,serverSide:true}});
@@ -148,7 +181,7 @@ async function run() {
         page.on('console',msg=>{if(msg.type()==='error') browserErrors.push(msg.text());});
     }
     async function boot(opts) {
-        const {a=[],i=[],fixed=true,lang='de',reload=false,keepSaved=false,ssr=false,count=false,heart=false}=opts;
+        const {a=[],i=[],fixed=true,lang='de',reload=false,keepSaved=false,ssr=false,count=false,heart=false,originalTranslations=false}=opts;
         if(!reload && !keepSaved) {
             articleIds=[...a];
             inactiveIds=[...i];
@@ -157,9 +190,10 @@ async function run() {
         assert.deepEqual(savedBefore,{active:a,inactive:i});
         requestLog=[];
         wishlistResponse=new Promise(resolve=>{answerWishlist=resolve;});
-        const input={active:ssr?articleIds:[],inactive:ssr?inactiveIds:[],sessionIds:[...articleIds,...inactiveIds],dictionary:dictionaries[lang],lang,count,heart};
+        const group=originalTranslations ? layouts[lang].originalTranslations : layouts[lang].translations;
+        const input={active:ssr?articleIds:[],inactive:ssr?inactiveIds:[],sessionIds:[...articleIds,...inactiveIds],dictionary:readGroup(group),lang,count,heart};
         const rendered=ssr?await serverMarkup(input):'<main id="vue-app"></main>';
-        markup='<!doctype html><html lang="'+lang+'"><head>'+(fixed?layout.markup:'')+'</head><body>'+rendered+
+        markup='<!doctype html><html lang="'+lang+'"><head>'+(fixed?layouts[lang].markup:'')+group+'</head><body>'+rendered+
             '<script src="/base.js"></script><script src="/chunks.js"></script></body></html>';
         if(reload)await page.reload();else await page.goto(origin);
         await page.evaluate(initialise,input);
@@ -167,8 +201,10 @@ async function run() {
             const root=document.querySelector('#vue-app');
             const empty=!!root.querySelector('p.text-muted.text-center');
             const text=root.querySelector('.mt-5 .h4')?.textContent;
+            const idLabel=root.querySelector('.badge-danger')?.closest('.position-relative').querySelector('strong').textContent.trim();
+            const badge=root.querySelector('.badge-danger')?.textContent.trim();
             fixture.app.$mount(root,ssr);
-            return {empty,text,rootReused:fixture.app.$el===root};
+            return {empty,text,idLabel,badge,rootReused:fixture.app.$el===root};
         },ssr);
         await page.waitForFunction(()=>fixture.store.state.wishList.isLoading);
         assert.equal(await page.locator('.loading-animation').count(),1);
@@ -180,6 +216,9 @@ async function run() {
         const observed=await page.evaluate(()=>({
             ids:[...fixture.store.state.wishList.wishListIds],
             badges:[...document.querySelectorAll('.badge-danger')].map(el=>el.textContent.trim()),
+            idLabels:[...document.querySelectorAll('.badge-danger')].map(el=>el.closest('.position-relative').querySelector('strong').textContent.trim()),
+            rawKeys:[...new Set(document.querySelector('#vue-app').innerText.match(/\w+::Template\.\w+/g)||[])],
+            listCount:fixture.app.$children.filter(c=>c.$options.name==='wish-list').length,
             active:[...document.querySelectorAll('.item-name')].map(el=>Number(el.getAttribute('href').split('/').pop())),
             inactive:[...document.querySelectorAll('.badge-danger')].map(el=>Number(el.closest('.position-relative').querySelector('span').textContent)),
             empty:document.querySelector('p.text-muted.text-center')?.textContent.trim()||null,
@@ -188,8 +227,13 @@ async function run() {
         }));
         assert.deepEqual(observed.errors,[]);assert.equal(observed.component,'wish-list');
         assert.deepEqual(observed.active,a);assert.deepEqual(observed.inactive,i);
-        assert.deepEqual(observed.badges,i.map(()=>dictionaries[lang].wishListInactiveItemAvailability));
-        assert.equal(observed.unavailable,i.length?dictionaries[lang][fixed?'wishListInactiveItemAvailability':'wishListInactiveItems']:null);
+        const availability=originalTranslations?'Ceres::Template.wishListInactiveItemAvailability':labels[lang][0];
+        const idLabel=originalTranslations?'Ceres::Template.wishListInactiveItemId':labels[lang][1];
+        assert.deepEqual(observed.badges,i.map(()=>availability));
+        assert.deepEqual(observed.idLabels,i.map(()=>idLabel+':'));
+        assert.equal(observed.listCount,1);
+        assert.deepEqual(observed.rawKeys.sort(),originalTranslations?[availability,idLabel].sort():[]);
+        assert.equal(observed.unavailable,i.length?(fixed?availability:dictionaries[lang].wishListInactiveItems):null);
         const shouldBeEmpty=!a.length&&!i.length;
         assert.equal(observed.empty,(fixed?shouldBeEmpty:(!a.length||i.length))?dictionaries[lang].wishListNoItems:null);
         assert.deepEqual(requestLog,['GET /rest/io/itemWishList']);
@@ -223,9 +267,22 @@ async function run() {
                 const state=await boot({a,i,fixed,reload});results.matrix.push({a,i,fixed,reload,...state});
             }
         }
-        for(const lang of ['de','en','fr','it','es']){
-            const empty=await boot({lang}),mixed=await boot({lang,a:[101],i:[202]});
-            results.languages.push({lang,empty:empty.observed.empty,unavailable:mixed.observed.unavailable});
+        for(const lang of ['it','es']){
+            const original=await boot({lang,i:[202],originalTranslations:true});
+            results.translationBaseline.push({lang,observed:original.observed});
+        }
+        for(const lang of Object.keys(labels)){
+            await boot({lang});
+            for(const reload of [false,true]){
+                const state=await boot({lang,i:[202],reload});
+                results.languages.push({lang,reload,...state});
+            }
+            const state=await boot({lang,i:[202],ssr:true});
+            assert.ok(state.before.rootReused);
+            assert.equal(state.before.text,labels[lang][0]);
+            assert.equal(state.before.badge,labels[lang][0]);
+            assert.equal(state.before.idLabel,labels[lang][1]+':');
+            results.hydration.push({lang,i:[202],...state.before});
         }
         for(const [a,i] of [[[],[]],[[101],[202]],[[],[202]]]){
             const {before}=await boot({ssr:true,a,i});
@@ -253,7 +310,8 @@ async function run() {
         results.unexpectedRequests=unexpectedRequests;
         const passed=fixed=>results.matrix.filter(m=>m.fixed===fixed&&m.meetsExpectation).length;
         assert.equal(passed(false),6);assert.equal(passed(true),10);
-        console.log('Display original '+passed(false)+'/10; override '+passed(true)+'/10; 8 routes; 5 language checks; 3 SSR/hydration cases; 4 manual writes; persistence across reload and a fresh fixture session.');
+        console.log('Display original '+passed(false)+'/10; override '+passed(true)+'/10; 8 routes per language; '
+            +results.languages.length+' language checks; '+results.hydration.length+' SSR/hydration cases; 4 manual writes; persistence across reload and a fresh fixture session.');
         if(output)fs.writeFileSync(output,JSON.stringify(results,null,2)+'\n');
     } finally {await browser.close();}
 }

@@ -2,6 +2,7 @@
 
 ## Unreleased – Wish list (2026-11-22)
 
+- Inactive wish list entries now show the availability status and variation ID labels in Italian and Spanish.
 - The empty message appears after loading when the wish list contains neither active nor inactive variations. Inactive variations remain on the list and are marked as unavailable.
 
 ## Unreleased – Mobile header search (2026-11-21)

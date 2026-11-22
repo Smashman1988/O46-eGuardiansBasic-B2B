@@ -2,6 +2,7 @@
 
 ## Unreleased – Merkliste (2026-11-22)
 
+- Inaktive Merklisteneinträge zeigen Verfügbarkeit und Varianten-ID auch auf Italienisch und Spanisch mit lesbaren Beschriftungen.
 - Der Leerhinweis erscheint erst nach dem Laden, wenn weder aktive noch inaktive Varianten vorgemerkt sind. Inaktive Varianten bleiben auf der Merkliste und werden als „Nicht verfügbar“ angezeigt.
 
 ## Unreleased – Mobile Headersuche (2026-11-21)
