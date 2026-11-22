@@ -204,6 +204,8 @@ O46Core.matrix = function () {
   var EG_I18N = {
     de: {
       add_start: "Wird hinzugefügt...Bitte warten",
+      select_quantity: "Bitte eine verfügbare Variante und eine positive ganze Menge auswählen.",
+      stock_check_failed: "Die verfügbare Menge konnte nicht geprüft werden. Bitte erneut versuchen.",
       add_uncertain: "Warenkorb bitte vor dem erneuten Hinzufügen prüfen.",
       added_ok: "Hinzugefügt ✓",
       not_addable: "Nicht verfügbar",
@@ -213,6 +215,8 @@ O46Core.matrix = function () {
     },
     en: {
       add_start: "Adding...Please wait",
+      select_quantity: "Select an available variant and a positive whole quantity.",
+      stock_check_failed: "The available quantity could not be checked. Please try again.",
       add_uncertain: "Please check your basket before adding again.",
       added_ok: "Added ✓",
       not_addable: "Not available",
@@ -222,6 +226,8 @@ O46Core.matrix = function () {
     },
     fr: {
       add_start: "Ajout en cours...Veuillez patienter",
+      select_quantity: "Veuillez sélectionner une variante disponible et une quantité entière positive.",
+      stock_check_failed: "La quantité disponible n’a pas pu être vérifiée. Veuillez réessayer.",
       add_uncertain: "Veuillez vérifier votre panier avant un nouvel ajout.",
       added_ok: "Ajouté ✓",
       not_addable: "Indisponible",
@@ -231,6 +237,8 @@ O46Core.matrix = function () {
     },
     it: {
       add_start: "Aggiunta in corso...attendere",
+      select_quantity: "Seleziona una variante disponibile e una quantità intera positiva.",
+      stock_check_failed: "Impossibile verificare la quantità disponibile. Riprova.",
       add_uncertain: "Controlla il carrello prima di aggiungere di nuovo.",
       added_ok: "Aggiunto ✓",
       not_addable: "Non disponibile",
@@ -240,6 +248,8 @@ O46Core.matrix = function () {
     },
     es: {
       add_start: "Añadiendo...Espere",
+      select_quantity: "Selecciona una variante disponible y una cantidad entera positiva.",
+      stock_check_failed: "No se ha podido comprobar la cantidad disponible. Vuelve a intentarlo.",
       add_uncertain: "Comprueba la cesta antes de volver a añadir.",
       added_ok: "Añadido ✓",
       not_addable: "No disponible",
@@ -1242,6 +1252,15 @@ O46Core.matrix = function () {
   }
 
   // === BASKET UI ===
+  function showBasketConfirmation() {
+    window.eGuardians?.basket?.openBasketPreviewSmall?.(function () {
+      var $jq = window.jQuery || window.$;
+      if (!$jq) return;
+      $jq("html").addClass("basket-prev-small-open");
+      setTimeout(function () { $jq("html").removeClass("basket-prev-small-open"); }, 3000);
+    });
+  }
+
   function addItemsToBasketBatch(items) {
     var basketItems = items.map(function (item) {
       return { variationId: toInt(item.variationId), quantity: toInt(item.quantity) };
@@ -2020,6 +2039,22 @@ O46Core.matrix = function () {
       var btn = e.target && e.target.closest ? e.target.closest("[data-eg-matrix-add]") : null;
       if (!btn || btn.disabled) return;
 
+      var modal = matrix.closest(".modal-cross");
+      var view = modal && O46Core.quickview;
+      var opening = view?.current;
+      if (modal && !opening?.rendered) return;
+
+      function stillOpen() {
+        return matrix.isConnected && view.current === opening;
+      }
+
+      function closeConfirmedQuickview() {
+        if (!stillOpen()) return;
+        var $modal = window.jQuery(modal);
+        $modal.one("hidden.bs.modal", showBasketConfirmation);
+        $modal.modal("hide");
+      }
+
       if (!btn.getAttribute("data-eg-base-text")) {
         btn.setAttribute("data-eg-base-text", btn.textContent || "");
       }
@@ -2036,7 +2071,10 @@ O46Core.matrix = function () {
         var qtyEl = row._egQtyEl || row.querySelector("[data-eg-qty]");
         if (!qtyEl || qtyEl.disabled) continue;
         var q = toInt(qtyEl.value);
-
+        if (opening && (!qtyEl.validity.valid || (q > 0 && !/^[1-9]\d*$/.test(row.dataset.egVariationId || "")))) {
+          showErrorToast(t("select_quantity"), matrix);
+          return;
+        }
         if (q <= 0) continue;
 
         clampQtyToStock(row);
@@ -2055,7 +2093,10 @@ O46Core.matrix = function () {
         });
       }
 
-      if (!items.length) return;
+      if (!items.length) {
+        if (opening) showErrorToast(t("select_quantity"), matrix);
+        return;
+      }
 
       // The pre-clamp and the POST operate on this selection. Do not let a
       // later edit be cleared as if it had been included in the same write.
@@ -2075,7 +2116,11 @@ O46Core.matrix = function () {
           try {
             snapBefore = await getBasketSnapshot();
           } catch (eBefore) {
-            snapBefore = null;
+            if (opening) {
+              if (stillOpen()) showErrorToast(t("stock_check_failed"), matrix);
+              btn.textContent = baseText;
+              return;
+            }
           }
 
           // Vor dem eigentlichen Add prüfen, was schon im Warenkorb liegt.
@@ -2086,7 +2131,7 @@ O46Core.matrix = function () {
           recalcMatrixTotals(matrix);
 
           if (!items.length) {
-            showInfoToast(t("info_nothing_addable"), "[data-eg-size-matrix]", 1);
+            if (!opening || stillOpen()) showInfoToast(t("info_nothing_addable"), matrix, 1);
 
             btn.textContent = t("not_addable");
 
@@ -2104,10 +2149,9 @@ O46Core.matrix = function () {
           var response = await addItemsToBasketBatch(items);
 
           var basket = response?.events?.AfterBasketChanged?.basket || response?.data?.basket;
-          // A confirmed write is complete even if the separate header GET stalls.
-          O46Core.basketHeader.accept(basket).then(function (accepted) {
-            if (!accepted) return O46Core.basketHeader.refreshAfterWrite();
-          });
+          var headerUpdated = O46Core.basketHeader.accept(basket).then(function (accepted) {
+            return accepted || O46Core.basketHeader.refreshAfterWrite();
+          }).catch(function () { return false; });
 
           var qInputs = matrix.querySelectorAll("[data-eg-qty]");
           for (var j = 0; j < qInputs.length; j++) {
@@ -2116,40 +2160,40 @@ O46Core.matrix = function () {
 
           recalcMatrixTotals(matrix);
 
-          if (hadAdjustments) {
-            showInfoToast(t("info_some_limited"), "[data-eg-size-matrix]", 1);
+          if (hadAdjustments && (!opening || stillOpen())) {
+            showInfoToast(t("info_some_limited"), matrix, 1);
           }
 
           btn.textContent = t("added_ok");
-          btn.disabled = false;
-          btn.removeAttribute("aria-busy");
-          btn.removeAttribute("data-eg-busy");
-
-          if (window.eGuardians && eGuardians.basket && typeof eGuardians.basket.openBasketPreviewSmall === "function") {
-            eGuardians.basket.openBasketPreviewSmall(function () {
-              var $jq = window.jQuery || window.$;
-
-              if ($jq) {
-                $jq("html").addClass("basket-prev-small-open");
-
-                setTimeout(function () {
-                  $jq("html").removeClass("basket-prev-small-open");
-                }, 3000);
-              }
-            });
+          if (!opening) {
+            showBasketConfirmation();
+            return;
           }
 
-          return;
+          var updated = await headerUpdated;
+          if (!stillOpen()) return;
+          if (!updated) {
+            showErrorToast(t("added_ok") + " " + t("add_uncertain"), matrix);
+            return;
+          }
+          if (hadAdjustments) return;
+
+          // Bootstrap ignores hide during opening. Check ownership again when
+          // shown, before subscribing the existing toast to this actual close.
+          if (view.phase === "opening") window.jQuery(modal).one("shown.bs.modal", closeConfirmedQuickview);
+          else closeConfirmedQuickview();
         } catch (err) {
           // Bundles can partially add other variation IDs, and another tab can
           // change quantities. A later basket snapshot cannot identify this write.
           O46Core.basketHeader.refreshAfterWrite();
-          showErrorToast((err?.basketReason ? err.basketReason + " " : "") + t("add_uncertain"), matrix);
+          if (!opening || stillOpen()) showErrorToast((err?.basketReason ? err.basketReason + " " : "") + t("add_uncertain"), matrix);
           btn.textContent = t("add_uncertain");
-          btn.disabled = false;
-          btn.removeAttribute("aria-busy");
-          btn.removeAttribute("data-eg-busy");
         } finally {
+          if (items.length) {
+            btn.disabled = false;
+            btn.removeAttribute("aria-busy");
+            btn.removeAttribute("data-eg-busy");
+          }
           matrix._egWriteInputs = null;
           writeInputs.forEach(function (input) {
             input.disabled = input.closest(".eg-row").dataset.egVariationState !== "available";

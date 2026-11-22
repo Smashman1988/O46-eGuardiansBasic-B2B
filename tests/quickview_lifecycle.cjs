@@ -16,7 +16,6 @@ const revision = 'b6ba34996bd261482af3e8cd694707a3594d789e';
 const read = file => fs.readFileSync(file, 'utf8');
 const core = baseline ? cp.execFileSync('git', ['show', revision + ':resources/js/core.min.js'], {encoding:'utf8', maxBuffer:2e6}) :
     compressed ? read('resources/js/core.min.js') : ['core.js','search.js','zoom-loader.js'].map(f => read('resources/js/' + f)).join('\n');
-fs.mkdirSync(output, {recursive:true});
 const cases = new Map(), results = [];
 let origin, serial = 0;
 const labels = {de:'Menge', en:'Quantity', fr:'Quantité', it:'Quantità', es:'Cantidad'};
@@ -160,6 +159,7 @@ async function reopen(page, delay, duringOpening=false) {
     }
 }
 async function main() {
+    fs.mkdirSync(output, {recursive:true});
     await new Promise(resolve => server.listen(0,'127.0.0.1',resolve)); origin='http://127.0.0.1:'+server.address().port;
     const browser=await chromium.launch({executablePath:process.env.O46_BROWSER_EXECUTABLE});
     try {
@@ -309,4 +309,5 @@ async function main() {
         }
     } finally {await browser.close();server.close();fs.writeFileSync(path.join(output,'results.json'),JSON.stringify({baseline,compressed,revision,results},null,2));}
 }
-main().catch(error=>{console.error(error);process.exitCode=1;server.close();});
+module.exports = {fixture, product};
+if (require.main === module) main().catch(error=>{console.error(error);process.exitCode=1;server.close();});

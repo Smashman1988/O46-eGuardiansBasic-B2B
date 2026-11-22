@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Artikelvorschau
+
+- Nach dem vollständigen Hinzufügen der gewählten Varianten schließt sich die Artikelvorschau, sobald der Warenkorb im Header aktualisiert ist. Die Bestätigung erscheint über der Produktliste. Bei Fehlern oder angepassten Mengen bleibt die Vorschau geöffnet.
+
 ## Unreleased – Währungsdialog
 
 - Der Währungsdialog zeigt seine Überschrift schon beim Öffnen in der gewählten Shopsprache.

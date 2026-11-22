@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Quickview
+
+- Quickview closes once all selected quantities have been added and the basket header has updated. The confirmation appears over the product list. Quickview stays open on errors or quantity adjustments.
+
 ## Unreleased – Currency dialog
 
 - The currency dialog shows its title in the selected shop language as soon as it opens.
