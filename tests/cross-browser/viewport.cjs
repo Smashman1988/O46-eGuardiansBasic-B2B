@@ -36,25 +36,36 @@ function observeViewport(width) {
     // event establish a stable layout. A stable previous layout can be retried once.
     function settle(holdMs=0, strictClient=true) {
         return new Promise(resolve => {
-            let previous, stableSince, frame, samples = 0;
+            let previous, stableSince, frame, samples = 0, confirming = false;
+            const signature = last => [generation,last.media,last.desktop,last.layout,last.inner,last.visual].join('/');
+            const target = last => last.media && last.desktop === (width>=992) && (!strictClient || last.layout===width);
             function finish(stable, last) {
                 cancelAnimationFrame(frame);
                 clearTimeout(timer);
-                resolve({stable, samples, last});
+                resolve({stable, samples, last, confirming, heldMs:stableSince===undefined?0:last.time-stableSince});
             }
             function paint() {
                 const last = measure();
                 samples++;
-                const signature = [generation,last.media,last.desktop,last.layout].join('/');
-                if (signature === previous) {
+                const current = signature(last);
+                if (current === previous) {
                     stableSince ??= last.time;
                     if (!last.media || (strictClient && last.layout!==width) || last.time-stableSince>=holdMs) return finish(true,last);
-                } else stableSince=undefined;
-                previous = signature;
+                } else {
+                    stableSince=undefined;
+                    if (confirming) return finish(false,last);
+                }
+                previous = current;
                 frame = requestAnimationFrame(paint);
             }
-            // A suspended render loop must also return a diagnostic.
-            const timer = setTimeout(()=>finish(false,measure()),1500);
+            // At the acquisition deadline only an already observed, matching pair
+            // of paints can finish its hold. Any further change invalidates it.
+            let timer = setTimeout(()=>{
+                const last=measure();
+                if (!holdMs || stableSince===undefined || !target(last) || signature(last)!==previous) return finish(false,last);
+                confirming=true;
+                timer=setTimeout(()=>finish(false,measure()),holdMs);
+            },1500);
             frame = requestAnimationFrame(paint);
         });
     }

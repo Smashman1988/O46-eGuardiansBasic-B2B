@@ -142,8 +142,9 @@ function overview() {
     const tag=env.GITHUB_REF_NAME, commit=env.TEST_COMMIT;
     const selected=require('./profile-selection.cjs')(tag,profiles);
     const single=selected.length===1;
-    const mode=single?'Einzelprofil iPhone':'Vollständige Matrix';
     const notScheduled=Object.keys(profiles).filter(name=>!selected.includes(name));
+    const full=notScheduled.length===0;
+    const mode=full?'Vollständige Matrix':single?'Einzelprofil iPhone':'Desktop-Teilprüfung Chrome und Chromium';
     const rows=selected.map(name=>{
         const dir=path.join(overviewDir,'storefront-'+name);
         const row=read(path.join(dir,'profile.json'));
@@ -161,7 +162,7 @@ function overview() {
         else if (row.totals.limited && row.status===PASS) row.status=INCOMPLETE;
         return row;
     });
-    const preview=single?null:read(path.join(overviewDir,'preview-identification','preview.json'));
+    const preview=full?read(path.join(overviewDir,'preview-identification','preview.json')):null;
     const total=counts();
     for(const row of rows) if(row.totals) for(const key of Object.keys(total)) total[key]+=row.totals[key];
     let status=PASS;
@@ -172,12 +173,14 @@ function overview() {
     const totalsText=Object.entries(labels).map(([key,label])=>label+' '+total[key]).join(' · ');
     const unplanned=rows.filter(row=>!row.planned).length;
     const started=rows.filter(r=>r.stages?.launch==='success' && r.browser?.version).length;
-    const scope=single?(rows[0].totals?.passed ? 'Keine vollständige Cross-Browser-Freigabe – nur iPhone geprüft (WebKit-Geräteemulation).' : 'Einzelprofil iPhone eingeplant. Der Funktionsnachweis und eine vollständige Cross-Browser-Freigabe stehen aus.'):'Funktionsprüfungen mit Twig-Fixtures. Fünf Desktopprofile und fünf emulierte Mobilgeräte. Native Shopfunktionen und physische Geräte wurden in dieser Matrix nicht geprüft.';
+    let scope='Funktionsprüfungen mit Twig-Fixtures. Fünf Desktopprofile und fünf emulierte Mobilgeräte. Native Shopfunktionen und physische Geräte wurden in dieser Matrix nicht geprüft.';
+    if (single) scope=rows[0].totals?.passed ? 'Keine vollständige Cross-Browser-Freigabe – nur iPhone geprüft (WebKit-Geräteemulation).' : 'Einzelprofil iPhone eingeplant. Der Funktionsnachweis und eine vollständige Cross-Browser-Freigabe stehen aus.';
+    else if (!full) scope='Teilprüfung mit Twig-Fixtures für Google Chrome und Chromium. Eine vollständige Cross-Browser-Freigabe erfordert alle zehn Profile.';
     const known=rows.flatMap(r=>r.findings.filter(f=>f.kind==='Bestätigte Browserinkompatibilität').map(f=>r.project+' · '+f.title));
     const coverage=total.limited ? 'Eingeschränkte Testabdeckung: '+total.limited+' Hintergrundtab-Prüfung(en) ohne bestätigtes hidden.' : 'Dokumentierte Einschränkungen: 0.';
     const plannedTests=rows.reduce((sum,row)=>sum+(row.planned||0),0);
     const tech=mode+' · Profile '+selected.length+' · '+(unplanned?'Testplan unvollständig':'Geplante Tests '+plannedTests)+' · GitHub-Matrix '+env.MATRIX_RESULT+' · Browserstarts '+started+'/'+selected.length;
-    const excluded=single?'Nicht eingeplant: '+notScheduled.join(', ')+'.':'';
+    const excluded=full?'':'Nicht eingeplant: '+notScheduled.join(', ')+'.';
     const table=rows.map(r=>{
         const rel='storefront-'+r.project+'/report/index.html';
         const name=fs.existsSync(path.join(overviewDir,rel))?'<a href="'+rel+'">'+r.project+'</a>':r.project;

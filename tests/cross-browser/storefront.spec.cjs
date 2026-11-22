@@ -26,7 +26,7 @@ test('Mehrfachfilter, Anwenden, Rücksetzen und History',async({page,shop,hasTou
     await expect(page.locator('.category-product-list .cat-item')).toHaveCount(1);
     await page.goForward();await expect(page.locator('[data-eg-remove-facet]')).toHaveCount(0);
 });
-test('LiveShopping-Karten, Raster, Bilder, Logo, Bewertung und Fokus',async({page,shop,hasTouch})=>{
+test('LiveShopping-Karten, Raster, Bilder, Logo, Bewertung und Fokus',async({page,shop,hasTouch},info)=>{
     await shop.open('/');
     const cards=page.locator('.category-product-list .cat-item');await expect(cards).toHaveCount(6);
     const first=cards.first();
@@ -46,7 +46,44 @@ test('LiveShopping-Karten, Raster, Bilder, Logo, Bewertung und Fokus',async({pag
     expect(Math.abs(geometry[0].x-rightMargin),'Außenabstände des Rasters').toBeLessThanOrEqual(2);
     expect(geometry[0].border).toBe('rgba(0, 0, 0, 0)');
     const action=first.locator('.linkabso');await action.focus();await expect(action).toBeFocused();
-    if(!hasTouch){await action.hover();expect(await action.evaluate(el=>el.matches(':hover'))).toBe(true);}
+    if(!hasTouch){
+        const probe=await action.evaluateHandle(button=>{
+            let point;
+            const events=[];
+            const describe=node=>node && {tag:node.tagName,classes:node.getAttribute?.('class')};
+            function sample() {
+                const hit=point && document.elementFromPoint(point.x,point.y);
+                return {time:performance.now(),point,hit:describe(hit),inside:hit?button.contains(hit):null,
+                    hover:button.matches(':hover'),cardHover:button.closest('.cat-item').matches(':hover'),
+                    pointer:getComputedStyle(button).pointerEvents,focus:document.activeElement===button,documentFocus:document.hasFocus(),
+                    visibility:document.visibilityState,rect:button.getBoundingClientRect().toJSON(),
+                    scroll:[scrollX,scrollY],color:getComputedStyle(button).backgroundColor};
+            }
+            function record(e) {
+                point={x:e.clientX,y:e.clientY};
+                events.push({type:e.type,time:performance.now(),point,trusted:e.isTrusted,target:describe(e.target)});
+            }
+            const types=['pointerover','pointermove','pointerout'];
+            for(const type of types) document.addEventListener(type,record,true);
+            return {before:sample(),async finish(){
+                const after=sample();
+                // Preserve the immediate verdict. A later sample only diagnoses
+                // whether the hover returned without another Playwright action.
+                let later;
+                if (!after.hover) {
+                    await new Promise(done=>setTimeout(done,330));
+                    later=sample();
+                }
+                for(const type of types) document.removeEventListener(type,record,true);
+                return {before:this.before,events,after,later};
+            }};
+        });
+        await action.hover();
+        const evidence=await probe.evaluate(p=>p.finish());
+        await probe.dispose();
+        await info.attach('karten-hover',{body:JSON.stringify(evidence),contentType:'application/json'});
+        expect(evidence.after.hover,'CSS-Hover unmittelbar nach der Mausaktion').toBe(true);
+    }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 test('Mobile Headersuche nimmt das erste Zeichen beim Öffnen an',async({page,shop,hasTouch})=>{

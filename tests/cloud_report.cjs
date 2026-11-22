@@ -56,25 +56,33 @@ test('Explizite Test-Tags wählen nur die vorgesehene Browserinstallation',()=>{
     const one=matrix('b2b-browser-iphone-001'), all=matrix('b2b-browser-test-004');
     assert.equal(one.status,0);assert.equal(all.status,0);
     assert.deepEqual(JSON.parse(one.stdout).include,[{project:'iphone',install:'webkit'}]);
+    const desktop=matrix('b2b-browser-desktop-001');
+    assert.equal(desktop.status,0);
+    assert.deepEqual(JSON.parse(desktop.stdout).include,[{project:'chrome',install:'chrome'},{project:'chromium',install:'chromium'}]);
     assert.deepEqual(JSON.parse(all.stdout).include.map(p=>p.project),Object.keys(profiles));
     for(const name of ['develop','refs/heads/develop','b2b-browser-ipad-001','']) assert.notEqual(matrix(name).status,0);
 });
 
-for(const [name,tag,scope,result,expected] of [
+for(const [name,tag,scope,result,expected,desktopArtifacts] of [
     ['iPhone bestanden','b2b-browser-iphone-001',1,'BESTANDEN','BESTANDEN'],
     ['iPhone eingeschränkt','b2b-browser-iphone-001',1,'BESTANDEN MIT EINSCHRÄNKUNGEN','BESTANDEN MIT EINSCHRÄNKUNGEN'],
     ['iPhone fehlgeschlagen','b2b-browser-iphone-001',1,'FEHLGESCHLAGEN','FEHLGESCHLAGEN'],
     ['iPhone-Artefakt fehlt','b2b-browser-iphone-001',1,null,'UNVOLLSTÄNDIG'],
-    ['Vollmatrix mit nur einem Artefakt','b2b-browser-test-004',10,'BESTANDEN','UNVOLLSTÄNDIG']
+    ['Vollmatrix mit nur einem Artefakt','b2b-browser-test-004',10,'BESTANDEN','UNVOLLSTÄNDIG'],
+    ['Desktop bestanden','b2b-browser-desktop-001',2,null,'BESTANDEN',{chrome:'BESTANDEN',chromium:'BESTANDEN'}],
+    ['Desktop mit Pflichtfehler','b2b-browser-desktop-001',2,null,'FEHLGESCHLAGEN',{chrome:'BESTANDEN',chromium:'FEHLGESCHLAGEN'}],
+    ['Desktop mit fehlendem Chromium-Artefakt','b2b-browser-desktop-001',2,null,'UNVOLLSTÄNDIG',{chrome:'BESTANDEN'}]
 ]) test(name,t=>{
     const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'o46-selection-'));
     t.after(()=>fs.rmSync(tmp,{recursive:true,force:true}));
-    const output=path.join(tmp,'.cache/browser-overview'), dir=path.join(output,'storefront-iphone');
-    fs.mkdirSync(path.join(dir,'report'),{recursive:true});
-    if(result) {
-        const limited=Number(result==='BESTANDEN MIT EINSCHRÄNKUNGEN'), failed=Number(result==='FEHLGESCHLAGEN');
-        const row={project:'iphone',commit:'fixture',tag,status:result,planned:23,stages:{launch:'success'},
-            browser:{version:'26.5'},totals:{passed:23-failed-limited,skipped:0,limited,failed,blocked:0},issues:[],findings:[]};
+    const output=path.join(tmp,'.cache/browser-overview');
+    const artifacts=desktopArtifacts || (result?{iphone:result}:{});
+    for(const [project,status] of Object.entries(artifacts)) {
+        const dir=path.join(output,'storefront-'+project);
+        fs.mkdirSync(path.join(dir,'report'),{recursive:true});
+        const limited=Number(status==='BESTANDEN MIT EINSCHRÄNKUNGEN'), failed=Number(status==='FEHLGESCHLAGEN');
+        const row={project,commit:'fixture',tag,status,planned:25,stages:{launch:'success'},
+            browser:{version:'fixture'},totals:{passed:25-failed-limited,skipped:0,limited,failed,blocked:0},issues:[],findings:[]};
         fs.writeFileSync(path.join(dir,'profile.json'),JSON.stringify(row));
         for(const file of ['browser.json','planned.json','results.json','report/index.html']) fs.writeFileSync(path.join(dir,file),'{}');
     }
@@ -85,12 +93,19 @@ for(const [name,tag,scope,result,expected] of [
     assert.equal(overview.selectedProfiles.length,scope);
     assert.equal(overview.rows.length,scope);
     assert.equal(overview.notScheduled.length,10-scope);
-    assert.equal(overview.profilesWithoutPlan,scope-Number(Boolean(result)));
-    assert.equal(overview.rows.filter(r=>r.status==='BLOCKIERT').length,scope-Number(Boolean(result)));
+    const missing=scope-Object.keys(artifacts).length;
+    assert.equal(overview.profilesWithoutPlan,missing);
+    assert.equal(overview.rows.filter(r=>r.status==='BLOCKIERT').length,missing);
+    if(desktopArtifacts) {
+        assert.deepEqual(overview.selectedProfiles,['chrome','chromium']);
+        assert.deepEqual(overview.notScheduled,Object.keys(profiles).filter(p=>!['chrome','chromium'].includes(p)));
+        assert.equal(overview.plannedTests,25*(scope-missing));
+    }
     assert.equal(run.status,expected.startsWith('BESTANDEN')?0:1);
     for(const content of [fs.readFileSync(path.join(output,'index.html'),'utf8'),fs.readFileSync(path.join(tmp,'summary.md'),'utf8')]) {
         assert.ok(content.includes(expected));
         assert.ok(content.includes(overview.mode));
         if(scope===1) assert.ok(content.includes('Nicht eingeplant: chromium') && content.includes('Cross-Browser-Freigabe'));
+        if(desktopArtifacts) assert.ok(content.includes('Nicht eingeplant: '+overview.notScheduled.join(', ')) && content.includes('Teilprüfung'));
     }
 });

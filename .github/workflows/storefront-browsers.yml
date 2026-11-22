@@ -6,6 +6,7 @@ on:
     tags:
       - 'b2b-browser-test-*'
       - 'b2b-browser-iphone-*'
+      - 'b2b-browser-desktop-*'
 
 permissions:
   contents: read
@@ -90,10 +91,10 @@ jobs:
         name: Launch and identify browser
         run: xvfb-run -a node tests/cross-browser/cloud-report.cjs launch
       - name: Identify anonymous preview from a fresh browser
-        if: matrix.project == 'chromium'
+        if: matrix.project == 'chromium' && startsWith(github.ref_name, 'b2b-browser-test-')
         run: node tests/cross-browser/preview-check.cjs >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
-        if: always() && matrix.project == 'chromium'
+        if: always() && matrix.project == 'chromium' && startsWith(github.ref_name, 'b2b-browser-test-')
         with:
           name: preview-identification
           overwrite: true

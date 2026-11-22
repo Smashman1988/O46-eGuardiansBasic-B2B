@@ -23,6 +23,8 @@ Ein neuer Tag nach dem Muster `b2b-browser-iphone-*` (z. B. `b2b-browser-iphone-
 
 **Lauf und Berichte**
 
+Das Tag-Muster `b2b-browser-desktop-*` plant ausschließlich Google Chrome und Chromium für die Fixture-Tests ein. Die Übersicht nennt die acht ausgelassenen Profile. Ein Fehler in einem Pflichtfall lässt die Teilprüfung fehlschlagen. Die anonyme Vorschauerkennung gehört zum vollständigen Lauf.
+
 1. Im Repository unter **Actions → B2B storefront browsers** den Lauf mit dem eigenen Tag öffnen. **Verify new tag against develop** zeigt die verifizierte Commit-SHA. Ein abgelehnter Ursprung beendet die Prüfung vor der Matrix.
 2. Jeder Job **Fixture · Profilname** installiert die gesperrten npm-Abhängigkeiten und die passende Browserlaufzeit. Chrome und Edge verwenden den Markenbrowser auf dem Runner, bei Bedarf installiert Playwright `chrome` bzw. `msedge`. Ein separater Start erfasst die echte Browserversion. Die Jobs einer vollständigen Matrix laufen unabhängig weiter, wenn ein Profil scheitert. [Playwright-Browserinstallation](https://playwright.dev/docs/browsers#google-chrome--microsoft-edge)
 3. Unter **Summary → Artifacts** das Archiv **b2b-browser-report** herunterladen, vollständig entpacken und **index.html** öffnen. Es enthält Tag, SHA, Gesamtstatus, Versions- und Ergebnistabelle sowie Links in die Playwright-Einzelberichte. Die Artefakte **storefront-…** sind auch einzeln verfügbar. Fehlgeschlagene Tests liefern Screenshots und Traces, die Fixture-Diagnostik enthält Konsolenfehler und Requests. Für den interaktiven Trace-Viewer kann ein Rechner mit der vorhandenen Projektinstallation den entpackten Einzelbericht mit `npx --no-install playwright show-report <Pfad-zum-report-Ordner>` lokal bereitstellen. Ein vorhandener Webbrowser genügt.
