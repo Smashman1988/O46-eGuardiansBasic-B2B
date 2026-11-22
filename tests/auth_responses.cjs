@@ -74,6 +74,7 @@ const scenarios = [
     {kind: 'logout', name: 'server error', status: 500, data: {}, errorKey: '0'},
     {kind: 'logout', name: 'network failure', status: 0, data: {}, errorKey: '0'},
     {kind: 'logout', name: 'invalid success envelope', status: 200, data: {data: null, events: {}}, errorKey: '0'},
+    {kind: 'logout', name: 'explicit rejection in success envelope', status: 200, data: {data: 200, error: {message: 'Rejected'}}, errorKey: '0'},
     {kind: 'logout', name: 'confirmed logout without optional event', status: 200, data: {data: 200, events: {}}, success: true}
 ];
 function translations(lang) {
@@ -92,12 +93,12 @@ function run(bundle, lang, scenario, vueLogout = false) {
     let pending;
     const timers = [];
     const jq = selector => ({val: () => 'fixture', removeClass() {return this;}, addClass() {return this;},
-        attr() {return this;}, removeAttr() {return this;}, alert() {return this;},
+        attr() {return this;}, removeAttr() {return this;}, alert() {return this;}, on() {return this;},
         insertBefore() {result.rendered.push(selector); return this;}});
     jq.ajax = options => {result.requests++; pending = options;};
     const location = {href: 'https://fixture.invalid/', reload() {result.redirects++;}};
     const context = {console: {error() {}, warn() {}}, $: jq, jQuery: jq,
-        document: {location, currentScript: {hasAttribute: name => name === 'data-eg-vue-logout' && vueLogout}}, location, setTimeout: fn => {timers.push(fn);}, clearTimeout() {},
+        document: {location, addEventListener() {}, documentElement: {getAttribute: () => null}, currentScript: {hasAttribute: name => name === 'data-eg-vue-logout' && vueLogout}}, location, setTimeout: fn => {timers.push(fn);}, clearTimeout() {},
         messageServiceTranslations: translations(lang),
         O46Core: {installed: {}, basketHeader: {invalidate() {result.cacheInvalidations++; return Promise.resolve();}}},
         eGuardians: {helper: {btnShowLoader() {result.shown++;}, btnHideLoader() {result.hidden++;}}, validator: {checkInputs: () => true}}

@@ -48,6 +48,10 @@ class AssetScopeLocalization {
     public function getLanguage() { return $this->language; }
 }
 class AssetScopeServices {
+    public $contactId = 0;
+    public function getContactId() { return $this->contactId; }
+    public function getContact() { return ['firstName' => 'SessionFixture']; }
+    public function isHidden($id) { return $id == 9901; }
     public function getCurrencyData() { return ['name' => 'EUR']; }
     public function getCanonicalURL(...$args) { return 'https://fixture.invalid/brands/'; }
     public function getURLById($id) { return '/category-' . $id . '/'; }
@@ -63,6 +67,7 @@ function readView($file) {
 $templates = [
     'layout' => readView('PageDesign/PageDesign'),
     'head' => readView('PageDesign/Partials/Head'),
+    'login-preview' => readView('DynamicContent/DynamicLogin'),
     'metadata' => '', 'empty' => '',
     'fixture' => '{% extends "layout" %}{% block PageBody %}<div class="fixture-body">{{ fixtureBody | raw }}</div>{% endblock %}',
     'brands' => readView('Category/Item/CategoryItem'),
@@ -161,6 +166,42 @@ $cases = [
 $report = ['php' => PHP_VERSION, 'twig' => Twig\Environment::VERSION,
     'runtime' => 'Local real Twig delivery templates with explicit Plenty/UI fixtures; native behavior NOT_TESTED',
     'cases' => [], 'failures' => []];
+
+// Render the same IO template and account preview used by the browser logout fixture.
+$logoutCases = [
+    'home' => ['tpl.home', 0, true], 'home-category' => ['tpl.home.category', 87, true],
+    'product' => ['tpl.item', 0, true], 'category' => ['tpl.category.item', 82, true],
+    'search' => ['tpl.search', 0, true], 'content' => ['tpl.category.content', 83, true], 'tags' => ['tpl.tags', 0, true],
+    'account' => ['tpl.my-account', 5178, false], 'account-linked' => ['tpl.category.content', 5178, false],
+    'orders' => ['tpl.order.return', 0, false], 'hidden-category' => ['tpl.category.item', 9901, false],
+    'wishlist-linked' => ['tpl.category.content', 5483, false], 'hidden-search' => ['tpl.search', 9901, false],
+    'unknown' => ['tpl.unknown', 0, false]
+];
+foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
+    $localization->language = $language;
+    $services->contactId = 1;
+    foreach ($logoutCases as $name => [$templateId, $categoryId, $isPublic]) {
+        $template->template = $templateId;
+        $ctx = $base;
+        $ctx['category'] = ['id' => $categoryId];
+        $ctx['urls']['templateType'] = 'home'; // An untrusted override must never identify an account page as public.
+        $ctx['urls']['home'] = $language === 'de' ? '/' : '/' . $language . '/';
+        $html = $twig->render('fixture', $ctx);
+        preg_match('~<html\b[^>]*>~', $html, $rootTag);
+        preg_match('~<script data-eg-session-history>.*?</script>~s', $html, $history);
+        check(isset($history[0]), 'Missing session history handler');
+        check((strpos($rootTag[0], ' data-eg-logout-home=') === false) === $isPublic, "$language/$name classification");
+        check((strpos($rootTag[0], ' data-eg-private-member') !== false) === !$isPublic, "$language/$name session history");
+        if (!$isPublic) { check(strpos($rootTag[0], 'data-eg-logout-home="' . $ctx['urls']['home'] . '"') !== false, "$language/$name fallback"); }
+        $report['logout']['roots'][$language][$name] = $rootTag[0];
+        $report['logout']['history'] = $history[0];
+    }
+}
+foreach (['guest' => 0, 'member' => 1] as $state => $contactId) {
+    $services->contactId = $contactId;
+    $report['logout']['previews'][$state] = $twig->render('login-preview', $base);
+}
+$services->contactId = 0;
 
 foreach (['de', 'en', 'fr', 'it', 'es'] as $language) {
     foreach ($cases as $name => $case) {

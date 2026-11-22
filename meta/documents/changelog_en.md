@@ -1,5 +1,9 @@
 # Release Notes for eGuardiansBasic B2B
 
+## Unreleased – Sign-out
+
+- Signing out from the account preview keeps the current public page, language, search and filters. Signing out on a personal page opens the home page in the selected language. Returning to a protected page checks the session again.
+
 ## Unreleased – Wish list (2026-11-22)
 
 - The close button stays in place while dialog content loads. Content dialogs and the wish list picker have even side margins and a subtle outline. The header search takes its final column width immediately when switching to the desktop layout.

@@ -720,7 +720,8 @@ O46Core.user = O46Core.user || function () {
        const loginConfirmed = (response, status) => status === 200 &&
             response?.events?.AfterAccountAuthentication?.isSuccess === true;
        // CustomerLogoutResource returns create(ResponseCode::OK); event metadata is optional.
-       const logoutConfirmed = (response, status) => status === 200 && response?.data === 200;
+       const logoutConfirmed = (response, status) => status === 200 && response?.data === 200 && !response.error;
+       let logoutPending = false;
        const escapeText = value => String(value ?? '').replace(/[&<>"']/g, character =>
             ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[character]));
 
@@ -743,7 +744,10 @@ O46Core.user = O46Core.user || function () {
 
         this.logout = function(callback){
             eGuardians.apiservice.post('/rest/io/customer/logout/', '', function(response, status) {
-                if (logoutConfirmed(response, status)) O46Core.basketHeader.invalidate();
+                if (logoutConfirmed(response, status)) {
+                    try { localStorage.setItem('eg:lastLogout', String(Date.now())); } catch (_) { /* Storage can be disabled. */ }
+                    O46Core.basketHeader.invalidate();
+                }
 
                 if (typeof callback === 'function') {
                     callback(response, status);
@@ -778,11 +782,14 @@ O46Core.user = O46Core.user || function () {
                 }
             });
         };
-        this.logoutUser = function(button, reloadImmediately) {
+        this.logoutUser = function(button) {
+            if (logoutPending) return;
+            logoutPending = true;
             eGuardians.helper.btnShowLoader(button);
             this.logout(function(response, status) {
                 try {
                     if (!logoutConfirmed(response, status)) {
+                        logoutPending = false;
                         eGuardians.ui.message.error.show({
                             message: messageServiceTranslations[0], insertElement: '.loginpreview-register'
                         });
@@ -791,8 +798,9 @@ O46Core.user = O46Core.user || function () {
                     eGuardians.ui.message.success.show({
                         message: messageServiceTranslations.successlogout, insertElement: '.loginpreview-register'
                     });
-                    if (reloadImmediately) document.location.reload();
-                    else setTimeout(function() { document.location.href = 'https://b2b.outlet46.de'; }, 3000);
+                    const home = document.documentElement.getAttribute('data-eg-logout-home');
+                    if (home === null) document.location.reload();
+                    else document.location.replace(document.location.origin + (/^\/(?:[a-z]{2}\/?)?$/.test(home) ? home : '/'));
                 } finally {
                     eGuardians.helper.btnHideLoader(button);
                 }

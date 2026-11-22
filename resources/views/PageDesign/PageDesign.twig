@@ -46,6 +46,18 @@
 {% set isBasketPage = currentTemplate == 'tpl.basket' or isBasketCategory %}
 {% set isWishListPage = currentTemplate == 'tpl.wish-list' or (currentTemplate == 'tpl.category.content'
     and category.id|default(0) > 0 and category.id == config('IO.routing.category_wish-list')) %}
+{# Use the template selected by the IO controller, never a return URL or request templateType. #}
+{% set publicLogoutPage = currentTemplate in ['tpl.home', 'tpl.home.category', 'tpl.item', 'tpl.search', 'tpl.tags',
+    'tpl.contact', 'tpl.cancellation-rights', 'tpl.cancellation-form', 'tpl.legal-disclosure', 'tpl.privacy-policy',
+    'tpl.terms-conditions', 'tpl.declaration-of-accessibility', 'tpl.item-not-found', 'tpl.page-not-found',
+    'tpl.category.blog', 'tpl.blog.category', 'tpl.blog.article', 'tpl.blog.search', 'tpl.blog.landing',
+    'tpl.category.item', 'tpl.category.content'] %}
+{% if publicLogoutPage and currentTemplate != 'tpl.item' and category.id|default(0) > 0 %}
+    {% set publicLogoutPage = not isBasketPage and not isWishListPage
+        and category.id not in [5178, 5483, 5482, 5484, config('IO.routing.category_my-account'), config('IO.routing.category_confirmation'),
+            config('IO.routing.category_order-return'), config('IO.routing.category_checkout')]
+        and category.right|default('') != 'customer' and not services.category.isHidden(category.id) %}
+{% endif %}
 {% set currentRequestUri = request.getRequestUri() %}
 {% set newsletterPaths = {
     'de': 'content/newsletter',
@@ -83,9 +95,63 @@
 {% set seoPage = createSeoPage(services.template.getCurrentTemplate(), pageMax is defined ? pageMax : null, currentPage is defined ? currentPage : null, itemCountTotal is defined ? itemCountTotal : null) %}
 {% block PrepareSeoContent %}{% endblock %}
 <!DOCTYPE html>
-<html lang="{{ lang }}" prefix="og: http://ogp.me/ns#">
+<html lang="{{ lang }}" prefix="og: http://ogp.me/ns#"{% if isQuickView and not publicLogoutPage %} data-eg-logout-home="{{ urls.home|default('/') }}"{% if services.customer.getContactId() > 0 %} data-eg-private-member{% endif %}{% endif %}>
     <head>
         {% if isQuickView %}
+        <script data-eg-session-history>
+        (() => {
+            const root = document.documentElement;
+            const home = root.getAttribute('data-eg-logout-home');
+            const conceal = () => root.style.setProperty('display', 'none', 'important');
+            const fromHistory = performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
+            const wasMember = root.hasAttribute('data-eg-private-member');
+            // Keep only a logout generation on personal history entries, never keys, URLs or customer data.
+            const generation = () => {
+                try { return localStorage.getItem('eg:lastLogout') || ''; } catch (_) { return null; }
+            };
+            let entry = history.state?.egMemberGeneration;
+            if (wasMember && !fromHistory) {
+                entry = generation();
+                history.replaceState({...history.state, egMemberGeneration: entry}, '');
+            }
+            async function restore() {
+                conceal();
+                if (home === null) {
+                    location.reload();
+                    return;
+                }
+                // Ceres or another tab can end the session independently of the theme button.
+                // Check IO before revisiting a personal URL that may still carry a valid order key.
+                if (typeof entry === 'string' && entry === generation()) {
+                    try {
+                        const response = await fetch('/rest/io/customer/', {
+                            cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: AbortSignal.timeout(8000)
+                        });
+                        const contact = response.status === 200 ? await response.json() : null;
+                        if (!contact?.error && /^[1-9]\d*$/.test(contact?.data?.id)) {
+                            location.reload();
+                            return;
+                        }
+                    } catch (_) { /* Unconfirmed session: take the public fallback. */ }
+                }
+                location.replace(location.origin + (/^\/(?:[a-z]{2}\/?)?$/.test(home) ? home : '/'));
+            }
+            if (home !== null && fromHistory && (wasMember || entry !== undefined)) {
+                restore();
+                return;
+            }
+            let concealed = false;
+            window.addEventListener('pagehide', event => {
+                if (event.persisted && (wasMember || document.querySelector('.btn-login-open.isLoggedIn, .loginpreview-register [data-eg-handler="logoutUser"]'))) {
+                    concealed = true;
+                    conceal();
+                }
+            });
+            window.addEventListener('pageshow', event => {
+                if (event.persisted && concealed) restore();
+            });
+        })();
+        </script>
         {{ get_consent_scripts(ceresConfig.global.blockCookies) }}
         {% endif %}
         {% include getPartial('head') %}
@@ -442,7 +508,7 @@
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=27" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=28" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
             {% if isItem and not matrixInPageScript %}
                 {# A PDP routed to another page bundle still needs the matrix before it. #}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" data-eg-matrix defer></script>

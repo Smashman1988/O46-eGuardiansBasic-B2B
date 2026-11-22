@@ -1,5 +1,9 @@
 # Release Notes für eGuardiansBasic B2B
 
+## Unreleased – Abmeldung
+
+- Nach der Abmeldung über die Kontovorschau bleibt die aktuelle öffentliche Shopseite mit Sprache, Suche und Filtern erhalten. Von persönlichen Seiten führt die Abmeldung zur Startseite der gewählten Sprache. Beim Zurückgehen in einen geschützten Bereich prüft der Shop die Sitzung erneut.
+
 ## Unreleased – Merkliste (2026-11-22)
 
 - Beim Nachladen von Dialoginhalten bleibt das Schließen-Kreuz an seinem Platz. Inhaltsdialoge und Merklisten-Auswahl haben gleichmäßige Seitenabstände und eine feine Außenkontur. Beim Wechsel zur Desktopansicht nimmt die Headersuche sofort ihre endgültige Spaltenbreite ein.
