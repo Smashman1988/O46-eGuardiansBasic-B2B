@@ -12943,10 +12943,10 @@ footer .footer-logo-omr { aspect-ratio: 170 / 120; }
     padding: 16px 46px 16px 14px;
     border: 1px solid #aab39e;
     border-left: 4px solid #76ae00;
-    border-radius: 12px;
+    border-radius: var(--eg-dialog-radius);
     background: #fff;
-    color: #20251b;
-    box-shadow: 0 6px 24px rgb(25 35 12 / 14%);
+    color: var(--eg-dialog-ink);
+    box-shadow: var(--eg-dialog-shadow);
     text-align: left;
     animation: o46-b2b-newsletter-in 300ms ease-out;
 }
@@ -13156,3 +13156,158 @@ body:has(#shop-mode-modal:not(.smm-hidden), .o46-b2b-contact-toggle[aria-expande
 [data-eg-compact-facets] li.eg-facet-selected { display: list-item; }
 [data-eg-compact-facets] .facet-status:empty { display: none; }
 /* End B2B compact facets */
+
+/* B2B dialogs share the shop typography and the existing Bootstrap backdrop. */
+:root {
+    --eg-dialog-gap: clamp(10px, 3vw, 24px);
+    --eg-dialog-padding: clamp(14px, 3vw, 24px);
+    --eg-dialog-radius: 18px;
+    --eg-dialog-shadow: 0 14px 54px rgba(20, 31, 26, .2);
+    --eg-dialog-ink: #202a24;
+    --eg-dialog-accent: #446e13;
+}
+[data-eg-shop-dialogs] .modal-backdrop { background: #1e2923; }
+body.modal-open .btnfilter-mobile { visibility: hidden; }
+.modal[data-eg-dialog] { inset: 0; }
+.modal[data-eg-dialog] .modal-dialog {
+    display: flex;
+    align-items: center;
+    width: calc(100% - 2 * var(--eg-dialog-gap));
+    min-height: calc(100% - 2 * var(--eg-dialog-gap));
+    height: auto;
+    margin: var(--eg-dialog-gap) auto;
+    transform: none;
+    transition: none;
+}
+.modal[data-eg-dialog]:not(.modal-cross) .modal-dialog:not(.modal-lg):not(.modal-xl) { max-width: 560px; }
+:is([data-eg-shop-dialogs] .modal, .modal[data-eg-dialog]) .modal-content {
+    border-radius: var(--eg-dialog-radius);
+    background: #fff;
+    color: var(--eg-dialog-ink);
+    box-shadow: var(--eg-dialog-shadow);
+}
+.modal[data-eg-dialog] .modal-content {
+    max-height: calc(100vh - 2 * var(--eg-dialog-gap));
+    max-height: calc(100dvh - 2 * var(--eg-dialog-gap));
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+:is([data-eg-shop-dialogs] .modal, .modal[data-eg-dialog]) .modal-header {
+    align-items: center;
+    flex: none;
+    gap: 12px;
+    padding: 10px var(--eg-dialog-padding);
+    border-bottom: 1px solid #e0e5df;
+    border-radius: var(--eg-dialog-radius) var(--eg-dialog-radius) 0 0;
+    background: #fff;
+    color: var(--eg-dialog-ink);
+}
+:is([data-eg-shop-dialogs] .modal, .modal[data-eg-dialog]) .modal-title {
+    order: -1;
+    margin: 0;
+    font-size: clamp(17px, 2.6vw, 21px);
+    line-height: 1.25;
+    font-weight: 600;
+    text-transform: none;
+    overflow-wrap: anywhere;
+}
+:is([data-eg-shop-dialogs] .modal .modal-header, [data-eg-dialog] .modal-header, .smm-header) .close {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    margin: 0 0 0 auto;
+    border: 0;
+    border-radius: 50%;
+    background: #f0f3ee;
+    color: #28332a;
+    font: 26px/1 sans-serif;
+    opacity: 1;
+}
+.modal[data-eg-dialog] .modal-body {
+    min-height: 0;
+    padding: var(--eg-dialog-padding);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+.modal-cross[data-eg-dialog] .modal-body { padding: clamp(8px, 2vw, 16px); }
+.modal[data-eg-dialog] .modal-footer {
+    flex: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px var(--eg-dialog-padding);
+    border-top: 1px solid #e0e5df;
+}
+.modal[data-eg-dialog] .modal-footer .btn {
+    min-height: 44px;
+    max-width: 100%;
+    margin: 0;
+    padding: 8px 16px;
+    border-radius: 10px;
+    white-space: normal;
+}
+.modal[data-eg-dialog] .modal-footer .btn-primary { background: var(--eg-dialog-accent); border-color: var(--eg-dialog-accent); color: #fff; }
+.modal[data-eg-dialog] .modal-footer .btn-secondary { background: #fff; border: 1px solid #bcc6bc; color: var(--eg-dialog-ink); }
+.modal[data-eg-dialog] .modal-footer .btn:disabled { opacity: .55; }
+.modal[data-eg-dialog] :focus-visible, .eg-gallery-frame .btn-watch-h:focus-visible { outline: 2px solid #355d13; outline-offset: 2px; }
+#shop-mode-modal[data-eg-dialog] .modal-dialog { max-width: 720px; }
+.smm-header .close { float: right; margin-inline-start: 8px; }
+.smm-card .smm-grid { padding: var(--eg-dialog-padding); }
+#eg-wish-hint { margin: 0 0 16px; color: #4e5d52; }
+#eg-wish-picker fieldset { min-width: 0; border: 0; margin: 0 0 12px; padding: 0; }
+#eg-wish-picker legend { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.eg-wish-option {
+    display: inline-grid;
+    grid-auto-flow: column;
+    align-content: center;
+    vertical-align: top;
+    justify-content: center;
+    align-items: center;
+    gap: 2px 5px;
+    min-height: 44px;
+    min-width: 44px;
+    max-width: 100%;
+    margin: 2px 6px 4px 0;
+    padding: 6px 12px;
+    border: 1px solid #b9c3ba;
+    border-radius: 10px;
+    background: #fff;
+    color: #223024;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+.eg-wish-option[aria-pressed="true"] { background: #edf4e4; border: 2px solid var(--eg-dialog-accent); padding: 5px 11px; font-weight: 700; }
+.eg-wish-option[aria-pressed="true"]::before { content: "✓"; font-size: 12px; line-height: 1; }
+.eg-wish-option small { grid-column: 1 / -1; }
+.eg-wish-option small:empty, [data-wish-status]:empty, [data-wish-notice]:empty { display: none; }
+[data-wish-status] { margin: 6px 0 0; font-weight: 600; }
+[data-wish-notice]:not(:empty) {
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    width: max-content;
+    max-width: min(220px, 70vw);
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--eg-dialog-ink);
+    box-shadow: var(--eg-dialog-shadow);
+    font-size: 14px;
+    line-height: 1.4;
+}
+.eg-gallery-frame .btn-watch-h.item-in-wishlist .icon-heart-o::before { content: "\e924"; }
+@media (max-width: 480px) {
+    #eg-wish-picker .modal-footer { flex-direction: column-reverse; align-items: stretch; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    /* Bootstrap observes the dialog's transition before it emits shown.bs.modal. */
+    .modal[data-eg-dialog].fade { opacity: 1; transition: none; }
+    .modal[data-eg-dialog].fade .modal-dialog { opacity: 0; transition: opacity .15s ease-out; }
+    .modal[data-eg-dialog].fade.show .modal-dialog { opacity: 1; }
+    .modal[data-eg-dialog].show:not(.fade) .modal-content { animation: eg-dialog-appear .15s ease-out; }
+    @keyframes eg-dialog-appear { from { opacity: 0; } to { opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) {
+    .modal[data-eg-dialog].fade, [data-eg-shop-dialogs] .modal-backdrop.fade { transition: none; }
+}

@@ -171,6 +171,7 @@ foreach(['Ceres::Widgets.WidgetComponents','Ceres::Widgets.ShopBuilderDataStore'
 foreach(['DE','EN','FR','IT','ES'] as $code)foreach(['nl-element','b2babfrage'] as $prefix)$stubs['GuardiansBasicB2B::PageDesign.Components.'.$prefix.$code]='<!--fixture '.$prefix.$code.'-->';
 foreach(['','DE','EN','FR','IT','ES'] as $language)$stubs['GuardiansBasicB2B::Category.Macros.CategoryTree'.$language.'.twig']='{% macro get_nav_bar(categories,ignored) %}<li>NAVIGATION BOUNDARY</li>{% endmacro %}';
 $cases=[];
+$stubs['GuardiansBasicB2B::Item.Partials.WishListPicker'] = file_get_contents($root.'/resources/views/Item/Partials/WishListPicker.twig');
 foreach(['de','en','fr','it','es'] as $lang)foreach([null,'true'] as $value)foreach([0,9,10,25] as $quantity)$cases[]=['lang'=>$lang,'value'=>$value,'builder'=>false,'quantity'=>$quantity];
 foreach(['',false,0,'0','false',[],['true']] as $value)$cases[]=['lang'=>'de','value'=>$value,'builder'=>false];
 $cases[]=['lang'=>'de','value'=>null,'builder'=>true];

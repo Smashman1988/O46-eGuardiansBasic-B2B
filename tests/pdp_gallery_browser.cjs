@@ -82,7 +82,23 @@ async function run() {
         await page.locator('.single-prev-images a').nth(1).click();await count('2 / 2');
         results.push({variation:'deduplicated, reinitialized and navigable'});save();
         const a=source.indexOf('this.watchListTrigger = '),b=source.indexOf('this.initLiveSearch',a);
-        await page.evaluate(()=>{window.messages=[];window.messageServiceTranslations={};window.eGuardians={item:{watchList:{add:(id,cb)=>{messages.push(['add',id]);cb();},remove:(id,cb)=>{messages.push(['remove',id]);cb();}}},ui:{message:{success:{show(){}}}},helper:{btnShowLoader(){},btnHideLoader(){}}};});
+        // Keep this gallery fixture on the direct, single-variation branch.
+        // The picker tests render the full multiple-variation component in Twig.
+        await page.evaluate(()=>{
+            const article=document.querySelector('article.single'),id=article.dataset.egActiveVariation;
+            const wrap=article.querySelector('[data-eg-variations]') || article.appendChild(document.createElement('div'));
+            wrap.dataset.egVariations=JSON.stringify([{variationId:id,attributes:[]}]);
+            if(!article.querySelector('[data-wish-notice]')) article.insertAdjacentHTML('beforeend','<span data-wish-notice role="status"></span>');
+            if(!document.getElementById('eg-wish-picker')) article.insertAdjacentHTML('afterend','<div id="eg-wish-picker"><div data-wish-choices></div><p data-wish-status></p><button data-wish-save></button></div>');
+            Object.assign(document.getElementById('eg-wish-picker').dataset,{saved:'[]',attributes:'{}'});
+            window.messages=[];window.messageServiceTranslations={wishlistplus:'Added',wishlistminus:'Removed'};
+            O46Core.basketHeader={refreshAfterWrite(){}};
+            window.eGuardians={item:{watchList:{
+                add:(id,cb)=>{messages.push(['add',id]);cb({data:{variationId:id}},201);},
+                remove:(id,cb)=>{messages.push(['remove',id]);cb({data:true},200);}
+            }}};
+        });
+        await page.addScriptTag({path:'resources/js/wishlist-picker.js'});
         await page.addScriptTag({content:source.slice(a,b).replace('this.watchListTrigger = ','window.watchListTrigger = ')});
         const wish=page.locator('.eg-gallery-frame [data-eg-handler="watchListTrigger"]');
         await wish.evaluate(el=>el.addEventListener('click',()=>window.watchListTrigger(el)));

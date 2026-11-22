@@ -82,9 +82,9 @@
     overflow: auto;
     overscroll-behavior: contain;
     border: 1px solid #aab39e;
-    border-radius: 20px;
+    border-radius: var(--eg-dialog-radius, 20px);
     background: #fff;
-    box-shadow: 0 12px 44px rgb(20 29 9 / 18%);
+    box-shadow: var(--eg-dialog-shadow, 0 12px 44px rgb(20 29 9 / 18%));
 }
 
 .o46-b2b-contact-widget .o46-b2b-contact-panel[hidden] {

@@ -233,11 +233,7 @@ O46Core.apiservice = O46Core.apiservice || function () {
             callApi(url,'PUT',data);
           };
           this.delete = function( url, data, callback, dataType){
-            callApi(url,'DELETE',data,function(response){
-                if(typeof callback === 'function') {
-                    callback(response);
-                }
-            }, dataType);
+            callApi(url,'DELETE',data,callback, dataType);
           };
       }  
 })(eGuardians);
@@ -249,6 +245,35 @@ O46Core.apiservice = O46Core.apiservice || function () {
 O46Core.ui = O46Core.ui || function (messageDuration) {
     if (O46Core.installed.ui) return;
 (function () {
+    // Bootstrap owns Escape, backdrop, scrollbar compensation and focus containment.
+    // Wrap sequential keyboard navigation at the first/last visible control.
+    const dialogs = '[data-eg-dialog]';
+    let clickOpener;
+    document.addEventListener('click', event => {
+        clickOpener = event.target.closest?.('[data-eg-handler="modalContent"]');
+        if (clickOpener) queueMicrotask(() => { clickOpener = null; });
+    }, true);
+    $(document).on('show.bs.modal', dialogs, function (event) {
+        this.egOpener = event.relatedTarget || clickOpener || document.activeElement;
+    }).on('shown.bs.modal', dialogs, function () {
+        const initial = this.querySelector('[data-wish-choices] [aria-pressed="true"], [data-wish-choices] button, #smm-b2b')
+            || this.querySelector('[data-dismiss="modal"]');
+        initial?.focus({preventScroll:true});
+    }).on('keydown', dialogs, function (event) {
+        if (event.key !== 'Tab') return;
+        const controls = [...this.querySelectorAll('a[href],button,input,select,textarea,[tabindex]')]
+            .filter(el => el.tabIndex >= 0 && !el.matches(':disabled') && el.getClientRects().length && getComputedStyle(el).visibility === 'visible');
+        const first = controls[0], last = controls[controls.length - 1];
+        if (!first || (event.shiftKey ? document.activeElement === first || document.activeElement === this : document.activeElement === last)) {
+            event.preventDefault();
+            (event.shiftKey ? last : first)?.focus();
+        }
+    }).on('hidden.bs.modal', dialogs, function () {
+        if (this.egOpener?.isConnected && (document.activeElement === document.body || this.contains(document.activeElement))) {
+            this.egOpener.focus({preventScroll:true});
+        }
+        this.egOpener = null;
+    });
     eGuardians.ui = new function () {
         this.modal = {
             show: function(content, title){
@@ -257,11 +282,11 @@ O46Core.ui = O46Core.ui || function (messageDuration) {
             modalRestContent: function(route,data,title,modalType,languageMessage){
                 $('.dynamicModal .loader-basket').addClass('load-rotate');
                 modalType = modalType || "";
-                $('.dynamicModal').find('.modal-dialog').addClass(modalType);
-                $('.dynamicModal').modal();
+                $('.dynamicModal').find('.modal-dialog').removeClass('modal-sm modal-lg modal-xl').addClass(modalType);
+                $('.dynamicModal').find('.modal-title').text(title);
+                $('.dynamicModal').modal('show');
                 
                 eGuardians.apiservice.get(route, data, function(response){
-                    $('.dynamicModal').find('.modal-title').html(title);
                     if(response.data.hasOwnProperty("description1")){
                         $('.dynamicModal').find('.modal-body').html(response.data["description1"]);
                     }else{
@@ -445,7 +470,7 @@ O46Core.basketHeader = O46Core.basketHeader || (function () {
         return entry && scope && entry.scope === scope && typeof entry.change === 'string' &&
             Number.isFinite(entry.timestamp) && entry.timestamp <= Date.now() && entry.timestamp > Date.now() - ttl;
     }
-    function render(basket) {
+    function render(basket, updateWishList = true) {
         current = basket;
         window.egSessionData = { basket };
         document.querySelectorAll('[data-eg-basket-quantity]').forEach(el => {
@@ -458,6 +483,7 @@ O46Core.basketHeader = O46Core.basketHeader || (function () {
         });
         document.querySelectorAll('[data-basket-sum]').forEach(el => { el.textContent = basket.itemSum.toFixed(2).replace('.', ','); });
         document.querySelectorAll('.wishlist-link').forEach(el => el.classList.toggle('noWishListItems', !basket.itemWishListIds.length));
+        if (updateWishList) O46Core.wishPicker?.sync(basket.itemWishListIds);
         document.querySelectorAll('.single[data-item]').forEach(el => {
             const selected = basket.itemWishListIds.some(id => String(id) === el.dataset.egActiveVariation);
             el.querySelectorAll('.btn-watch').forEach(btn => btn.classList.toggle('item-in-wishlist', selected));
@@ -542,7 +568,8 @@ O46Core.basketHeader = O46Core.basketHeader || (function () {
             writeVersion = 0;
         }
         change = entry.change;
-        render(summary);
+        // The freshly rendered PDP has newer wishlist IDs than a restored header cache.
+        render(summary, notify && modified);
         if (notify && modified) window.dispatchEvent(new Event('o46:basket-invalidated'));
         return true;
     }
@@ -971,32 +998,34 @@ O46Core.shopMode = O46Core.shopMode || function () {
         const b2c = document.getElementById('smm-b2c');
         if (!modal || !b2b || !b2c) return;
 
-        // Keep the existing two-second opening delay.
-        const openTimer = setTimeout(() => {
+        function openChoice() {
+          if (document.body.classList.contains('modal-open')) {
+            $(document).one('hidden.bs.modal.o46ShopChoice', openChoice);
+            return;
+          }
+          document.removeEventListener('keydown', cancelBeforeOpen);
           modal.classList.remove('smm-hidden');
-          modal.setAttribute('aria-hidden','false');
-        }, 2000);
-
-        function closeModal() {
+          $(modal).modal('show');
+        }
+        function cancelBeforeOpen(event) {
+          if (event.key !== 'Escape') return;
           clearTimeout(openTimer);
-          document.removeEventListener('keydown', onKeydown);
+          $(document).off('hidden.bs.modal.o46ShopChoice', openChoice);
+          document.removeEventListener('keydown', cancelBeforeOpen);
           modal.remove();
         }
-        function onKeydown(event) {
-          if (event.key === 'Escape') closeModal();
-        }
+        const openTimer = setTimeout(openChoice, 2000);
+        document.addEventListener('keydown', cancelBeforeOpen);
+        $(modal).one('hidden.bs.modal', () => modal.remove());
 
         b2b.addEventListener('click',()=>{
           setCookie(COOKIE, 'b2b', DAYS, '.outlet46.de');
-          closeModal();
+          $(modal).modal('hide');
         });
         b2c.addEventListener('click',()=>{
-          closeModal();
           location.href = URL_B2C;
         });
 
-        modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
-        document.addEventListener('keydown', onKeydown);
       }
     }
 

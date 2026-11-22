@@ -13,7 +13,7 @@ async function prepare({root = path.resolve(__dirname, '..')} = {}) {
     const report = [], outputs = [];
     for (const [source, target] of files) {
         const sources = source === 'core.js' ? [source, 'search.js', 'zoom-loader.js', 'contact-widget.js'] :
-            source === 'item.js' ? ['matrix.js', source] :
+            source === 'item.js' ? ['matrix.js', 'wishlist-picker.js', source] :
             ['main.js', 'cat.js', 'vue.js'].includes(source) ? ['listing-item.js', source] : [source];
         const input = sources.map(file => versions.lf(fs.readFileSync(path.join(root, 'resources/js', file)))).join('\n');
         acorn.parse(input, { ecmaVersion: 'latest' });

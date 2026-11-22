@@ -76,6 +76,10 @@
 {% set isInWishList = variationId matches '/^[1-9][0-9]*$/D' and basketItems.itemWishListIds is defined and basketItems.itemWishListIds is iterable
     ? variationId in basketItems.itemWishListIds
     : services.wishList.isItemInWishList(variationId) %}
+{% set savedWishIds = basketItems.itemWishListIds is iterable ? basketItems.itemWishListIds : (isInWishList ? [variationId] : []) %}
+{% if not pdpQuickview and not isInWishList and savedWishIds %}
+    {% set isInWishList = variationsWithAttributes|filter(v => v.variationId in savedWishIds)|length > 0 %}
+{% endif %}
 {% set itemPrices = itemData.prices %}
 {% set unitPriceValue = itemPrices.default.unitPrice.value ?? '' %}
 {% set rrpUnitValue = itemPrices.rrp.unitPrice.value ?? '' %}
@@ -216,7 +220,7 @@
                                                         {% endif %}
                                                         {% endfor %}
                                                         <span class="wishlist-info1">
-				<button type="button" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryWishlist') }}" aria-pressed="{{ isInWishList ? 'true' : 'false' }}" data-eg-event="click" data-eg-handler="watchListTrigger" class="btn btn-watch-h align-items-center justify-content-center btn-secondary wishlist-count1{% if isInWishList %} item-in-wishlist{% endif %}"><span class="icon-heart-o"></span></button>
+				<button type="button" aria-label="{{ trans('GuardiansBasicB2B::Template.galleryWishlist') }}" aria-pressed="{{ isInWishList ? 'true' : 'false' }}" data-eg-event="click" data-eg-handler="watchListTrigger" {% if variationsWithAttributes|length > 1 %}aria-haspopup="dialog" aria-controls="eg-wish-picker"{% endif %} class="btn btn-watch-h align-items-center justify-content-center btn-secondary wishlist-count1{% if isInWishList %} item-in-wishlist{% endif %}"><span class="icon-heart-o" aria-hidden="true"></span></button><span data-wish-notice role="status"></span>
                             </span>
                             <a {% if galleryCount %}href="{{ mainImg.url }}"{% endif %} aria-label="{{ itemData | itemName }}" title="{{ itemData | itemName }}" id="ItemImgZoom" class="eg-pdp-photo {% if galleryCount %}MagicZoomPlus{% endif %}" data-options="zoomMode: off; transitionEffect: false; lazyZoom: true; cssClass: white-bg; textBtnClose: {{ trans('GuardiansBasicB2B::Template.facetClose') }}; textBtnNext: {{ trans('GuardiansBasicB2B::Template.galleryNext') }}; textBtnPrev: {{ trans('GuardiansBasicB2B::Template.galleryPrevious') }}; textHoverZoomHint: ; textClickZoomHint: ; textExpandHint:    " data-mobile-options="zoomMode: off; textTouchZoomHint: ; textClickZoomHint: ; textExpandHint: ">
                                 <img fetchpriority="high" {% if galleryCount %}src="{{ mainImg.urlMiddle }}"{% endif %} alt="{{ itemData | itemName }}" title="{{ itemData | itemName }}"  width="560px" height="560px">
@@ -370,8 +374,8 @@
 {% set colorAttr = null %}
 
 {# Tokens für Attribut-Namen in deinen Sprachen #}
-{% set sizeTokens  = ['größe','groesse','size','taille','taglia','dimensione','misura','tamaño','tamano'] %}
-{% set colorTokens = ['farb','farbe','color','couleur','colore'] %}
+{% set sizeTokens  = ['größe','groesse','size','taille','taglia','dimensione','misura','tamaño','tamano','talla'] %}
+{% set colorTokens = ['farb','farbe','color','colour','couleur','colore'] %}
 
 {% for a in attributes %}
   {% set an = (a.name is defined and a.name ? a.name : '')|lower %}
@@ -651,6 +655,7 @@
     {% endif %} 
 </article>
 {% if isQuickView %}
+{% include 'GuardiansBasicB2B::Item.Partials.WishListPicker' %}
 {# PageDesign's isQuickView flag is true for a full page, false for the AJAX fragment. #}
 <script>
 window.dataLayer = window.dataLayer || [];

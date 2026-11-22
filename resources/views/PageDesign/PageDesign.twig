@@ -105,10 +105,10 @@
         {% if isItem %}
             {{ LayoutContainer.show("Ceres::SingleItem.Styles") }}
         {% endif %}
-        <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/contact-widget.css?v=1">
+        <link rel="stylesheet" href="{{ plugin_path('GuardiansBasicB2B') }}/css/contact-widget.css?v=2">
         {% endif %}
     </head>
-    <body class="hold-transition{% if isQuickView %} o46-b2b-contact-page{% endif %}" {% if isVueView %}id="isVueView"{% endif %}{% if isBasketPage %} data-o46-basket-sync{% endif %}>
+    <body class="hold-transition{% if isQuickView %} o46-b2b-contact-page{% endif %}" {% if isVueView %}id="isVueView"{% endif %}{% if isBasketPage %} data-o46-basket-sync{% endif %}{% if not isBasketPage and currentTemplate != 'tpl.checkout' and category.id not in wkbkasse|default([]) %} data-eg-shop-dialogs{% endif %}>
         {% if isQuickView %}
         {{ context.renderState() }}
         <!-- SSR:app() -->
@@ -121,14 +121,14 @@
                     <shipping-country-select :disable-input="{{ services.template.isCheckout() | json_encode() }}"></shipping-country-select>
                 </div>
                 <div id="login-modal-wrapper">
-                    <div class="modal fade login-modal" id="login" tabindex="-1" role="dialog">
+                    <div class="modal login-modal" id="login" data-eg-dialog aria-labelledby="eg-login-title" tabindex="-1" role="dialog">
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" aria-label="Close">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="{{ trans('GuardiansBasicB2B::Template.facetClose') }}">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
-                                    <div class="modal-title h3">{{ trans("Ceres::Template.login") }}</div>
+                                    <div class="modal-title h3" id="eg-login-title">{{ trans("Ceres::Template.login") }}</div>
                                 </div>
                                 <login template="#vue-login" modal-element="login-modal-wrapper"></login>
                             </div>
@@ -152,12 +152,12 @@
         </div>
         <!-- /SSR -->
         <template id="o46-basket-toast">{% include "GuardiansBasicB2B::DynamicContent.DynamicBasketPreviewSmall" %}</template>
-        <div class="modal fade dynamicModal" tabindex="-1" role="dialog">
+        <div class="modal dynamicModal" data-eg-dialog aria-labelledby="eg-info-title" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <span class="modal-title"></span>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span class="modal-title" id="eg-info-title"></span>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="{{ trans('GuardiansBasicB2B::Template.facetClose') }}">
                         <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
@@ -412,12 +412,12 @@
        {% if not services.template.shouldBeCached() %}
             <input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
         {% endif %}
-<div class="modal fade modal-cross" tabindex="-1" role="dialog">
+<div class="modal fade modal-cross" data-eg-dialog aria-labelledby="eg-quick-title" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <span class="modal-title"></span>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span class="modal-title" id="eg-quick-title">{{ trans('GuardiansBasicB2B::Template.quickViewTitle') }}</span>
+          <button type="button" class="close" data-dismiss="modal" aria-label="{{ trans('GuardiansBasicB2B::Template.facetClose') }}">
                 <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -443,13 +443,13 @@
             {% elseif category.id or isSearch %}
                 {% set themePageScript = 'cat.min.js?v=8' %}
             {% elseif isItem %}
-                {% set themePageScript = 'item.min.js?v=11' %}
+                {% set themePageScript = 'item.min.js?v=12' %}
                 {% set matrixInPageScript = true %}
             {% endif %}
             {% if themeNeedsJquery %}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/jquery-3.7.1.min.js?v=1"></script>
             {% endif %}
-            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=25" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
+            <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/core.min.js?v=26" data-eg-magiczoom-src="{{ plugin_path('GuardiansBasicB2B') }}/js/magiczoom.min.js?v=1" data-eg-matrix-src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" defer></script>
             {% if isItem and not matrixInPageScript %}
                 {# A PDP routed to another page bundle still needs the matrix before it. #}
                 <script src="{{ plugin_path('GuardiansBasicB2B') }}/js/matrix.min.js?v=4" data-eg-matrix defer></script>

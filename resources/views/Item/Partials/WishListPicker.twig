@@ -1,0 +1,29 @@
+<div id="eg-wish-picker" class="modal" data-eg-dialog role="dialog" tabindex="-1" aria-hidden="true"
+     aria-labelledby="eg-wish-title" aria-describedby="eg-wish-hint"
+     data-saved="{{ savedWishIds|json_encode|e('html_attr') }}"
+     data-attributes="{{ itemAttributes.attributes|default({})|json_encode|e('html_attr') }}"
+     {% if itemAttributes.units|default([])|length > 1 %}
+     data-units="{{ variationsWithAttributes|map(v => [v.variationId ~ '', itemAttributes.units[v.unitCombinationId]|default('')])|json_encode|e('html_attr') }}"
+     {% endif %}
+     data-variant="{{ trans('GuardiansBasicB2B::Template.wishVariant') }}"
+     data-saved-label="{{ trans('GuardiansBasicB2B::Template.wishAlreadySaved') }}"
+     data-unavailable="{{ trans('GuardiansBasicB2B::Template.wishUnavailable') }}"
+     data-error="{{ trans('GuardiansBasicB2B::Template.wishWriteError') }}">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="eg-wish-title">{{ trans('GuardiansBasicB2B::Template.wishAdd') }}</h2>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ trans('GuardiansBasicB2B::Template.facetClose') }}"><span aria-hidden="true">×</span></button>
+            </div>
+            <div class="modal-body">
+                <p id="eg-wish-hint">{{ trans('GuardiansBasicB2B::Template.wishChoose') }}</p>
+                <div data-wish-choices></div>
+                <p data-wish-status role="status" aria-live="polite"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ trans('GuardiansBasicB2B::Template.wishCancel') }}</button>
+                <button type="button" class="btn btn-primary" data-wish-save disabled>{{ trans('GuardiansBasicB2B::Template.wishAdd') }}</button>
+            </div>
+        </div>
+    </div>
+</div>

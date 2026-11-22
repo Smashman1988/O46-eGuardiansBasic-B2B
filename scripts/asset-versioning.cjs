@@ -77,7 +77,7 @@ function prepare({root = path.resolve(__dirname, '..'), outputs = []} = {}) {
             entry.sourceSha256 === hash(sources.map(file => lf(read(file))).join('\n')), message);
     }
     requireBundle('core', ['core', 'search', 'zoom-loader', 'contact-widget'], 'Contact bundle requires a current complete core build; run npm run build');
-    requireBundle('item', ['matrix', 'item'], 'PDP requires a current combined matrix/item build; run npm run build');
+    requireBundle('item', ['matrix', 'wishlist-picker', 'item'], 'PDP requires a current matrix, wishlist picker and item build; run npm run build');
     requireBundle('main', ['listing-item', 'main'], 'Shared main/Vue delivery requires a current main build; run npm run build');
     function version(file) {
         assert.ok(assets[file], 'Unknown own delivery asset: ' + file);

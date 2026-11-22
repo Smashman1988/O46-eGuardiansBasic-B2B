@@ -2,6 +2,7 @@
 
 ## Unreleased – Wish list (2026-11-22)
 
+- The product-page heart now offers a variation picker for items with multiple variations. It identifies saved and unavailable variations. Shop dialogs share a responsive layout and keyboard navigation.
 - Inactive wish list entries now show the availability status and variation ID labels in Italian and Spanish.
 - The empty message appears after loading when the wish list contains neither active nor inactive variations. Inactive variations remain on the list and are marked as unavailable.
 

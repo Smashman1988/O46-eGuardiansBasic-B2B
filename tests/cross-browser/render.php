@@ -62,8 +62,8 @@ function divSource($source, $opening) {
     } while ($depth > 0);
     return substr($source, $start, $offset-$start);
 }
-foreach (['modal-cross','dynamicModal'] as $dialog) {
-    $source = divSource($layout, '<div class="modal fade '.$dialog.'"');
+foreach (['modal-cross'=>'modal fade modal-cross','dynamicModal'=>'modal dynamicModal'] as $dialog=>$classes) {
+    $source = divSource($layout, '<div class="'.$classes.'"');
     $result[$dialog] = $twig->createTemplate($source)->render($context);
 }
 preg_match('~<div class="eg-backdrop transition"[^>]+></div>~',$layout,$match);

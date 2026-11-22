@@ -8,7 +8,7 @@ const {region} = require('../scripts/build-shop-mode-assets.cjs');
 const output = process.argv[2] || '.cache/shop-mode.json';
 const revision = process.argv.find(x => x.startsWith('--revision='))?.split('=')[1];
 const rows = [];
-const fixture = '<style>.smm-hidden{display:none}#shop-mode-modal{padding:16px}</style><div id="shop-mode-modal" class="smm-hidden" aria-hidden="true"><input><button id="smm-b2b">B2B</button><button id="smm-b2c">B2C</button></div>';
+const fixture = '<style>.smm-hidden{display:none}#shop-mode-modal{position:fixed;inset:0;padding:16px}</style><div id="shop-mode-modal" class="modal smm-hidden" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><input><button id="smm-b2b">B2B</button><button id="smm-b2c">B2C</button></div></div>';
 
 async function run() {
     const browser = await chromium.launch({executablePath: process.env.O46_BROWSER_EXECUTABLE});
@@ -25,20 +25,27 @@ async function run() {
                 // Deterministic timer queue for the local dialog contract, not a native timing measurement.
                 await page.addInitScript(() => {
                     let id = 0; window.__timers = new Map();
-                    window.setTimeout = (callback, delay) => { __timers.set(++id, {callback, delay}); return id; };
-                    window.clearTimeout = id => __timers.delete(id);
+                    const timer = window.setTimeout.bind(window), clear = window.clearTimeout.bind(window);
+                    window.setTimeout = (callback, delay, ...args) => { if(delay!==2000)return timer(callback,delay,...args); __timers.set(--id, {callback, delay}); return id; };
+                    window.clearTimeout = id => id < 0 ? __timers.delete(id) : clear(id);
                     window.__openDialog = () => { for (const [id, timer] of __timers) { __timers.delete(id); timer.callback(); } };
                 });
+                let vendorListeners = 0;
                 async function fresh(noModal = false) {
                     await context.clearCookies();
                     await page.goto('https://b2b.outlet46.de/__local_shop_mode_contract');
+                    await page.addScriptTag({path:'resources/js/jquery-3.7.1.min.js'});
+                    await page.addScriptTag({path:'resources/js/core.min.js'});
+                    await page.evaluate(()=>{window.tseElem=null;O46Core.vendors.call(window);});
+                    vendorListeners = 0;
+                    vendorListeners = await listeners();
                     if (noModal) await page.locator('#shop-mode-modal').evaluate(e => e.remove());
                     await page.evaluate(script);
                 }
                 async function listeners() {
                     const object = await cdp.send('Runtime.evaluate', {expression: 'document'});
                     const result = await cdp.send('DOMDebugger.getEventListeners', {objectId: object.result.objectId});
-                    return result.listeners.filter(x => x.type === 'keydown').length;
+                    return result.listeners.filter(x => x.type === 'keydown').length - vendorListeners;
                 }
                 async function check(test, fn) {
                     const row = {file, lang, test, revision: revision || 'working-tree'};
@@ -66,7 +73,7 @@ async function run() {
                 await check('Missing dialog is harmless', async () => { await fresh(true); assert.equal(await listeners(), 0); });
                 await check('Stored B2B preference skips dialog', async () => {
                     await fresh(); await page.evaluate(() => __openDialog()); await page.locator('#smm-b2b').click();
-                    await page.goto('https://b2b.outlet46.de/__local_shop_mode_contract'); await page.evaluate(script);
+                    await page.reload(); vendorListeners = 0; await page.evaluate(script);
                     assert.equal(await page.evaluate(() => __timers.size), 0);
                     assert.equal(await listeners(), 0);
                     assert.equal(await page.locator('#shop-mode-modal').isVisible(), false);

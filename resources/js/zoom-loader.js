@@ -77,7 +77,7 @@ O46Core.openQuickview = function (trigger, bindDelay) {
             opener = request.trigger;
             $('.modal-cross .modal-body').html(request.html);
             MagicZoom.start();
-            modal.modal('show');
+            modal.modal('show', opener);
             setTimeout(function () {
                 if (view.current === request) eGuardians.events.bindEvents('.modal-cross [data-eg-event]');
             }, request.bindDelay);

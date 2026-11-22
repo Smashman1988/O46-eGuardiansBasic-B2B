@@ -190,53 +190,7 @@ this.initShopData = function () { return O46Core.basketHeader.start(); };
             $(_this).parents('.eg-dropdown').toggleClass('isOpen');
         }
        
-        this.watchListTrigger = function(_this){
-            var variationId = $(_this).parents('[data-item]').data('eg-active-variation');
-            ///rest/io/itemWishList/5903
-            eGuardians.helper.btnShowLoader(_this);
-            var countWish = parseInt($('.wishlist-count').html());
-            var countWishNew = 0;
-            if(!$(_this).hasClass('item-in-wishlist')){
-                eGuardians.item.watchList.add(variationId,function(response){
-                    
-                    $(_this).addClass('item-in-wishlist').attr('aria-pressed', 'true');
-                    eGuardians.ui.message.success.show({
-                        'message'        : messageServiceTranslations["wishlistplus"],
-                        'insertElement'  : '.item-actions-wrap',
-                        'closeTimer'     : 2500
-                    });
-                    eGuardians.helper.btnHideLoader(_this);
-                    countWishNew = countWish+1;
-                    $('.wishlist-count').html(countWishNew);
-                    if(countWishNew<=0){
-                        $('.wishlist-link').addClass('noWishListItems');
-                    }else{
-                        $('.wishlist-link').removeClass('noWishListItems');
-                    }
-                }); 
-               
-            }else{
-                eGuardians.item.watchList.remove(variationId,function(){
-                    $(_this).removeClass('item-in-wishlist').attr('aria-pressed', 'false');
-                    eGuardians.ui.message.success.show({
-                        'message'        : messageServiceTranslations["wishlistminus"],
-                        'insertElement'  : '.item-actions-wrap',
-                        'closeTimer'     : 1500
-                    });
-                    eGuardians.helper.btnHideLoader(_this);
-                    countWishNew = countWish-1;
-                    $('.wishlist-count').html(countWishNew);
-                    if(countWishNew<=0){
-                        $('.wishlist-link').addClass('noWishListItems');
-                    }else{
-                        $('.wishlist-link').removeClass('noWishListItems');
-                    }
-                }); 
-                
-            }
-            
-            
-        }
+        this.watchListTrigger = function(heart) { O46Core.wishPicker.open(heart); };
         this.initLiveSearch = O46Core.initLiveSearch
   };
   
@@ -562,22 +516,14 @@ O46Core.apiservice.call(window);
                     variationId: variationId,
                     templateEvent: "tpl.item"
                 }
-                eGuardians.apiservice.post('/rest/io/itemWishList/', searchParams, function(response){
-                    if(typeof callback === 'function') {
-                        callback(response);
-                    }
-                });
+                eGuardians.apiservice.post('/rest/io/itemWishList/', searchParams, callback);
             },
             remove: function(variationId, callback){
                  var searchParams = {
                     variationId: variationId,
                     templateEvent: "tpl.item"
                 }
-                eGuardians.apiservice.delete('/rest/io/itemWishList/'+variationId, searchParams, function(response){
-                    if(typeof callback === 'function') {
-                        callback(response);
-                    }
-                });
+                eGuardians.apiservice.delete('/rest/io/itemWishList/'+variationId, searchParams, callback);
             }
         };
     };
