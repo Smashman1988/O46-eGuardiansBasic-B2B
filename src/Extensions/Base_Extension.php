@@ -24,6 +24,7 @@ use GuardiansBasicB2B\Helper\SeoPage;
 
 class Base_Extension extends Twig_Extension
 {
+    private const SHOPBUILDER_ITEMS_PER_PAGE = 12;
 
     /**
      * @var TwigFactory
@@ -393,6 +394,7 @@ class Base_Extension extends Twig_Extension
         return '';
     }
 
+    /** The second argument is retained for compatibility with saved ShopBuilder widgets. */
     public function getItemsFromCat($categoryId, $maxItemsPerPage, $ownFacets, $priceFilter = [0,0])
     {
         $categoryService = pluginApp(CategoryService::class);
@@ -409,7 +411,7 @@ class Base_Extension extends Twig_Extension
 
         $itemListOptions = [
             'page'          => SeoPage::positiveInteger($this->req->get('page', 1)) ?? 1,
-            'itemsPerPage'  => $maxItemsPerPage,
+            'itemsPerPage'  => self::SHOPBUILDER_ITEMS_PER_PAGE,
             'sorting'       => $sorting,
             'facets'        => $facets,
             'categoryId'    => $categoryId,
@@ -421,7 +423,7 @@ class Base_Extension extends Twig_Extension
 
         $effectivePage = SeoPage::positiveInteger($itemListOptions['page']);
         $effectiveSize = SeoPage::positiveInteger($itemListOptions['itemsPerPage']);
-        if ($effectivePage === null || $effectiveSize === null) {
+        if ($effectivePage === null || $effectiveSize !== self::SHOPBUILDER_ITEMS_PER_PAGE) {
             throw pluginApp(\UnexpectedValueException::class, [
                 'message' => 'Invalid effective category pagination after SearchOptions validation'
             ]);

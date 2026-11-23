@@ -2,6 +2,8 @@
 
 ## Unreleased – Seitenauswahl in Kategorien
 
+- Paginierte ShopBuilder-Listen aus `getItemsFromCat()` laden zwölf Artikel pro voller Seite. Bestehende Widget-Aufrufe können ihren zweiten Parameter beibehalten. Teaser aus `getItemsFromCatSimple()` verwenden weiterhin ihre eigene Größe.
+
 - Beim Ein- und Ausblenden der mobilen Browserleiste richtet sich der Abstand zwischen Kontakt-Widget und Seitenauswahl nach der gemessenen Widgetposition.
 
 - Kontakt-Schaltfläche und Nach-oben-Pfeil lassen auf Mobilgeräten Platz für die Seitenleiste. Auch bei geöffnetem Kontaktfenster bleiben die Seitenlinks erreichbar.

@@ -2,6 +2,8 @@
 
 ## Unreleased – Category pagination
 
+- Paginated ShopBuilder lists rendered by `getItemsFromCat()` load twelve items per full page. Existing widgets can keep their second argument. Teasers rendered by `getItemsFromCatSimple()` retain their own size.
+
 - As the mobile browser toolbar expands or collapses, the gap between the contact widget and category pagination follows the measured widget position.
 
 - On mobile, the contact launcher and back-to-top button leave room for category pagination. Page links remain accessible while the contact panel is open.

@@ -189,7 +189,7 @@ for (const [name, url, server, items, accepted] of [
 for (const reportFile of process.argv.slice(3).filter(arg => !arg.startsWith('--'))) {
     const php = JSON.parse(readAsset(reportFile, 'utf8'));
     for (const [name, value] of Object.entries(php.cases).filter(([name]) => name.startsWith('client-pagination/'))) {
-        browserFixtures.push({ name: 'browser-' + php.twig + '/' + name, value, tail: php.cases['documents/1654/1658/70'] });
+        browserFixtures.push({ name: 'browser-' + php.twig + '/' + name, value, tail: php.cases['documents/1654/1658/139'] });
         test('php-' + php.twig + '/' + name, () => {
             const page = name.endsWith('-abc') ? 'abc' : (name.endsWith('-999') ? '999' : (name.endsWith('-1') ? '1' : '2'));
             const f = fixture({ url: baseUrl + '?page=' + page, pagination: value.pagination,
@@ -239,7 +239,7 @@ async function browserTests() {
                         assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), strip(value.description) + suffix);
                     }
                     if (tail) {
-                        // Begin with a bound of 69 in this fixture and append a separately
+                        // Begin with the reported bound and append a separately
                         // confirmed page beyond it, using the actual jQuery event signature.
                         await page.evaluate(state => {
                             const payload = document.implementation.createHTMLDocument();
@@ -257,8 +257,8 @@ async function browserTests() {
                             window.jQuery('.category-product-list').trigger('append.infiniteScroll', [payload,path+'&quickViewItem=true',[document.createElement('article')]]);
                             history.pushState(null,'',path);
                         }, tail);
-                        await page.waitForFunction(expected => document.title === expected, strip(value.title) + ' – Seite 70', {timeout:3000});
-                        assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), strip(value.description) + ' – Seite 70');
+                        await page.waitForFunction(expected => document.title === expected, strip(value.title) + ' – Seite ' + tail.currentPage, {timeout:3000});
+                        assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), strip(value.description) + ' – Seite ' + tail.currentPage);
                     }
                 }
                 assert.deepEqual(pageErrors, []);

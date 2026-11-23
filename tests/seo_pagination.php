@@ -49,12 +49,13 @@ namespace IO\Services {
 namespace Ceres\Helper {
     class SearchOptions {
         const SCOPE_CATEGORY = 'category';
-        public static $defaultSize = 24;
+        public static $overrideSize = null;
         public static $overridePage = null;
         public static $menuReads = 0;
         public static function validateItemListOptions($options, $scope) {
             if ((int)$options['page'] <= 0) { $options['page'] = 1; }
-            if ((int)$options['itemsPerPage'] <= 0) { $options['itemsPerPage'] = self::$defaultSize; }
+            if ((int)$options['itemsPerPage'] <= 0) { $options['itemsPerPage'] = 24; }
+            if (self::$overrideSize !== null) { $options['itemsPerPage'] = self::$overrideSize; }
             if (self::$overridePage !== null) { $options['page'] = self::$overridePage; }
             if (!$options['sorting']) { $options['sorting'] = 'variation.createdAt_desc'; }
             return $options;
@@ -415,20 +416,35 @@ namespace {
         $extension->prepareSeoContent($newPage,100); $extension->prepareSeoContent($newPage,100);
         check($builderCalls === 1 && $newPage->getPagination()['valid'],'Repeated prepare queried again');
     });
-    foreach ([0,-1,'abc','',24] as $size) {
+    foreach ([0,-1,'abc','',12,24,48] as $size) {
         test('list/effective-size-' . json_encode($size),function () use ($size,$extension,$renderer,$request,$search) {
             $request->params = ['page'=>'2']; $search->calls = [];
             $extension->getItemsFromCat(200,$size,[]);
-            check($renderer->params['itemCountPage'] === 24 && $renderer->params['pageMax'] === 69.0,'Validated size not used');
-            check($renderer->params['query']['items'] === 24 && $renderer->params['pageLimit'] === 69.0,'List size/page limit inconsistent');
+            check($renderer->params['itemCountPage'] === 12 && $renderer->params['pageMax'] === 138.0,'Validated size not used');
+            check($renderer->params['query']['items'] === 12 && $renderer->params['pageLimit'] === 138.0,'List size/page limit inconsistent');
             check(count($search->calls) === 1,'Extra query for count');
         });
     }
-    test('list/invalid-config-default',function () use ($extension,$search) {
-        $search->calls = []; SearchOptions::$defaultSize = 0;
-        try { $extension->getItemsFromCat(200,0,[]); throw new RuntimeException('Expected invalid configuration failure'); }
-        catch (UnexpectedValueException $error) { check(count($search->calls) === 0,'Query executed with zero page size'); }
-        finally { SearchOptions::$defaultSize = 24; }
+    test('list/reject-changed-effective-size',function () use ($extension,$search) {
+        $search->calls = []; SearchOptions::$overrideSize = 24;
+        try { $extension->getItemsFromCat(200,24,[]); throw new RuntimeException('Expected invalid configuration failure'); }
+        catch (UnexpectedValueException $error) { check(count($search->calls) === 0,'Queried a size other than twelve'); }
+        finally { SearchOptions::$overrideSize = null; }
+    });
+    test('twig/shopbuilder-page-size',function () use ($twig,$request,$search) {
+        $request->params = ['page'=>'2','items'=>'48'];
+        foreach (['getItemsFromCat(60, 12, [])','getItemsFromCat(60, 24, [])',
+                  'getItemsFromCat(60, 48, [])','getItemsFromCat(60, 24, [], [0,2000])'] as $call) {
+            $search->calls = [];
+            $html = $twig->createTemplate('{{ ' . $call . ' | raw }}')->render([]);
+            preg_match_all('~class="item">(\d+)</span>~',$html,$cards);
+            check(array_map('intval',$cards[1]) === range(13,24),'Widget delivered unexpected second page: ' . $call);
+            check(count($search->calls) === 1,'Extra query for widget: ' . $call);
+        }
+        $search->calls = [];
+        $simple = $twig->createTemplate('{{ getItemsFromCatSimple(60, 24, []) | raw }}')->render([]);
+        check(strpos($simple,implode(',',range(1,24)) . ',') !== false,'Simple widget lost its configured size');
+        check(count($search->calls) === 1 && $search->calls[0]['itemList']['itemsPerPage'] === 24,'Simple widget query changed');
     });
     test('list/validated-page',function () use ($extension,$renderer,$request) {
         $request->params = ['page'=>'2']; SearchOptions::$overridePage = 3;
@@ -438,19 +454,20 @@ namespace {
     foreach ([0,10,1654] as $total) {
         test('list/total-' . $total,function () use ($total,$extension,$renderer,$search,$request) {
             $search->total = $total; $request->params = ['page'=>'2'];
-            try { $extension->getItemsFromCat(200,24,[]); check($renderer->params['pageMax'] === ceil($total/24),'Incorrect page maximum'); }
+            try { $extension->getItemsFromCat(200,24,[]); check($renderer->params['pageMax'] === ceil($total/12),'Incorrect page maximum'); }
             finally { $search->total = 1654; }
         });
     }
     // The search total and the documents available by offset can disagree in Plenty.
     // Check the actual ShopBuilder/Twig path including the link consumed by Infinite Scroll.
     foreach ([
-        [1315,1323,55,24,55,56,true], [1315,1323,56,3,56,56,true], [1315,1323,57,0,55,55,false],
-        [1314,1322,56,2,56,56,true],
-        [1271,1277,54,5,54,54,true], [1271,1277,999,0,53,53,false], [1654,1658,70,2,70,70,true],
-        [72,25,3,0,3,3,false], [48,48,2,24,2,2,true], [47,47,2,23,2,2,true],
-        [0,25,1,24,1,2,true], [0,25,2,1,2,2,true], [0,0,2,0,0,0,false],
-        [24,97,4,24,4,5,true], [24,97,5,1,5,5,true],
+        [1315,1323,110,12,110,111,true], [1315,1323,111,3,111,111,true], [1315,1323,112,0,110,110,false],
+        [1314,1322,111,2,111,111,true],
+        [1271,1277,107,5,107,107,true], [1271,1277,999,0,106,106,false], [1654,1658,139,2,139,139,true],
+        [36,13,3,0,3,3,false], [24,24,2,12,2,2,true], [23,23,2,11,2,2,true],
+        [2468,2460,205,12,206,206,true], [2468,2460,206,0,206,206,false],
+        [0,13,1,12,1,2,true], [0,13,2,1,2,2,true], [0,0,2,0,0,0,false],
+        [12,49,4,12,4,5,true], [12,49,5,1,5,5,true],
     ] as [$total,$available,$number,$docs,$seoMax,$navMax,$valid]) {
         test("documents/$total/$available/$number",function () use ($total,$available,$number,$docs,$seoMax,$navMax,$valid,$search,$renderer,$request,$twig,$base,&$builderCalls,&$builderMode) {
             $search->total = $total; $search->documentTotal = $available;
@@ -537,7 +554,7 @@ namespace {
             check(count($search->calls) === 1 && array_keys($search->calls[0]) === $expectedKeys,'Wrong searches for fragment flag');
             check(SearchOptions::$menuReads === ($fragment ? 0 : 1),'Wrong explicit sort menu preparations');
             $options = $search->calls[0]['itemList'];
-            check($options === ['page'=>2,'itemsPerPage'=>24,'sorting'=>'texts.name1_asc','facets'=>[7,17,19],'categoryId'=>200,'priceMin'=>8.0,'priceMax'=>21.0],'Changed filtered category request');
+            check($options === ['page'=>2,'itemsPerPage'=>12,'sorting'=>'texts.name1_asc','facets'=>[7,17,19],'categoryId'=>200,'priceMin'=>8.0,'priceMax'=>21.0],'Changed filtered category request');
             $fullParams = $renderer->params;
             // Render the same fragment with the full UI data the old helper always passed.
             $fullParams['facets'] = [['id'=>3, 'name'=>'Marke', 'values'=>[['id'=>17,'name'=>'A','count'=>5]]]];
@@ -545,7 +562,8 @@ namespace {
             if ($fragment) {
                 check($html === $renderer->render('GuardiansBasicB2B::Category.Item.CategoryItemContent',$fullParams),'Fragment output depends on omitted data');
             }
-            check(strpos($html,'class="item">25</span>') !== false && strpos($html,'class="item">48</span>') !== false,'Wrong fragment cards');
+            preg_match_all('~class="item">(\d+)</span>~',$html,$cards);
+            check(array_map('intval',$cards[1]) === range(13,24),'Wrong fragment cards');
             check(strpos($html,'class="pagination__next"') !== false,'Lost next page');
             return ['factoryKeys'=>$expectedKeys,'cards'=>24,'htmlSha256'=>hash('sha256',$html)];
         });
@@ -572,7 +590,7 @@ namespace {
             $currentQueries = $search->calls;
             check(serialize($context) === $before,'Context altered by current list render');
             $search->calls = [];
-            try { $legacy = $baselineExtension->getItemsFromCat(200,24,[7],[10,80]); }
+            try { $legacy = $baselineExtension->getItemsFromCat(200,12,[7],[10,80]); }
             finally { foreach (get_object_vars(unserialize($before)) as $key=>$value) { $context->$key = $value; } }
             check($current === $legacy,'List HTML, structure or item order changed');
             check($currentQueries == $search->calls && count($search->calls) === 1,'Query options or count changed');
@@ -623,7 +641,7 @@ namespace {
         check(strpos($robots,'MAX-SNIPPET:0') !== false && strpos($robots,'MAX-SNIPPET:100') !== false,'Configured directive values lost');
         check(strpos($robots,'UNAVAILABLE_AFTER: 25 JUN 2020 15:00:00 PST') !== false,'Valued directive was split');
     });
-    foreach ([['1',24,true],['2',24,false],['1',0,false],['2',0,false],['2',1654,true],['69',1654,true],['999',1654,false],['abc',1654,false]] as [$number,$total,$valid]) {
+    foreach ([['1',12,true],['2',12,false],['1',0,false],['2',0,false],['2',1654,true],['138',1654,true],['999',1654,false],['abc',1654,false]] as [$number,$total,$valid]) {
         test('content/indexable-route/' . $number . '/' . $total,function () use ($number,$total,$valid,$twig,$request,$base,$search,&$builderMode) {
             $request->params = ['page'=>$number]; $search->total = $total; $builderMode = 'single';
             $category = $base['category']; $category['details'][0]['metaRobots'] = 'INDEX,FOLLOW';
@@ -657,14 +675,16 @@ namespace {
     // The preview supplies the active shop language, but renders a blank locale in the head.
     foreach (['de'=>'Seite','en'=>'Page','fr'=>'Page','it'=>'Pagina','es'=>'Página'] as $language=>$label) {
         foreach (['content'=>'tpl.category.content','regular-head'=>'tpl.category.item'] as $view=>$type) {
-            foreach ([1,2,69,70] as $page) {
-                test("language/server-html/$view/$language/$page", function () use ($view,$type,$page,$language,$label,$base,$twig,$request,$templateService) {
+            $lastPage = $view === 'content' ? 138 : 69;
+            $pages = $view === 'content' ? [1,2,52,103,104,$lastPage,$lastPage+1,204] : [1,2,$lastPage,$lastPage+1];
+            foreach ($pages as $page) {
+                test("language/server-html/$view/$language/$page", function () use ($view,$type,$page,$lastPage,$language,$label,$base,$twig,$request,$templateService) {
                     $request->params = $page === 1 ? [] : ['page'=>(string)$page];
                     $templateService->template = $type;
                     $ctx = localizedContext($base,$language) + ['currentPage'=>$page,'pageMax'=>69,'itemCountTotal'=>1654];
                     try {
                         $html = $twig->render($view,$ctx);
-                        $suffix = in_array($page,[2,69],true) ? ' – ' . $label . ' ' . $page : '';
+                        $suffix = $page > 1 && $page <= $lastPage ? ' – ' . $label . ' ' . $page : '';
                         check(strpos($html,'<title>Route title' . $suffix . '</title>') !== false,'Wrong server title');
                         check(meta($html,'description') === 'Route description' . $suffix,'Wrong server description');
                         check(canonical($html) === 'https://example.test/damen/' . ($suffix ? '?page=' . $page : ''),'Language changed canonical');
@@ -700,16 +720,18 @@ namespace {
         check($builderCalls === 1 && count($search->calls) === 1,'Quickview executes extra queries');
     });
     // These are actual per-page ShopBuilder function arguments, not theme URL mappings.
-    foreach ([[[60,24,[727]],73],[[900,12,[5,77]],25],[[42,48,[12]],112],[[999,7,[]],15]] as [$arguments,$filteredTotal]) {
-        $last = (int)ceil($filteredTotal / $arguments[1]);
-        foreach ([1,2,$last,$last+1] as $number) {
+    foreach ([[[60,12,[]],25],[[60,24,[]],25],[[60,48,[]],25],[[60,24,[],[0,2000]],19],
+              [[60,24,[727]],73],[[900,12,[5,77]],25],[[42,48,[12]],112],[[999,7,[]],15]] as [$arguments,$filteredTotal]) {
+        $last = (int)ceil($filteredTotal / 12);
+        foreach (array_unique([1,2,$last,$last+1]) as $number) {
             test('shopbuilder-arguments/' . json_encode($arguments) . '/page-' . $number,function () use ($arguments,$filteredTotal,$number,$last,$request,$twig,$base,$search,$renderer,&$builderMode,&$builderSpecs,&$builderCalls) {
                 $builderMode = 'configured'; $builderSpecs = [$arguments]; $builderCalls = 0; $search->calls = [];
                 $request->params = ['page'=>(string)$number];
                 $search->totalResolver = function ($options) use ($arguments,$filteredTotal) {
                     check($options['categoryId'] === $arguments[0], 'ShopBuilder source category changed');
-                    check($options['itemsPerPage'] === $arguments[1], 'ShopBuilder page size replaced with a theme constant');
+                    check($options['itemsPerPage'] === 12, 'Legacy widget argument changed the page size');
                     check($options['facets'] === $arguments[2], 'ShopBuilder facets lost before filtered total');
+                    check([$options['priceMin'],$options['priceMax']] === array_map('floatval',$arguments[3] ?? [0,0]), 'Widget price range changed');
                     return $filteredTotal;
                 };
                 $category = $base['category']; $category['details'][0]['metaRobots'] = 'ALL';
@@ -717,8 +739,12 @@ namespace {
                     $html = $twig->render('content',array_replace($base,['category'=>$category]));
                     check($builderCalls === 1 && count($search->calls) === 1,'Actual ShopBuilder function queried twice');
                     check($renderer->params['itemCountTotal'] === $filteredTotal && $renderer->params['pageMax'] === (float)$last,'SEO total not from filtered item query');
-                    check($renderer->params['itemCountPage'] === $arguments[1], 'List page size differs from function arguments');
+                    check($renderer->params['itemCountPage'] === 12, 'List and query disagree on page size');
                     $valid = $number <= $last;
+                    $firstId = ($number - 1) * 12 + 1;
+                    $expectedIds = $valid ? range($firstId,min($firstId + 11,$filteredTotal)) : [];
+                    $actualIds = array_map(static function ($item) { return $item['data']['variation']['id']; },$renderer->params['itemList']);
+                    check($actualIds === $expectedIds, 'Unexpected article order or gap at the page boundary');
                     check(meta($html,'robots') === ($valid ? 'INDEX,FOLLOW' : 'NOINDEX,FOLLOW'),'SEO used a different filtered total/page size');
                     check(canonical($html) === 'https://example.test/damen/' . ($valid && $number > 1 ? '?page=' . $number : ''),'Wrong canonical for actual ShopBuilder arguments');
                     check(strpos($html,'<title>Route title') !== false,'Source category replaced route metadata');
@@ -811,7 +837,7 @@ namespace {
             $request->params = ['page'=>$page]; $search->total = $total;
             $html = $twig->render('content',localizedContext($base,substr($locale,0,2)) + ['locale'=>$locale]);
             $seen[] = canonical($html);
-            $expected = $page === '2' && $total > 24 ? 'https://example.test/damen/?page=2' : 'https://example.test/damen/';
+            $expected = $page === '2' && $total > 12 ? 'https://example.test/damen/?page=2' : 'https://example.test/damen/';
             check(canonical($html) === $expected,'Data leaked across page/filter/language variants');
         }
         $search->total = 1654; check($seen[0] === $seen[5],'Repeated variant changed');
@@ -994,7 +1020,7 @@ namespace {
                 $state = json_decode(meta($html,'o46-pagination'),true);
                 $valid = $mode === 'single' && in_array($number,['1','2'],true);
                 check(is_array($state) && $state['valid'] === $valid,'Client state disagrees with server decision');
-                check($state['pageMax'] === ($mode === 'single' ? 69 : null),'Client invented/changed the bound');
+                check($state['pageMax'] === ($mode === 'single' ? 138 : null),'Client invented/changed the bound');
                 check($state['ambiguous'] === ($mode === 'multiple'),'Client lost ambiguity');
                 check($state['hasList'] === in_array($mode,['single','multiple'],true),'Client promoted content/simple widget to main list');
                 check($builderCalls === 1 && count($search->calls) === ['single'=>1,'none'=>0,'simple-only'=>1,'multiple'=>2][$mode],'Exporting client state ran another query/builder');
@@ -1046,7 +1072,7 @@ namespace {
         foreach (['size','page'] as $option) {
             test('compatibility/effective-' . $option . '/' . $name,function () use ($value,$option,$request,$extension,$search,$context,&$factoryCalls) {
                 $request->params = ['page'=>'2']; $search->calls = []; $factoryCalls = []; $before = serialize($context);
-                if ($option === 'size') { SearchOptions::$defaultSize = $value; }
+                if ($option === 'size') { SearchOptions::$overrideSize = $value; }
                 else { SearchOptions::$overridePage = $value; }
                 try {
                     $extension->getItemsFromCat(200,$option === 'size' ? 0 : 24,[]);
@@ -1055,7 +1081,7 @@ namespace {
                     check($error->getMessage() === 'Invalid effective category pagination after SearchOptions validation','Exception/message changed');
                     check(count($search->calls) === 0 && serialize($context) === $before,'Invalid option queried or changed route context');
                     check(count($factoryCalls) === 1 && $factoryCalls[0]['class'] === UnexpectedValueException::class,'Exception did not use pluginApp');
-                } finally { SearchOptions::$defaultSize = 24; SearchOptions::$overridePage = null; }
+                } finally { SearchOptions::$overrideSize = null; SearchOptions::$overridePage = null; }
             });
         }
     }

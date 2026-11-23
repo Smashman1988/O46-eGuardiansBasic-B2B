@@ -750,7 +750,7 @@ Nur Dokumentation geändert. Kein Commit, Push, Deployment, Plugin-Sync oder Cac
 
 Die Desktop-Markenübersicht reserviert vor dem ersten Zeichnen die endgültigen Spaltenbreiten, Kachelhöhen und den Platz für das Alphabet. Auf Kategorien, Such- und Produktseiten sowie Content mit paginierter Hauptliste kennt der Browser auch die endgültige Desktop-Höhe des Headerlogos. Die erste Reihe von bis zu vier Markenlogos verwendet direkte Bildquellen. Das Hauptstylesheet behält seinen bisherigen Ladeweg. Bei Änderungen an den Logo- oder Rastermaßen in `main.css` sind die entsprechenden kritischen Desktopregeln in `Head.twig` mitzuprüfen.
 
-Kategorie, Suche und die beiden eingebetteten Artikellisten holen die vorhandenen `VariationAttributeMap`-Ergebnisse mit `ItemSearchService::getResults` in Gruppen von bis zu 24 eindeutigen Artikel-IDs. Die 24 begrenzt ausschließlich die Zahl gleichzeitig abgefragter Attributmaps. Die Seitengröße stammt weiterhin aus dem bestehenden Listenaufruf. Die Zuordnung gilt für genau eine gerenderte Liste. Bei 12, 24 und 48 unterschiedlichen Karten ergeben sich 1, 1 und 2 Attribut-Serviceaufrufe. Einzelne Karteneinbindungen außerhalb dieser Listen behalten ihren Einzelabruf. Für einen lokalen Vergleich auf Twig 2 oder 3 dient `php tests/card_attributes.php <Twig-Autoloader> <Berichtsdatei.json>`.
+Kategorie, Suche und die beiden eingebetteten Artikellisten holen die vorhandenen `VariationAttributeMap`-Ergebnisse mit `ItemSearchService::getResults` in Gruppen von bis zu 24 eindeutigen Artikel-IDs. Die 24 begrenzt ausschließlich die Zahl gleichzeitig abgefragter Attributmaps. Paginierte ShopBuilder-Listen aus `getItemsFromCat()` laden zwölf Artikel pro voller Seite. Bei `getItemsFromCatSimple()` bestimmt der Widget-Aufruf die Größe. Die Zuordnung gilt für genau eine gerenderte Liste. Bei 12, 24 und 48 unterschiedlichen Karten ergeben sich 1, 1 und 2 Attribut-Serviceaufrufe. Einzelne Karteneinbindungen außerhalb dieser Listen behalten ihren Einzelabruf. Für einen lokalen Vergleich auf Twig 2 oder 3 dient `php tests/card_attributes.php <Twig-Autoloader> <Berichtsdatei.json>`.
 
 In Test-Pluginset 426 sind IO und plentyShop LTS jeweils in Version 5.0.86 bereitgestellt. Am 10.11.2026 lieferten Ergebnisliste und Facetten für `adidas` in EN jeweils 31 Treffer, in IT und ES jeweils 0. Über die interne ID `2351296` war derselbe Artikel in allen fünf Sprachen unter seiner lokalen URL und mit dem jeweiligen Preis erreichbar.
 
@@ -1875,8 +1875,10 @@ beispielsweise für `/herren/`:
 {{ getItemsFromCat(60, 24, [727]) | raw }}
 ```
 
-Das Theme enthält keine Zuordnung von Content-URLs zu Artikelkategorien, keine
-Analyse von Funktionsquelltext und keine feste Seitengröße 24. Erfasst werden
+Auch dieser Aufruf lädt zwölf Artikel pro voller Seite. Der zweite Parameter bleibt
+für vorhandene Widgets erhalten. Die Konstante `SHOPBUILDER_ITEMS_PER_PAGE` setzt
+die Größe vor der Ceres-Validierung. Kategorieabfrage, Pagination und SEO verwenden
+anschließend dieselben validierten Optionen. Erfasst werden
 ausschließlich die beim tatsächlichen Funktionsaufruf validierten Werte und
 das Resultat seiner eigenen, durch die vorgegebenen Facetten gefilterten Abfrage.
 Ohne diesen Aufruf entstehen keine entsprechenden Paginierungsdaten, auch wenn
@@ -1995,11 +1997,12 @@ Kategorie-Service und gemeinsamer Kategorie-Kontext werden vor/nach dem
 vorgezogenen Render verglichen. Auch Fehlerfälle räumen den Capture auf.
 
 Für Seite 1, 2 und 69 wird die **tatsächliche PHP-Methode aus Ausgangscommit
-`15d06d2`** ausgeführt und mit der neuen verglichen: Listen-HTML byteidentisch,
+`15d06d2`** mit zwölf Artikeln pro Seite ausgeführt und mit dem heutigen Aufruf
+mit zweitem Argument 24 verglichen: Listen-HTML byteidentisch,
 Artikelreihenfolge und Abfrageparameter identisch, jeweils ein `getResults()`.
 Auch der einfache Widget-Aufruf bleibt im HTML-/Abfragevergleich identisch.
 Weitere direkte ShopBuilder-Aufrufe prüfen das Beispiel `(60, 24, [727])` sowie
-unterschiedliche Quellkategorien, Facetten und Seitengrößen **7, 12, 24 und 48**.
+unterschiedliche Quellkategorien, Facetten und zweite Argumente **7, 12, 24 und 48**.
 Die gefilterten Fixture-Gesamtzahlen unterscheiden sich von der ungefilterten
 Quellzahl; gültige und ungültige Seiten müssen sich nach genau diesem Resultat
 richten. Für Content ganz ohne PHP-Listenaufruf und für ausschließlich einfache
